@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { DiscoveryBranchCard } from "@/components/home/DiscoveryBranchCard";
@@ -227,7 +227,7 @@ function countHostsForLocation(
   return hosts.filter((h) => matchesLocation(h, locationId)).length;
 }
 
-export function HostsMarketplace({
+function HostsMarketplaceInner({
   initialHosts = [],
 }: {
   initialHosts?: HostDiscovery[];
@@ -813,5 +813,25 @@ export function HostsMarketplace({
         }
       />
     </main>
+  );
+}
+
+export function HostsMarketplace({
+  initialHosts = [],
+}: {
+  initialHosts?: HostDiscovery[];
+}) {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-background">
+          <Container className="py-16 text-sm text-muted-foreground">
+            Loading hosts…
+          </Container>
+        </main>
+      }
+    >
+      <HostsMarketplaceInner initialHosts={initialHosts} />
+    </Suspense>
   );
 }
