@@ -101,6 +101,18 @@ describe("sitemap merch + blog hubs", () => {
     ).toEqual(["a", "c"]);
   });
 
+  it("excludes reserved merch hub slugs from product sitemap entries", () => {
+    expect(isSitemapEligibleMerch({ slug: "drops", indexable: true })).toBe(
+      false,
+    );
+    expect(isSitemapEligibleMerch({ slug: "vault", indexable: true })).toBe(
+      false,
+    );
+    expect(isSitemapEligibleMerch({ slug: "hosts", indexable: true })).toBe(
+      false,
+    );
+  });
+
   it("only marks hubs with published posts as non-empty", () => {
     const hubs = collectNonEmptyBlogHubSlugs([
       {

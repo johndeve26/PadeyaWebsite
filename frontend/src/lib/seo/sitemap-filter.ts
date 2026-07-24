@@ -1,5 +1,7 @@
 /** Sitemap visibility helpers — keep in sync with app/sitemap.ts. */
 
+import { isReservedMerchSlug } from "@/lib/seo/merch-paths";
+
 export type SitemapEventLike = {
   slug: string;
   visibility?: string | null;
@@ -121,6 +123,7 @@ export function filterSponsorsForSitemap<T extends SitemapSponsorLike>(
 
 export function isSitemapEligibleMerch(item: SitemapMerchLike): boolean {
   if (!item.slug?.trim()) return false;
+  if (isReservedMerchSlug(item.slug)) return false;
   return item.indexable !== false;
 }
 

@@ -193,4 +193,13 @@ export function normalizeSeoBaseUrl(raw: string): string {
   }
 }
 
+export {
+  decideMerchProductSample,
+  isMerchHubPath,
+  isMerchProductPath,
+  isReservedMerchSlug,
+  pickMerchProductUrl,
+  RESERVED_MERCH_PATH_SEGMENTS,
+} from "@/lib/seo/merch-paths";
+
 export { LIVE_SITE_ORIGIN, LIVE_SITE_HOST };

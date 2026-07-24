@@ -75,6 +75,13 @@ assert.match(smoke, /extractJsonLd|ld\+json/);
 assert.match(smoke, /padeya\.com/);
 assert.doesNotMatch(smoke, /SEO_BASE_URL\s*=\s*["']http:\/\/localhost/);
 
+assert.match(smoke, /isMerchProductPath/);
+assert.match(smoke, /No public indexable merch Product URL found/);
+assert.match(smoke, /No public indexable merch product available for Product JSON-LD sample/);
+assert.match(read("src/lib/seo/merch-paths.ts"), /RESERVED_MERCH_PATH_SEGMENTS/);
+assert.match(read("src/lib/seo/merch-paths.ts"), /isMerchProductPath/);
+assert.match(read("src/lib/seo/sitemap-filter.ts"), /isReservedMerchSlug/);
+
 const pkg = JSON.parse(read("package.json"));
 assert.match(pkg.scripts["test:seo"], /seo-phase1c-smoke/);
 assert.ok(pkg.scripts["seo:production-smoke"]);

@@ -354,6 +354,39 @@ const hosts = `${BASE}/hosts`;
 const fans = `${BASE}/fans`;
 const sponsorships = `${BASE}/sponsorships`;
 
+/** Reserved hub segments under /merch/ — keep sync with src/lib/seo/merch-paths.ts */
+const RESERVED_MERCH_SEGMENTS = new Set(["drops", "vault", "hosts"]);
+
+function isMerchProductPath(pathname) {
+  const p = (pathname || "").replace(/\/+$/, "") || "/";
+  const m = p.match(/^\/merch\/([^/]+)$/i);
+  if (!m?.[1]) return false;
+  return !RESERVED_MERCH_SEGMENTS.has(m[1].toLowerCase());
+}
+
+function isMerchHubPath(pathname) {
+  const p = ((pathname || "").replace(/\/+$/, "") || "/").toLowerCase();
+  if (p === "/merch" || p === "/merch-guide") return true;
+  if (p === "/merch/hosts" || p.startsWith("/merch/hosts/")) return true;
+  const m = p.match(/^\/merch\/([^/]+)$/);
+  return Boolean(m && RESERVED_MERCH_SEGMENTS.has(m[1]));
+}
+
+function decideMerchProductSample(productUrl, strict) {
+  if (productUrl) return { action: "check", url: productUrl };
+  if (strict) {
+    return {
+      action: "fail",
+      message: "No public indexable merch Product URL found",
+    };
+  }
+  return {
+    action: "skip",
+    message:
+      "No public indexable merch product available for Product JSON-LD sample",
+  };
+}
+
 const sampleEvent = pickByPath(
   sitemapUrls,
   (p) => /^\/events\/[^/]+$/.test(p) && !["/events/search", "/events/location"].includes(p) && !p.startsWith("/events/c/") && !p.startsWith("/events/city/") && !p.startsWith("/events/today") && !p.startsWith("/events/free") && !p.startsWith("/events/vip") && !p.startsWith("/events/this-weekend"),
@@ -361,7 +394,7 @@ const sampleEvent = pickByPath(
 const sampleHost = pickByPath(sitemapUrls, (p) => /^\/u\/[^/]+$/.test(p));
 const sampleFan = pickByPath(sitemapUrls, (p) => /^\/f\/[^/]+$/.test(p));
 const sampleSponsor = pickByPath(sitemapUrls, (p) => /^\/sponsors\/[^/]+$/.test(p));
-const sampleMerch = pickByPath(sitemapUrls, (p) => /^\/merch\/[^/]+$/.test(p));
+const sampleMerch = pickByPath(sitemapUrls, (p) => isMerchProductPath(p));
 const sampleBlog = pickByPath(sitemapUrls, (p) => /^\/blog\/[^/]+$/.test(p) && !p.startsWith("/blog/category") && !p.startsWith("/blog/tag") && !p.startsWith("/blog/author"));
 const sampleHelp = pickByPath(sitemapUrls, (p) => /^\/help\/articles\/[^/]+$/.test(p));
 const sampleLocation = pickByPath(
@@ -412,13 +445,38 @@ if (sampleSponsor) {
 } else if (STRICT) fail("no sponsor sample in sitemap");
 else console.warn("  ⚠ no sponsor sample in sitemap (skip)");
 
-if (sampleMerch) {
-  await checkIndexablePage(sampleMerch, {
-    label: "merch",
+const merchSample = decideMerchProductSample(sampleMerch, STRICT);
+if (merchSample.action === "check") {
+  await checkIndexablePage(merchSample.url, {
+    label: "merch product",
     requireTypes: ["Product"],
   });
-} else if (STRICT) fail("no merch sample in sitemap");
-else console.warn("  ⚠ no merch sample in sitemap (skip)");
+} else if (merchSample.action === "fail") {
+  fail(merchSample.message);
+} else {
+  console.warn(`  ⚠ ${merchSample.message}`);
+}
+
+// Merch hubs are not Product pages — spot-check /merch/drops without Product schema
+{
+  const dropsUrl = `${BASE}/merch/drops`;
+  if (!isMerchHubPath("/merch/drops")) {
+    fail("internal: /merch/drops must classify as merch hub");
+  } else {
+    const r = await fetchFollow(dropsUrl);
+    if (r.ok && r.res?.status === 200 && r.html) {
+      const ld = extractJsonLd(r.html);
+      if (jsonLdHasType(ld, "Product")) {
+        fail("/merch/drops must not emit Product JSON-LD (hub, not product detail)");
+      } else {
+        ok("/merch/drops is hub (no Product JSON-LD)");
+        if (jsonLdHasType(ld, "CollectionPage")) {
+          ok("/merch/drops CollectionPage present");
+        }
+      }
+    }
+  }
+}
 
 if (sampleBlog) {
   await checkIndexablePage(sampleBlog, {

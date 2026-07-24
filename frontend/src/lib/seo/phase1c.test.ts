@@ -8,15 +8,19 @@ import {
 
 import {
   assertPadeyaAbsoluteUrl,
+  decideMerchProductSample,
   extractCanonicalHref,
   extractJsonLdBlocks,
   extractMetaContent,
   extractTitle,
   isForbiddenLiveHost,
+  isMerchHubPath,
+  isMerchProductPath,
   isNoindexRobotsContent,
   jsonLdContainsType,
   normalizeSeoBaseUrl,
   parseSitemapLocs,
+  pickMerchProductUrl,
   robotsAdvertisesPadeyaSitemap,
   robotsDisallowsPrivateTrees,
   sitemapUrlsLookSafe,
@@ -26,6 +30,7 @@ import {
   isClientProductionSeoEnvironment,
   shouldIndexEnvironment,
 } from "./env-policy";
+import { RESERVED_MERCH_PATH_SEGMENTS } from "./merch-paths";
 
 describe("Search Console / Bing verification metadata", () => {
   it("omits verification when env tokens are empty", () => {
@@ -258,5 +263,72 @@ describe("environment indexing policy (regression)", () => {
         nodeEnv: "production",
       }),
     ).toBe(false);
+  });
+});
+
+describe("merch product vs hub path classification", () => {
+  it("does not treat hubs as Product detail paths", () => {
+    expect(isMerchProductPath("/merch")).toBe(false);
+    expect(isMerchProductPath("/merch/drops")).toBe(false);
+    expect(isMerchProductPath("/merch/vault")).toBe(false);
+    expect(isMerchProductPath("/merch/hosts")).toBe(false);
+    expect(isMerchProductPath("/merch/hosts/dj-ade")).toBe(false);
+    expect(isMerchProductPath("/merch-guide")).toBe(false);
+    expect(isMerchHubPath("/merch/drops")).toBe(true);
+    expect(isMerchHubPath("/merch")).toBe(true);
+    for (const seg of RESERVED_MERCH_PATH_SEGMENTS) {
+      expect(isMerchProductPath(`/merch/${seg}`)).toBe(false);
+    }
+  });
+
+  it("classifies real product slugs correctly", () => {
+    expect(isMerchProductPath("/merch/legacy-tee")).toBe(true);
+    expect(isMerchProductPath("/merch/night-market-hoodie")).toBe(true);
+    expect(isMerchProductPath("https://padeya.com/merch/legacy-tee")).toBe(
+      true,
+    );
+  });
+
+  it("picks product URLs from sitemap and skips hubs", () => {
+    const urls = [
+      "https://padeya.com/merch",
+      "https://padeya.com/merch/drops",
+      "https://padeya.com/merch/vault",
+      "https://padeya.com/merch/legacy-tee",
+    ];
+    expect(pickMerchProductUrl(urls)).toBe(
+      "https://padeya.com/merch/legacy-tee",
+    );
+    expect(pickMerchProductUrl(urls.slice(0, 3))).toBeNull();
+  });
+
+  it("non-strict skips cleanly when no product inventory; strict fails clearly", () => {
+    const skip = decideMerchProductSample(null, false);
+    expect(skip.action).toBe("skip");
+    expect(skip.message).toMatch(/No public indexable merch product available/);
+
+    const fail = decideMerchProductSample(null, true);
+    expect(fail.action).toBe("fail");
+    expect(fail.message).toBe("No public indexable merch Product URL found");
+    expect(fail.message).not.toMatch(/drops/);
+
+    const check = decideMerchProductSample(
+      "https://padeya.com/merch/legacy-tee",
+      true,
+    );
+    expect(check).toEqual({
+      action: "check",
+      url: "https://padeya.com/merch/legacy-tee",
+    });
+  });
+
+  it("requires Product JSON-LD on a real product HTML sample", () => {
+    const html = `
+      <script type="application/ld+json">
+        {"@type":"Product","name":"Legacy Tee","offers":{"@type":"Offer"}}
+      </script>`;
+    const blocks = extractJsonLdBlocks(html);
+    expect(jsonLdContainsType(blocks, "Product")).toBe(true);
+    expect(jsonLdContainsType(blocks, "Offer")).toBe(true);
   });
 });
