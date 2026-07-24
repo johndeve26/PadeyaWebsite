@@ -11,7 +11,13 @@ import {
   hostLegacyCanonicalPath,
   hostLegacyJsonLd,
 } from "./host-metadata";
-import { pickEntityOgImage, resolvePublicAssetUrl } from "./public-asset";
+import {
+  isSocialPreviewSafeImage,
+  pickEntityOgImage,
+  resolveOgImageUrl,
+  resolvePublicAssetUrl,
+} from "./public-asset";
+import { buildPageMetadata } from "./site";
 import {
   buildSponsorMetadata,
   sponsorProfileJsonLd,
@@ -39,6 +45,49 @@ describe("public assets", () => {
     );
   });
 
+  it("rewrites retired smartlance media hosts to padeya.com", () => {
+    expect(
+      resolvePublicAssetUrl(
+        "https://padeya.smartlancedesigns.com/demo/events/afrobeats-night-live-gallery.svg",
+      ),
+    ).toBe("https://padeya.com/demo/events/afrobeats-night-live-gallery.svg");
+  });
+
+  it("rejects SVG for WhatsApp-safe OG images", () => {
+    expect(
+      isSocialPreviewSafeImage(
+        "https://padeya.com/demo/events/afrobeats-night-live-gallery.svg",
+      ),
+    ).toBe(false);
+    expect(
+      resolveOgImageUrl(
+        "https://padeya.com/demo/events/afrobeats-night-live-gallery.svg",
+      ),
+    ).toBeNull();
+    expect(resolveOgImageUrl("/brand/padeya-hero.jpg")).toBe(
+      "https://padeya.com/brand/padeya-hero.jpg",
+    );
+  });
+
+  it("falls back to default OG PNG when page image is SVG", () => {
+    const meta = buildPageMetadata({
+      title: "Afrobeats Night",
+      description: "Live in Lagos",
+      path: "/events/demo-afrobeats-night-live",
+      image: "https://padeya.com/demo/events/afrobeats-night-live-gallery.svg",
+      env: prodEnv,
+    });
+    const images = meta.openGraph?.images;
+    const first = Array.isArray(images) ? images[0] : images;
+    const url =
+      typeof first === "string"
+        ? first
+        : first && typeof first === "object" && "url" in first
+          ? String(first.url)
+          : "";
+    expect(url).toBe("https://padeya.com/brand/padeya-og.png");
+  });
+
   it("picks cover over avatar over logo", () => {
     expect(
       pickEntityOgImage({
@@ -47,6 +96,15 @@ describe("public assets", () => {
         logo: "/l.jpg",
       }),
     ).toBe("https://padeya.com/c.jpg");
+  });
+
+  it("skips SVG covers when picking entity OG", () => {
+    expect(
+      pickEntityOgImage({
+        cover: "/demo/cover.svg",
+        avatar: "/media/avatar.png",
+      }),
+    ).toBe("https://padeya.com/media/avatar.png");
   });
 });
 

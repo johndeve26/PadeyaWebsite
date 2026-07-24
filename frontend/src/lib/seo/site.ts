@@ -12,7 +12,16 @@ import {
   type SeoEnvInput,
 } from "@/lib/seo/env-policy";
 import { NOINDEX_ROBOTS } from "@/lib/seo/noindex";
+import { resolveOgImageUrl } from "@/lib/seo/public-asset";
 import { buildSiteVerificationMetadata } from "@/lib/seo/verification";
+
+/** Default share card dimensions (WhatsApp / Facebook recommended). */
+const DEFAULT_OG_IMAGE = {
+  path: "/brand/padeya-og.png",
+  width: 1200,
+  height: 630,
+  type: "image/png",
+} as const;
 
 export {
   getCanonicalSiteOrigin,
@@ -107,7 +116,7 @@ export function absoluteUrl(path: string, env?: SeoEnvInput): string {
 }
 
 export function defaultOgImage(env?: SeoEnvInput): string {
-  return absoluteUrl("/brand/padeya-og.png", env);
+  return absoluteUrl(DEFAULT_OG_IMAGE.path, env);
 }
 
 export function buildPageMetadata(opts: {
@@ -121,9 +130,20 @@ export function buildPageMetadata(opts: {
   const env = opts.env ?? readSeoEnv();
   const path = canonicalPathOnly(opts.path);
   const url = absoluteUrl(path, env);
-  const image = opts.image || defaultOgImage(env);
+  // WhatsApp/iMessage ignore SVG OG images — fall back to brand raster card.
+  const custom = resolveOgImageUrl(opts.image);
+  const image = custom || defaultOgImage(env);
+  const usingDefault = !custom;
   const envBlocksIndex = !shouldIndexEnvironment(env);
   const noIndex = Boolean(opts.noIndex) || envBlocksIndex;
+  const ogImage = usingDefault
+    ? {
+        url: image,
+        width: DEFAULT_OG_IMAGE.width,
+        height: DEFAULT_OG_IMAGE.height,
+        type: DEFAULT_OG_IMAGE.type,
+      }
+    : { url: image };
 
   return {
     title: opts.title,
@@ -135,7 +155,7 @@ export function buildPageMetadata(opts: {
       description: opts.description,
       url,
       siteName: brand.name,
-      images: [{ url: image }],
+      images: [ogImage],
       type: "website",
     },
     twitter: {

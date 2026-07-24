@@ -2,6 +2,7 @@ import type { EventItem } from "@/lib/types/events";
 import { formatPublicPlaceLabel, locationVisibilityOf } from "@/lib/event-privacy";
 
 import type { SeoEnvInput } from "./env-policy";
+import { resolveOgImageUrl } from "./public-asset";
 import { absoluteUrl, buildPageMetadata, siteOrigin } from "./site";
 
 /** Visibility values that must never be indexed when slug-reachable. */
@@ -66,7 +67,8 @@ export function buildEventMetadata(event: EventItem, env?: SeoEnvInput) {
       description: `Password-protected event on Pàdéyá.`,
       path: `/events/${event.slug}`,
       // Prefer explicit social share art only; avoid treating body media as public.
-      image: event.social_share_image_url || null,
+      // SVG / unsafe formats fall back to brand OG inside buildPageMetadata.
+      image: resolveOgImageUrl(event.social_share_image_url),
       noIndex: true,
       env,
     });
@@ -84,7 +86,9 @@ export function buildEventMetadata(event: EventItem, env?: SeoEnvInput) {
     event.description.slice(0, 160);
   const description = scrubPrivateAddress(rawDescription, event, place);
   const image =
-    event.social_share_image_url || event.banner_url || event.mobile_banner_url;
+    resolveOgImageUrl(event.social_share_image_url) ||
+    resolveOgImageUrl(event.banner_url) ||
+    resolveOgImageUrl(event.mobile_banner_url);
 
   return buildPageMetadata({
     title,

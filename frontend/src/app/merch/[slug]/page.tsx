@@ -11,7 +11,7 @@ import {
 } from "@/lib/seo/merch-metadata";
 import { breadcrumbJsonLd, JsonLdScript } from "@/lib/seo/jsonld";
 import { buildPageMetadata, siteOrigin } from "@/lib/seo/site";
-import { resolvePublicAssetUrl } from "@/lib/seo/public-asset";
+import { resolveOgImageUrl } from "@/lib/seo/public-asset";
 import type { MarketplaceProduct } from "@/lib/types/merch";
 
 type PageProps = {
@@ -58,8 +58,8 @@ export async function generateMetadata({
     product.description ||
     `Shop ${product.name} on ${brand.name}.`;
   const image =
-    resolvePublicAssetUrl(product.cover_image_url) ||
-    resolvePublicAssetUrl(product.image_url) ||
+    resolveOgImageUrl(product.cover_image_url) ||
+    resolveOgImageUrl(product.image_url) ||
     undefined;
   const indexable = product.indexable !== false;
 
