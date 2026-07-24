@@ -519,7 +519,7 @@ See [FAN_CONNECT.md](./FAN_CONNECT.md) and [DEMO_DATA.md](./DEMO_DATA.md#fan-con
 
 See [FAN_PASSPORT.md](./FAN_PASSPORT.md).
 
-- `fan_passports` — one row per buyer (`user_id` unique); denormalized counts + Superfan flag + favorite categories; profile fields (`username`, `avatar_url`, `tagline`, `bio`); visibility (`private`/`unlisted`/`public`); `appear_in_directory` (default false); section toggles (`show_*`, `hide_private_events_always`); admin moderation (`admin_hidden_at`, `admin_hidden_reason`)
+- `fan_passports` — one row per buyer (`user_id` unique); denormalized counts + Superfan flag + favorite categories; profile fields (`username`, `avatar_url`, `tagline`, `bio`); visibility (`private`/`unlisted`/`public`, default `public`); `appear_in_directory` (default true); section toggles (`show_*`, `hide_private_events_always`); admin moderation (`admin_hidden_at`, `admin_hidden_reason`)
 - `fan_badges` — badge catalog (slug, name, description, criteria_key)
 - `user_badges` — awards (`user_id` + `badge_id` unique); `awarded_at`
 - `loyalty_records` — per-user-per-host loyalty (tickets, check-ins, VIP purchases, `is_superfan`)

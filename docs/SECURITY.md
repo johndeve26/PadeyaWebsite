@@ -309,10 +309,10 @@ Full matrix: [TEAMS.md](./TEAMS.md#security--privacy-summary) · [HOST_TEAM.md](
 
 ## Fan Passport privacy
 
-- Fan Passport visibility defaults to **private**; public/unlisted require explicit opt-in (`docs/FAN_PASSPORT.md`)
+- Fan Passport visibility defaults to **public** with directory listing on; fans can set private/unlisted or leave `/fans` anytime (`docs/FAN_PASSPORT.md`)
 - Public `/api/v1/f/{username}` returns **404** for private or admin-hidden profiles (no existence leak beyond username guess)
 - Unlisted profiles load by direct link only — they never appear on `/fans`
-- **Fan Passport Directory** (`/fans` / `GET /api/v1/fans`) lists only `visibility=public` **and** `appear_in_directory=true` (opt-in). There is no global public list of every fan
+- **Fan Passport Directory** (`/fans` / `GET /api/v1/fans`) lists only `visibility=public` **and** `appear_in_directory=true`. There is no forced global list of every fan
 - Public attended events omit amounts, ticket types, and hidden venues; secret/invite/unlisted events are excluded when `hide_private_events_always` is on
 - Vault on public Passport exposes unlock **titles** only — never locked bodies or media URLs
 - Directory / public serializers never expose email, phone, orders, payments, refunds, CRM segments, or locked Vault content

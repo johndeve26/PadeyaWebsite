@@ -10,7 +10,7 @@ export default function ConnectSuggestionsPage() {
   return (
     <ConnectShell
       title="Shared event energy"
-      description="Going to the same events, following the same hosts, and similar scenes — opt-in only, never a dating feed."
+      description="Going to the same events, following the same hosts, and similar scenes — never a dating feed. Turn discovery off anytime in settings."
     >
       <Suspense fallback={<SkeletonLoader className="h-28" />}>
         <ConnectSuggestions />

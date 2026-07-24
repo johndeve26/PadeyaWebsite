@@ -271,7 +271,8 @@ def test_user_cannot_edit_another_passport(
     assert other.status_code == 200
     assert other.json()["display_name"] == "Hijack Attempt"
     owner = client.get("/api/v1/f/ownerfan")
-    # still private by default
-    assert owner.status_code == 404
+    # Public + directory by default; other user's PATCH must not rewrite owner.
+    assert owner.status_code == 200
+    assert owner.json()["display_name"] == "Owner Fan"
     me_a = client.get("/api/v1/passport/me", headers=a)
     assert me_a.json()["display_name"] == "Owner Fan"

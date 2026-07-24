@@ -665,7 +665,7 @@ See [FAN_CONNECT.md](./FAN_CONNECT.md). Opt-in fan↔fan graph; messaging only a
 
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| GET/PATCH | `/api/v1/fan-connect/settings` | User | Own Connect settings (defaults off) |
+| GET/PATCH | `/api/v1/fan-connect/settings` | User | Own Connect settings (defaults on; untick anytime) |
 | GET | `/api/v1/fan-connect/can-connect/{username}` | User | Eligibility, safe shared context, `cooldown_until`, `can_send_connect_request`, relationship flags |
 | GET/POST | `/api/v1/fan-connect/requests` | User | List (`box=incoming\|outgoing`) / create request |
 | POST | `/api/v1/fan-connect/requests/{id}/accept` | User | Accept → `connected` + unlock `fan_fan` |
@@ -721,7 +721,7 @@ See [FAN_PASSPORT.md](./FAN_PASSPORT.md).
 
 - Passport is created automatically on first `GET /passport/me` for the authenticated user.
 - **Default visibility is private.** Public/unlisted only after the fan opts in.
-- **Directory listing** requires `visibility=public` **and** `appear_in_directory=true`. Unlisted/private never list. Non-public visibility clears directory opt-in.
+- **Directory listing** requires `visibility=public` **and** `appear_in_directory=true` (both default on at signup). Unlisted/private never list. Non-public visibility clears directory listing.
 - **Attendance** = distinct events with a `checked_in` ticket. Cancelled / refunded tickets never count.
 - Owned tickets for stats = `active` or `checked_in` only.
 - Badge awards are deterministic from ticket, check-in, follow, VIP, Vault, and city data.

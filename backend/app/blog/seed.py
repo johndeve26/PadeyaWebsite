@@ -384,6 +384,8 @@ DEMO_COMMENTS: dict[str, list[dict[str, str]]] = {
 
 def seed_blog_content(db: Session) -> dict[str, int]:
     """Idempotent seed of categories, tags, author, and demo posts (upsert by slug)."""
+    import app.users.models  # noqa: F401 — BlogAuthor FK → users.id
+
     created = {
         "categories": 0,
         "tags": 0,

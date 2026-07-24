@@ -155,7 +155,7 @@ def update_passport_settings(db: Session, user: User, payload) -> FanPassport:
     ):
         if field in data and data[field] is not None:
             setattr(passport, field, data[field])
-    # Directory listing is public + opt-in only
+    # Directory listing requires public + appear_in_directory (both default on)
     if passport.visibility != VISIBILITY_PUBLIC:
         passport.appear_in_directory = False
     db.commit()

@@ -239,7 +239,7 @@ export function ConnectHome() {
       {!enabled ? (
         <EmptyState
           title="Fan Connect is off"
-          description="Turn it on to see fans going to the same events and build your Pàdéyá circle — private by default."
+          description="Turn it back on in settings to see fans going to the same events and build your Pàdéyá circle."
           action={
             <Link href="/connect/settings">
               <Button>Open settings</Button>
@@ -293,7 +293,7 @@ export function ConnectHome() {
           <Section
             eyebrow="Host circle"
             title="Members who follow your hosts"
-            description="People following the same public hosts you do — opt-in only."
+            description="People following the same public hosts you do."
             href="/connect/suggestions"
             linkLabel="More suggestions →"
             empty={sameHosts.length === 0}

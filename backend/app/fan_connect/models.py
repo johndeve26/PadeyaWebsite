@@ -1,4 +1,4 @@
-"""Fan Connect ORM models — privacy-first opt-in graph."""
+"""Fan Connect ORM models — discoverability on by default; fans can disable."""
 
 from __future__ import annotations
 

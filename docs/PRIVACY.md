@@ -43,7 +43,7 @@ Details: [EVENT_RECOMMENDATIONS.md](./EVENT_RECOMMENDATIONS.md).
 
 ## Fan Connect
 
-- Opt-in / private by default (`fan_connect_enabled`, `allow_connection_requests`, `discoverable_for_same_events`, `discoverable_for_similar_interests` default off; `request_policy` defaults to `same_event`; `show_public_city` defaults off).
+- Discoverability defaults **on** (`fan_connect_enabled`, `allow_connection_requests`, `discoverable_for_same_events`, `discoverable_for_similar_interests`, `show_public_city` default true; fans can disable anytime). `request_policy` defaults to `same_event`.
 - `/fans` directory visibility is **separate** — directory alone never enables Connect.
 - Target must have a **public** Passport; private / unlisted / admin-hidden fans are never suggested.
 - **Self-actions denied:** users cannot Connect with, message, follow, report, or block themselves; self is excluded from suggestions and connection counts.
@@ -67,7 +67,7 @@ Details: [TICKETS.md](./TICKETS.md#admin-event-buyers--attendees--exports) · [A
 
 ## Fan Passport
 
-- Default visibility **private**; directory requires `public` + `appear_in_directory`.
+- Default visibility **public** with `appear_in_directory=true` on signup; fans can go private/unlisted or leave the directory anytime. Directory still requires `public` + `appear_in_directory`.
 - Public / directory serializers never expose email, phone, amounts, hidden venues, or locked Vault content.
 - Users may **view and share** their own public Passport; own page shows Edit / Personal dashboard / Share instead of Connect / Message / Follow / Report / Block.
 - Self Connect, Message, Follow, Report, and Block are denied server-side (same user id).

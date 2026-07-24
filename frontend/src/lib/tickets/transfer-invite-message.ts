@@ -1,3 +1,5 @@
+import { LIVE_SITE_ORIGIN } from "@/lib/seo/site";
+
 /** Manual invite text when email is delayed or the recipient prefers a DM. */
 export function buildTransferInviteMessage(
   recipientEmail: string,
@@ -11,7 +13,7 @@ export function buildTransferInviteMessage(
     options?.origin?.replace(/\/$/, "") ||
     (typeof window !== "undefined"
       ? window.location.origin
-      : "https://padeya.smartlancedesigns.com");
+      : LIVE_SITE_ORIGIN);
   const claimPath = options?.claimPath?.trim() || null;
   const next = encodeURIComponent(claimPath || "/dashboard/tickets");
   const registerLink = `${origin}/register?email=${encodeURIComponent(trimmed)}&next=${next}`;
@@ -36,7 +38,7 @@ export function siteOrigin(origin?: string): string {
     origin?.replace(/\/$/, "") ||
     (typeof window !== "undefined"
       ? window.location.origin
-      : "https://padeya.smartlancedesigns.com")
+      : LIVE_SITE_ORIGIN)
   );
 }
 

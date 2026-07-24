@@ -163,7 +163,7 @@ export default function PassportSettingsPage() {
       tone="soft"
       eyebrow="Fan Passport"
       title="Passport settings"
-      description="Your Fan Passport is private by default. Public directory listing is opt-in only."
+      description="Your Fan Passport starts public and listed in the Fans directory. Untick anytime to go private or leave the directory."
       actions={
         <div className="flex flex-wrap gap-2">
           <Link href="/fans">
@@ -206,12 +206,13 @@ export default function PassportSettingsPage() {
               Public discovery
             </h3>
             <p className="text-sm text-muted-foreground">
-              There is no global list of every fan. Only Passports you opt into
-              the directory can appear on{" "}
+              There is no forced global list of every fan. Passports marked
+              public and listed appear on{" "}
               <Link href="/fans" className="font-semibold underline-offset-2 hover:underline">
                 /fans
               </Link>
-              .
+              {" "}
+              — you can leave the directory anytime.
             </p>
             <Select
               label="Profile visibility"
@@ -221,7 +222,7 @@ export default function PassportSettingsPage() {
                 setDraft({
                   ...draft,
                   visibility,
-                  // Directory opt-in only applies when Public.
+                  // Directory listing only applies when Public.
                   appear_in_directory:
                     visibility === "public"
                       ? draft.appear_in_directory

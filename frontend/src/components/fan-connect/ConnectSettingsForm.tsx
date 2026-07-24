@@ -61,7 +61,7 @@ const VISIBILITY: VisibilityToggle[] = [
   {
     key: "fan_connect_enabled",
     label: "Enable Fan Connect",
-    hint: "Off by default. Turn on to meet Explorers going where you’re going.",
+    hint: "On by default. Meet Explorers going where you’re going — turn off anytime.",
   },
   {
     key: "discoverable_for_same_events",
@@ -71,12 +71,12 @@ const VISIBILITY: VisibilityToggle[] = [
   {
     key: "discoverable_for_similar_interests",
     label: "Let members with similar event interests find me",
-    hint: "Appear when favorite scenes overlap — still opt-in only.",
+    hint: "Appear when favorite scenes overlap — turn off anytime.",
   },
   {
     key: "allow_connection_requests",
     label: "Allow connection requests",
-    hint: "Other opted-in members may send a Connect request when eligible.",
+    hint: "Other members may send a Connect request when eligible.",
   },
 ];
 
@@ -334,12 +334,13 @@ export function ConnectSettingsForm() {
 
       <Card className="space-y-2 border-primary/20 bg-primary/5 p-5">
         <p className="text-sm font-extrabold text-heading">
-          Private by default
+          On by default — untick anytime
         </p>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Fan Connect stays off until you enable it. Directory or Passport
-          visibility alone never turns this on. Chat unlocks only after both
-          of you accept — no phone numbers or private venues.
+          Fan Connect and discovery start enabled so you can meet Explorers
+          going where you’re going. Turn any toggle off when you want privacy.
+          Directory listing is separate. Chat unlocks only after both of you
+          accept — no phone numbers or private venues.
         </p>
       </Card>
 

@@ -227,7 +227,7 @@ export function FansDirectory() {
         <p className="text-sm text-muted-foreground">
           {loading
             ? "Loading public Fan Passports…"
-            : `${total} public Passport${total === 1 ? "" : "s"} · opt-in only`}
+            : `${total} public Passport${total === 1 ? "" : "s"} · listed in directory`}
         </p>
 
         {error ? (
@@ -239,7 +239,7 @@ export function FansDirectory() {
         {!loading && items.length === 0 ? (
           <EmptyState
             title="No public Fan Passports yet"
-            description="Fans can choose to make their Passport visible from their privacy settings."
+            description="Fans can list their Passport from privacy settings — or leave the directory anytime."
             action={
               <Link href="/dashboard/passport/settings">
                 <Button>Create your Passport</Button>

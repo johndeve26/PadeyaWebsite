@@ -56,21 +56,21 @@ Self is never included in Fan Connect suggestions and never counted as a connect
 
 | Mode | `/f/{username}` | Listed on `/fans` |
 |------|-----------------|-------------------|
-| `private` (default) | **404** | Never |
+| `private` | **404** | Never |
 | `unlisted` | Direct link only | Never |
-| `public` | Accessible | Only if `appear_in_directory=true` |
+| `public` (default) | Accessible | Only if `appear_in_directory=true` |
 
-### Directory opt-in
+### Directory listing
 
-- Separate flag: `appear_in_directory` (default **false**).
+- Separate flag: `appear_in_directory` (default **true** on signup).
 - Listing requires **all** of: `visibility=public`, `appear_in_directory=true`, active user, username set, not admin-hidden.
 - Setting visibility to private/unlisted clears `appear_in_directory`.
-- Fans can turn directory visibility off anytime from settings.
+- Fans can leave the directory anytime from settings.
 
 ### Admin moderation
 
 - Admins may hide a Fan Passport (`admin_hidden_at` / reason): removes from `/fans` and returns 404 on `/f/{username}`.
-- Restore clears the hide. Directory listing still requires the fan’s own opt-in.
+- Restore clears the hide. Directory listing still requires the fan’s own directory flag.
 - Actions are audited (`passport.admin.hide` / `passport.admin.restore`).
 
 ### Never expose on public Passport / directory
@@ -100,7 +100,7 @@ Public serializers live in `app/passport/public_service.py` and `app/passport/di
 
 | Method | Path | Notes |
 |--------|------|-------|
-| GET | `/api/v1/fans` | Directory — public + opt-in only |
+| GET | `/api/v1/fans` | Directory — public + `appear_in_directory` |
 | GET | `/api/v1/dashboard/passport` | Private full Passport |
 | GET/PATCH | `/api/v1/dashboard/passport/settings` | Profile + Public discovery |
 | GET | `/api/v1/f/{username}` | Public / unlisted page (404 if private/hidden) |
@@ -122,7 +122,7 @@ Public serializers live in `app/passport/public_service.py` and `app/passport/di
 - Section toggles: badges, followed hosts, public reviews, city/category stats, attended event summaries, Vault unlocks
 - Hide private events always (default **true**)
 
-Defaults: `visibility=private`, `appear_in_directory=false`, `hide_private_events_always=true`.
+Defaults: `visibility=public`, `appear_in_directory=true`, `hide_private_events_always=true`. Fans can set private/unlisted or leave the directory anytime.
 
 ## Merch badges & proof
 

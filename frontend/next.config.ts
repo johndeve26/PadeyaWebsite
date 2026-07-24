@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
   // Public / tunnel hosts (Next 16 blocks cross-origin dev assets by default)
   allowedDevOrigins: [
+    "padeya.com",
+    "www.padeya.com",
     "padeya.smartlancedesigns.com",
     "*.smartlancedesigns.com",
     "rat-meetings-parish-fair.trycloudflare.com",

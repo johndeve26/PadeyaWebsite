@@ -14,18 +14,18 @@ Copy anchors:
 
 Prefer “shared event energy”, “going to the same event”, “fans who follow your hosts”, “build your Pàdéyá circle” — avoid dating-app language.
 
-## Opt-in defaults (private)
+## Discoverability defaults (on — untick anytime)
 
 | Setting | Default |
 |---------|---------|
-| `fan_connect_enabled` | `false` |
-| `discoverable_for_same_events` | `false` |
-| `discoverable_for_similar_interests` | `false` |
-| `allow_connection_requests` | `false` |
+| `fan_connect_enabled` | `true` |
+| `discoverable_for_same_events` | `true` |
+| `discoverable_for_similar_interests` | `true` |
+| `allow_connection_requests` | `true` |
 | `show_shared_hosts` | `true` |
 | `show_shared_categories` | `true` |
 | `show_shared_public_events` | `true` |
-| `show_public_city` | `false` |
+| `show_public_city` | `true` |
 | `hide_private_events_always` | `true` (always enforced on ensure) |
 | `request_policy` | `same_event` |
 
@@ -52,9 +52,9 @@ API: `GET /fan-connect/decline-cooldown-options` · `POST …/decline` body `{ "
 | Surface | Gate |
 |---------|------|
 | `/fans` directory | Passport `public` + `appear_in_directory` |
-| Fan Connect | Explicit Connect opt-in + eligibility below |
+| Fan Connect | Connect settings enabled (default on) + eligibility below |
 
-Public Passport ≠ Connect enabled. Directory membership ≠ connection requests allowed. See [FAN_PASSPORT.md](./FAN_PASSPORT.md).
+Public Passport ≠ Connect enabled. Directory membership ≠ connection requests allowed — they are independent toggles (both default on). See [FAN_PASSPORT.md](./FAN_PASSPORT.md).
 
 ## Self-actions (own Passport)
 
@@ -195,10 +195,10 @@ Permission: user `fan_connect.use`; admin `admin.full_access`.
 
 ## Privacy guarantees
 
-- Defaults off; directory ≠ Connect
+- Defaults **on** for Connect availability + discovery toggles; fans can disable anytime. Directory ≠ Connect
 - Target must be public Passport; private/unlisted/admin-hidden never suggested
 - Self Connect / report / block denied; self never suggested or counted as a connection
-- Shared context = public-safe events / hosts / categories / dual-opt-in city / public badges only
+- Shared context = public-safe events / hosts / categories / dual-consent city / public badges only
 - `reasons_json` and suggestion cards never carry unsafe fields
 - Notifications never include private event details or full message bodies
 - Analytics never track private attendance, venues, ticket types, spend, contact, Vault bodies, or message text — see [ANALYTICS_TRACKING_PLAN.md](./ANALYTICS_TRACKING_PLAN.md)
@@ -272,7 +272,7 @@ Full inventory: [API.md](./API.md#fan-connect). Schema: [DATABASE.md](./DATABASE
 | `/connect/events` | Public-safe nights for Connect |
 | `/connect/requests` | Incoming / outgoing requests |
 | `/connect/connections` | Accepted connections |
-| `/connect/settings` | Privacy & settings — off by default |
+| `/connect/settings` | Privacy & settings — on by default; untick anytime |
 | `/dashboard/connect/*` | Redirect aliases → `/connect/*` |
 | `/events/[slug]` | Optional “Going too? Connect with fans.” — 3-card preview; hidden for private/hidden/preview; enable CTA if Connect is off |
 | `/admin/fan-connect` | Admin overview |

@@ -74,9 +74,12 @@ def register_user(
     db.add(user)
     db.flush()
 
+    from app.fan_connect.eligibility import ensure_connect_settings
     from app.passport.service import ensure_passport
 
     ensure_passport(db, user, preferred_username=username, display_name=display)
+    # Connect + directory discoverability default on; fans can untick later.
+    ensure_connect_settings(db, user)
 
     write_audit_log(
         db,

@@ -271,7 +271,7 @@ Do **not** use status to skip planning. Append-only modules (ledger, audit logs,
 
 | Resource | Model | Create | Read | Update | Delete / lifecycle | Hard delete? | Frontend | Backend (key) | Status | Primary gap |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Connect settings | `fan_connect_settings` | Ensure on read | Owner | Owner PATCH | Soft via disable flags | Never | `/connect/settings` | `GET/PATCH /fan-connect/settings` | **shipped** | Defaults all-off; `request_policy` |
+| Connect settings | `fan_connect_settings` | Ensure on register + read | Owner | Owner PATCH | Soft via disable flags | Never | `/connect/settings` | `GET/PATCH /fan-connect/settings` | **shipped** | Defaults on; fans can untick; `request_policy` |
 | Connection requests | `fan_connections` (`request_sent`) | Authenticated fan when eligible | Parties | Accept/decline/cancel | Soft statuses + 14d decline cooldown | Soft | `/connect/requests` | `/fan-connect/requests*` | **shipped** | Safe `reasons_json` only |
 | Connections | `fan_connections` (`connected`) | Via accept | Parties | Remove/block/report | Soft `removed`/`blocked` | Soft | `/connect/connections` | accept → `fan_fan` thread | **shipped** | Messaging only while `connected` |
 | Blocks | `fan_connection_blocks` | Blocker | Parties + admin | — | Soft (row kept) | Soft | `/admin/fan-connect/blocks` + user history | `/fan-connect/block` + admin list | **shipped** | Display names only |

@@ -7,7 +7,7 @@ export default function ConnectSettingsPage() {
   return (
     <ConnectShell
       title="Privacy & settings"
-      description="Private by default — Fan Connect stays off until you enable it. Directory membership never turns this on by itself."
+      description="On by default so you can connect — untick anytime. Directory listing is separate and never turns Connect on by itself."
     >
       <ConnectSettingsForm />
     </ConnectShell>
