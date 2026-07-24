@@ -6,6 +6,7 @@ type Variant =
   | "primary"
   | "secondary"
   | "ghost"
+  | "ghost-dark"
   | "dark"
   | "outline-dark"
   | "danger";
@@ -23,6 +24,8 @@ const variantClasses: Record<Variant, string> = {
     "bg-surface-elevated text-foreground border border-border shadow-[var(--shadow-soft)] hover:border-border-strong/50 hover:bg-surface-muted active:bg-surface-muted focus-visible:ring-focus-ring",
   ghost:
     "bg-transparent text-foreground hover:bg-surface-muted active:bg-surface-inset focus-visible:ring-focus-ring",
+  "ghost-dark":
+    "bg-transparent text-paper/80 hover:bg-paper/5 hover:text-paper active:bg-paper/10 focus-visible:ring-focus-ring",
   dark:
     "bg-ink text-paper shadow-[var(--shadow-soft)] hover:bg-surface-dark hover:shadow-[var(--shadow)] active:translate-y-px focus-visible:ring-focus-ring",
   "outline-dark":

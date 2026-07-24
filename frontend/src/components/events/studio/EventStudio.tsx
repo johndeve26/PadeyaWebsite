@@ -443,7 +443,7 @@ function EventStudioInner({
           title: options?.publish
             ? "Event published"
             : options?.submit
-              ? "Submitted for review"
+              ? "Event published"
               : "Draft saved",
           durationMs: 3500,
         });
@@ -618,7 +618,7 @@ function EventStudioInner({
             ? "Create with Event Studio"
             : values.title || "Edit event"
         }
-        description="Fill in each step, then use Preview to open the full guest listing in a new tab. Nothing goes public until you submit for review and Pàdéyá approves it — unless your role can publish."
+        description="Fill in each step, then use Preview to open the full guest listing in a new tab. Publish goes live immediately — Pàdéyá may review listings after they are public."
         currentStep={step}
         onStepChange={goToStep}
         values={values}
@@ -649,7 +649,7 @@ function EventStudioInner({
                   void handleSave({ submit: true }).catch(() => undefined)
                 }
               >
-                Submit for review
+                Publish event
               </Button>
             ) : null}
             {canPublish ? (

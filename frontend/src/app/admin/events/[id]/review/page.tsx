@@ -366,6 +366,30 @@ export default function AdminEventReviewDetailPage() {
               </div>
             ) : null}
 
+            {event.status === "published" && flagged ? (
+              <div className="space-y-3 border-t border-border pt-4">
+                <p className="text-sm text-muted-foreground">
+                  This listing is already live. Mark reviewed when you have checked
+                  it, or pause the listing if it should come down.
+                </p>
+                <ConfirmAction
+                  label="Mark reviewed"
+                  title="Mark this event reviewed?"
+                  description="Clears the review flag. The listing stays published."
+                  confirmLabel="Mark reviewed"
+                  size="md"
+                  variant="dark"
+                  busy={busy}
+                  onConfirm={() =>
+                    run(
+                      () => clearEventFlag(event.id),
+                      "Review flag cleared",
+                    )
+                  }
+                />
+              </div>
+            ) : null}
+
             {event.status === "published" ? (
               <div className="border-t border-border pt-4">
                 <ConfirmAction

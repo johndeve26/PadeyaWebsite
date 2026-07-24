@@ -440,6 +440,51 @@ def test_admin_can_send_test_push_non_admin_cannot(
     assert test.json()["ok"] is True
 
 
+def test_user_can_send_test_push_to_self(
+    client: TestClient, db_session: Session, assign_role
+):
+    reg = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "user-self-push@example.com",
+            "password": "Password123!",
+            "full_name": "Self Push",
+        },
+    )
+    assert reg.status_code == 201
+    headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
+    user = db_session.scalar(
+        select(User).where(User.email == "user-self-push@example.com")
+    )
+    assert user is not None
+    _enable_push(db_session, provider="log", actor_user_id=user.id)
+
+    missing = client.post("/api/v1/push/test", headers=headers)
+    assert missing.status_code == 400
+    assert "device" in missing.json()["detail"].lower()
+
+    db_session.add(
+        PushSubscription(
+            user_id=user.id,
+            endpoint="https://push.example.com/user-self-test",
+            p256dh_encrypted=encrypt_secret("p256dh"),
+            auth_encrypted=encrypt_secret("auth"),
+            is_active=True,
+        )
+    )
+    db_session.commit()
+
+    ok = client.post("/api/v1/push/test", headers=headers)
+    assert ok.status_code == 200, ok.text
+    body = ok.json()
+    assert body["ok"] is True
+    assert body["title"] == "Pàdéyá test notification"
+
+    again = client.post("/api/v1/push/test", headers=headers)
+    assert again.status_code == 400
+    assert "wait" in again.json()["detail"].lower()
+
+
 def test_vapid_private_key_encrypted(
     client: TestClient, db_session: Session, assign_role
 ):

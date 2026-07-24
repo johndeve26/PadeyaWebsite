@@ -131,6 +131,16 @@ def test_repair_partial_demo_data(demo_settings, db_session) -> None:
     assert repaired["status"] == "repaired"
     assert repaired.get("fans", 0) >= 20
     assert repaired["sponsorship_slots_published"] >= 8
+    from app.taxonomy.models import Location
+
+    assert (
+        db_session.scalar(
+            select(func.count())
+            .select_from(Location)
+            .where(Location.kind == "country")
+        )
+        or 0
+    ) >= 1
     assert get_user_by_email(db_session, "fan1@demo.padeye.test") is not None
     assert db_session.scalar(
         select(DemoEntityMarker.id).where(

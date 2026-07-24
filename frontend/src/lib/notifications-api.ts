@@ -287,6 +287,21 @@ export type AdminPushSubscriptionLookup = {
   }>;
 };
 
+export type PushTestResult = {
+  ok: boolean;
+  message?: string;
+  title?: string;
+  body?: string;
+  action_url?: string;
+};
+
+export async function testMyPush() {
+  return apiRequest<PushTestResult>("/push/test", {
+    method: "POST",
+    body: {},
+  });
+}
+
 export async function testAdminPush() {
   return apiRequest<AdminPushTestResult>("/admin/push/settings/test", {
     method: "POST",

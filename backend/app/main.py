@@ -203,6 +203,22 @@ async def lifespan(_: FastAPI):
             seed_ai_prompt_templates(db)
             ensure_default_settings(db)
             ensure_system_admin_roles(db)
+            if settings.app_env.strip().lower() in {"development", "dev", "local"}:
+                from sqlalchemy import func, select
+
+                from app.taxonomy.models import Location
+                from app.taxonomy.service import seed_taxonomy_vocab
+
+                country_count = int(
+                    db.scalar(
+                        select(func.count())
+                        .select_from(Location)
+                        .where(Location.kind == "country")
+                    )
+                    or 0
+                )
+                if country_count == 0:
+                    seed_taxonomy_vocab(db)
             db.commit()
             try:
                 seed_knowledge_base(db)

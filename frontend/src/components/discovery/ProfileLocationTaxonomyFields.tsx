@@ -64,6 +64,7 @@ export function ProfileLocationTaxonomyFields({
   const [countries, setCountries] = useState<TaxonomyLocation[]>([]);
   const [states, setStates] = useState<TaxonomyLocation[]>([]);
   const [cities, setCities] = useState<TaxonomyLocation[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [cascade, setCascade] = useState<LocationCascadeValue>(emptyCascade);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [suggestName, setSuggestName] = useState("");
@@ -73,9 +74,27 @@ export function ProfileLocationTaxonomyFields({
 
   useEffect(() => {
     let alive = true;
-    void fetchTaxonomyLocations({ kind: "country" }).then((rows) => {
-      if (alive) setCountries(rows);
-    });
+    void fetchTaxonomyLocations({ kind: "country" })
+      .then((rows) => {
+        if (!alive) return;
+        setCountries(rows);
+        if (rows.length === 0) {
+          setLoadError(
+            "Location list is empty. Ask your admin to run demo seed repair or redeploy the API.",
+          );
+        } else {
+          setLoadError(null);
+        }
+      })
+      .catch((err) => {
+        if (!alive) return;
+        setCountries([]);
+        setLoadError(
+          err instanceof ApiError
+            ? err.detail
+            : "Could not load countries. Check that the API is running.",
+        );
+      });
     return () => {
       alive = false;
     };
@@ -208,6 +227,9 @@ export function ProfileLocationTaxonomyFields({
           to suggest one for other hosts.
         </p>
       )}
+      {loadError ? (
+        <p className="text-xs font-semibold text-danger">{loadError}</p>
+      ) : null}
       <LocationSelector
         value={cascade}
         options={{ countries, states, cities, areas: [] }}

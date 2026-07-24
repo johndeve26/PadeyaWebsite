@@ -503,7 +503,10 @@ def test_publish_checklist_and_submit_for_review(client: TestClient, db_session:
         headers=headers,
     )
     assert submitted.status_code == 200, submitted.text
-    assert submitted.json()["status"] == "pending_review"
+    body = submitted.json()
+    assert body["status"] == "published"
+    assert body.get("admin_flagged") is True
+    assert body.get("published_at")
 
 
 def test_delete_draft_event(client: TestClient):

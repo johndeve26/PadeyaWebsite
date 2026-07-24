@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # Local demo helper (/demo) + seed tooling. Never enable in production.
     demo_mode: bool = False
 
+    # Host submit publishes immediately; admins review flagged listings later.
+    events_auto_publish_on_submit: bool = True
+
     # PostgreSQL
     database_url: str = (
         "postgresql+psycopg2://padeya:padeya@localhost:5432/padeya"

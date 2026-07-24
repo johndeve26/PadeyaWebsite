@@ -3311,6 +3311,9 @@ def repair_demo_data(db: Session) -> dict[str, Any]:
     events = _ensure_events(db, hosts, categories)
     db.flush()
 
+    log_seed_phase("starting taxonomy", script="demo")
+    apply_demo_taxonomy(db)
+
     log_seed_phase("starting sponsorship slots", script="demo")
     slot_count = _seed_sponsorships(db, hosts)
 

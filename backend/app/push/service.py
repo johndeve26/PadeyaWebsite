@@ -375,6 +375,28 @@ def send_test_push(
     }
 
 
+USER_TEST_PUSH_COOLDOWN_SECONDS = 30
+
+
+def send_user_test_push(db: Session, *, user_id: UUID) -> dict[str, Any]:
+    """Authenticated user smoke test — reuses fixed admin test copy."""
+    cutoff = datetime.now(UTC) - timedelta(seconds=USER_TEST_PUSH_COOLDOWN_SECONDS)
+    recent = db.scalar(
+        select(PushEvent.id)
+        .where(
+            PushEvent.recipient_user_id == user_id,
+            PushEvent.template.in_(("admin_push_test", "admin.push_test")),
+            PushEvent.created_at >= cutoff,
+        )
+        .limit(1)
+    )
+    if recent is not None:
+        raise ValueError(
+            f"Wait {USER_TEST_PUSH_COOLDOWN_SECONDS} seconds before sending another test."
+        )
+    return send_test_push(db, user_id=user_id, actor_user_id=user_id)
+
+
 def cleanup_failed_subscriptions(
     db: Session,
     *,
@@ -487,6 +509,7 @@ __all__ = [
     "enqueue_push",
     "send_push_event",
     "send_test_push",
+    "send_user_test_push",
     "user_push_subscription_status",
     "cleanup_failed_subscriptions",
     "drain_push_outbox",

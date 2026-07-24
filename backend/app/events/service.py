@@ -9,10 +9,11 @@ from decimal import Decimal
 from typing import Any
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, object_session, selectinload
 
 from app.core.audit import write_audit_log
+from app.core.config import get_settings
 from app.core.media import get_media_storage
 from app.events.models import (
     Event,
@@ -49,6 +50,9 @@ NESTED_EXCLUDE = {
     "checkout_questions",
     "gallery_urls",
 }
+
+AUTO_PUBLISH_REVIEW_FLAG_REASON = "Auto-published — pending post-publish review"
+EDIT_AFTER_PUBLISH_FLAG_REASON = "Edited after publish — review when ready"
 
 
 def slugify(value: str) -> str:
@@ -698,10 +702,16 @@ def list_host_events(db: Session, host: Host) -> list[Event]:
 
 
 def list_pending_events(db: Session) -> list[Event]:
+    """Events awaiting admin attention: manual review queue or post-publish flags."""
     return list(
         db.scalars(
             _event_query()
-            .where(Event.status == "pending_review")
+            .where(
+                or_(
+                    Event.status == "pending_review",
+                    Event.admin_flagged_at.isnot(None),
+                )
+            )
             .order_by(Event.created_at.asc())
         )
     )
@@ -1120,10 +1130,15 @@ def update_event(
         _apply_category_dual_write(db, event)
     _sync_studio_nested(event, payload, replace=False)
 
-    # Editing a published event sends it back for review.
+    # Editing a published event flags it for admin review (or sends back to queue).
     if event.status == "published":
-        event.status = "pending_review"
-        event.published_at = None
+        if get_settings().events_auto_publish_on_submit:
+            event.admin_flagged_at = datetime.now(UTC)
+            event.admin_flag_reason = EDIT_AFTER_PUBLISH_FLAG_REASON
+            event.admin_flagged_by_user_id = None
+        else:
+            event.status = "pending_review"
+            event.published_at = None
 
     write_audit_log(
         db,
@@ -1507,8 +1522,25 @@ def submit_event_for_review(db: Session, *, user: User, event_id: uuid.UUID) -> 
             status_code=400,
             detail="Only draft, rejected, or paused events can be submitted",
         )
-    event.status = "pending_review"
     event.rejection_reason = None
+    if get_settings().events_auto_publish_on_submit:
+        event.status = "published"
+        event.published_at = datetime.now(UTC)
+        event.admin_flagged_at = datetime.now(UTC)
+        event.admin_flag_reason = AUTO_PUBLISH_REVIEW_FLAG_REASON
+        event.admin_flagged_by_user_id = None
+        write_audit_log(
+            db,
+            action="events.auto_publish",
+            actor_user_id=user.id,
+            resource_type="event",
+            resource_id=str(event.id),
+        )
+        refreshed = _commit_refresh_event(db, event.id)
+        _notify_admin_event_lifecycle(db, refreshed, published=True)
+        return refreshed
+
+    event.status = "pending_review"
     write_audit_log(
         db,
         action="events.submit_review",
@@ -1528,6 +1560,20 @@ def approve_event(db: Session, *, user: User, event_id: uuid.UUID) -> Event:
     event = get_event_by_id(db, event_id)
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
+    if event.status == "published":
+        if event.admin_flagged_at is not None:
+            event.admin_flagged_at = None
+            event.admin_flag_reason = None
+            event.admin_flagged_by_user_id = None
+            write_audit_log(
+                db,
+                action="events.review_cleared",
+                actor_user_id=user.id,
+                resource_type="event",
+                resource_id=str(event.id),
+            )
+            return _commit_refresh_event(db, event.id)
+        return event
     if event.status != "pending_review":
         raise HTTPException(status_code=400, detail="Event is not pending review")
     event.status = "published"
@@ -1560,11 +1606,22 @@ def reject_event(
     event = get_event_by_id(db, event_id)
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
-    if event.status != "pending_review":
-        raise HTTPException(status_code=400, detail="Event is not pending review")
-    event.status = "rejected"
-    event.rejection_reason = payload.reason
-    event.published_at = None
+    if event.status == "pending_review":
+        event.status = "rejected"
+        event.rejection_reason = payload.reason
+        event.published_at = None
+    elif event.status == "published" and event.admin_flagged_at is not None:
+        event.status = "rejected"
+        event.rejection_reason = payload.reason
+        event.published_at = None
+        event.admin_flagged_at = None
+        event.admin_flag_reason = None
+        event.admin_flagged_by_user_id = None
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Event is not pending review or flagged for post-publish review",
+        )
     write_audit_log(
         db,
         action="events.reject",

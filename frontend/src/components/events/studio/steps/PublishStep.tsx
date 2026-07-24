@@ -72,10 +72,10 @@ export function PublishStep({
           {previewing ? "Opening preview…" : "Preview event"}
         </Button>
         <ConfirmAction
-          label="Submit for review"
-          title="Submit this event for review?"
-          description="Pàdéyá will review listing details before it goes live. You can still edit while it is pending."
-          confirmLabel="Submit for review"
+          label="Publish event"
+          title="Publish this event?"
+          description="Your listing goes live on Pàdéyá immediately. Our team may review it after publish."
+          confirmLabel="Publish event"
           disabled={saving || !ready}
           onConfirm={onSubmitReview}
         />
@@ -83,7 +83,7 @@ export function PublishStep({
           <ConfirmAction
             label="Publish now"
             title="Publish this event now?"
-            description="Your role can skip the review queue. The listing becomes public immediately."
+            description="Same as Publish event — your listing becomes public immediately."
             confirmLabel="Publish now"
             disabled={saving || !ready}
             onConfirm={onPublish}
@@ -99,13 +99,12 @@ export function PublishStep({
 
       {canPublish ? (
         <p className="text-sm text-muted-foreground">
-          Your role can publish directly after the checklist is complete (skips
-          the pending-review queue).
+          Your role can publish directly after the checklist is complete.
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Hosts submit for review — Pàdéyá publishes after approval unless you
-          have publish permission.
+          Publish goes live immediately. Pàdéyá may review listings after they
+          are public.
         </p>
       )}
 

@@ -125,9 +125,13 @@ const eventUnavailable = read(
   "src/components/not-found/EventUnavailableState.tsx",
 );
 assert.match(eventUnavailable, /This event is no longer available/);
+assert.match(eventUnavailable, /variant="outline-dark"/);
+assert.doesNotMatch(eventUnavailable, /variant="secondary"/);
 
 const expired = read("src/components/not-found/ExpiredLinkState.tsx");
 assert.match(expired, /This link has expired|expired/i);
+assert.match(expired, /variant="outline-dark"/);
+assert.doesNotMatch(expired, /variant="secondary"/);
 
 const sitemap = read("src/app/sitemap.ts");
 assert.doesNotMatch(sitemap, /not-found|\/404/);

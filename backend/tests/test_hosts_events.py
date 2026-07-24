@@ -137,7 +137,11 @@ def test_public_event_visibility(client: TestClient):
     assert detail.status_code == 404
 
     client.post(f"/api/v1/events/by-id/{created['id']}/submit", headers=headers)
-    assert all(e["id"] != created["id"] for e in client.get("/api/v1/events").json())
+    submitted = client.get(f"/api/v1/events/by-id/{created['id']}", headers=headers).json()
+    assert submitted["status"] == "published"
+    assert any(e["id"] == created["id"] for e in client.get("/api/v1/events").json())
+    detail_after = client.get(f"/api/v1/events/{created['slug']}")
+    assert detail_after.status_code == 200
 
 
 def test_admin_approval_rejection(client: TestClient, assign_role):
@@ -164,6 +168,11 @@ def test_admin_approval_rejection(client: TestClient, assign_role):
         json=_event_payload(title="Needs Approval"),
     ).json()
     client.post(f"/api/v1/events/by-id/{event['id']}/submit", headers=host_headers)
+    submitted = client.get(
+        f"/api/v1/events/by-id/{event['id']}", headers=host_headers
+    ).json()
+    assert submitted["status"] == "published"
+    assert submitted["admin_flagged"] is True
 
     pending = client.get("/api/v1/events/admin/pending", headers=admin_headers)
     assert pending.status_code == 200
@@ -175,6 +184,7 @@ def test_admin_approval_rejection(client: TestClient, assign_role):
     )
     assert approved.status_code == 200
     assert approved.json()["status"] == "published"
+    assert approved.json()["admin_flagged"] is False
 
     public = client.get("/api/v1/events")
     assert any(e["id"] == event["id"] for e in public.json())

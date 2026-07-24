@@ -8,6 +8,7 @@ import {
   fetchVapidPublicKey,
   removePushSubscription,
   subscribePush,
+  testMyPush,
   unsubscribePush,
   urlBase64ToUint8Array,
   type PushSubscriptionDevice,
@@ -213,6 +214,16 @@ export function usePushNotifications() {
       setSubscribed(true);
       setNote(PUSH_ENABLED_COPY);
       await refresh();
+      try {
+        await testMyPush();
+        setNote(
+          "Push is enabled on this device. Check for a test notification from Pàdéyá.",
+        );
+      } catch {
+        setNote(
+          `${PUSH_ENABLED_COPY} Tap "Send test notification" below to verify delivery.`,
+        );
+      }
     } catch (err) {
       setError(
         err instanceof ApiError
@@ -285,6 +296,28 @@ export function usePushNotifications() {
     [refresh],
   );
 
+  const sendTest = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    setNote(null);
+    try {
+      await testMyPush();
+      setNote(
+        "Test notification sent. Check your system tray or notification center.",
+      );
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.detail
+          : err instanceof Error
+            ? err.message
+            : "Could not send test notification",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
   const canOfferOptIn =
     supported &&
     adminEnabled &&
@@ -308,6 +341,7 @@ export function usePushNotifications() {
     enable,
     disableThisDevice,
     removeDevice,
+    sendTest,
     setError,
     setNote,
   };

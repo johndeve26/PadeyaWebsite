@@ -23,6 +23,7 @@ from app.push.schemas import (
 from app.push.service import (
     list_user_subscriptions,
     register_subscription,
+    send_user_test_push,
     serialize_subscription_public,
     unregister_subscription,
 )
@@ -159,3 +160,19 @@ def patch_push_preferences(
     prefs = update_preferences(db, user_id=user.id, updates=updates)
     db.commit()
     return _push_prefs_public(prefs)
+
+
+@router.post("/push/test")
+def send_my_test_push(
+    db: Annotated[Session, Depends(get_db)],
+    user: CurrentUser,
+) -> dict[str, object]:
+    """Send a fixed-copy test push to the current user's active devices."""
+    try:
+        result = send_user_test_push(db, user_id=user.id)
+    except ValueError as exc:
+        detail = str(exc)
+        code = 503 if "not enabled" in detail.lower() else 400
+        raise HTTPException(status_code=code, detail=detail) from exc
+    db.commit()
+    return result

@@ -38,16 +38,12 @@ export function EventUnavailableState({
             <Button size="lg">Explore events</Button>
           </Link>
           <Link href="/hosts">
-            <Button
-              size="lg"
-              variant="secondary"
-              className="border-paper/20 bg-paper/5 text-paper hover:bg-paper/10"
-            >
+            <Button size="lg" variant="outline-dark">
               Explore hosts
             </Button>
           </Link>
           <Link href="/">
-            <Button size="lg" variant="ghost" className="text-paper/80">
+            <Button size="lg" variant="ghost-dark">
               Go home
             </Button>
           </Link>

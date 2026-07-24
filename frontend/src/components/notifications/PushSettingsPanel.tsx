@@ -78,7 +78,7 @@ export function PushSettingsPanel() {
         </Alert>
       ) : null}
 
-      {push.note && status !== "enabled" ? (
+      {push.note ? (
         <Alert tone="success" title="Updated">
           {push.note}
         </Alert>
@@ -108,15 +108,25 @@ export function PushSettingsPanel() {
         ) : null}
 
         {status === "enabled" ? (
-          <Button
-            className="w-full sm:w-auto"
-            size="sm"
-            variant="secondary"
-            disabled={push.busy}
-            onClick={() => void push.disableThisDevice()}
-          >
-            Disable on this device
-          </Button>
+          <>
+            <Button
+              className="w-full sm:w-auto"
+              size="sm"
+              disabled={push.busy}
+              onClick={() => void push.sendTest()}
+            >
+              {push.busy ? "Sending…" : "Send test notification"}
+            </Button>
+            <Button
+              className="w-full sm:w-auto"
+              size="sm"
+              variant="secondary"
+              disabled={push.busy}
+              onClick={() => void push.disableThisDevice()}
+            >
+              Disable on this device
+            </Button>
+          </>
         ) : null}
 
         {status === "unsupported" || status === "install_required" ? (

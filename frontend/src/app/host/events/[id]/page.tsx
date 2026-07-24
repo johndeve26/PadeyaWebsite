@@ -98,7 +98,7 @@ export default function HostEventDetailPage() {
     try {
       const updated = await submitEvent(params.id);
       setEvent(updated);
-      setMessage("Submitted for review.");
+      setMessage("Event published and is live on Pàdéyá.");
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : "Submit failed");
     }
@@ -349,10 +349,10 @@ export default function HostEventDetailPage() {
             </Link>
             {["draft", "rejected", "paused"].includes(event.status) ? (
               <ConfirmAction
-                label="Submit for review"
-                title="Submit this event for review?"
-                description="Pàdéyá will review listing details before it goes live."
-                confirmLabel="Submit for review"
+                label="Publish event"
+                title="Publish this event?"
+                description="Your listing goes live on Pàdéyá immediately. Our team may review it after publish."
+                confirmLabel="Publish event"
                 onConfirm={onSubmitReview}
               />
             ) : null}
