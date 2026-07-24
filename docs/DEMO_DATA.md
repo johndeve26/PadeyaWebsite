@@ -42,6 +42,9 @@ From `backend/` (venv active, migrations applied):
 # Idempotent seed (refreshes Studio/taxonomy/placements + messaging top-up if already seeded)
 python -m scripts.seed_demo_data
 
+# Repair partial demo data on Neon/local (demo-scoped rows only; no production reset)
+DEMO_MODE=true PYTHONUNBUFFERED=1 python3 -u -m scripts.seed_demo_data --repair
+
 # Wipe demo-scoped data, then full seed
 python -m scripts.seed_demo_data --reset
 
@@ -49,9 +52,26 @@ python -m scripts.seed_demo_data --reset
 python -m scripts.reset_demo_data
 ```
 
+### Neon (remote database)
+
+After migrations are applied, repair a partial seed or finish missing sponsorship slots:
+
+```bash
+DATABASE_URL="$NEON_DATABASE_URL" DEMO_MODE=true PYTHONUNBUFFERED=1 python3 -u -m scripts.seed_demo_data --repair
+```
+
+Then run the rich sponsor demo:
+
+```bash
+DATABASE_URL="$NEON_DATABASE_URL" DEMO_MODE=true PYTHONUNBUFFERED=1 python3 -u -m scripts.seed_sponsor_demo_data --force
+```
+
+Progress phases are printed with `flush=True` (`starting roles/permissions`, `starting sponsorship slots`, `completed seed`, etc.).
+
 | Command | Behavior |
 | --- | --- |
 | `seed_demo_data` | If marker `seed/complete` exists: refresh + **idempotent** persona / passport / messaging / merch / open Ambassadors top-up. Does **not** re-run full commerce loops. |
+| `seed_demo_data --repair` | Completes missing demo users/hosts/events/**sponsorship_slots** and writes `seed/complete`. Only touches demo-marked rows / known demo emails and slugs. |
 | `seed_demo_data --reset` | Delete demo users/hosts/events/orders/tickets (scoped), then full seed. |
 
 ### Rich sponsor demo (6 fictional brands)
@@ -61,10 +81,35 @@ Separate from the minimal `_seed_sponsorships` rows in the main demo seed. Run *
 ```bash
 # From backend/ — requires DEMO_MODE=true or SPONSOR_DEMO_SEED_ENABLED=true
 DEMO_MODE=true python -m scripts.seed_sponsor_demo_data
-DEMO_MODE=true python -m scripts.seed_sponsor_demo_data --force   # re-apply interactions
+DEMO_MODE=true python -m scripts.seed_sponsor_demo_data --force   # re-apply / repair partial sponsor rows
 ```
 
+**Completion markers:** base seed writes `seed/complete`; sponsor seed writes `sponsor_seed/complete`. If a run stops mid-way, rerun `--repair` (base) then `--force` (sponsor).
+
 **Guards:** Refuses `APP_ENV=production`. Requires `DEMO_MODE=true` **or** `SPONSOR_DEMO_SEED_ENABLED=true`. Prints `Seeding fictional sponsor demo data only.`
+
+**Demo seed safety rules**
+
+- Never runs when `APP_ENV=production`.
+- Does not call Paystack or send notifications during seed.
+- Repair/force modes only upsert demo-marked entities (`@demo.padeye.test`, `@demo.padeya.test`, `demo-` event slugs, sponsor demo slugs) — non-demo rows are not deleted.
+- Demo sponsorship slots are inserted via demo-only helpers (not runtime host permission checks); product permissions in the live app are unchanged.
+
+### Expected table counts (after base + sponsor seed)
+
+| Table | Approx. count |
+| --- | --- |
+| users (demo) | 15+ core accounts + fan personas |
+| hosts | 5 |
+| events | 24+ |
+| ticket_types | 100+ |
+| sponsorship_slots (published) | ≥ 8 base + portfolio slots |
+| sponsors (rich demo) | 6 fictional brands + 3 minimal base sponsors |
+| sponsor_campaigns | ≥ 6 |
+| sponsor_saved_items | ≥ 6 |
+| sponsorship_deals | ≥ 4 |
+| sponsorship_invoices | ≥ 3 |
+| sponsorship_deliverables | ≥ 6 |
 
 **Brands (fictional):** NeonPalm Drinks, KoraWave Pay, Jollof Republic, CampusWave, NovaSkin Beauty, PulseFrame Media — each with team users `@demo.padeya.test`, **5 demo events**, **2–3 pack hosts**, **3–5 published slots**, campaigns, saved items, inquiries, deals/invoices, placements, deliverables, and recommendation feedback where applicable.
 

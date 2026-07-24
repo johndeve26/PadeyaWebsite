@@ -45,6 +45,11 @@ from app.demo.constants import (
 )
 from app.demo.guards import assert_demo_ops_allowed
 from app.demo.models import DemoEntityMarker, DemoSupportCase
+from app.demo.progress import log_seed_phase
+from app.demo.sponsorship_seed import (
+    create_demo_sponsorship_slot,
+    ensure_demo_host_sponsorship_settings,
+)
 from app.demo.reset import reset_demo_data
 from app.events.models import (
     Event,
@@ -101,14 +106,11 @@ from app.reviews.models import ReviewReply, ReviewReport, VerifiedReview
 from app.reviews.schemas import ReviewCreate
 from app.reviews.service import submit_review
 from app.sponsorships.models import (
-    HostSponsorshipSettings,
     Sponsor,
     SponsorshipInquiry,
     SponsorshipPlacement,
     SponsorshipSlot,
 )
-from app.sponsorships.schemas import SponsorshipSlotCreate
-from app.sponsorships.service import create_slot, get_or_create_settings
 from app.taxonomy.demo_seed import apply_demo_taxonomy
 from app.tickets.models import Ticket
 from app.tickets.schemas import TicketTransferRequest
@@ -1159,6 +1161,20 @@ def _demo_checkout_answers(event: Event, *, buyer_index: int = 0) -> list[Checko
     return answers
 
 
+def _ensure_demo_fan_users(db: Session) -> dict[str, User]:
+    """Create fan1–fan20 demo buyers (idempotent). Used by full seed and repair."""
+    fans: dict[str, User] = {}
+    for i in range(1, 21):
+        email = f"fan{i}@{DEMO_EMAIL_DOMAIN}"
+        persona = FAN_PERSONA_BY_EMAIL.get(email)
+        full_name = persona["full_name"] if persona else f"Demo Fan {i}"
+        fans[email] = _ensure_user(
+            db, email=email, full_name=full_name, role="buyer"
+        )
+    db.flush()
+    return fans
+
+
 def _seed_commerce(
     db: Session,
     *,
@@ -1166,12 +1182,8 @@ def _seed_commerce(
     events: dict[str, Event],
 ) -> list[User]:
     buyer = users[f"buyer@{DEMO_EMAIL_DOMAIN}"]
-    fans: list[User] = []
-    for i in range(1, 21):
-        email = f"fan{i}@{DEMO_EMAIL_DOMAIN}"
-        persona = FAN_PERSONA_BY_EMAIL.get(email)
-        full_name = persona["full_name"] if persona else f"Demo Fan {i}"
-        fans.append(_ensure_user(db, email=email, full_name=full_name, role="buyer"))
+    fans_dict = _ensure_demo_fan_users(db)
+    fans = list(fans_dict.values())
     db.commit()
     pool = [buyer, *fans]
     staff = users[f"staff@{DEMO_EMAIL_DOMAIN}"]
@@ -3049,7 +3061,8 @@ def _seed_analytics(db: Session, events: dict[str, Event]) -> None:
     seed_event_analytics_traffic(db, events=events)
 
 
-def _seed_sponsorships(db: Session, hosts: dict[str, Host]) -> None:
+def _seed_sponsorships(db: Session, hosts: dict[str, Host]) -> int:
+    """Seed demo sponsorship settings, slots, and minimal marketplace rows."""
     sponsors_spec = [
         ("Acme Events", "acme-events", "ada@acme.demo.padeye.test"),
         ("Greenline Media", "greenline-media", "leo@greenline.demo.padeye.test"),
@@ -3079,69 +3092,66 @@ def _seed_sponsorships(db: Session, hosts: dict[str, Host]) -> None:
         ("sponsored_memory_page", "Sponsored Event Memory page"),
     ]
     host_specs = {h["slug"]: h for h in DEMO_HOSTS}
+    created = 0
     for slug, host in hosts.items():
         owner = db.get(User, host.user_id)
         if owner is None:
             continue
         sponsor_ready = bool(host_specs.get(slug, {}).get("sponsor_ready", True))
-        get_or_create_settings(db, host.id)
-        settings = db.scalar(
-            select(HostSponsorshipSettings).where(
-                HostSponsorshipSettings.host_id == host.id
-            )
-        )
-        if settings:
-            settings.accepting_sponsors = sponsor_ready
-            settings.pitch = (
+        ensure_demo_host_sponsorship_settings(
+            db,
+            host=host,
+            accepting_sponsors=sponsor_ready,
+            pitch=(
                 f"Partner with {host.display_name} on Pàdéyá." if sponsor_ready else None
-            )
-            # Internal ops contact only — never expose on public Legacy surfaces
-            settings.contact_email = owner.email if sponsor_ready else None
+            ),
+            contact_email=owner.email if sponsor_ready else None,
+        )
         if not sponsor_ready:
             continue
         chosen = slot_types if slug == "djmaze" else slot_types[:3]
         for stype, title in chosen:
-            if db.scalar(
-                select(SponsorshipSlot).where(
+            before = db.scalar(
+                select(SponsorshipSlot.id).where(
                     SponsorshipSlot.host_id == host.id,
                     SponsorshipSlot.title == title,
                 )
-            ):
-                continue
-            _safe_call(
-                db,
-                create_slot,
-                db,
-                user=owner,
-                payload=SponsorshipSlotCreate(
-                    slot_type=stype,
-                    title=title,
-                    description=f"{title} for {host.display_name} on Pàdéyá demo.",
-                    price=Decimal("150000"),
-                    status="published",
-                ),
             )
+            slot = create_demo_sponsorship_slot(
+                db,
+                host=host,
+                slot_type=stype,
+                title=title,
+                description=f"{title} for {host.display_name} on Pàdéyá demo.",
+                price=Decimal("150000"),
+                status="published",
+                moderation_status="approved",
+            )
+            if slot is not None and before is None:
+                created += 1
         if slug == "djmaze":
-            created_disabled = _safe_call(
-                db,
-                create_slot,
-                db,
-                user=owner,
-                payload=SponsorshipSlotCreate(
-                    slot_type="booth_at_event",
-                    title="Disabled Booth Listing",
-                    description="Flagged demo listing for admin testing on Pàdéyá.",
-                    price=Decimal("500000"),
-                    status="draft",
-                ),
+            before_disabled = db.scalar(
+                select(SponsorshipSlot.id).where(
+                    SponsorshipSlot.host_id == host.id,
+                    SponsorshipSlot.title == "Disabled Booth Listing",
+                )
             )
-            if isinstance(created_disabled, dict) and created_disabled.get("id"):
-                slot_dis = db.get(SponsorshipSlot, created_disabled["id"])
-                if slot_dis:
-                    slot_dis.status = "disabled"
-                    slot_dis.moderation_status = "flagged"
-                    slot_dis.moderation_note = "Demo flagged listing"
-                    db.commit()
+            slot_dis = create_demo_sponsorship_slot(
+                db,
+                host=host,
+                slot_type="booth_at_event",
+                title="Disabled Booth Listing",
+                description="Flagged demo listing for admin testing on Pàdéyá.",
+                price=Decimal("500000"),
+                status="draft",
+                moderation_status="flagged",
+            )
+            if slot_dis is not None:
+                slot_dis.status = "disabled"
+                slot_dis.moderation_status = "flagged"
+                slot_dis.moderation_note = "Demo flagged listing"
+                if before_disabled is None:
+                    created += 1
             slot = db.scalar(
                 select(SponsorshipSlot).where(
                     SponsorshipSlot.host_id == host.id,
@@ -3178,7 +3188,19 @@ def _seed_sponsorships(db: Session, hosts: dict[str, Host]) -> None:
                             asset_url=sponsor_rows[0].logo_url,
                         )
                     )
-    db.commit()
+    db.flush()
+    published = int(
+        db.scalar(
+            select(func.count())
+            .select_from(SponsorshipSlot)
+            .where(
+                SponsorshipSlot.host_id.in_([h.id for h in hosts.values()]),
+                SponsorshipSlot.status == "published",
+            )
+        )
+        or 0
+    )
+    return published if published >= created else created
 
 
 def _seed_support_cases(db: Session) -> None:
@@ -3231,14 +3253,105 @@ def _seed_merch(
     return seed_demo_merch(db, users=users, events=events)
 
 
-def seed_demo_data(db: Session, *, reset: bool = False) -> dict[str, Any]:
+def _demo_partial(db: Session) -> bool:
+    """True when demo-scoped rows exist without a completion marker."""
+    if _seeded(db):
+        return False
+    return (
+        db.scalar(
+            select(User.id)
+            .where(User.email.like(f"%@{DEMO_EMAIL_DOMAIN}"))
+            .limit(1)
+        )
+        is not None
+    )
+
+
+def _demo_needs_sponsorship_repair(db: Session, hosts: dict[str, Host]) -> bool:
+    published = int(
+        db.scalar(
+            select(func.count())
+            .select_from(SponsorshipSlot)
+            .where(
+                SponsorshipSlot.host_id.in_([h.id for h in hosts.values()]),
+                SponsorshipSlot.status == "published",
+            )
+        )
+        or 0
+    )
+    return published < 8
+
+
+def repair_demo_data(db: Session) -> dict[str, Any]:
+    """Complete missing demo rows after a partial seed — demo-scoped only."""
+    assert_demo_ops_allowed(operation="demo seed repair")
+    log_seed_phase("starting repair", script="demo")
+
+    log_seed_phase("starting roles/permissions", script="demo")
+    seed_roles_and_permissions(db)
+    log_seed_phase("completed roles/permissions", script="demo")
+
+    log_seed_phase("starting users", script="demo")
+    users: dict[str, User] = {}
+    for acct in [*DEMO_ACCOUNTS, *EXTRA_HOST_ACCOUNTS, *DEMO_TEAM_ACCOUNTS]:
+        users[acct["email"]] = _ensure_user(
+            db,
+            email=acct["email"],
+            full_name=acct["full_name"],
+            role=acct["role"],
+        )
+    db.flush()
+
+    log_seed_phase("starting hosts", script="demo")
+    hosts = _ensure_hosts(db, users)
+    db.flush()
+
+    log_seed_phase("starting events", script="demo")
+    categories = _ensure_categories(db)
+    events = _ensure_events(db, hosts, categories)
+    db.flush()
+
+    log_seed_phase("starting sponsorship slots", script="demo")
+    slot_count = _seed_sponsorships(db, hosts)
+
+    log_seed_phase("starting fans", script="demo")
+    fan_users = _ensure_demo_fan_users(db)
+    users.update(fan_users)
+    _seed_passport(db, users[f"buyer@{DEMO_EMAIL_DOMAIN}"])
+
+    _mark(db, "seed", "complete", meta={"version": 1, "repaired": True})
+    db.commit()
+
+    log_seed_phase("completed seed", script="demo")
+    return {
+        "status": "repaired",
+        "reset": False,
+        "repair": True,
+        "users": len(users),
+        "hosts": len(hosts),
+        "events": len(events),
+        "fans": len(fan_users),
+        "sponsorship_slots_published": slot_count,
+        "password": DEMO_PASSWORD,
+    }
+
+
+def seed_demo_data(
+    db: Session, *, reset: bool = False, repair: bool = False
+) -> dict[str, Any]:
     """Seed rich local demo content. Idempotent unless reset=True."""
     from app.placements.demo_seed import apply_demo_featured_placements
 
     assert_demo_ops_allowed(operation="demo seed")
 
+    if repair:
+        return repair_demo_data(db)
+
     if reset:
         reset_demo_data(db)
+
+    if _demo_partial(db):
+        return repair_demo_data(db)
 
     if _seeded(db) and not reset:
         # Refresh Event Studio + idempotent passport/messaging top-ups.
@@ -3260,7 +3373,11 @@ def seed_demo_data(db: Session, *, reset: bool = False) -> dict[str, Any]:
         placement_counts = apply_demo_featured_placements(db)
         _force_legacy_tiers(db, hosts)
         _seed_legacy_studio(db, hosts)
-        _seed_sponsorships(db, hosts)
+        log_seed_phase("starting sponsorship slots", script="demo")
+        slot_count = _seed_sponsorships(db, hosts)
+        fan_users = _ensure_demo_fan_users(db)
+        users.update(fan_users)
+        _seed_passport(db, users[f"buyer@{DEMO_EMAIL_DOMAIN}"])
         _seed_vault(db, hosts, users, events)
         persona_ctx = _seed_persona_product_context(
             db, users=users, events=events
@@ -3293,6 +3410,7 @@ def seed_demo_data(db: Session, *, reset: bool = False) -> dict[str, Any]:
             "status": "already_seeded",
             "reset": False,
             "events_refreshed": len(events),
+            "sponsorship_slots_published": slot_count,
             "message_threads_created": messaging_counts.get("threads", 0),
             "messages_created": messaging_counts.get("messages", 0),
             "message_attachments": messaging_counts.get("attachments", 0),
@@ -3305,11 +3423,14 @@ def seed_demo_data(db: Session, *, reset: bool = False) -> dict[str, Any]:
             **placement_counts,
         }
 
+    log_seed_phase("starting roles/permissions", script="demo")
     seed_roles_and_permissions(db)
+    log_seed_phase("completed roles/permissions", script="demo")
     seed_legacy_tiers(db)
     seed_fan_badges(db)
     categories = _ensure_categories(db)
 
+    log_seed_phase("starting users", script="demo")
     users: dict[str, User] = {}
     for acct in [*DEMO_ACCOUNTS, *EXTRA_HOST_ACCOUNTS, *DEMO_TEAM_ACCOUNTS]:
         users[acct["email"]] = _ensure_user(
@@ -3320,8 +3441,10 @@ def seed_demo_data(db: Session, *, reset: bool = False) -> dict[str, Any]:
         )
     db.commit()
 
+    log_seed_phase("starting hosts", script="demo")
     hosts = _ensure_hosts(db, users)
     db.commit()
+    log_seed_phase("starting events", script="demo")
     events = _ensure_events(db, hosts, categories)
     db.commit()
     apply_demo_taxonomy(db)
@@ -3366,13 +3489,16 @@ def seed_demo_data(db: Session, *, reset: bool = False) -> dict[str, Any]:
     )
     _seed_memories(db, events)
     _seed_analytics(db, events)
-    _seed_sponsorships(db, hosts)
+    log_seed_phase("starting sponsorship slots", script="demo")
+    slot_count = _seed_sponsorships(db, hosts)
     _seed_support_cases(db)
     _force_legacy_tiers(db, hosts)
     _seed_legacy_studio(db, hosts)
 
     _mark(db, "seed", "complete", meta={"version": 1})
     db.commit()
+
+    log_seed_phase("completed seed", script="demo")
 
     tickets = list(
         db.scalars(
@@ -3387,6 +3513,7 @@ def seed_demo_data(db: Session, *, reset: bool = False) -> dict[str, Any]:
         "users": len(users) + len(fans),
         "hosts": len(hosts),
         "events": len(events),
+        "sponsorship_slots_published": slot_count,
         **persona_ctx,
         "tickets": len(tickets),
         "checked_in": sum(1 for t in tickets if t.status == "checked_in"),

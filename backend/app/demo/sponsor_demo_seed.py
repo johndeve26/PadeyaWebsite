@@ -15,7 +15,9 @@ from sqlalchemy.orm import Session
 from app.demo import assets
 from app.demo.constants import DEMO_EVENT_SLUG_PREFIX, DEMO_HOSTS, DEMO_PASSWORD
 from app.demo.models import DemoEntityMarker
-from app.demo.seed import _ensure_user, _mark, _seed_sponsorships
+from app.demo.progress import log_seed_phase
+from app.demo.seed import _ensure_user, _mark
+from app.demo.sponsorship_seed import create_demo_sponsorship_slot
 from app.demo.sponsor_demo_guards import assert_sponsor_demo_seed_allowed
 from app.events.models import Event
 from app.hosts.models import Host
@@ -57,8 +59,10 @@ from app.users.models import User
 from app.users.service import get_role_by_name
 
 SPONSOR_DEMO_EMAIL_DOMAIN = "demo.padeya.test"
-MARKER_TYPE = "sponsor_demo"
-MARKER_KEY = "rich-v2"
+MARKER_TYPE = "sponsor_seed"
+MARKER_KEY = "complete"
+LEGACY_MARKER_TYPE = "sponsor_demo"
+LEGACY_MARKER_KEY = "rich-v2"
 
 PUBLIC_DIRECTORY_SLUGS = frozenset(
     {
@@ -90,6 +94,17 @@ def _marker_done(db: Session) -> bool:
     )
 
 
+def _sponsor_partial(db: Session) -> bool:
+    if _marker_done(db):
+        return False
+    return (
+        db.scalar(
+            select(Sponsor.id).where(Sponsor.slug.in_([s.slug for s in SPONSOR_SPECS])).limit(1)
+        )
+        is not None
+    )
+
+
 def _set_marker(db: Session) -> None:
     if _marker_done(db):
         return
@@ -98,9 +113,24 @@ def _set_marker(db: Session) -> None:
             entity_type=MARKER_TYPE,
             entity_key=MARKER_KEY,
             entity_id=None,
-            meta={"note": "Rich sponsor demo seed"},
+            meta={"note": "Rich sponsor demo seed complete"},
         )
     )
+    legacy = db.scalar(
+        select(DemoEntityMarker).where(
+            DemoEntityMarker.entity_type == LEGACY_MARKER_TYPE,
+            DemoEntityMarker.entity_key == LEGACY_MARKER_KEY,
+        )
+    )
+    if legacy is None:
+        db.add(
+            DemoEntityMarker(
+                entity_type=LEGACY_MARKER_TYPE,
+                entity_key=LEGACY_MARKER_KEY,
+                entity_id=None,
+                meta={"note": "Rich sponsor demo seed"},
+            )
+        )
 
 
 @dataclass
@@ -362,6 +392,7 @@ SPONSOR_SPECS: list[SponsorSpec] = [
 def _ensure_marketplace(
     db: Session,
 ) -> tuple[dict[str, Host], list[Event], list[SponsorshipSlot], dict[str, Event], list[SponsorshipSlot]]:
+    log_seed_phase("starting sponsorship slots", script="sponsor")
     hosts: dict[str, Host] = {}
     for spec in DEMO_HOSTS:
         host = db.scalar(select(Host).where(Host.slug == spec["slug"]))
@@ -371,13 +402,6 @@ def _ensure_marketplace(
         raise RuntimeError(
             "Demo hosts missing. Run `python -m scripts.seed_demo_data` first."
         )
-    users: dict[str, User] = {}
-    for spec in DEMO_HOSTS:
-        if spec["slug"] in hosts:
-            owner = db.get(User, hosts[spec["slug"]].user_id)
-            if owner:
-                users[spec["owner_email"]] = owner
-    _seed_sponsorships(db, hosts)
 
     events = list(
         db.scalars(
@@ -438,17 +462,16 @@ def _ensure_extra_slots(
         if exists:
             continue
         ev = event_by_host.get(host.id)
-        db.add(
-            SponsorshipSlot(
-                host_id=host.id,
-                event_id=ev.id if ev else None,
-                slot_type=slot_type,
-                title=title,
-                description=f"Demo sponsorship slot: {title} on Pàdéyá.",
-                price=price,
-                status="published",
-                moderation_status="approved",
-            )
+        create_demo_sponsorship_slot(
+            db,
+            host=host,
+            slot_type=slot_type,
+            title=title,
+            description=f"Demo sponsorship slot: {title} on Pàdéyá.",
+            price=price,
+            event_id=ev.id if ev else None,
+            status="published",
+            moderation_status="approved",
         )
     db.flush()
 
@@ -1197,7 +1220,7 @@ def _seed_sponsor_interactions(
 def seed_rich_sponsor_demo(db: Session, *, force: bool = False) -> dict[str, Any]:
     """Seed six fictional sponsor workspaces. Idempotent unless force=True."""
     assert_sponsor_demo_seed_allowed()
-    refresh_only = _marker_done(db) and not force
+    refresh_only = _marker_done(db) and not force and not _sponsor_partial(db)
 
     hosts, events, slots, pack_events, pack_slots = _ensure_marketplace(db)
 
@@ -1238,6 +1261,7 @@ def seed_rich_sponsor_demo(db: Session, *, force: bool = False) -> dict[str, Any
 
     counts = {"sponsors": 0, "campaigns": 0, "deals": 0, "slots": len(slots)}
 
+    log_seed_phase("starting sponsor profiles", script="sponsor")
     for spec in SPONSOR_SPECS:
         owner = _ensure_sponsor_user(
             db,
@@ -1247,6 +1271,7 @@ def seed_rich_sponsor_demo(db: Session, *, force: bool = False) -> dict[str, Any
         sponsor = _upsert_sponsor(db, spec, owner)
         counts["sponsors"] += 1
         _ensure_team(db, sponsor=sponsor, spec=spec, owner=owner)
+        log_seed_phase("starting campaigns", script="sponsor")
         campaigns = _ensure_campaigns(db, sponsor=sponsor, owner=owner, spec=spec)
         counts["campaigns"] += len(campaigns)
         seed_sponsor_portfolio(
@@ -1260,6 +1285,7 @@ def seed_rich_sponsor_demo(db: Session, *, force: bool = False) -> dict[str, Any
             pack_events=pack_events,
             pack_slots=pack_slots,
         )
+        log_seed_phase("starting deals", script="sponsor")
         _seed_sponsor_interactions(
             db,
             spec=spec,
@@ -1285,6 +1311,7 @@ def seed_rich_sponsor_demo(db: Session, *, force: bool = False) -> dict[str, Any
     counts["skipped"] = False
     counts["password"] = DEMO_PASSWORD
     counts["public_directory_slugs"] = sorted(PUBLIC_DIRECTORY_SLUGS)
+    log_seed_phase("completed seed", script="sponsor")
     return counts
 
 

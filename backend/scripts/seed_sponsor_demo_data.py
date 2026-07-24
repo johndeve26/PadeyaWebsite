@@ -36,12 +36,15 @@ def main() -> int:
     parser.add_argument(
         "--force",
         action="store_true",
-        help="Re-run even if marker exists",
+        help="Re-run and repair partial sponsor demo data",
     )
     args = parser.parse_args()
 
-    print("Seeding fictional sponsor demo data only.")
-    print("This does not run in production and does not call Paystack or send notifications.")
+    print("Seeding fictional sponsor demo data only.", flush=True)
+    print(
+        "This does not run in production and does not call Paystack or send notifications.",
+        flush=True,
+    )
 
     db = SessionLocal()
     try:

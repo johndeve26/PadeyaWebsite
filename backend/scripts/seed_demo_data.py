@@ -3,6 +3,7 @@
 Usage:
   python -m scripts.seed_demo_data
   python -m scripts.seed_demo_data --reset
+  python -m scripts.seed_demo_data --repair
 """
 
 from __future__ import annotations
@@ -53,6 +54,11 @@ def main() -> int:
         action="store_true",
         help="Clear demo data first, then reseed",
     )
+    parser.add_argument(
+        "--repair",
+        action="store_true",
+        help="Repair partial demo data (demo-scoped rows only)",
+    )
     args = parser.parse_args()
 
     settings = get_settings()
@@ -64,7 +70,7 @@ def main() -> int:
 
     db = SessionLocal()
     try:
-        result = seed_demo_data(db, reset=args.reset)
+        result = seed_demo_data(db, reset=args.reset, repair=args.repair)
     except DemoEnvironmentError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
