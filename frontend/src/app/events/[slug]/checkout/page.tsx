@@ -82,6 +82,7 @@ import {
   resolveCheckoutReferral,
 } from "@/lib/ambassador-referral";
 import { validatePromo } from "@/lib/promos-api";
+import { trackAmbassadorReferralLanding } from "@/lib/referral-click-track";
 import type { EventItem, TicketType } from "@/lib/types/events";
 import type {
   MerchBundle,
