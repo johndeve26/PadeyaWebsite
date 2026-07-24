@@ -1,0 +1,133 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: padeya-postgres
+    environment:
+      POSTGRES_USER: padeya
+      POSTGRES_PASSWORD: padeya
+      POSTGRES_DB: padeya
+    ports:
+      - "5432:5432"
+    volumes:
+      - padeya_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U padeya -d padeya"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: padeya-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - padeya_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: padeya-backend
+    env_file:
+      - ./backend/.env.example
+    environment:
+      DATABASE_URL: postgresql+psycopg2://padeya:padeya@postgres:5432/padeya
+      REDIS_URL: redis://redis:6379/0
+      CORS_ORIGINS: http://localhost:3000
+      APP_ENV: development
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    entrypoint: ["/bin/sh", "/app/scripts/docker-entrypoint.sh"]
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  # Long-running outbox drain — see docs/EMAILS.md and docs/OPERATIONS.md
+  email_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: padeya-email-worker
+    env_file:
+      - ./backend/.env.example
+    environment:
+      PYTHONPATH: /app
+      DATABASE_URL: postgresql+psycopg2://padeya:padeya@postgres:5432/padeya
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: development
+      # Email provider/SMTP: Admin → Email settings (code defaults until configured)
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+    # Skip migrate entrypoint (backend already migrates); run worker loop.
+    entrypoint: ["python", "scripts/process_email_outbox.py"]
+    command: ["--loop"]
+    restart: unless-stopped
+
+  # Browser push outbox drain — see docs/NOTIFICATIONS.md + docs/OPERATIONS.md
+  push_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: padeya-push-worker
+    env_file:
+      - ./backend/.env
+    environment:
+      PYTHONPATH: /app
+      DATABASE_URL: postgresql+psycopg2://padeya:padeya@postgres:5432/padeya
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: development
+      PUSH_QUEUE_ENABLED: "true"
+      PUSH_WORKER_POLL_SECONDS: "20"
+      PUSH_WORKER_BATCH_SIZE: "50"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+    # Bare invoke defaults to --loop --maintenance (no payload logging).
+    command: ["python", "scripts/process_push_outbox.py"]
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+        NEXT_PUBLIC_API_PREFIX: /api/v1
+        NEXT_PUBLIC_APP_NAME: Pàdéyá
+    container_name: padeya-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_API_PREFIX: /api/v1
+      NEXT_PUBLIC_APP_NAME: Pàdéyá
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  padeya_postgres_data:
+  padeya_redis_data:

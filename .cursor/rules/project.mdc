@@ -1,0 +1,53 @@
+---
+description: Pàdéyá platform engineering rules
+alwaysApply: true
+---
+
+# Pàdéyá project rules
+
+## Scope discipline
+
+- Do not implement future phases unless explicitly requested.
+- Do not rebuild the old Pàdéyá marketing website.
+- Auth, events, payments, tickets, Legacy Page, Vault, and AI stay out of scope until asked.
+- Prefer small, focused files. Do not create giant files.
+
+## Secrets & config
+
+- Do not hardcode secrets.
+- Use environment variables and `.env.example` files only.
+- Never commit real credentials, API keys, or webhook secrets.
+
+## Backend
+
+- Keep the FastAPI backend modular by domain (`app/auth`, `app/events`, etc.).
+- Add tests for important backend logic.
+- Use audit logs for admin and finance actions.
+- Do not trust frontend payment success.
+- Only issue tickets after a verified payment webhook.
+- Use signed QR payloads for tickets/check-in.
+- Manual payouts require immutable evidence.
+
+## Frontend
+
+- Keep components reusable and small.
+- Use centralized brand tokens (`src/lib/brand.ts` + CSS variables).
+- Do not hardcode random colors in components — use brand tokens / Tailwind theme colors.
+- Use official logo assets from `frontend/public/brand/`.
+  - Dark-background logo on black/dark surfaces.
+  - Light-background logo on white/light surfaces.
+- Do not recreate the logo with text.
+
+## Permissions (product invariants)
+
+- Hosts cannot delete reviews.
+- Support cannot modify financial records.
+- Manual payouts require immutable evidence.
+- Messaging: fan↔host rules stay fan↔host; fan↔fan is Fan Connect connection-only; pins are shared per thread; stars are private to the viewer; replies are same-thread and permission-checked via `app.messaging.permissions`.
+
+## Lifecycle (product invariant)
+
+- CRUD/lifecycle is never optional for product modules.
+- Every current and future module must have a complete lifecycle plan in `docs/CRUD_MATRIX.md` (create, read, update, end-of-life, restore, permissions, audit, FE, tests).
+- Intentionally read-only or append-only resources (payments, ledger, audit logs, evidence) still need an explicit plan — document *system-only / immutable / reverse-only* and enforce it.
+- Prefer archive/cancel/deactivate over hard delete. Follow `docs/CRUD_PATTERN.md`.

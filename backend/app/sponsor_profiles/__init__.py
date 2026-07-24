@@ -1,0 +1,1 @@
+"""Sponsor profile workspace module."""

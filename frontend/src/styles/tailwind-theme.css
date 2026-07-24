@@ -1,0 +1,97 @@
+/*
+ * Pàdéyá Tailwind v4 theme registration
+ * ─────────────────────────────────────
+ * Single approach (do not mix):
+ * 1. Semantic CSS variables on :root / .dark  → globals.css
+ * 2. Tailwind utilities via @theme inline    → this file
+ * 3. Class-based dark mode on <html class="dark">
+ *    (ThemeProvider + ThemeScript — not data-theme, not media-only)
+ */
+
+/* Class-based dark: matches ThemeProvider toggling html.dark */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  /* ── Required semantic colors ── */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-inset: var(--surface-inset);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-heading: var(--heading);
+  --color-body: var(--body);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-muted: var(--border-muted);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-surface: var(--success-surface);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-surface: var(--warning-surface);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-surface: var(--danger-surface);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-surface: var(--info-surface);
+
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-input-border: var(--input-border);
+  --color-input-foreground: var(--input-foreground);
+  --color-placeholder: var(--placeholder);
+  --color-ring: var(--ring);
+  --color-focus-ring: var(--focus-ring);
+
+  /* ── Brand + fixed ink/paper ── */
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-brand-green: var(--brand-green);
+  --color-brand-green-hover: var(--brand-green-hover);
+  --color-brand-black: var(--brand-black);
+  --color-brand-white: var(--brand-white);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+
+  /* ── Charts ── */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-muted: var(--chart-muted);
+
+  /* ── Overlay / backdrop (use with bg-* / opacity utilities) ── */
+  --color-overlay: var(--overlay);
+  --color-backdrop: var(--backdrop);
+
+  /* ── Legacy aliases (kept for existing components) ── */
+  --color-soft-gray: var(--soft-gray);
+  --color-light-gray: var(--light-gray);
+  --color-surface-dark: var(--surface-dark);
+  --color-dark-gray: var(--dark-gray);
+  --color-medium-gray: var(--medium-gray);
+  --color-border-gray: var(--border-gray);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-border: var(--danger-border);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-border: var(--warning-border);
+
+  --font-sans: var(--font-manrope);
+}

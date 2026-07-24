@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" fill="none">
+  <defs>
+    <linearGradient id="whenonline-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="55%" stop-color="#111111"/>
+      <stop offset="100%" stop-color="#1A1A1A"/>
+    </linearGradient>
+    <radialGradient id="whenonline-glow" cx="72%" cy="28%" r="48%">
+      <stop offset="0%" stop-color="#8EF012" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#8EF012" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="whenonline-wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8EF012" stop-opacity="0"/>
+      <stop offset="40%" stop-color="#8EF012" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#8EF012" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#whenonline-bg)"/>
+  <circle cx="864" cy="210" r="280" fill="url(#whenonline-glow)"/>
+  <path d="M80 300 V560" stroke="#8EF012" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M136 300 V560" stroke="#8EF012" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M192 300 V560" stroke="#8EF012" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M248 300 V560" stroke="#8EF012" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M304 300 V560" stroke="#8EF012" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M360 300 V560" stroke="#8EF012" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M416 300 V560" stroke="#8EF012" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M472 300 V560" stroke="#8EF012" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M528 300 V560" stroke="#8EF012" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M584 300 V560" stroke="#8EF012" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M640 300 V560" stroke="#8EF012" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M696 300 V560" stroke="#8EF012" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M80 300 H700" stroke="#8EF012" stroke-opacity="0.12" stroke-width="2"/>
+  <path d="M80 340 H700" stroke="#8EF012" stroke-opacity="0.12" stroke-width="2"/>
+  <path d="M80 380 H700" stroke="#8EF012" stroke-opacity="0.12" stroke-width="2"/>
+  <path d="M80 420 H700" stroke="#8EF012" stroke-opacity="0.12" stroke-width="2"/>
+  <path d="M80 460 H700" stroke="#8EF012" stroke-opacity="0.12" stroke-width="2"/>
+  <path d="M80 500 H700" stroke="#8EF012" stroke-opacity="0.12" stroke-width="2"/>
+  <path d="M80 540 H700" stroke="#8EF012" stroke-opacity="0.12" stroke-width="2"/>
+  <rect x="180" y="340" width="120" height="80" rx="10" fill="#8EF012" fill-opacity="0.18" stroke="#8EF012" stroke-opacity="0.5" stroke-width="2"/>
+  <rect x="340" y="400" width="160" height="100" rx="10" fill="none" stroke="#8EF012" stroke-opacity="0.45" stroke-width="2"/>
+  <circle cx="864" cy="210" r="88" fill="none" stroke="#8EF012" stroke-opacity="0.28" stroke-width="10"/>
+  <circle cx="864" cy="210" r="42" fill="#8EF012" fill-opacity="0.16"/>
+  <circle cx="864" cy="210" r="10" fill="#8EF012"/>
+  <rect x="0" y="0" width="10" height="100%" fill="#8EF012"/>
+  <text x="56" y="72" fill="#8EF012" font-family="Manrope,Arial,sans-serif" font-size="18" font-weight="700" letter-spacing="3.5">PÀDÉYÁ · BROWSE</text>
+  <text x="56" y="640" fill="#FFFFFF" font-family="Manrope,Arial,sans-serif" font-size="48" font-weight="800">ONLINE</text>
+  <rect x="56" y="668" width="140" height="6" rx="3" fill="#8EF012"/>
+</svg>

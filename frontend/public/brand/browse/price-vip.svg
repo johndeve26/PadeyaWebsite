@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" fill="none">
+  <defs>
+    <linearGradient id="pricevip-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="55%" stop-color="#111111"/>
+      <stop offset="100%" stop-color="#1A1A1A"/>
+    </linearGradient>
+    <radialGradient id="pricevip-glow" cx="85%" cy="15%" r="48%">
+      <stop offset="0%" stop-color="#8EF012" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#8EF012" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pricevip-wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8EF012" stop-opacity="0"/>
+      <stop offset="40%" stop-color="#8EF012" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#8EF012" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#pricevip-bg)"/>
+  <circle cx="1020" cy="112" r="280" fill="url(#pricevip-glow)"/>
+  <path d="M400 520 L160 280" stroke="#8EF012" stroke-opacity="0.15" stroke-width="3"/>
+  <path d="M400 520 L224 280" stroke="#8EF012" stroke-opacity="0.23" stroke-width="3"/>
+  <path d="M400 520 L288 280" stroke="#8EF012" stroke-opacity="0.31" stroke-width="3"/>
+  <path d="M400 520 L352 280" stroke="#8EF012" stroke-opacity="0.39" stroke-width="3"/>
+  <path d="M400 520 L416 280" stroke="#8EF012" stroke-opacity="0.15" stroke-width="3"/>
+  <path d="M400 520 L480 280" stroke="#8EF012" stroke-opacity="0.23" stroke-width="3"/>
+  <path d="M400 520 L544 280" stroke="#8EF012" stroke-opacity="0.31" stroke-width="3"/>
+  <path d="M400 520 L608 280" stroke="#8EF012" stroke-opacity="0.39" stroke-width="3"/>
+  <path d="M400 520 L672 280" stroke="#8EF012" stroke-opacity="0.15" stroke-width="3"/>
+  <circle cx="400" cy="520" r="18" fill="#8EF012" fill-opacity="0.35"/>
+  <circle cx="400" cy="520" r="6" fill="#8EF012"/>
+  <circle cx="1020" cy="112" r="88" fill="none" stroke="#8EF012" stroke-opacity="0.28" stroke-width="10"/>
+  <circle cx="1020" cy="112" r="42" fill="#8EF012" fill-opacity="0.16"/>
+  <circle cx="1020" cy="112" r="10" fill="#8EF012"/>
+  <rect x="0" y="0" width="10" height="100%" fill="#8EF012"/>
+  <text x="56" y="72" fill="#8EF012" font-family="Manrope,Arial,sans-serif" font-size="18" font-weight="700" letter-spacing="3.5">PÀDÉYÁ · BROWSE</text>
+  <text x="56" y="640" fill="#FFFFFF" font-family="Manrope,Arial,sans-serif" font-size="48" font-weight="800">VIP</text>
+  <rect x="56" y="668" width="140" height="6" rx="3" fill="#8EF012"/>
+</svg>

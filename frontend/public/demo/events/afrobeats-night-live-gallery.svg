@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  
+      <defs>
+        <linearGradient id="e-afrobeatsnightliveg-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#000000"/>
+          <stop offset="55%" stop-color="#111111"/>
+          <stop offset="100%" stop-color="#1A1A1A"/>
+        </linearGradient>
+        <radialGradient id="e-afrobeatsnightliveg-glow" cx="78%" cy="22%" r="45%">
+          <stop offset="0%" stop-color="#8EF012" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="#8EF012" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="e-afrobeatsnightliveg-wave" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#8EF012" stop-opacity="0"/>
+          <stop offset="40%" stop-color="#8EF012" stop-opacity="0.85"/>
+          <stop offset="100%" stop-color="#8EF012" stop-opacity="0.15"/>
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#e-afrobeatsnightliveg-bg)"/>
+      <circle cx="920" cy="140" r="260" fill="url(#e-afrobeatsnightliveg-glow)"/>
+      <g opacity="0.9" stroke="url(#e-afrobeatsnightliveg-wave)" stroke-width="3" fill="none">
+        <path d="M80 420 C200 300 320 540 440 400 S680 280 800 420 1040 500 1160 380"/>
+        <path d="M80 460 C220 340 340 560 460 440 S700 320 820 460 1060 520 1160 420" opacity="0.55"/>
+        <path d="M80 500 C240 380 360 580 480 480 S720 360 840 500 1080 540 1160 460" opacity="0.3"/>
+      </g>
+      <circle cx="980" cy="200" r="88" fill="none" stroke="#8EF012" stroke-opacity="0.35" stroke-width="10"/>
+      <circle cx="980" cy="200" r="42" fill="#8EF012" fill-opacity="0.2"/>
+      <circle cx="980" cy="200" r="10" fill="#8EF012"/>
+      <rect x="0" y="0" width="10" height="100%" fill="#8EF012"/>
+  <rect x="40" y="40" width="1120" height="550" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="2"/>
+  <text x="88" y="112" fill="#8EF012" font-family="Manrope,Arial,sans-serif" font-size="18" font-weight="700" letter-spacing="3.5">PÀDÉYÁ · MUSIC · NIGHTLIFE</text>
+  <text x="88" y="300" fill="#FFFFFF" font-family="Manrope,Arial,sans-serif" font-size="56" font-weight="800">Afrobeats Night Live</text>
+  <text x="88" y="360" fill="#DDDDDD" font-family="Manrope,Arial,sans-serif" font-size="26">Gallery cut · Stage lights</text>
+  <rect x="88" y="398" width="160" height="6" rx="3" fill="#8EF012"/>
+</svg>

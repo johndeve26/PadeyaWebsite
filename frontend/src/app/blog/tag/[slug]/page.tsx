@@ -1,0 +1,56 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+
+import { BlogCard } from "@/components/blog/BlogCard";
+import { BlogRecoveryCtas } from "@/components/blog/BlogRecoveryCtas";
+import { Container, EmptyState } from "@/components/ui";
+import type { BlogTag } from "@/lib/blog-api";
+import {
+  fetchBlogPostsServer,
+  fetchBlogTaxonomyServer,
+} from "@/lib/blog-api";
+import { buildPageMetadata } from "@/lib/seo/site";
+
+type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const tag = (await fetchBlogTaxonomyServer("tags", slug)) as BlogTag | null;
+  if (!tag) return { title: "Tag", robots: { index: false } };
+  return buildPageMetadata({
+    title: `#${tag.name} · Blog`,
+    description: `Posts tagged ${tag.name} on Pàdéyá.`,
+    path: `/blog/tag/${slug}`,
+  });
+}
+
+export const revalidate = 300;
+
+export default async function BlogTagPage({ params }: Props) {
+  const { slug } = await params;
+  const tag = (await fetchBlogTaxonomyServer("tags", slug)) as BlogTag | null;
+  if (!tag) notFound();
+  const posts = await fetchBlogPostsServer({ tag: slug });
+
+  return (
+    <main className="bg-background pb-20 pt-10">
+      <Container>
+        <h1 className="font-display text-3xl font-extrabold tracking-tight">
+          #{tag.name}
+        </h1>
+        {posts.length ? (
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {posts.map((p) => (
+              <BlogCard key={p.id} post={p} />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-12">
+            <EmptyState title="No posts with this tag" />
+          </div>
+        )}
+        <BlogRecoveryCtas />
+      </Container>
+    </main>
+  );
+}

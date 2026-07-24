@@ -1,0 +1,48 @@
+{
+  "name": "Pàdéyá",
+  "short_name": "Pàdéyá",
+  "description": "Discover events. Trust hosts. Own the moment.",
+  "start_url": "/dashboard/tickets",
+  "scope": "/",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#000000",
+  "theme_color": "#0a0a0a",
+  "lang": "en",
+  "categories": ["events", "entertainment", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "My tickets",
+      "short_name": "Tickets",
+      "url": "/dashboard/tickets",
+      "description": "Open your tickets"
+    },
+    {
+      "name": "Browse events",
+      "short_name": "Events",
+      "url": "/events",
+      "description": "Discover published events"
+    }
+  ]
+}

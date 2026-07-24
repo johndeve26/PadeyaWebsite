@@ -1,0 +1,190 @@
+# Pàdéyá production stack (no hot-reload, no demo seed, no source mounts).
+#
+# Prerequisites:
+#   cp backend/.env.production.example backend/.env.production
+#   cp frontend/.env.production.example frontend/.env.production
+#   Fill secrets — never commit real .env.production files.
+#
+# Local production smoke:
+#   docker compose -f docker-compose.prod.yml --env-file frontend/.env.production up --build -d
+#
+# Put Nginx (or another reverse proxy) in front of :3000 and :8000.
+
+name: padeya-prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: padeya-prod-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-padeya}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-padeya}
+    volumes:
+      - padeya_prod_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - padeya_prod
+
+  redis:
+    image: redis:7-alpine
+    container_name: padeya-prod-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - padeya_prod_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - padeya_prod
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: padeya-prod-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.production
+    environment:
+      # Override only for local staging smoke; VPS must keep production.
+      APP_ENV: ${APP_ENV:-production}
+      DEBUG: ${DEBUG:-false}
+      DEMO_MODE: ${DEMO_MODE:-false}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-padeya}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-padeya}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Entrypoint runs: alembic upgrade head, then the CMD below (no --reload).
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+    ports:
+      - "${BACKEND_HOST_PORT:-8000}:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    networks:
+      - padeya_prod
+
+  # Transactional email outbox worker — drains email_events (see docs/OPERATIONS.md)
+  email_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: padeya-prod-email-worker
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.production
+    environment:
+      PYTHONPATH: /app
+      APP_ENV: ${APP_ENV:-production}
+      DEBUG: ${DEBUG:-false}
+      DEMO_MODE: ${DEMO_MODE:-false}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-padeya}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-padeya}
+      REDIS_URL: redis://redis:6379/0
+      EMAIL_WORKER_POLL_SECONDS: ${EMAIL_WORKER_POLL_SECONDS:-20}
+      EMAIL_WORKER_BATCH_SIZE: ${EMAIL_WORKER_BATCH_SIZE:-50}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    # Backend entrypoint migrates; worker only drains the outbox.
+    entrypoint: ["python", "scripts/process_email_outbox.py"]
+    command: ["--loop"]
+    networks:
+      - padeya_prod
+
+  push_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: padeya-prod-push-worker
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.production
+    environment:
+      PYTHONPATH: /app
+      APP_ENV: ${APP_ENV:-production}
+      DEBUG: ${DEBUG:-false}
+      DEMO_MODE: ${DEMO_MODE:-false}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-padeya}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-padeya}
+      REDIS_URL: redis://redis:6379/0
+      PUSH_QUEUE_ENABLED: ${PUSH_QUEUE_ENABLED:-true}
+      PUSH_WORKER_POLL_SECONDS: ${PUSH_WORKER_POLL_SECONDS:-20}
+      PUSH_WORKER_BATCH_SIZE: ${PUSH_WORKER_BATCH_SIZE:-50}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    # Bare invoke defaults to --loop --maintenance (counts only; no payloads).
+    command: ["python", "scripts/process_push_outbox.py"]
+    networks:
+      - padeya_prod
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL (public API origin)}
+        NEXT_PUBLIC_API_PREFIX: ${NEXT_PUBLIC_API_PREFIX:-/api/v1}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Pàdéyá}
+        NEXT_PUBLIC_DEMO_MODE: "false"
+    container_name: padeya-prod-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_DEMO_MODE: "false"
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_HOST_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    networks:
+      - padeya_prod
+
+volumes:
+  padeya_prod_postgres_data:
+  padeya_prod_redis_data:
+
+networks:
+  padeya_prod:
+    driver: bridge

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" fill="none">
+  <defs>
+    <linearGradient id="citylagos-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="55%" stop-color="#111111"/>
+      <stop offset="100%" stop-color="#1A1A1A"/>
+    </linearGradient>
+    <radialGradient id="citylagos-glow" cx="80%" cy="20%" r="48%">
+      <stop offset="0%" stop-color="#8EF012" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#8EF012" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="citylagos-wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8EF012" stop-opacity="0"/>
+      <stop offset="40%" stop-color="#8EF012" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#8EF012" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#citylagos-bg)"/>
+  <circle cx="960" cy="150" r="280" fill="url(#citylagos-glow)"/>
+  
+  <g fill="#8EF012">
+    <rect x="120" y="360" width="48" height="180" fill-opacity="0.2"/>
+    <rect x="180" y="300" width="56" height="240" fill-opacity="0.35"/>
+    <rect x="250" y="340" width="44" height="200" fill-opacity="0.18"/>
+    <rect x="310" y="260" width="70" height="280" fill-opacity="0.4"/>
+    <rect x="395" y="320" width="50" height="220" fill-opacity="0.22"/>
+    <rect x="460" y="280" width="62" height="260" fill-opacity="0.32"/>
+    <rect x="540" y="350" width="46" height="190" fill-opacity="0.16"/>
+    <rect x="600" y="300" width="58" height="240" fill-opacity="0.28"/>
+    <rect x="310" y="260" width="70" height="14" fill-opacity="0.7"/>
+  </g>
+  <path d="M100 540 H700" stroke="#8EF012" stroke-opacity="0.45" stroke-width="3"/>
+  <circle cx="960" cy="150" r="88" fill="none" stroke="#8EF012" stroke-opacity="0.28" stroke-width="10"/>
+  <circle cx="960" cy="150" r="42" fill="#8EF012" fill-opacity="0.16"/>
+  <circle cx="960" cy="150" r="10" fill="#8EF012"/>
+  <rect x="0" y="0" width="10" height="100%" fill="#8EF012"/>
+  <text x="56" y="72" fill="#8EF012" font-family="Manrope,Arial,sans-serif" font-size="18" font-weight="700" letter-spacing="3.5">PÀDÉYÁ · BROWSE</text>
+  <text x="56" y="640" fill="#FFFFFF" font-family="Manrope,Arial,sans-serif" font-size="48" font-weight="800">LAGOS</text>
+  <rect x="56" y="668" width="140" height="6" rx="3" fill="#8EF012"/>
+</svg>

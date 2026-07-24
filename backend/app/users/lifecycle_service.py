@@ -1,0 +1,137 @@
+"""User profile update and admin deactivate/restore (delegates status MVP)."""
+
+from __future__ import annotations
+
+import uuid
+
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.core.audit import write_audit_log
+from app.users.account_status_constants import (
+    ACCOUNT_STATUS_ACTIVE,
+    ACCOUNT_STATUS_SUSPENDED,
+)
+from app.users.account_status_service import change_account_status
+from app.users.admin_users_permissions import require_admin_users_perm
+from app.users.models import User
+from app.users.service import get_user_by_id
+
+
+def update_my_profile(
+    db: Session, *, user: User, full_name: str | None = None
+) -> User:
+    if full_name is not None:
+        name = full_name.strip()
+        if len(name) < 2:
+            raise HTTPException(status_code=400, detail="full_name too short")
+        user.full_name = name
+    write_audit_log(
+        db,
+        action="users.profile_update",
+        actor_user_id=user.id,
+        resource_type="user",
+        resource_id=str(user.id),
+        details={"full_name": user.full_name},
+    )
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def deactivate_user(
+    db: Session,
+    *,
+    admin: User,
+    user_id: uuid.UUID,
+    reason: str | None = None,
+) -> User:
+    return change_account_status(
+        db,
+        admin=admin,
+        user_id=user_id,
+        new_status=ACCOUNT_STATUS_SUSPENDED,
+        reason=reason or "",
+    )
+
+
+def restore_user(
+    db: Session,
+    *,
+    admin: User,
+    user_id: uuid.UUID,
+    reason: str | None = None,
+) -> User:
+    return change_account_status(
+        db,
+        admin=admin,
+        user_id=user_id,
+        new_status=ACCOUNT_STATUS_ACTIVE,
+        reason=reason or "",
+    )
+
+
+def delete_user_blocked() -> None:
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Hard delete blocked for users; use suspend",
+    )
+
+
+def set_ambassadors_blocked(
+    db: Session, *, admin: User, user_id: uuid.UUID, blocked: bool
+) -> User:
+    """Block/unblock a user from all Pàdéyá Ambassadors programs (not host team)."""
+    require_admin_users_perm(
+        admin, "admin.users.restrict", "admin.users.add_restriction"
+    )
+    target = get_user_by_id(db, user_id)
+    if target is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    from app.users.restrictions_service import (
+        apply_restrictions,
+        list_restriction_rows,
+        revoke_restriction,
+    )
+
+    code = "cannot_join_ambassador_campaigns"
+    if blocked:
+        apply_restrictions(
+            db,
+            admin=admin,
+            user_id=user_id,
+            restriction_keys=[code],
+            reason="Ambassadors program blocked by admin",
+        )
+    else:
+        rows = list_restriction_rows(db, user_id, include_inactive=False)
+        for row in rows:
+            if row.restriction_key in {
+                "cannot_join_ambassador_campaigns",
+                "cannot_promote_events",
+                "cannot_receive_ambassador_rewards",
+                "cannot_request_ambassador_payouts",
+            }:
+                try:
+                    revoke_restriction(
+                        db,
+                        admin=admin,
+                        user_id=user_id,
+                        restriction_id=row.id,
+                        reason="Ambassadors program unblocked by admin",
+                    )
+                except HTTPException:
+                    continue
+
+    write_audit_log(
+        db,
+        action="users.ambassadors_block" if blocked else "users.ambassadors_unblock",
+        actor_user_id=admin.id,
+        resource_type="user",
+        resource_id=str(user_id),
+        details={"ambassadors_blocked": blocked},
+    )
+    db.commit()
+    refreshed = get_user_by_id(db, user_id)
+    return refreshed  # type: ignore[return-value]

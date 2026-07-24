@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="ha-mainlandvibesa-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="100%" stop-color="#111111"/>
+    </linearGradient>
+    <clipPath id="ha-mainlandvibesa-clip"><circle cx="256" cy="256" r="256"/></clipPath>
+  </defs>
+  <g clip-path="url(#ha-mainlandvibesa-clip)">
+    <rect width="512" height="512" fill="url(#ha-mainlandvibesa-bg)"/>
+    <circle cx="360" cy="140" r="120" fill="#8EF012" fill-opacity="0.2"/>
+      <path d="M60 360 C140 260 220 420 300 320 S420 240 480 340" fill="none" stroke="#8EF012" stroke-width="8"/>
+    <circle cx="256" cy="256" r="118" fill="#000000" fill-opacity="0.55" stroke="#8EF012" stroke-width="4"/>
+    <text x="256" y="282" text-anchor="middle" fill="#FFFFFF" font-family="Manrope,Arial,sans-serif" font-size="72" font-weight="800">MV</text>
+  </g>
+  <circle cx="256" cy="256" r="250" fill="none" stroke="#8EF012" stroke-opacity="0.45" stroke-width="6"/>
+  <title>Mainland Vibes</title>
+</svg>

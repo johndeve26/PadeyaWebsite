@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  
+      <defs>
+        <linearGradient id="e-artwalklagos-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#111111"/>
+          <stop offset="100%" stop-color="#000000"/>
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#e-artwalklagos-bg)"/>
+      <rect x="700" y="80" width="380" height="280" fill="#1A1A1A" stroke="#DDDDDD" stroke-opacity="0.2"/>
+      <rect x="730" y="110" width="320" height="220" fill="#8EF012" fill-opacity="0.15"/>
+      <path d="M760 280 Q860 140 960 260 T1120 200" fill="none" stroke="#8EF012" stroke-width="6" stroke-linecap="round"/>
+      <rect x="780" y="400" width="260" height="160" fill="#000000" stroke="#8EF012" stroke-opacity="0.4"/>
+      <circle cx="910" cy="480" r="36" fill="#8EF012" fill-opacity="0.35"/>
+      <path d="M60 520 C200 300 360 560 520 340 S780 200 980 380" fill="none" stroke="#FFFFFF" stroke-opacity="0.12" stroke-width="10" stroke-linecap="round"/>
+      <rect x="64" y="64" width="18" height="18" fill="#8EF012"/>
+      <rect x="92" y="64" width="18" height="18" fill="#FFFFFF" fill-opacity="0.35"/>
+      <rect x="120" y="64" width="18" height="18" fill="#DDDDDD" fill-opacity="0.2"/>
+  
+  <text x="64" y="88" fill="#8EF012" font-family="Manrope,Arial,sans-serif" font-size="18" font-weight="700" letter-spacing="3.5">PÀDÉYÁ · ART · CULTURE</text>
+  <text x="64" y="280" fill="#FFFFFF" font-family="Manrope,Arial,sans-serif" font-size="64" font-weight="800">Art Walk Lagos</text>
+  <text x="64" y="340" fill="#DDDDDD" font-family="Manrope,Arial,sans-serif" font-size="26">Galleries · Streets · Culture</text>
+  <rect x="64" y="378" width="160" height="6" rx="3" fill="#8EF012"/>
+</svg>

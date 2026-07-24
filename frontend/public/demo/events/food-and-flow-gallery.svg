@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  
+      <defs>
+        <linearGradient id="e-foodandflowg-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#1A1A1A"/>
+          <stop offset="100%" stop-color="#000000"/>
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#e-foodandflowg-bg)"/>
+      <circle cx="900" cy="280" r="200" fill="#8EF012" fill-opacity="0.1"/>
+      <circle cx="900" cy="280" r="140" fill="none" stroke="#8EF012" stroke-opacity="0.45" stroke-width="8"/>
+      <circle cx="900" cy="280" r="70" fill="#8EF012" fill-opacity="0.18"/>
+      <ellipse cx="240" cy="480" rx="180" ry="70" fill="#8EF012" fill-opacity="0.08"/>
+      <path d="M120 200c40-80 120-80 160 0s120 80 160 0 120-80 160 0" fill="none" stroke="#DDDDDD" stroke-opacity="0.2" stroke-width="4"/>
+      <path d="M140 260c36-60 100-60 136 0s100 60 136 0" fill="none" stroke="#8EF012" stroke-opacity="0.35" stroke-width="3"/>
+      <rect x="0" y="0" width="10" height="100%" fill="#8EF012"/>
+  <rect x="40" y="40" width="1120" height="550" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="2"/>
+  <text x="88" y="112" fill="#8EF012" font-family="Manrope,Arial,sans-serif" font-size="18" font-weight="700" letter-spacing="3.5">PÀDÉYÁ · FOOD · LIFESTYLE</text>
+  <text x="88" y="300" fill="#FFFFFF" font-family="Manrope,Arial,sans-serif" font-size="64" font-weight="800">Food &amp; Flow</text>
+  <text x="88" y="360" fill="#DDDDDD" font-family="Manrope,Arial,sans-serif" font-size="26">Gallery cut · Table scenes</text>
+  <rect x="88" y="398" width="160" height="6" rx="3" fill="#8EF012"/>
+</svg>

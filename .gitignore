@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+backend/.venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+.env.production
+**/.env.production
+!.env.example
+!**/.env.example
+!.env.production.example
+!**/.env.production.example
+
+# DB backups from scripts/prod-backup-db.sh
+backups/
+
+# Build / Next
+frontend/.next/
+frontend/out/
+dist/
+build/
+*.egg-info/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs / coverage
+*.log
+coverage/
+htmlcov/
+.coverage
+
+# Docker
+*.pid
+
+# Local media uploads
+backend/media_uploads/
+backend/media_uploads_test/
+media_uploads/
+media_uploads_test/
+
+# Private message attachment storage (never commit uploaded files)
+backend/storage/message_attachments/*
+!backend/storage/message_attachments/.gitkeep
+storage/message_attachments/*
+!storage/message_attachments/.gitkeep

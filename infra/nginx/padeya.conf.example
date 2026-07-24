@@ -1,0 +1,136 @@
+# Pàdéyá Nginx reverse-proxy example
+#
+# Assumes Docker Compose publishes:
+#   frontend → 127.0.0.1:3000
+#   backend  → 127.0.0.1:8000
+#
+# Install (Ubuntu example):
+#   sudo cp infra/nginx/padeya.conf.example /etc/nginx/sites-available/padeya
+#   sudo ln -s /etc/nginx/sites-available/padeya /etc/nginx/sites-enabled/padeya
+#   sudo nginx -t && sudo systemctl reload nginx
+#
+# TLS: use Certbot after DNS points here:
+#   sudo certbot --nginx -d padeya.com -d www.padeya.com -d api.padeya.com
+
+upstream padeya_frontend {
+    server 127.0.0.1:3000;
+    keepalive 32;
+}
+
+upstream padeya_backend {
+    server 127.0.0.1:8000;
+    keepalive 32;
+}
+
+# Redirect www → apex (optional)
+server {
+    listen 80;
+    listen [::]:80;
+    server_name www.padeya.com;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://padeya.com$request_uri;
+    }
+}
+
+# Marketing + app (Next.js)
+server {
+    listen 80;
+    listen [::]:80;
+    server_name padeya.com;
+
+    # After Certbot, this block is usually upgraded to listen 443 ssl;
+    # and include managed certificate paths.
+
+    client_max_body_size 25m;
+
+    location / {
+        proxy_pass http://padeya_frontend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 60s;
+    }
+}
+
+# API (FastAPI)
+server {
+    listen 80;
+    listen [::]:80;
+    server_name api.padeya.com;
+
+    client_max_body_size 25m;
+
+    location / {
+        proxy_pass http://padeya_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # WebSocket-safe headers (future realtime / scanner tooling)
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 120s;
+    }
+
+    # Optional: expose OpenAPI only on private networks — keep closed in prod if preferred.
+    # location /docs { deny all; }
+}
+
+# HTTPS example (uncomment after certificates exist)
+#
+# server {
+#     listen 443 ssl http2;
+#     listen [::]:443 ssl http2;
+#     server_name padeya.com;
+#
+#     ssl_certificate     /etc/letsencrypt/live/padeya.com/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/padeya.com/privkey.pem;
+#     include /etc/letsencrypt/options-ssl-nginx.conf;
+#     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+#
+#     client_max_body_size 25m;
+#
+#     location / {
+#         proxy_pass http://padeya_frontend;
+#         proxy_http_version 1.1;
+#         proxy_set_header Host $host;
+#         proxy_set_header X-Real-IP $remote_addr;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+#         proxy_set_header Upgrade $http_upgrade;
+#         proxy_set_header Connection "upgrade";
+#     }
+# }
+#
+# server {
+#     listen 443 ssl http2;
+#     listen [::]:443 ssl http2;
+#     server_name api.padeya.com;
+#
+#     ssl_certificate     /etc/letsencrypt/live/api.padeya.com/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/api.padeya.com/privkey.pem;
+#     include /etc/letsencrypt/options-ssl-nginx.conf;
+#
+#     client_max_body_size 25m;
+#
+#     location / {
+#         proxy_pass http://padeya_backend;
+#         proxy_http_version 1.1;
+#         proxy_set_header Host $host;
+#         proxy_set_header X-Real-IP $remote_addr;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+#         proxy_set_header Upgrade $http_upgrade;
+#         proxy_set_header Connection "upgrade";
+#     }
+# }
