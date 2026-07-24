@@ -791,11 +791,26 @@ def _ensure_events(
 
         if spec.get("enrich_studio"):
             _apply_studio_enrichment(db, event=event, spec=spec, host=host)
+        else:
+            _sync_demo_event_asset_urls(event)
 
         _mark(db, "event", slug, event.id)
         events[spec["key"]] = event
     db.flush()
     return events
+
+
+def _sync_demo_event_asset_urls(event: Event) -> None:
+    """Point stored demo media at the current FRONTEND_URL (domain migrations)."""
+    event.banner_url = assets.normalize_demo_asset_url(event.banner_url)
+    event.mobile_banner_url = assets.normalize_demo_asset_url(event.mobile_banner_url)
+    event.social_share_image_url = assets.normalize_demo_asset_url(
+        event.social_share_image_url
+    )
+    for media in list(event.media or []):
+        normalized = assets.normalize_demo_asset_url(media.url)
+        if normalized:
+            media.url = normalized
 
 
 def _apply_studio_enrichment(
@@ -806,6 +821,7 @@ def _apply_studio_enrichment(
     host: Host,
 ) -> None:
     """Fill Studio-facing fields so every demo section has something to show."""
+    _sync_demo_event_asset_urls(event)
     start: datetime = spec["start"]
     end: datetime = spec["end"]
     key = spec["key"]
@@ -1057,26 +1073,38 @@ def _apply_studio_enrichment(
                 sort_order=sort_base + offset,
             )
         )
-    if not any(m.media_type == "banner" for m in (event.media or [])):
+    banner_media = next(
+        (m for m in (event.media or []) if m.media_type == "banner"),
+        None,
+    )
+    banner_url = event.banner_url or assets.event_banner(key)
+    if banner_media is None:
         db.add(
             EventMedia(
                 event_id=event.id,
-                url=event.banner_url or assets.event_banner(key),
+                url=banner_url,
                 media_type="banner",
                 sort_order=0,
             )
         )
-    if event.social_share_image_url and not any(
-        m.media_type == "social_share" for m in (event.media or [])
-    ):
-        db.add(
-            EventMedia(
-                event_id=event.id,
-                url=event.social_share_image_url,
-                media_type="social_share",
-                sort_order=20,
+    else:
+        banner_media.url = banner_url
+    social_media = next(
+        (m for m in (event.media or []) if m.media_type == "social_share"),
+        None,
+    )
+    if event.social_share_image_url:
+        if social_media is None:
+            db.add(
+                EventMedia(
+                    event_id=event.id,
+                    url=event.social_share_image_url,
+                    media_type="social_share",
+                    sort_order=20,
+                )
             )
-        )
+        else:
+            social_media.url = event.social_share_image_url
 
     # Ticket benefits for already-created tiers
     for ticket in list(event.ticket_types or []):

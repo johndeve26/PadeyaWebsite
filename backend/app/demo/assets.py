@@ -14,6 +14,20 @@ def demo_asset_url(relative_path: str) -> str:
     return f"{base}/demo/{path}"
 
 
+def normalize_demo_asset_url(url: str | None) -> str | None:
+    """Rewrite a stored demo asset URL to the current FRONTEND_URL origin."""
+    if not url or not str(url).strip():
+        return url
+    value = str(url).strip()
+    if value.startswith("/demo/"):
+        return demo_asset_url(value.removeprefix("/demo/"))
+    marker = "/demo/"
+    idx = value.find(marker)
+    if idx >= 0:
+        return demo_asset_url(value[idx + len(marker) :])
+    return value
+
+
 # New showcase keys reuse nearby artwork until dedicated SVGs exist.
 _EVENT_ASSET_FALLBACKS: dict[str, str] = {
     "mainland-after-dark": "detty-friday-live",
