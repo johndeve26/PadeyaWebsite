@@ -2,55 +2,64 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { FanPassportPublicClient } from "@/components/passport/FanPassportPublicClient";
-import { getApiBaseUrl, getApiPrefix } from "@/lib/api-base";
+import {
+  buildFanMetadata,
+  fanPassportCanonicalPath,
+  fanPassportJsonLd,
+  isFanPassportIndexable,
+} from "@/lib/seo/fan-metadata";
+import { breadcrumbJsonLd, JsonLdScript } from "@/lib/seo/jsonld";
+import { fetchPublicJson } from "@/lib/seo/public-fetch";
+import { NOINDEX_ROBOTS } from "@/lib/seo/noindex";
+import { siteOrigin } from "@/lib/seo/site";
 import type { FanPassportPublicPage } from "@/lib/types/passport";
 
 async function loadPublicPassport(
   username: string,
 ): Promise<FanPassportPublicPage | null> {
-  // Prefer API_PROXY_TARGET / NEXT_PUBLIC_API_URL — never a bare relative
-  // "/api/…" on the server (that fails when NEXT_PUBLIC_API_URL is empty).
-  const apiUrl = getApiBaseUrl() || "http://127.0.0.1:8000";
-  const apiPrefix = getApiPrefix();
-  try {
-    const res = await fetch(
-      `${apiUrl}${apiPrefix}/f/${encodeURIComponent(username)}`,
-      // Privacy toggles must reflect immediately — do not ISR-cache 404s.
-      { cache: "no-store" },
-    );
-    if (res.status === 404) return null;
-    if (!res.ok) return null;
-    return (await res.json()) as FanPassportPublicPage;
-  } catch {
-    return null;
-  }
+  const { data, status } = await fetchPublicJson<FanPassportPublicPage>(
+    `/f/${encodeURIComponent(username)}`,
+    { revalidate: false },
+  );
+  if (status === 404 || !data) return null;
+  return data;
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ username: string }>;
-}): Promise<Metadata> {
+type Props = { params: Promise<{ username: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params;
-  const page = await loadPublicPassport(username);
+  const page = await loadPublicPassport(decodeURIComponent(username));
   if (!page) {
-    return { title: "Fan Passport | Pàdéyá" };
+    return { title: "Fan Passport", robots: NOINDEX_ROBOTS };
   }
-  return {
-    title: `${page.display_name} · Fan Passport | Pàdéyá`,
-    description:
-      page.tagline ||
-      `${page.display_name}'s Fan Passport on Pàdéyá — verified nights, badges, and hosts.`,
-  };
+  return buildFanMetadata(page);
 }
 
-export default async function PublicFanPassportPage({
-  params,
-}: {
-  params: Promise<{ username: string }>;
-}) {
+export default async function PublicFanPassportPage({ params }: Props) {
   const { username } = await params;
-  const page = await loadPublicPassport(username);
+  const page = await loadPublicPassport(decodeURIComponent(username));
   if (!page) notFound();
-  return <FanPassportPublicClient initial={page} />;
+
+  const schema = fanPassportJsonLd(page);
+  const crumbs = isFanPassportIndexable(page)
+    ? [
+        { label: "Home", href: "/" },
+        { label: "Fans", href: "/fans" },
+        {
+          label: page.display_name,
+          href: fanPassportCanonicalPath(page.username),
+        },
+      ]
+    : null;
+
+  return (
+    <>
+      {schema ? <JsonLdScript data={schema} /> : null}
+      {crumbs ? (
+        <JsonLdScript data={breadcrumbJsonLd(crumbs, siteOrigin())} />
+      ) : null}
+      <FanPassportPublicClient initial={page} />
+    </>
+  );
 }

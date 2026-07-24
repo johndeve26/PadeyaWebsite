@@ -1,13 +1,15 @@
-"use client";
+import type { Metadata } from "next";
 
-import { RequireAuth } from "@/components/auth/RequireAuth";
+import { privateAreaMetadata } from "@/lib/seo/noindex";
+
+import StaffCheckInLayoutClient from "./StaffCheckInLayoutClient";
+
+export const metadata: Metadata = privateAreaMetadata("Staff check-in");
 
 export default function StaffCheckInLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <RequireAuth roles={["host", "host_staff", "super_admin"]}>{children}</RequireAuth>
-  );
+  return <StaffCheckInLayoutClient>{children}</StaffCheckInLayoutClient>;
 }

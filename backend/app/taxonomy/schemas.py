@@ -166,6 +166,10 @@ class LocationUpdate(BaseModel):
     state_code: str | None = Field(default=None, max_length=16)
     country_code: str | None = Field(default=None, max_length=8)
     is_active: bool | None = None
+    seo_title: str | None = Field(default=None, max_length=200)
+    seo_description: str | None = Field(default=None, max_length=320)
+    intro_content: str | None = None
+    seo_index_mode: str | None = Field(default=None, max_length=24)
 
 
 class LocationPublic(BaseModel):
@@ -179,6 +183,10 @@ class LocationPublic(BaseModel):
     state_code: str | None
     country_code: str | None
     is_active: bool
+    seo_title: str | None = None
+    seo_description: str | None = None
+    intro_content: str | None = None
+    seo_index_mode: str = "auto"
     created_at: datetime
     updated_at: datetime
 

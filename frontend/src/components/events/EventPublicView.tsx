@@ -21,6 +21,7 @@ import { RelatedVaultTeaserSection } from "@/components/vault/public/RelatedVaul
 import { useHostAffiliation } from "@/hooks/useHostAffiliation";
 import { useUserRestrictions } from "@/hooks/useUserRestrictions";
 import { eventPageCtaMode, eventPageCtas } from "@/lib/own-host-ctas";
+import { eventCoverAlt } from "@/lib/seo/image-alt";
 import { USER_RESTRICTION_ACTION_MESSAGE } from "@/lib/user-restrictions";
 import {
   trackBuyTicketClick,
@@ -175,7 +176,25 @@ export function EventPublicView({
     }
   }
 
-  const hostHref = event.host_slug ? `/@${event.host_slug}` : "/hosts";
+  const hostHref = event.host_slug
+    ? `/u/${encodeURIComponent(event.host_slug)}`
+    : "/hosts";
+
+  const locationHubHref = (() => {
+    const loc = event.location;
+    if (loc?.kind && loc?.slug) {
+      return `/events/${loc.kind}/${encodeURIComponent(loc.slug)}`;
+    }
+    if (event.city) {
+      const citySlug = event.city
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      if (citySlug) return `/events/city/${citySlug}`;
+    }
+    return null;
+  })();
 
   return (
     <main className="min-w-0 overflow-x-clip bg-[linear-gradient(180deg,var(--surface)_0%,var(--muted)_42%,var(--surface)_100%)] pb-28 lg:pb-14">
@@ -213,7 +232,7 @@ export function EventPublicView({
           <>
             <Media
               src={event.banner_url}
-              alt=""
+              alt={eventCoverAlt(event.title)}
               className="padeya-hero-media absolute inset-0 h-full w-full object-cover opacity-85"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-ink/30 to-ink/55" />
@@ -268,7 +287,16 @@ export function EventPublicView({
                     </p>
                     <p>
                       <span className="font-semibold text-foreground">Where · </span>
-                      {venueLine || "Location TBA"}
+                      {locationHubHref ? (
+                        <Link
+                          href={locationHubHref}
+                          className="underline decoration-accent underline-offset-2"
+                        >
+                          {venueLine || "Location TBA"}
+                        </Link>
+                      ) : (
+                        venueLine || "Location TBA"
+                      )}
                     </p>
                     {event.host_display_name ? (
                       <p>

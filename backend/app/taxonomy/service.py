@@ -1251,6 +1251,20 @@ def update_location(
         data["kind"] = data["kind"].strip().lower()
     if "name" in data and isinstance(data["name"], str):
         data["name"] = data["name"].strip()
+    if "seo_index_mode" in data and data["seo_index_mode"] is not None:
+        mode = str(data["seo_index_mode"]).strip().lower()
+        if mode not in ("auto", "force_index", "force_noindex"):
+            raise HTTPException(
+                status_code=422,
+                detail="seo_index_mode must be auto, force_index, or force_noindex",
+            )
+        data["seo_index_mode"] = mode
+    if "seo_title" in data and isinstance(data["seo_title"], str):
+        data["seo_title"] = data["seo_title"].strip() or None
+    if "seo_description" in data and isinstance(data["seo_description"], str):
+        data["seo_description"] = data["seo_description"].strip() or None
+    if "intro_content" in data and isinstance(data["intro_content"], str):
+        data["intro_content"] = data["intro_content"].strip() or None
     kind = data.get("kind", row.kind)
     slug = data.get("slug", row.slug)
     if slug:

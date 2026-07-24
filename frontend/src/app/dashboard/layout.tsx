@@ -1,34 +1,15 @@
-"use client";
+import type { Metadata } from "next";
 
-import { RequireAuth } from "@/components/auth/RequireAuth";
-import { HostWorkspaceProvider } from "@/components/hosts/HostWorkspaceProvider";
-import { SponsorWorkspaceProvider } from "@/components/sponsor/SponsorWorkspaceProvider";
-import { WorkspaceSwitcher } from "@/components/hosts/WorkspaceSwitcher";
-import { WorkspaceShell } from "@/components/layout/WorkspaceShell";
-import { PERSONAL_WORKSPACE_TITLE } from "@/lib/host-access";
-import { buyerNav, buyerNavGroups } from "@/lib/nav/workspace";
+import { privateAreaMetadata } from "@/lib/seo/noindex";
 
-/** Personal workspace shell — buyer/fan nav only (`/dashboard/*`). */
+import DashboardLayoutClient from "./DashboardLayoutClient";
+
+export const metadata: Metadata = privateAreaMetadata("Personal");
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <RequireAuth>
-      <HostWorkspaceProvider>
-        <SponsorWorkspaceProvider>
-        <WorkspaceShell
-          nav={buyerNav}
-          navGroups={buyerNavGroups}
-          title={PERSONAL_WORKSPACE_TITLE}
-          homeHref="/dashboard"
-          toolbar={<WorkspaceSwitcher />}
-        >
-          {children}
-        </WorkspaceShell>
-        </SponsorWorkspaceProvider>
-      </HostWorkspaceProvider>
-    </RequireAuth>
-  );
+  return <DashboardLayoutClient>{children}</DashboardLayoutClient>;
 }

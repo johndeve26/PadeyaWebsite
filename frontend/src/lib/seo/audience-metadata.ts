@@ -1,6 +1,6 @@
 import type { MarketingFaqItem } from "@/components/marketing/MarketingFaq";
-import { brand } from "@/lib/brand";
-import { absoluteUrl, buildPageMetadata, siteOrigin } from "@/lib/seo/site";
+import { absoluteUrl, buildPageMetadata } from "@/lib/seo/site";
+import { websiteIdRef } from "@/lib/seo/site-graph";
 
 export function faqPageJsonLd(
   items: readonly MarketingFaqItem[],
@@ -18,11 +18,7 @@ export function faqPageJsonLd(
       },
     })),
     url: absoluteUrl(path),
-    isPartOf: {
-      "@type": "WebSite",
-      name: brand.name,
-      url: siteOrigin(),
-    },
+    isPartOf: websiteIdRef(),
   };
 }
 

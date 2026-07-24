@@ -1,20 +1,41 @@
 import type { MetadataRoute } from "next";
 
-import { fetchBlogPostsServer } from "@/lib/blog-api";
+import { getApiBaseUrl, getApiPrefix } from "@/lib/api-base";
+import {
+  fetchBlogAuthorsServer,
+  fetchBlogCategoriesServer,
+  fetchBlogPostsServer,
+  fetchBlogTagsServer,
+} from "@/lib/blog-api";
 import {
   fetchHelpArticlesServer,
   fetchHelpCategoriesServer,
 } from "@/lib/knowledge-base/api";
-import { siteOrigin } from "@/lib/seo/site";
+import { getCanonicalSiteOrigin } from "@/lib/seo/site";
+import {
+  collectNonEmptyBlogHubSlugs,
+  filterFansForSitemap,
+  filterHostsForSitemap,
+  filterListedEventsForSitemap,
+  filterMerchForSitemap,
+  filterSponsorsForSitemap,
+  isPublishedBlogPost,
+  sitemapLastModified,
+} from "@/lib/seo/sitemap-filter";
+import {
+  buildHubInventoryFromEvents,
+  isCityCategoryInSitemap,
+  isLocationInSitemap,
+} from "@/lib/seo/hub-eligibility";
 import {
   SPONSORSHIP_HOSTS_PATH,
   SPONSORSHIP_MARKETPLACE_PATH,
 } from "@/lib/sponsor-marketplace-paths";
-import { filterListedEventsForSitemap } from "@/lib/seo/sitemap-filter";
 
-const API =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-  "http://localhost:8000/api/v1";
+function apiRoot(): string {
+  const base = getApiBaseUrl() || "http://127.0.0.1:8000";
+  return `${base}${getApiPrefix()}`;
+}
 
 type PublicEvent = {
   slug: string;
@@ -23,6 +44,11 @@ type PublicEvent = {
   visibility?: string;
   updated_at?: string;
   published_at?: string | null;
+  location?: {
+    kind?: string | null;
+    slug?: string | null;
+    ancestors?: Array<{ kind?: string | null; slug?: string | null }> | null;
+  } | null;
 };
 
 type Category = { slug: string; is_active?: boolean };
@@ -31,19 +57,22 @@ type TaxonomyLocation = {
   kind: string;
   slug: string;
   is_active?: boolean;
+  seo_index_mode?: string | null;
 };
 
-function slugify(s: string): string {
-  return s
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
+type DiscoverHost = { username: string };
+type FanDirectoryCard = { username: string };
+type FanDirectoryList = {
+  items: FanDirectoryCard[];
+  page: number;
+  limit: number;
+  total: number;
+};
+type SponsorDirectoryCard = { slug: string; verified?: boolean };
 
 async function safeJson<T>(path: string): Promise<T | null> {
   try {
-    const res = await fetch(`${API}${path}`, {
+    const res = await fetch(`${apiRoot()}${path}`, {
       next: { revalidate: 300 },
     });
     if (!res.ok) return null;
@@ -53,100 +82,195 @@ async function safeJson<T>(path: string): Promise<T | null> {
   }
 }
 
+/** Paginate public Fan directory (max 48/page) — public+directory-eligible only. */
+async function fetchAllDirectoryFans(): Promise<FanDirectoryCard[]> {
+  const out: FanDirectoryCard[] = [];
+  const limit = 48;
+  let page = 1;
+  let total = Infinity;
+
+  while (out.length < total && page <= 50) {
+    const data = await safeJson<FanDirectoryList>(
+      `/fans?page=${page}&limit=${limit}&sort=recently_active`,
+    );
+    if (!data?.items?.length) break;
+    out.push(...data.items);
+    total = typeof data.total === "number" ? data.total : out.length;
+    if (data.items.length < limit) break;
+    page += 1;
+  }
+
+  return out;
+}
+
+function pushEntry(
+  entries: MetadataRoute.Sitemap,
+  url: string,
+  opts: {
+    lastModified?: Date;
+    changeFrequency?: MetadataRoute.Sitemap[number]["changeFrequency"];
+    priority?: number;
+  },
+) {
+  const entry: MetadataRoute.Sitemap[number] = {
+    url,
+    changeFrequency: opts.changeFrequency,
+    priority: opts.priority,
+  };
+  if (opts.lastModified) entry.lastModified = opts.lastModified;
+  entries.push(entry);
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const origin = siteOrigin();
+  const origin = getCanonicalSiteOrigin();
   const now = new Date();
-  const entries: MetadataRoute.Sitemap = [
-    { url: `${origin}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
-    { url: `${origin}/events`, lastModified: now, changeFrequency: "hourly", priority: 0.9 },
+  const entries: MetadataRoute.Sitemap = [];
+
+  // Static / marketing surfaces — lastModified = generation time is OK (no entity clock).
+  const staticPages: Array<{
+    path: string;
+    changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"];
+    priority: number;
+  }> = [
+    { path: "/", changeFrequency: "daily", priority: 1 },
+    { path: "/events", changeFrequency: "hourly", priority: 0.9 },
+    { path: "/events/location", changeFrequency: "daily", priority: 0.75 },
+    { path: "/hosts", changeFrequency: "weekly", priority: 0.7 },
+    { path: "/fans", changeFrequency: "weekly", priority: 0.65 },
     {
-      url: `${origin}/events/location`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.75,
+      path: SPONSORSHIP_MARKETPLACE_PATH,
+      changeFrequency: "weekly",
+      priority: 0.6,
     },
-    { url: `${origin}/hosts`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
-    { url: `${origin}${SPONSORSHIP_MARKETPLACE_PATH}`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
-    { url: `${origin}${SPONSORSHIP_HOSTS_PATH}`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
-    { url: `${origin}/events/this-weekend`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
-    { url: `${origin}/events/free`, lastModified: now, changeFrequency: "daily", priority: 0.6 },
-    { url: `${origin}/events/vip`, lastModified: now, changeFrequency: "daily", priority: 0.6 },
-    { url: `${origin}/blog`, lastModified: now, changeFrequency: "daily", priority: 0.75 },
-    { url: `${origin}/help`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
-    { url: `${origin}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${origin}/for-hosts`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
-    { url: `${origin}/for-fans`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
-    { url: `${origin}/merch-guide`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${origin}/merch`, lastModified: now, changeFrequency: "daily", priority: 0.85 },
-    { url: `${origin}/merch/drops`, lastModified: now, changeFrequency: "daily", priority: 0.75 },
-    { url: `${origin}/merch/vault`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
-    { url: `${origin}/pricing`, lastModified: now, changeFrequency: "monthly", priority: 0.55 },
-    { url: `${origin}/faq`, lastModified: now, changeFrequency: "weekly", priority: 0.55 },
-    { url: `${origin}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${origin}/support`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
-    { url: `${origin}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${origin}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${origin}/cookies`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${origin}/refund-policy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${origin}/ticket-policy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${origin}/community-guidelines`, lastModified: now, changeFrequency: "yearly", priority: 0.35 },
-    { url: `${origin}/safety`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
-    { url: `${origin}/report`, lastModified: now, changeFrequency: "monthly", priority: 0.35 },
-    { url: `${origin}/accessibility`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${origin}/events/today`, lastModified: now, changeFrequency: "hourly", priority: 0.7 },
-    { url: `${origin}/events/search`, lastModified: now, changeFrequency: "daily", priority: 0.65 },
+    { path: SPONSORSHIP_HOSTS_PATH, changeFrequency: "weekly", priority: 0.6 },
+    { path: "/events/this-weekend", changeFrequency: "daily", priority: 0.7 },
+    { path: "/events/free", changeFrequency: "daily", priority: 0.6 },
+    { path: "/events/vip", changeFrequency: "daily", priority: 0.6 },
+    { path: "/events/today", changeFrequency: "hourly", priority: 0.7 },
+    { path: "/blog", changeFrequency: "daily", priority: 0.75 },
+    { path: "/help", changeFrequency: "daily", priority: 0.8 },
+    { path: "/about", changeFrequency: "monthly", priority: 0.5 },
+    { path: "/for-hosts", changeFrequency: "monthly", priority: 0.75 },
+    { path: "/for-fans", changeFrequency: "monthly", priority: 0.75 },
+    { path: "/merch-guide", changeFrequency: "monthly", priority: 0.7 },
+    { path: "/merch", changeFrequency: "daily", priority: 0.85 },
+    { path: "/merch/drops", changeFrequency: "daily", priority: 0.75 },
+    { path: "/merch/vault", changeFrequency: "daily", priority: 0.7 },
+    { path: "/pricing", changeFrequency: "monthly", priority: 0.55 },
+    { path: "/faq", changeFrequency: "weekly", priority: 0.55 },
+    { path: "/contact", changeFrequency: "monthly", priority: 0.5 },
+    { path: "/support", changeFrequency: "weekly", priority: 0.6 },
+    { path: "/ambassadors", changeFrequency: "monthly", priority: 0.55 },
+    { path: "/ambassadors/events", changeFrequency: "weekly", priority: 0.5 },
+    {
+      path: "/ambassadors/how-it-works",
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    { path: "/terms", changeFrequency: "yearly", priority: 0.3 },
+    { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
+    { path: "/cookies", changeFrequency: "yearly", priority: 0.3 },
+    { path: "/refund-policy", changeFrequency: "yearly", priority: 0.3 },
+    { path: "/ticket-policy", changeFrequency: "yearly", priority: 0.3 },
+    {
+      path: "/community-guidelines",
+      changeFrequency: "yearly",
+      priority: 0.35,
+    },
+    { path: "/safety", changeFrequency: "monthly", priority: 0.4 },
+    { path: "/report", changeFrequency: "monthly", priority: 0.35 },
+    { path: "/accessibility", changeFrequency: "yearly", priority: 0.3 },
   ];
 
-  const [events, categories, locations, blogPosts, helpArticles, helpCategories, merchList] =
-    await Promise.all([
-      safeJson<PublicEvent[]>("/events"),
-      safeJson<Category[]>("/events/categories"),
-      safeJson<TaxonomyLocation[]>("/taxonomy/locations"),
-      fetchBlogPostsServer({ limit: 100 }),
-      fetchHelpArticlesServer({ limit: 100 }),
-      fetchHelpCategoriesServer(),
-      safeJson<{
-        items?: Array<{
-          slug: string;
-          host_slug?: string | null;
-          marketplace_path?: string | null;
-          indexable?: boolean;
-          updated_at?: string;
-        }>;
-      }>("/merch?limit=100&sort=newest"),
-    ]);
+  for (const page of staticPages) {
+    pushEntry(entries, `${origin}${page.path}`, {
+      lastModified: now,
+      changeFrequency: page.changeFrequency,
+      priority: page.priority,
+    });
+  }
+
+  const [
+    events,
+    categories,
+    locations,
+    blogPosts,
+    blogCategories,
+    blogTags,
+    blogAuthors,
+    helpArticles,
+    helpCategories,
+    merchList,
+    discoverHosts,
+    directoryFans,
+    sponsors,
+  ] = await Promise.all([
+    safeJson<PublicEvent[]>("/events"),
+    safeJson<Category[]>("/events/categories"),
+    safeJson<TaxonomyLocation[]>("/taxonomy/locations"),
+    fetchBlogPostsServer({ limit: 100 }),
+    fetchBlogCategoriesServer(),
+    fetchBlogTagsServer(),
+    fetchBlogAuthorsServer(),
+    fetchHelpArticlesServer({ limit: 100 }),
+    fetchHelpCategoriesServer(),
+    safeJson<{
+      items?: Array<{
+        slug: string;
+        host_slug?: string | null;
+        marketplace_path?: string | null;
+        indexable?: boolean;
+        updated_at?: string;
+      }>;
+    }>("/merch?limit=100&sort=newest"),
+    safeJson<DiscoverHost[]>("/legacy/discover/hosts"),
+    fetchAllDirectoryFans(),
+    safeJson<SponsorDirectoryCard[]>("/sponsors/public/directory"),
+  ]);
 
   for (const post of blogPosts) {
-    if (post.status !== "published") continue;
-    entries.push({
-      url: `${origin}/blog/${post.slug}`,
-      lastModified: post.updated_at
-        ? new Date(post.updated_at)
-        : post.published_at
-          ? new Date(post.published_at)
-          : now,
+    if (!isPublishedBlogPost(post)) continue;
+    pushEntry(entries, `${origin}/blog/${post.slug}`, {
+      lastModified: sitemapLastModified(post.updated_at, post.published_at),
       changeFrequency: "weekly",
       priority: 0.65,
     });
   }
 
+  const blogHubs = collectNonEmptyBlogHubSlugs(blogPosts);
+  for (const cat of blogCategories) {
+    if (!blogHubs.categories.has(cat.slug)) continue;
+    pushEntry(entries, `${origin}/blog/category/${encodeURIComponent(cat.slug)}`, {
+      changeFrequency: "weekly",
+      priority: 0.55,
+    });
+  }
+  for (const tag of blogTags) {
+    if (!blogHubs.tags.has(tag.slug)) continue;
+    pushEntry(entries, `${origin}/blog/tag/${encodeURIComponent(tag.slug)}`, {
+      changeFrequency: "weekly",
+      priority: 0.5,
+    });
+  }
+  for (const author of blogAuthors) {
+    if (!blogHubs.authors.has(author.slug)) continue;
+    pushEntry(entries, `${origin}/blog/author/${encodeURIComponent(author.slug)}`, {
+      changeFrequency: "weekly",
+      priority: 0.5,
+    });
+  }
+
   for (const article of helpArticles) {
     if (article.status !== "published") continue;
-    entries.push({
-      url: `${origin}/help/articles/${article.slug}`,
-      lastModified: article.updated_at
-        ? new Date(article.updated_at)
-        : article.published_at
-          ? new Date(article.published_at)
-          : now,
+    pushEntry(entries, `${origin}/help/articles/${article.slug}`, {
+      lastModified: sitemapLastModified(article.updated_at, article.published_at),
       changeFrequency: "weekly",
       priority: 0.7,
     });
   }
 
   for (const cat of helpCategories) {
-    entries.push({
-      url: `${origin}/help/${cat.slug}`,
+    pushEntry(entries, `${origin}/help/${cat.slug}`, {
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.6,
@@ -154,30 +278,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const listed = filterListedEventsForSitemap(events ?? []);
+  const { locationCounts, cityCategoryCounts } =
+    buildHubInventoryFromEvents(listed);
 
-  const cities = new Set<string>();
-  const cityCategory = new Set<string>();
+  const cityBySlug = new Map(
+    (locations ?? [])
+      .filter((l) => l.kind === "city")
+      .map((l) => [l.slug, l] as const),
+  );
 
   for (const event of listed) {
-    entries.push({
-      url: `${origin}/events/${event.slug}`,
-      lastModified: event.updated_at
-        ? new Date(event.updated_at)
-        : event.published_at
-          ? new Date(event.published_at)
-          : now,
+    pushEntry(entries, `${origin}/events/${event.slug}`, {
+      lastModified: sitemapLastModified(event.updated_at, event.published_at),
       changeFrequency: "daily",
       priority: 0.8,
     });
-    if (event.city) cities.add(slugify(event.city));
-    if (event.category?.slug && event.city) {
-      cityCategory.add(`${slugify(event.city)}::${event.category.slug}`);
-    }
   }
 
   for (const cat of categories ?? []) {
-    entries.push({
-      url: `${origin}/events/c/${cat.slug}`,
+    pushEntry(entries, `${origin}/events/c/${cat.slug}`, {
       lastModified: now,
       changeFrequency: "daily",
       priority: 0.7,
@@ -192,64 +311,96 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   };
 
   for (const loc of locations ?? []) {
-    if (loc.is_active === false) continue;
     if (!["country", "state", "city", "area"].includes(loc.kind)) continue;
-    entries.push({
-      url: `${origin}/events/${loc.kind}/${loc.slug}`,
+    if (!isLocationInSitemap(loc, locationCounts)) continue;
+    pushEntry(entries, `${origin}/events/${loc.kind}/${loc.slug}`, {
       lastModified: now,
       changeFrequency: "daily",
       priority: hubPriority[loc.kind] ?? 0.65,
     });
   }
 
-  for (const city of cities) {
-    const path = `${origin}/events/city/${city}`;
-    if (!entries.some((e) => e.url === path)) {
-      entries.push({
-        url: path,
-        lastModified: now,
-        changeFrequency: "daily",
-        priority: 0.7,
-      });
+  // City hubs derived from event.city text when taxonomy row missing but inventory enough.
+  for (const [key, count] of locationCounts) {
+    if (!key.startsWith("city::")) continue;
+    const citySlug = key.slice("city::".length);
+    const path = `${origin}/events/city/${citySlug}`;
+    if (entries.some((e) => e.url === path)) continue;
+    if (
+      !isLocationInSitemap(
+        {
+          kind: "city",
+          slug: citySlug,
+          is_active: true,
+          seo_index_mode: cityBySlug.get(citySlug)?.seo_index_mode,
+        },
+        locationCounts,
+      )
+    ) {
+      continue;
     }
+    // silence unused when count always used via helper
+    void count;
+    pushEntry(entries, path, {
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.7,
+    });
   }
 
-  for (const key of cityCategory) {
+  for (const [key, count] of cityCategoryCounts) {
     const [city, cat] = key.split("::");
-    if (city && cat) {
-      entries.push({
-        url: `${origin}/events/city/${city}/${cat}`,
-        lastModified: now,
-        changeFrequency: "daily",
-        priority: 0.65,
-      });
+    if (!city || !cat) continue;
+    if (
+      !isCityCategoryInSitemap(city, cat, cityCategoryCounts, cityBySlug.get(city))
+    ) {
+      continue;
     }
+    void count;
+    pushEntry(entries, `${origin}/events/city/${city}/${cat}`, {
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.65,
+    });
   }
 
-  for (const item of merchList?.items ?? []) {
-    if (item.indexable === false) continue;
-    const path =
-      item.marketplace_path?.split("?")[0] ||
-      (item.host_slug
-        ? `/merch/${item.slug}?h=${item.host_slug}`
-        : `/merch/${item.slug}`);
-    const urlPath = path.startsWith("http")
-      ? path
-      : `${origin}${path.startsWith("/") ? path : `/${path}`}`;
-    // Prefer clean slug URLs without query for sitemap when host disambiguator present.
-    const cleanUrl = item.host_slug
-      ? `${origin}/merch/${item.slug}`
-      : urlPath.includes("?")
-        ? urlPath.split("?")[0]
-        : urlPath;
+  for (const item of filterMerchForSitemap(merchList?.items ?? [])) {
+    const cleanUrl = `${origin}/merch/${item.slug}`;
     if (!entries.some((e) => e.url === cleanUrl)) {
-      entries.push({
-        url: cleanUrl,
-        lastModified: item.updated_at ? new Date(item.updated_at) : now,
+      pushEntry(entries, cleanUrl, {
+        lastModified: sitemapLastModified(item.updated_at),
         changeFrequency: "weekly",
         priority: 0.55,
       });
     }
+  }
+
+  // Host Legacy — public discover API (active hosts with listed marketplace events).
+  for (const host of filterHostsForSitemap(discoverHosts ?? [])) {
+    pushEntry(entries, `${origin}/u/${encodeURIComponent(host.username.trim())}`, {
+      changeFrequency: "weekly",
+      priority: 0.7,
+    });
+  }
+
+  // Fan Passports — public directory API only (public + appear_in_directory + not hidden).
+  for (const fan of filterFansForSitemap(directoryFans)) {
+    pushEntry(entries, `${origin}/f/${encodeURIComponent(fan.username.trim())}`, {
+      changeFrequency: "weekly",
+      priority: 0.55,
+    });
+  }
+
+  // Sponsors — public directory (active + public visibility + verified).
+  for (const sponsor of filterSponsorsForSitemap(sponsors ?? [])) {
+    pushEntry(
+      entries,
+      `${origin}/sponsors/${encodeURIComponent(sponsor.slug.trim())}`,
+      {
+        changeFrequency: "weekly",
+        priority: 0.6,
+      },
+    );
   }
 
   return entries;

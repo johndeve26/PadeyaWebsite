@@ -1,7 +1,30 @@
 import type { EventItem } from "@/lib/types/events";
 import { formatPublicPlaceLabel, locationVisibilityOf } from "@/lib/event-privacy";
 
+import type { SeoEnvInput } from "./env-policy";
 import { absoluteUrl, buildPageMetadata, siteOrigin } from "./site";
+
+/** Visibility values that must never be indexed when slug-reachable. */
+const NOINDEX_VISIBILITIES = new Set([
+  "unlisted",
+  "password_protected",
+]);
+
+export function eventVisibilityOf(event: Pick<EventItem, "visibility">): string {
+  return (event.visibility || "listed").trim().toLowerCase();
+}
+
+export function isEventSeoIndexable(
+  event: Pick<EventItem, "visibility">,
+): boolean {
+  return !NOINDEX_VISIBILITIES.has(eventVisibilityOf(event));
+}
+
+export function isPasswordProtectedEvent(
+  event: Pick<EventItem, "visibility">,
+): boolean {
+  return eventVisibilityOf(event) === "password_protected";
+}
 
 function publicLocationLabel(event: EventItem): string {
   return (
@@ -31,8 +54,24 @@ function scrubPrivateAddress(
   return next;
 }
 
-export function buildEventMetadata(event: EventItem) {
+export function buildEventMetadata(event: EventItem, env?: SeoEnvInput) {
   const place = publicLocationLabel(event);
+  const indexable = isEventSeoIndexable(event);
+  const password = isPasswordProtectedEvent(event);
+
+  // Password gate: never leak protected body copy into meta before unlock.
+  if (password) {
+    return buildPageMetadata({
+      title: scrubPrivateAddress(event.title, event, place),
+      description: `Password-protected event on Pàdéyá.`,
+      path: `/events/${event.slug}`,
+      // Prefer explicit social share art only; avoid treating body media as public.
+      image: event.social_share_image_url || null,
+      noIndex: true,
+      env,
+    });
+  }
+
   const title = scrubPrivateAddress(
     event.seo_title || event.social_share_title || event.title,
     event,
@@ -43,19 +82,53 @@ export function buildEventMetadata(event: EventItem) {
     event.social_share_description ||
     event.short_tagline ||
     event.description.slice(0, 160);
-  // Never rely on private street address in public meta fallbacks.
   const description = scrubPrivateAddress(rawDescription, event, place);
   const image =
     event.social_share_image_url || event.banner_url || event.mobile_banner_url;
+
   return buildPageMetadata({
     title,
     description,
     path: `/events/${event.slug}`,
     image,
+    noIndex: !indexable,
+    env,
   });
 }
 
-export function eventJsonLd(event: EventItem): Record<string, unknown> {
+/**
+ * Map real event lifecycle `status` → schema.org EventStatusType URL.
+ *
+ * Platform notes (do not invent):
+ * - Public detail API only returns `published` events today.
+ * - There is no first-class `postponed` / `rescheduled` status
+ *   (`postpone_event` only moves datetimes while status stays published).
+ * - Past published events remain `EventScheduled` (not Cancelled).
+ * - `cancelled` is mapped for completeness if a row is ever serialized;
+ *   it is not currently served on public SEO pages (404).
+ */
+export function eventStatusSchemaUrl(
+  event: Pick<EventItem, "status">,
+): string | undefined {
+  const s = (event.status || "").trim().toLowerCase();
+  switch (s) {
+    case "published":
+    case "paused":
+      return "https://schema.org/EventScheduled";
+    case "cancelled":
+      return "https://schema.org/EventCancelled";
+    default:
+      // draft / pending_review / completed / rejected / archived — do not guess
+      return undefined;
+  }
+}
+
+export function eventJsonLd(event: EventItem): Record<string, unknown> | null {
+  // Do not emit rich Event schema for password-gated content.
+  if (isPasswordProtectedEvent(event)) {
+    return null;
+  }
+
   const locationName = publicLocationLabel(event);
   const visibility = locationVisibilityOf(event);
   const showStreet =
@@ -104,6 +177,7 @@ export function eventJsonLd(event: EventItem): Record<string, unknown> {
         (t.quantity ?? 0) - (t.quantity_sold ?? 0) > 0
           ? "https://schema.org/InStock"
           : "https://schema.org/SoldOut",
+      // Checkout URL may appear in Offer; the checkout route itself is noindex.
       url: absoluteUrl(`/events/${event.slug}/checkout`),
     }));
 
@@ -113,9 +187,30 @@ export function eventJsonLd(event: EventItem): Record<string, unknown> {
     locationName,
   );
 
-  return {
+  const url = absoluteUrl(`/events/${event.slug}`);
+  const eventStatus = eventStatusSchemaUrl(event);
+
+  const organizer = event.host_display_name
+    ? (() => {
+        const org: Record<string, unknown> = {
+          "@type": "Organization",
+          name: event.host_display_name,
+        };
+        if (event.host_slug?.trim()) {
+          const hostUrl = absoluteUrl(
+            `/u/${encodeURIComponent(event.host_slug.trim())}`,
+          );
+          org.url = hostUrl;
+          org["@id"] = `${hostUrl}#organization`;
+        }
+        return org;
+      })()
+    : undefined;
+
+  const json: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Event",
+    "@id": `${url}#event`,
     name: event.title,
     description: jsonDescription,
     image: event.banner_url || undefined,
@@ -128,15 +223,12 @@ export function eventJsonLd(event: EventItem): Record<string, unknown> {
           ? "https://schema.org/MixedEventAttendanceMode"
           : "https://schema.org/OfflineEventAttendanceMode",
     location: place,
-    organizer: event.host_display_name
-      ? {
-          "@type": "Organization",
-          name: event.host_display_name,
-        }
-      : undefined,
+    organizer,
     offers: offers.length ? offers : undefined,
-    url: absoluteUrl(`/events/${event.slug}`),
+    url,
   };
+  if (eventStatus) json.eventStatus = eventStatus;
+  return json;
 }
 
 export { siteOrigin };

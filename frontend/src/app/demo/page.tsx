@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 import {
   DemoSessionShortcuts,
@@ -16,8 +17,11 @@ import {
   SectionHeader,
 } from "@/components/ui";
 import { brand } from "@/lib/brand";
+import { privateAreaMetadata } from "@/lib/seo/noindex";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = privateAreaMetadata("Demo");
 
 const DEMO_PASSWORD = "DemoPass123!";
 

@@ -1,6 +1,7 @@
 import { headerDarkSurfaceProps } from "@/components/layout/headerSurface";
 import { Badge, Button, Container } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { sponsorCoverAlt, sponsorLogoAlt } from "@/lib/seo/image-alt";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -55,7 +56,7 @@ export function SponsorBrandProfileHero({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={coverUrl}
-            alt=""
+            alt={sponsorCoverAlt(displayName)}
             className="h-full w-full object-cover opacity-40 saturate-[0.9]"
           />
         ) : (
@@ -89,7 +90,7 @@ export function SponsorBrandProfileHero({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={logoUrl}
-              alt=""
+              alt={sponsorLogoAlt(displayName)}
               className="h-24 w-24 shrink-0 rounded-2xl border-4 border-ink/80 bg-card object-cover shadow-lg sm:h-28 sm:w-28"
             />
           ) : (

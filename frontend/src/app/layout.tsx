@@ -14,6 +14,9 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ThemeScript } from "@/components/theme/ThemeScript";
 import { NotificationToastProvider } from "@/components/notifications/NotificationToastProvider";
 import { brand } from "@/lib/brand";
+import { JsonLdScript } from "@/lib/seo/jsonld";
+import { siteGraphJsonLd } from "@/lib/seo/site-graph";
+import { rootSeoMetadataFields } from "@/lib/seo/site";
 import { THEME_COLOR } from "@/lib/theme";
 import "@/styles/globals.css";
 
@@ -24,7 +27,12 @@ const manrope = Manrope({
   display: "swap",
 });
 
+const seoRoot = rootSeoMetadataFields();
+
 export const metadata: Metadata = {
+  metadataBase: seoRoot.metadataBase,
+  robots: seoRoot.robots,
+  ...(seoRoot.verification ? { verification: seoRoot.verification } : {}),
   title: {
     default: brand.name,
     template: `%s · ${brand.name}`,
@@ -74,6 +82,7 @@ export default function RootLayout({
     >
       <head>
         <ThemeScript />
+        <JsonLdScript data={siteGraphJsonLd()} />
       </head>
       <body
         className="flex min-h-full flex-col bg-background font-sans text-foreground"

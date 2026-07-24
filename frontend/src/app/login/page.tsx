@@ -1,9 +1,11 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { LoginForm } from "@/components/auth/LoginForm";
 import { Container, SkeletonLoader } from "@/components/ui";
+import { privateAreaMetadata } from "@/lib/seo/noindex";
 
-export const metadata = { title: "Log in" };
+export const metadata: Metadata = privateAreaMetadata("Log in");
 
 export default function LoginPage() {
   return (

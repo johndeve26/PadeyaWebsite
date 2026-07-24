@@ -248,6 +248,13 @@ class Location(Base):
     state_code: Mapped[str | None] = mapped_column(String(16), nullable=True)
     country_code: Mapped[str | None] = mapped_column(String(8), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    seo_title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    seo_description: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    intro_content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # auto | force_index | force_noindex — curated override for hub indexability
+    seo_index_mode: Mapped[str] = mapped_column(
+        String(24), default="auto", server_default="auto", nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

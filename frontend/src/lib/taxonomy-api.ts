@@ -11,6 +11,10 @@ export type TaxonomyLocation = {
   state_code?: string | null;
   country_code?: string | null;
   is_active: boolean;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  intro_content?: string | null;
+  seo_index_mode?: string | null;
   created_at?: string;
   updated_at?: string;
 };

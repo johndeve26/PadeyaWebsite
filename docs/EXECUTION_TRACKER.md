@@ -6,6 +6,138 @@ Lightweight log of verification runs for major product domains. Not a roadmap.
 
 ---
 
+## SEO post-implementation audit (2026-07-24)
+
+**Re-audit after Phases 0A–0C + 1A–1C.** Dual scores: code **88 / 100** (was **52**); live `padeya.com` **54 / 100**. Production smoke **FAILED** — phases implemented in workspace but **not deployed** at audit time. Launch: **not ready**.
+
+Canonical: [SEO_AUDIT.md](./SEO_AUDIT.md#post-implementation-audit--2026-07-24) · [SEO_LAUNCH_CHECKLIST.md](./SEO_LAUNCH_CHECKLIST.md) · [SEO_IMPLEMENTATION.md](./SEO_IMPLEMENTATION.md).
+
+| Item | Status |
+|---|---|
+| Code P0s (13) | **FIXED** in workspace |
+| Live P0s | **STILL OPEN** (undeployed) |
+| `seo:production-smoke` @ padeya.com | **FAILED** |
+| GSC indexing request | **Blocked** until green smoke |
+| Next action | Commit/deploy phases → re-smoke → then GSC |
+
+---
+
+## SEO Phase 1C — GSC / analytics / production smoke (2026-07-24)
+
+**Phase 1C = implemented** — optional GSC/Bing verification metadata via env; first-party analytics kept primary; optional consent-gated GA4; production SEO smoke script; [SEO_LAUNCH_CHECKLIST.md](./SEO_LAUNCH_CHECKLIST.md).
+
+Canonical: [SEO_IMPLEMENTATION.md](./SEO_IMPLEMENTATION.md) · [SEO_AUDIT.md](./SEO_AUDIT.md) · [SEO.md](./SEO.md) · [SEO_LAUNCH_CHECKLIST.md](./SEO_LAUNCH_CHECKLIST.md).
+
+| Item | Status |
+|---|---|
+| `GOOGLE_SITE_VERIFICATION` / Bing meta (env-only) | **Done** |
+| First-party analytics primary | **Done** |
+| Optional GA4 + consent on `/cookies` | **Done** |
+| `seo-production-smoke.mjs` | **Done** |
+| Launch checklist + CWV notes | **Done** |
+| `npm run test:seo` + `npm run build` | **Done** |
+| Live GSC verify + sitemap submit | **Ops** (post-deploy) |
+| Dynamic OG / sitemap sharding | **Out of scope** |
+
+---
+
+## SEO Phase 1B — Faceted nav + location SEO (2026-07-24)
+
+**Phase 1B = implemented** — faceted `/events` noindex + canonical `/events`; `/events/search` noindex/follow + canonical `/events`; location SEO columns + thin-hub thresholds; city×category gates; image alts; sitemap eligibility aligned; event location/host crawl links.
+
+Canonical: [SEO_IMPLEMENTATION.md](./SEO_IMPLEMENTATION.md) · [SEO_AUDIT.md](./SEO_AUDIT.md) · [SEO.md](./SEO.md).
+
+| Item | Status |
+|---|---|
+| Faceted `/events` policy | **Done** |
+| `/events/search` noindex + canonical `/events` | **Done** (no redirect) |
+| Location SEO fields + thresholds | **Done** |
+| City × category eligibility | **Done** |
+| Image alt helpers on public media | **Done** |
+| Sitemap location/combo gates | **Done** |
+| `npm run test:seo` + `npm run build` | **Done** |
+| Sitemap sharding / dynamic OG / GSC | **Out of scope** |
+
+---
+
+## SEO Phase 1A — Sitewide + Product structured data (2026-07-24)
+
+**Phase 1A = implemented** — root Organization/WebSite `@graph`, SearchAction on working `/events?q=` (not `/events/search`), Product/Offer for indexable merch, Event `eventStatus`, BreadcrumbList on merch/host/sponsor/fan, CollectionPage/FAQ reference WebSite `@id`.
+
+Canonical: [SEO_IMPLEMENTATION.md](./SEO_IMPLEMENTATION.md) · [SEO_AUDIT.md](./SEO_AUDIT.md) · [SEO.md](./SEO.md).
+
+| Item | Status |
+|---|---|
+| Organization `https://padeya.com/#organization` | **Done** |
+| WebSite `https://padeya.com/#website` | **Done** |
+| SearchAction (`/events?q=`) | **Done** (documented; `/events/search?q=` rejected) |
+| Product / Offer (indexable merch) | **Done** |
+| Event `eventStatus` | **Done** (Scheduled/Cancelled; no Postponed/Rescheduled in model) |
+| Entity BreadcrumbList | **Done** |
+| `npm run test:seo` + `npm run build` | **Done** |
+| Location SEO / faceted noindex / sitemap shard | **Out of scope** |
+
+---
+
+## SEO Phase 0C — Privacy-safe sitemap completeness (2026-07-24)
+
+**Phase 0C = implemented** — sitemap includes Host Legacy (`/u/*` via discover), directory Fan Passports (`/f/*`), verified public Sponsors (`/sponsors/*`), `/fans`, non-empty blog category/tag/author hubs, ambassadors marketing; removed `/events/search`; entity `lastModified` from real timestamps only; privacy filter vitest + smoke.
+
+Canonical: [SEO_IMPLEMENTATION.md](./SEO_IMPLEMENTATION.md) · [SEO_AUDIT.md](./SEO_AUDIT.md) · [SEO.md](./SEO.md).
+
+| Item | Status |
+|---|---|
+| Host / Fan / Sponsor entity URLs in sitemap | **Done** |
+| `/fans` + ambassadors marketing | **Done** |
+| Non-empty blog hubs | **Done** |
+| Remove `/events/search` | **Done** |
+| Entity lastModified (no invented `now`) | **Done** |
+| Privacy-safe filter tests | **Done** |
+| Sitemap sharding | **Not needed yet** |
+| `npm run test:seo` (0A+0B+0C) | **Done** |
+| Product JSON-LD / sitewide Organization | **Out of scope (later)** |
+
+---
+
+## SEO Phase 0B — Entity SSR SEO + soft 404s (2026-07-24)
+
+**Phase 0B = implemented** — Host Legacy `/u/[username]` SSR metadata + ProfilePage/Organization JSON-LD; sponsor `/sponsors/[slug]` SSR + 404; `/sponsorships` + `/sponsorships/hosts` server metadata; Fan Passport `buildFanMetadata` + public Person schema / unlisted noindex; soft-404 → `notFound()` for missing events, merch, sponsors.
+
+Canonical: [SEO_IMPLEMENTATION.md](./SEO_IMPLEMENTATION.md) · [SEO_AUDIT.md](./SEO_AUDIT.md) · [SEO.md](./SEO.md).
+
+| Item | Status |
+|---|---|
+| Host Legacy SSR + generateMetadata + Organization | **Done** |
+| Sponsor profile SSR + generateMetadata + Organization | **Done** |
+| Sponsorships marketplace route metadata | **Done** |
+| Event / merch / sponsor soft-404 → HTTP 404 | **Done** |
+| Fan Passport canonical/OG + public Person / unlisted noindex | **Done** |
+| `npm run test:seo` (0A+0B) | **Done** |
+| Sitemap entity expansion / Product JSON-LD | **Sitemap done in 0C; Product JSON-LD later** |
+
+---
+
+## SEO Phase 0A — Canonical / indexing safety (2026-07-24)
+
+**Phase 0A = implemented** — production-safe `https://padeya.com` canonical origin, `metadataBase`, non-production noindex (root robots + `buildPageMetadata` + `robots.ts` Disallow `/` + middleware `X-Robots-Tag`), private/auth/checkout layout noindex, hardened production robots, unlisted/password event noindex + password meta scrub / no Event JSON-LD.
+
+Canonical: [SEO_IMPLEMENTATION.md](./SEO_IMPLEMENTATION.md) · [SEO_AUDIT.md](./SEO_AUDIT.md) · [SEO.md](./SEO.md).
+
+| Item | Status |
+|---|---|
+| `getCanonicalSiteOrigin` / env indexing policy | **Done** |
+| Root `metadataBase` + env robots | **Done** |
+| Non-prod robots Disallow `/` (no sitemap ad) | **Done** |
+| Middleware `X-Robots-Tag` | **Done** |
+| Private workspace + auth + checkout noindex layouts | **Done** |
+| Unlisted / password event noindex | **Done** |
+| Tracking params stripped from canonicals | **Done** |
+| `npm run test:seo` | **Done** |
+| Host Legacy / sponsor SSR / soft-404 | **Done in 0B** |
+| Sitemap entity expansion | **Done in 0C** |
+
+---
+
 ## Event recommendations integration (2026-07-22)
 
 **Event recommendations = integrated (rules-only; no AI ranking)** — `GET /events/recommendations`, `/events` rail + `?sort=recommended`, `/events/[slug]` detail rail, dashboard “Events for you”, impressions + unified feedback endpoint, runtime `event-recommendations`, admin debug. Backend: `tests/test_event_recommendations.py` (5). Frontend smoke: `frontend/scripts/events-recommendations-smoke.mjs`.

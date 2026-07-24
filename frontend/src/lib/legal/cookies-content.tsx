@@ -130,17 +130,19 @@ export function CookiesContent() {
 
       <LegalSection id="analytics" title="Analytics">
         <p>
-          We may use first-party analytics or marketing technologies where
-          enabled to understand feature usage, fix funnels, and improve
-          reliability. Analytics are used to operate and improve {brand.name},
-          not to sell personal profiles as a product. We do not name specific
-          third-party analytics or ad networks on this page unless they are
-          actively in use; check in-product notices when additional tools are
-          introduced.
+          <strong>First-party product analytics</strong> (Pàdéyá) measure page
+          views, discovery, checkout funnels, and reliability signals so we can
+          operate and improve the marketplace. These events are sent to{" "}
+          {brand.name} APIs and use on-device IDs in localStorage /
+          sessionStorage (for example anonymous visitor and session IDs). They
+          are not sold as advertising profiles.
         </p>
         <p>
-          Where a market requires consent for non-essential analytics, we align
-          collection with those expectations.
+          <strong>Optional Google Analytics (GA4)</strong> may be enabled in
+          production when a measurement ID is configured. GA4 does{" "}
+          <em>not</em> load until you explicitly allow it on this page (or an
+          equivalent in-product control). If you deny or have not decided, GA4
+          stays off. Non-production environments never load GA4.
         </p>
       </LegalSection>
 
@@ -200,6 +202,10 @@ export function CookiesContent() {
           <li>
             Opt out of marketing communications where we offer those controls
             (for example email preferences).
+          </li>
+          <li>
+            When optional GA4 is configured, use the control below to allow,
+            deny, or reset that choice.
           </li>
           <li>
             Questions: <Link href="/support">Support</Link> or{" "}

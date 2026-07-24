@@ -372,6 +372,26 @@ export async function fetchBlogCategoriesServer(): Promise<BlogCategory[]> {
   }
 }
 
+export async function fetchBlogTagsServer(): Promise<BlogTag[]> {
+  try {
+    const res = await fetch(`${apiRoot()}/blog/tags`, BLOG_FETCH);
+    if (!res.ok) return [];
+    return (await res.json()) as BlogTag[];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchBlogAuthorsServer(): Promise<BlogAuthor[]> {
+  try {
+    const res = await fetch(`${apiRoot()}/blog/authors`, BLOG_FETCH);
+    if (!res.ok) return [];
+    return (await res.json()) as BlogAuthor[];
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchBlogTaxonomyServer(
   kind: "categories" | "tags" | "authors",
   slug: string,

@@ -1,29 +1,15 @@
-"use client";
+import type { Metadata } from "next";
 
-import { RequireAuth } from "@/components/auth/RequireAuth";
-import { HostWorkspaceProvider } from "@/components/hosts/HostWorkspaceProvider";
-import { WorkspaceSwitcher } from "@/components/hosts/WorkspaceSwitcher";
-import { WorkspaceShell } from "@/components/layout/WorkspaceShell";
-import { SUPPORT_DESK_ROLES } from "@/lib/auth/workspace-access";
-import { supportNav } from "@/lib/nav/workspace";
+import { privateAreaMetadata } from "@/lib/seo/noindex";
+
+import SupportStaffLayoutClient from "./SupportStaffLayoutClient";
+
+export const metadata: Metadata = privateAreaMetadata("Support desk");
 
 export default function SupportStaffLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <RequireAuth roles={[...SUPPORT_DESK_ROLES]}>
-      <HostWorkspaceProvider>
-        <WorkspaceShell
-          nav={supportNav}
-          title="Support"
-          homeHref="/support/desk"
-          toolbar={<WorkspaceSwitcher />}
-        >
-          {children}
-        </WorkspaceShell>
-      </HostWorkspaceProvider>
-    </RequireAuth>
-  );
+  return <SupportStaffLayoutClient>{children}</SupportStaffLayoutClient>;
 }

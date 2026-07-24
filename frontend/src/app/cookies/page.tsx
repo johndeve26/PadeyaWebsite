@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { OptionalAnalyticsConsentControls } from "@/components/legal/OptionalAnalyticsConsentControls";
 import { LegalDocument } from "@/components/legal/LegalDocument";
 import { brand } from "@/lib/brand";
 import { CookiesContent, COOKIES_TOC } from "@/lib/legal/cookies-content";
@@ -21,6 +22,7 @@ export default function CookiesPage() {
       toc={COOKIES_TOC}
     >
       <CookiesContent />
+      <OptionalAnalyticsConsentControls />
     </LegalDocument>
   );
 }

@@ -15,6 +15,9 @@ export type TaxonomyTermSeo = {
   description?: string | null;
   seo_title?: string | null;
   seo_description?: string | null;
+  is_active?: boolean;
+  seo_index_mode?: string | null;
+  intro_content?: string | null;
 };
 
 async function safeJson<T>(path: string): Promise<T | null> {
@@ -66,11 +69,15 @@ export function hubPageMetadata(opts: {
   path: string;
   seoTitle?: string | null;
   seoDescription?: string | null;
+  noIndex?: boolean;
+  /** When set, canonical points here instead of `path` (e.g. /events/search → /events). */
+  canonicalPath?: string;
 }) {
   return buildPageMetadata({
     title: opts.seoTitle || opts.title,
     description: opts.seoDescription || opts.description,
-    path: opts.path,
+    path: opts.canonicalPath || opts.path,
+    noIndex: opts.noIndex,
   });
 }
 

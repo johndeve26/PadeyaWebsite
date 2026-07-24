@@ -1,10 +1,9 @@
 "use client";
 
-import { useParams, useSearchParams } from "next/navigation";
+import { notFound, useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { EventPublicView } from "@/components/events/EventPublicView";
-import { EventUnavailableState } from "@/components/not-found/EventUnavailableState";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Container, SkeletonCard } from "@/components/ui";
 import {
@@ -45,16 +44,17 @@ async function loadRelated(event: EventItem): Promise<EventItem[]> {
 }
 
 export function EventDetailClient({
-  initialEvent = null,
+  initialEvent,
 }: {
-  /** Server-fetched event — avoids a duplicate public detail request. */
-  initialEvent?: EventItem | null;
+  /** Server-fetched published event (route already 404'd if missing). */
+  initialEvent: EventItem;
 }) {
   const params = useParams<{ slug: string }>();
   const searchParams = useSearchParams();
-  const [event, setEvent] = useState<EventItem | null>(initialEvent);
+  const [event, setEvent] = useState<EventItem>(initialEvent);
   const [allEvents, setAllEvents] = useState<EventItem[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [missing, setMissing] = useState(false);
+  const [hydrating, setHydrating] = useState(false);
   const referralCode = readAmbassadorCodeFromSearchParams(searchParams);
   const { user } = useAuth();
 
@@ -65,11 +65,13 @@ export function EventDetailClient({
     async function run() {
       try {
         let current = initialEvent;
-        if (!current || current.slug !== slug) {
+        if (current.slug !== slug) {
+          setHydrating(true);
           current = await fetchPublicEvent(slug);
         }
         if (cancelled) return;
         setEvent(current);
+        setMissing(false);
         applyReferral(current, slug, referralCode);
         if (!user) {
           const related = await loadRelated(current);
@@ -78,7 +80,9 @@ export function EventDetailClient({
           setAllEvents([]);
         }
       } catch {
-        if (!cancelled) setError("unavailable");
+        if (!cancelled) setMissing(true);
+      } finally {
+        if (!cancelled) setHydrating(false);
       }
     }
 
@@ -88,11 +92,11 @@ export function EventDetailClient({
     };
   }, [params.slug, referralCode, initialEvent, user]);
 
-  if (error) {
-    return <EventUnavailableState />;
+  if (missing) {
+    notFound();
   }
 
-  if (!event) {
+  if (hydrating && event.slug !== params.slug) {
     return (
       <main className="bg-background">
         <div className="h-[42vh] animate-pulse bg-surface-dark sm:h-[52vh]" />

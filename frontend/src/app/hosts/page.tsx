@@ -1,11 +1,15 @@
+import type { Metadata } from "next";
+
 import { HostsMarketplace } from "@/components/hosts/HostsMarketplace";
+import { buildPageMetadata } from "@/lib/seo/site";
 import type { HostDiscovery } from "@/lib/types/hosts-discovery";
 
-export const metadata = {
-  title: "Hosts | Pàdéyá",
+export const metadata: Metadata = buildPageMetadata({
+  title: "Hosts",
   description:
     "Discover Host Legacy Pages on Pàdéyá — verified event creators with upcoming nights, reviews, Vault, and ticketing history.",
-};
+  path: "/hosts",
+});
 
 export const revalidate = 180;
 

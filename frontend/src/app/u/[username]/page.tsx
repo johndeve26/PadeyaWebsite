@@ -1,51 +1,63 @@
-"use client";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
-import { useParams, notFound } from "next/navigation";
-import { useEffect, useState } from "react";
-
-import { LegacyPublicPageRenderer } from "@/components/legacy/LegacyPublicPageRenderer";
-import { Container, SkeletonLoader } from "@/components/ui";
-import { fetchLegacyPage } from "@/lib/legacy-api";
+import { LegacyPublicClient } from "./LegacyPublicClient";
+import {
+  buildHostMetadataFromPage,
+  hostLegacyCanonicalPath,
+  hostLegacyJsonLd,
+} from "@/lib/seo/host-metadata";
+import { breadcrumbJsonLd, JsonLdScript } from "@/lib/seo/jsonld";
+import { fetchPublicJson } from "@/lib/seo/public-fetch";
+import { siteOrigin } from "@/lib/seo/site";
 import type { LegacyPage } from "@/lib/types/legacy";
 
-/**
- * Public host Legacy Page. Missing / inactive / private hosts use the global
- * branded 404 (privacy by omission — no distinct “hidden host” page).
- */
-export default function PublicLegacyUsernamePage() {
-  const params = useParams<{ username: string }>();
-  const username = decodeURIComponent(params.username);
-  const [page, setPage] = useState<LegacyPage | null>(null);
-  const [missing, setMissing] = useState(false);
+export const revalidate = 120;
 
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      try {
-        const data = await fetchLegacyPage(username);
-        if (active) setPage(data);
-      } catch {
-        if (active) setMissing(true);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [username]);
+async function loadLegacyPage(username: string): Promise<LegacyPage | null> {
+  const { data, status } = await fetchPublicJson<LegacyPage>(
+    `/u/${encodeURIComponent(username)}/legacy`,
+    { revalidate: 120 },
+  );
+  if (status === 404 || !data) return null;
+  // Inactive / non-active hosts must not be indexed as live Legacy pages.
+  if (data.status && data.status !== "active") return null;
+  return data;
+}
 
-  if (missing) {
-    notFound();
-  }
+type Props = { params: Promise<{ username: string }> };
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { username } = await params;
+  const decoded = decodeURIComponent(username);
+  const page = await loadLegacyPage(decoded);
   if (!page) {
-    return (
-      <main className="bg-background py-20">
-        <Container width="narrow">
-          <SkeletonLoader lines={6} />
-        </Container>
-      </main>
-    );
+    return { title: "Host", robots: { index: false, follow: false } };
   }
+  return buildHostMetadataFromPage(page);
+}
 
-  return <LegacyPublicPageRenderer page={page} />;
+/**
+ * Public host Legacy Page (also reachable via `/@username` rewrite).
+ * Missing / inactive hosts → HTTP 404 (privacy by omission).
+ */
+export default async function PublicLegacyUsernamePage({ params }: Props) {
+  const { username } = await params;
+  const decoded = decodeURIComponent(username);
+  const page = await loadLegacyPage(decoded);
+  if (!page) notFound();
+
+  const crumbs = [
+    { label: "Home", href: "/" },
+    { label: "Hosts", href: "/hosts" },
+    { label: page.display_name, href: hostLegacyCanonicalPath(page.username) },
+  ];
+
+  return (
+    <>
+      <JsonLdScript data={hostLegacyJsonLd(page)} />
+      <JsonLdScript data={breadcrumbJsonLd(crumbs, siteOrigin())} />
+      <LegacyPublicClient page={page} />
+    </>
+  );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -24,6 +25,7 @@ import {
   fetchMerchProductBySlug,
 } from "@/lib/merch-api";
 import { productImageUrl } from "@/lib/merch-fallback";
+import { merchImageAlt } from "@/lib/seo/image-alt";
 import {
   buildHostShopCheckoutHref,
   buildMerchCheckoutHref,
@@ -36,6 +38,8 @@ import type { MarketplaceProduct } from "@/lib/types/merch";
 type Props = {
   slug: string;
   hostSlug?: string | null;
+  /** Server-loaded product — missing products already 404 at the route. */
+  initialProduct: MarketplaceProduct;
 };
 
 function dropAudienceLabel(audience?: string | null): string | null {
@@ -55,14 +59,24 @@ function dropAudienceLabel(audience?: string | null): string | null {
   }
 }
 
-export function MerchProductDetailView({ slug, hostSlug }: Props) {
+export function MerchProductDetailView({
+  slug,
+  hostSlug,
+  initialProduct,
+}: Props) {
   const { user } = useAuth();
   const toast = useToast();
-  const [product, setProduct] = useState<MarketplaceProduct | null>(null);
+  const [product, setProduct] = useState<MarketplaceProduct>(initialProduct);
   const [error, setError] = useState<string | null>(null);
-  const [notFound, setNotFound] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [variantId, setVariantId] = useState("");
+  const [gone, setGone] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [variantId, setVariantId] = useState(() => {
+    return (
+      initialProduct.variants.find((v) => variantAvailable(v) > 0)?.id ??
+      initialProduct.variants[0]?.id ??
+      ""
+    );
+  });
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
@@ -70,7 +84,6 @@ export function MerchProductDetailView({ slug, hostSlug }: Props) {
   const [activeImage, setActiveImage] = useState(0);
 
   const maxQty = useMemo(() => {
-    if (!product) return 1;
     const selected = product.variants.find((v) => v.id === variantId);
     const selectedAvail = selected ? variantAvailable(selected) : 0;
     return Math.max(
@@ -93,7 +106,17 @@ export function MerchProductDetailView({ slug, hostSlug }: Props) {
 
   useEffect(() => {
     let active = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset loading for slug change
+    const sameProduct =
+      initialProduct.slug === slug &&
+      (!hostSlug ||
+        !initialProduct.host_slug ||
+        initialProduct.host_slug === hostSlug);
+    if (sameProduct) {
+      return () => {
+        active = false;
+      };
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- client nav refetch
     setLoading(true);
     void (async () => {
       try {
@@ -101,7 +124,7 @@ export function MerchProductDetailView({ slug, hostSlug }: Props) {
         if (!active) return;
         setProduct(row);
         setError(null);
-        setNotFound(false);
+        setGone(false);
         const first =
           row.variants.find((v) => variantAvailable(v) > 0)?.id ??
           row.variants[0]?.id ??
@@ -110,13 +133,12 @@ export function MerchProductDetailView({ slug, hostSlug }: Props) {
       } catch (err) {
         if (!active) return;
         if (err instanceof ApiError && err.status === 404) {
-          setNotFound(true);
+          setGone(true);
         } else {
           setError(
             err instanceof ApiError ? err.detail : "Could not load product",
           );
         }
-        setProduct(null);
       } finally {
         if (active) setLoading(false);
       }
@@ -124,16 +146,28 @@ export function MerchProductDetailView({ slug, hostSlug }: Props) {
     return () => {
       active = false;
     };
-  }, [slug, hostSlug]);
+  }, [slug, hostSlug, initialProduct]);
+
+  // Keep client state aligned when the server passes a refreshed initial product.
+  const [prevInitialId, setPrevInitialId] = useState(initialProduct.id);
+  if (initialProduct.id !== prevInitialId && initialProduct.slug === slug) {
+    setPrevInitialId(initialProduct.id);
+    setProduct(initialProduct);
+    setGone(false);
+    setError(null);
+  }
 
   const gallery = useMemo(() => {
-    if (!product) return [] as string[];
     const urls = [
       product.cover_image_url || product.image_url,
       ...(product.gallery_urls ?? []),
     ].filter((u): u is string => Boolean(u));
     return Array.from(new Set(urls));
   }, [product]);
+
+  if (gone) {
+    notFound();
+  }
 
   if (loading) {
     return (
@@ -143,26 +177,11 @@ export function MerchProductDetailView({ slug, hostSlug }: Props) {
     );
   }
 
-  if (notFound) {
-    return (
-      <Container className="py-16">
-        <Alert tone="danger" title="Merch not found">
-          This product is unavailable or no longer listed.
-        </Alert>
-        <div className="mt-4">
-          <Link href="/merch">
-            <Button variant="secondary">Back to shop</Button>
-          </Link>
-        </div>
-      </Container>
-    );
-  }
-
-  if (error || !product) {
+  if (error) {
     return (
       <Container className="py-16">
         <Alert tone="danger" title="Could not load merch">
-          {error || "Unknown error"}
+          {error}
         </Alert>
       </Container>
     );
@@ -263,7 +282,11 @@ export function MerchProductDetailView({ slug, hostSlug }: Props) {
             <div className="aspect-[4/5] overflow-hidden bg-ink">
               {image ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={image} alt="" className="h-full w-full object-cover" />
+                <img
+                  src={image}
+                  alt={merchImageAlt(product.name)}
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <MerchFallbackVisual
                   productType={product.product_type}
@@ -284,7 +307,14 @@ export function MerchProductDetailView({ slug, hostSlug }: Props) {
                     }`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt="" className="h-full w-full object-cover" />
+                    <img
+                      src={url}
+                      alt={merchImageAlt(product.name, {
+                        index: i,
+                        total: gallery.length,
+                      })}
+                      className="h-full w-full object-cover"
+                    />
                   </button>
                 ))}
               </div>

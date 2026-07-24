@@ -1,6 +1,20 @@
-import { SponsorHostsMarketplace } from "./SponsorHostsMarketplace";
+import type { Metadata } from "next";
 
+import { SponsorHostsMarketplace } from "./SponsorHostsMarketplace";
+import {
+  collectionPageJsonLd,
+  JsonLdScript,
+} from "@/lib/seo/jsonld";
+import { sponsorshipHostsIndexMetadata } from "@/lib/seo/sponsor-metadata";
+import { siteOrigin } from "@/lib/seo/site";
 import type { SponsorHost } from "@/lib/types/sponsorships";
+
+export const metadata: Metadata = sponsorshipHostsIndexMetadata();
+
+export const revalidate = 30;
+
+const INTRO =
+  "Browse verified Pàdéyá hosts with event history, checked-in attendance, Legacy reputation, and open sponsorship slots.";
 
 async function loadSponsorHosts(): Promise<SponsorHost[]> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -23,5 +37,18 @@ async function loadSponsorHosts(): Promise<SponsorHost[]> {
 
 export default async function SponsorHostsPage() {
   const hosts = await loadSponsorHosts();
-  return <SponsorHostsMarketplace initialHosts={hosts} />;
+  const origin = siteOrigin();
+  return (
+    <>
+      <JsonLdScript
+        data={collectionPageJsonLd({
+          name: "Hosts open to sponsorship",
+          description: INTRO,
+          path: "/sponsorships/hosts",
+          origin,
+        })}
+      />
+      <SponsorHostsMarketplace initialHosts={hosts} />
+    </>
+  );
 }

@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { ReferralLandingTracker } from "@/components/ambassadors/ReferralLandingTracker";
 import { EventsMarketplaceClient } from "@/components/events/marketplace";
 import {
@@ -6,17 +8,33 @@ import {
   type PublicEventsServerFilters,
 } from "@/lib/events/public-server";
 import { buildHomeEvents } from "@/lib/marketplace-breadcrumbs";
+import {
+  EVENTS_FACET_CANONICAL_PATH,
+  hasEventsFacetQuery,
+} from "@/lib/seo/facet-policy";
 import { HubJsonLd, hubPageMetadata } from "@/lib/seo/hub-page";
-
-export const metadata = hubPageMetadata({
-  title: "Events",
-  description:
-    "Discover events on Pàdéyá — search by city, category, date, and vibe. Verified tickets, QR check-in, and trusted hosts.",
-  path: "/events",
-});
 
 /** ISR — aligns with PUBLIC_REVALIDATE.eventsList (must be a literal for Next). */
 export const revalidate = 90;
+
+/**
+ * Faceted /events?… URLs stay usable in the UI but canonicalize to /events
+ * and are noindex when filter/search params are present (tracking-only OK).
+ */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  return hubPageMetadata({
+    title: "Events",
+    description:
+      "Discover events on Pàdéyá — search by city, category, date, and vibe. Verified tickets, QR check-in, and trusted hosts.",
+    path: EVENTS_FACET_CANONICAL_PATH,
+    noIndex: hasEventsFacetQuery(sp),
+  });
+}
 
 /**
  * SSR public list for default + non-geo URL filters (city/category/date/weekend).

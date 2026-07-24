@@ -1,4 +1,5 @@
 import type { BreadcrumbItem } from "@/components/ui/Breadcrumb";
+import { websiteIdRef } from "@/lib/seo/site-graph";
 
 export function breadcrumbJsonLd(
   items: BreadcrumbItem[],
@@ -41,11 +42,8 @@ export function collectionPageJsonLd(opts: {
     name: opts.name,
     description: opts.description,
     url,
-    isPartOf: {
-      "@type": "WebSite",
-      name: "Pàdéyá",
-      url: opts.origin.replace(/\/$/, ""),
-    },
+    // Reference sitewide WebSite @id — do not embed a duplicate WebSite entity.
+    isPartOf: websiteIdRef(),
   };
 }
 

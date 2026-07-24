@@ -110,6 +110,7 @@ function LocationLandingInner({
   childLocations = [],
   siblingLocations = [],
   ancestors = [],
+  introContent,
 }: {
   kind: string;
   slug: string;
@@ -118,6 +119,7 @@ function LocationLandingInner({
   childLocations?: TaxonomyLocation[];
   siblingLocations?: TaxonomyLocation[];
   ancestors?: TaxonomyLocation[];
+  introContent?: string | null;
 }) {
   const searchParams = useSearchParams();
   const weekendOnly = searchParams.get("weekend") === "1";
@@ -288,6 +290,14 @@ function LocationLandingInner({
         name={name}
         description={heroDescription}
       />
+
+      {introContent?.trim() ? (
+        <Container className="pt-6 sm:pt-8">
+          <p className="max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+            {introContent.trim()}
+          </p>
+        </Container>
+      ) : null}
 
       <Container className="space-y-10 py-8 sm:space-y-12 sm:py-12">
         <section className="space-y-4 sm:space-y-5" aria-label="Jump in">
@@ -503,6 +513,7 @@ export function LocationLandingClient(props: {
   childLocations?: TaxonomyLocation[];
   siblingLocations?: TaxonomyLocation[];
   ancestors?: TaxonomyLocation[];
+  introContent?: string | null;
 }) {
   return (
     <Suspense

@@ -8,6 +8,7 @@ import { citySlugFromName } from "@/lib/discovery/slugify";
 import { formatPublicPlaceLabel, locationVisibilityOf } from "@/lib/event-privacy";
 import { formatDateTime, formatNgn } from "@/lib/format";
 import { resolveEventImage } from "@/lib/legacy-presentation";
+import { eventCardAlt } from "@/lib/seo/image-alt";
 import type { EventItem } from "@/lib/types/events";
 
 export type TaxonomyEventCardProps = {
@@ -129,7 +130,7 @@ export function TaxonomyEventCard({
         {cover ? (
           <Media
             src={cover}
-            alt=""
+            alt={eventCardAlt(event?.title || title)}
             className={cn(
               "padeya-image-zoom h-full w-full object-cover",
               compact ? "absolute inset-0" : "",

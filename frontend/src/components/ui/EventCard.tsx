@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { formatPublicPlaceLabel } from "@/lib/event-privacy";
 import { formatDateTime, formatNgn } from "@/lib/format";
 import { resolveEventImage } from "@/lib/legacy-presentation";
+import { eventCardAlt } from "@/lib/seo/image-alt";
 import {
   trackEventCardClick,
   type ListContext,
@@ -89,7 +90,7 @@ export function EventCard({
           <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-surface-dark">
             <Media
               src={image}
-              alt=""
+              alt={eventCardAlt(event.title)}
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             />
             <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-ink/80 to-transparent" />

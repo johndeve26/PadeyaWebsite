@@ -8,6 +8,7 @@ import { FanFollowButton } from "@/components/passport/FanFollowButton";
 import { FanPassportSafetyMenu } from "@/components/passport/FanPassportSafetyMenu";
 import { Badge, Button, Container, Media } from "@/components/ui";
 import { fanPageCtas } from "@/lib/own-fan-ctas";
+import { fanAvatarAlt } from "@/lib/seo/image-alt";
 import type { FanPassportPublicPage } from "@/lib/types/passport";
 
 type FanCtas = ReturnType<typeof fanPageCtas>;
@@ -65,7 +66,7 @@ export function FanPassportHero({
                   {page.avatar_url ? (
                     <Media
                       src={page.avatar_url}
-                      alt=""
+                      alt={fanAvatarAlt(page.display_name)}
                       className="h-full w-full object-cover"
                     />
                   ) : (

@@ -1,9 +1,11 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { Container, SkeletonLoader } from "@/components/ui";
+import { privateAreaMetadata } from "@/lib/seo/noindex";
 
-export const metadata = { title: "Register" };
+export const metadata: Metadata = privateAreaMetadata("Register");
 
 export default function RegisterPage() {
   return (

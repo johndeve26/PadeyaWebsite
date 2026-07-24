@@ -1,30 +1,15 @@
-"use client";
+import type { Metadata } from "next";
 
-import { RequireAuth } from "@/components/auth/RequireAuth";
-import { HostWorkspaceProvider } from "@/components/hosts/HostWorkspaceProvider";
-import { WorkspaceSwitcher } from "@/components/hosts/WorkspaceSwitcher";
-import { WorkspaceShell } from "@/components/layout/WorkspaceShell";
-import { PERSONAL_WORKSPACE_TITLE } from "@/lib/host-access";
-import { buyerNav, buyerNavGroups } from "@/lib/nav/workspace";
+import { privateAreaMetadata } from "@/lib/seo/noindex";
+
+import ConnectLayoutClient from "./ConnectLayoutClient";
+
+export const metadata: Metadata = privateAreaMetadata("Fan Connect");
 
 export default function ConnectLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <RequireAuth>
-      <HostWorkspaceProvider>
-        <WorkspaceShell
-          nav={buyerNav}
-          navGroups={buyerNavGroups}
-          title={PERSONAL_WORKSPACE_TITLE}
-          homeHref="/dashboard"
-          toolbar={<WorkspaceSwitcher />}
-        >
-          {children}
-        </WorkspaceShell>
-      </HostWorkspaceProvider>
-    </RequireAuth>
-  );
+  return <ConnectLayoutClient>{children}</ConnectLayoutClient>;
 }

@@ -23,6 +23,7 @@ import { useHostAffiliation } from "@/hooks/useHostAffiliation";
 import { cn } from "@/lib/cn";
 import { sponsorshipMarketplaceUrl } from "@/lib/sponsor-marketplace-paths";
 import { hostPageCtaMode, hostPageCtas } from "@/lib/own-host-ctas";
+import { hostAvatarAlt, hostCoverAlt } from "@/lib/seo/image-alt";
 import {
   formatCompact,
   formatLegacyDate,
@@ -79,7 +80,7 @@ function LockedVaultPreviewCard({
         {item.cover_url ? (
           <Media
             src={item.cover_url}
-            alt=""
+            alt={item.title || "Vault item"}
             className="h-full w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-[1.05]"
           />
         ) : (
@@ -857,7 +858,7 @@ export function LegacyPublicPageRenderer({ page }: { page: LegacyPage }) {
           <div className="absolute inset-0">
             <Media
               src={media.coverUrl}
-              alt=""
+              alt={hostCoverAlt(page.display_name)}
               className="h-full w-full object-cover opacity-40 padeya-hero-media"
             />
           </div>
@@ -908,7 +909,7 @@ export function LegacyPublicPageRenderer({ page }: { page: LegacyPage }) {
               {media.avatarUrl ? (
                 <Media
                   src={media.avatarUrl}
-                  alt=""
+                  alt={hostAvatarAlt(page.display_name)}
                   className="h-full w-full object-cover"
                 />
               ) : (

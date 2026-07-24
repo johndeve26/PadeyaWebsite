@@ -1,19 +1,37 @@
 import type { Metadata } from "next";
 
 import { brand } from "@/lib/brand";
+import { canonicalPathOnly } from "@/lib/seo/canonical-path";
+import {
+  getCanonicalSiteOrigin,
+  isForbiddenCanonicalHost,
+  LIVE_SITE_ORIGIN,
+  readSeoEnv,
+  robotsMetaForEnvironment,
+  shouldIndexEnvironment,
+  type SeoEnvInput,
+} from "@/lib/seo/env-policy";
+import { NOINDEX_ROBOTS } from "@/lib/seo/noindex";
+import { buildSiteVerificationMetadata } from "@/lib/seo/verification";
 
-/** Canonical live site — used for shareable links when env is missing/local. */
-export const LIVE_SITE_ORIGIN = "https://padeya.com";
+export {
+  getCanonicalSiteOrigin,
+  isForbiddenCanonicalHost,
+  isProductionSeoEnvironment,
+  isValidProductionCanonicalOrigin,
+  LIVE_SITE_ORIGIN,
+  LIVE_SITE_HOST,
+  readSeoEnv,
+  robotsMetaForEnvironment,
+  shouldIndexEnvironment,
+  X_ROBOTS_NOINDEX,
+} from "@/lib/seo/env-policy";
+
+export { NOINDEX_ROBOTS, privateAreaMetadata } from "@/lib/seo/noindex";
 
 function isLocalOrigin(origin: string): boolean {
   try {
-    const host = new URL(origin).hostname;
-    return (
-      host === "localhost" ||
-      host === "127.0.0.1" ||
-      host === "0.0.0.0" ||
-      host.endsWith(".local")
-    );
+    return isForbiddenCanonicalHost(new URL(origin).hostname);
   } catch {
     return /localhost|127\.0\.0\.1/i.test(origin);
   }
@@ -22,28 +40,29 @@ function isLocalOrigin(origin: string): boolean {
 function originFromApiUrl(apiUrl: string): string | null {
   try {
     const u = new URL(apiUrl);
-    if (isLocalOrigin(u.origin)) return null;
+    if (isForbiddenCanonicalHost(u.hostname)) return null;
     if (u.hostname.startsWith("api.")) {
       u.hostname = u.hostname.slice(4);
     }
+    if (isForbiddenCanonicalHost(u.hostname)) return null;
     return u.origin;
   } catch {
     return null;
   }
 }
 
-export function siteOrigin(): string {
-  const raw =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.SITE_URL ||
-    "http://localhost:3000";
-  return raw.replace(/\/$/, "");
+/**
+ * SEO / sitemap / robots / metadataBase origin.
+ * Always production-safe (https://padeya.com) — never localhost or preview hosts.
+ */
+export function siteOrigin(env?: SeoEnvInput): string {
+  return getCanonicalSiteOrigin(env ?? readSeoEnv());
 }
 
 /**
- * Public origin for shareable links (referral, OG, emails in the browser).
- * Prefers configured site URL, then the current non-local window origin,
- * then derives from NEXT_PUBLIC_API_URL, then the live brand domain.
+ * Public origin for shareable links (referral, OG in the browser).
+ * Prefers configured non-forbidden site URL, then non-forbidden window origin,
+ * then API-derived origin, then the live brand domain.
  */
 export function publicShareOrigin(): string {
   const configured = (
@@ -51,11 +70,27 @@ export function publicShareOrigin(): string {
     process.env.SITE_URL ||
     ""
   ).replace(/\/$/, "");
-  if (configured && !isLocalOrigin(configured)) return configured;
+  if (configured && !isLocalOrigin(configured)) {
+    try {
+      if (!isForbiddenCanonicalHost(new URL(configured).hostname)) {
+        return configured;
+      }
+    } catch {
+      /* fall through */
+    }
+  }
 
   if (typeof window !== "undefined") {
     const current = window.location.origin;
-    if (current && !isLocalOrigin(current)) return current;
+    if (current && !isLocalOrigin(current)) {
+      try {
+        if (!isForbiddenCanonicalHost(new URL(current).hostname)) {
+          return current;
+        }
+      } catch {
+        /* fall through */
+      }
+    }
   }
 
   const fromApi = originFromApiUrl(
@@ -66,13 +101,13 @@ export function publicShareOrigin(): string {
   return LIVE_SITE_ORIGIN;
 }
 
-export function absoluteUrl(path: string): string {
-  const p = path.startsWith("/") ? path : `/${path}`;
-  return `${siteOrigin()}${p}`;
+export function absoluteUrl(path: string, env?: SeoEnvInput): string {
+  const p = canonicalPathOnly(path);
+  return `${siteOrigin(env)}${p}`;
 }
 
-export function defaultOgImage(): string {
-  return absoluteUrl("/brand/padeya-og.png");
+export function defaultOgImage(env?: SeoEnvInput): string {
+  return absoluteUrl("/brand/padeya-og.png", env);
 }
 
 export function buildPageMetadata(opts: {
@@ -81,14 +116,20 @@ export function buildPageMetadata(opts: {
   path: string;
   image?: string | null;
   noIndex?: boolean;
+  env?: SeoEnvInput;
 }): Metadata {
-  const url = absoluteUrl(opts.path);
-  const image = opts.image || defaultOgImage();
+  const env = opts.env ?? readSeoEnv();
+  const path = canonicalPathOnly(opts.path);
+  const url = absoluteUrl(path, env);
+  const image = opts.image || defaultOgImage(env);
+  const envBlocksIndex = !shouldIndexEnvironment(env);
+  const noIndex = Boolean(opts.noIndex) || envBlocksIndex;
+
   return {
     title: opts.title,
     description: opts.description,
     alternates: { canonical: url },
-    robots: opts.noIndex ? { index: false, follow: false } : undefined,
+    robots: noIndex ? NOINDEX_ROBOTS : undefined,
     openGraph: {
       title: opts.title,
       description: opts.description,
@@ -103,5 +144,19 @@ export function buildPageMetadata(opts: {
       description: opts.description,
       images: [image],
     },
+  };
+}
+
+/** Root-layout robots + metadataBase + optional Search Console verification. */
+export function rootSeoMetadataFields(env: SeoEnvInput = readSeoEnv()): Pick<
+  Metadata,
+  "metadataBase" | "robots" | "verification"
+> {
+  const origin = getCanonicalSiteOrigin(env);
+  const verification = buildSiteVerificationMetadata();
+  return {
+    metadataBase: new URL(`${origin}/`),
+    robots: robotsMetaForEnvironment(env),
+    ...(verification ? { verification } : {}),
   };
 }
