@@ -11,7 +11,7 @@ import {
 import type { AISuggestion } from "@/lib/types/ai";
 import { cn } from "@/lib/cn";
 
-import type { EventStudioValues } from "../types";
+import type { EventStudioValues } from "./types";
 
 const FEATURE_TITLE = "host.event.title";
 const FEATURE_DESCRIPTION = "host.event.description";
@@ -40,7 +40,7 @@ function studioExtra(
     location_visibility: values.location_visibility || "full_public",
     short_tagline: values.short_tagline || "",
     ticket_tiers: values.ticket_drafts
-      .map((t) => t.name)
+      .map((t: { name: string }) => t.name)
       .filter(Boolean)
       .join(", "),
   };

@@ -153,6 +153,8 @@ export type EligibleAmbassadorEvent = {
 
 export type AmbassadorEarningsSummary = {
   clicks: number;
+  total_clicks?: number;
+  unique_clicks?: number;
   tickets_sold: number;
   merch_units_sold: number;
   confirmed_sales: number;
@@ -264,6 +266,8 @@ export type AmbassadorReportsSummary = {
   ambassadors_total: number;
   ambassadors_active: number;
   clicks: number;
+  total_clicks?: number;
+  unique_clicks?: number;
   conversions_total: number;
   conversions_active: number;
   conversions_reversed: number;

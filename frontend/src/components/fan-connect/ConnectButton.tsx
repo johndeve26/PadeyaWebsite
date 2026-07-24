@@ -265,7 +265,7 @@ export function ConnectButton({
   const loadingConnect = !state && !loadError;
 
   async function sendConnectRequest() {
-    if (!canSendConnect(state) || busy) return;
+    if (!state || !canSendConnect(state) || busy) return;
     const snapshot = state;
     setBusy(true);
     setState({
@@ -274,6 +274,7 @@ export function ConnectButton({
       reasons: [...snapshot.reasons, "request_pending"],
       denials: [...snapshot.denials, "request_pending"],
       connection_status: "request_sent",
+      shared_context: snapshot.shared_context,
     });
     setHint(null);
     try {

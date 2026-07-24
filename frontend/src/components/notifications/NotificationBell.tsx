@@ -78,7 +78,7 @@ export function NotificationBell({
 
   useEffect(() => {
     if (!open) return;
-    function onPointerDown(event: MouseEvent) {
+    function onPointerDown(event: globalThis.MouseEvent) {
       const target = event.target as Node | null;
       if (rootRef.current && target && !rootRef.current.contains(target)) {
         setOpen(false);

@@ -3,7 +3,7 @@
 const HOST_ID_KEY = "padeya-active-host-id";
 const MODE_KEY = "padeya-workspace-mode";
 
-export type WorkspaceMode = "personal" | "host" | "admin" | "support";
+export type WorkspaceMode = "personal" | "host" | "admin" | "support" | "sponsor";
 
 export function readActiveHostId(): string | null {
   if (typeof window === "undefined") return null;
@@ -28,7 +28,9 @@ export function readWorkspaceMode(): WorkspaceMode {
   if (typeof window === "undefined") return "personal";
   try {
     const raw = localStorage.getItem(MODE_KEY);
-    if (raw === "host" || raw === "admin" || raw === "support") return raw;
+    if (raw === "host" || raw === "admin" || raw === "support" || raw === "sponsor") {
+      return raw;
+    }
     return "personal";
   } catch {
     return "personal";
@@ -64,6 +66,10 @@ export function syncWorkspaceModeFromPath(pathname: string | null | undefined): 
     pathname.startsWith("/support/refunds/")
   ) {
     writeWorkspaceMode("support");
+    return;
+  }
+  if (pathname === "/sponsor" || pathname.startsWith("/sponsor/")) {
+    writeWorkspaceMode("sponsor");
     return;
   }
   if (

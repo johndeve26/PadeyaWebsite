@@ -479,6 +479,8 @@ class AmbassadorReportsSummary(BaseModel):
     ambassadors_total: int
     ambassadors_active: int
     clicks: int
+    total_clicks: int = 0
+    unique_clicks: int = 0
     conversions_total: int
     conversions_active: int
     conversions_reversed: int

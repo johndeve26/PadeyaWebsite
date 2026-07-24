@@ -74,9 +74,15 @@ export default function AdminSponsorDetailPage() {
     try {
       const updated = await adminVerifySponsor(params.id, action, notes || undefined);
       setDetail(updated);
-      toast.success(action === "approve" ? "Sponsor verified" : "Sponsor rejected");
+      toast.push({
+        tone: "success",
+        title: action === "approve" ? "Sponsor verified" : "Sponsor rejected",
+      });
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail : "Action failed");
+      toast.push({
+        tone: "danger",
+        title: err instanceof ApiError ? err.detail : "Action failed",
+      });
     } finally {
       setBusy(false);
     }
@@ -92,9 +98,12 @@ export default function AdminSponsorDetailPage() {
         notes || undefined,
       );
       setDetail(updated);
-      toast.success("Sponsor restricted");
+      toast.push({ tone: "success", title: "Sponsor restricted" });
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail : "Action failed");
+      toast.push({
+        tone: "danger",
+        title: err instanceof ApiError ? err.detail : "Action failed",
+      });
     } finally {
       setBusy(false);
     }
@@ -106,9 +115,12 @@ export default function AdminSponsorDetailPage() {
     try {
       const updated = await adminSponsorNotes(params.id, notes || null);
       setDetail(updated);
-      toast.success("Notes saved");
+      toast.push({ tone: "success", title: "Notes saved" });
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail : "Save failed");
+      toast.push({
+        tone: "danger",
+        title: err instanceof ApiError ? err.detail : "Save failed",
+      });
     } finally {
       setBusy(false);
     }

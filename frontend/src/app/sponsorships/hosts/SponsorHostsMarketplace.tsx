@@ -22,6 +22,7 @@ import {
   uniqueHostCities,
   type SponsorHostSort,
 } from "@/lib/sponsor-host-presentation";
+import type { SponsorHost } from "@/lib/types/sponsorships";
 import {
   SPONSORSHIP_MARKETPLACE_PATH,
   sponsorshipMarketplaceUrl,

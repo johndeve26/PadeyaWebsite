@@ -67,7 +67,7 @@ export default function AdminSponsorCampaignsPage() {
         </Alert>
       ) : null}
       {rows === null ? (
-        <SkeletonLoader rows={4} />
+        <SkeletonLoader lines={4} />
       ) : (
         <DataTable
           columns={[

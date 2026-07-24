@@ -9,6 +9,7 @@ import {
   SPONSORSHIP_MARKETPLACE_PATH,
   SPONSORSHIP_OPEN_SLOTS_HASH,
 } from "@/lib/sponsor-marketplace-paths";
+import { ApiError } from "@/lib/api";
 import { formatNgn } from "@/lib/format";
 import { saveSponsorItem } from "@/lib/sponsor-saved-api";
 import {

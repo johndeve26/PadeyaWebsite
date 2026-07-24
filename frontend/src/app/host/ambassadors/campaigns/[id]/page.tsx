@@ -67,11 +67,19 @@ export default function HostCampaignDetailPage() {
     return participants.reduce(
       (acc, row) => ({
         clicks: acc.clicks + row.clicks,
+        total_clicks: acc.total_clicks + (row.total_clicks ?? row.clicks),
+        unique_clicks: acc.unique_clicks + (row.unique_clicks ?? row.clicks),
         conversions: acc.conversions + row.conversions,
         commission:
           acc.commission + Number(row.commission_amount || 0),
       }),
-      { clicks: 0, conversions: 0, commission: 0 },
+      {
+        clicks: 0,
+        total_clicks: 0,
+        unique_clicks: 0,
+        conversions: 0,
+        commission: 0,
+      },
     );
   }, [participants]);
 

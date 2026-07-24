@@ -233,7 +233,7 @@ export function HostRecommendationsSection({
                 hostSlug={item.host.username}
                 hostDisplayName={item.host.display_name}
                 loginNextPath="/hosts"
-                size="sm"
+                size="md"
                 promptAfterFollow={false}
                 onBeforeFollowToggle={() => {
                   void recordHostRecommendationFollow(item.host.host_id);

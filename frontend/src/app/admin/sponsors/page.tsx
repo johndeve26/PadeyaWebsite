@@ -84,13 +84,13 @@ export default function AdminSponsorsPage() {
               key: "verification",
               header: "Verification",
               cell: (r) => (
-                <StatusBadge tone="neutral">{r.verification_status}</StatusBadge>
+                <StatusBadge status={r.verification_status} />
               ),
             },
             {
               key: "status",
               header: "Status",
-              cell: (r) => <StatusBadge tone="neutral">{r.status}</StatusBadge>,
+              cell: (r) => <StatusBadge status={r.status} />,
             },
             {
               key: "created",

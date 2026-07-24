@@ -87,7 +87,7 @@ export default function SponsorTeamSettingsPage() {
   async function run(action: () => Promise<void>, ok: string) {
     try {
       await action();
-      toast.success(ok);
+      toast.push({ tone: "success", title: ok });
       await load();
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : "Action failed");
@@ -281,7 +281,7 @@ export default function SponsorTeamSettingsPage() {
         onClose={() => setInviteOpen(false)}
         onInvited={load}
         onError={setError}
-        onSuccess={(msg) => toast.success(msg)}
+        onSuccess={(msg) => toast.push({ tone: "success", title: msg })}
       />
     </Container>
   );
