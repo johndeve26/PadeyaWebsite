@@ -220,6 +220,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         host_slug?: string | null;
         marketplace_path?: string | null;
         indexable?: boolean;
+        marketplace_listed?: boolean;
+        storefront_visibility?: string | null;
+        is_vault_exclusive?: boolean;
         updated_at?: string;
       }>;
     }>("/merch?limit=100&sort=newest"),

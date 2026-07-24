@@ -394,7 +394,6 @@ const sampleEvent = pickByPath(
 const sampleHost = pickByPath(sitemapUrls, (p) => /^\/u\/[^/]+$/.test(p));
 const sampleFan = pickByPath(sitemapUrls, (p) => /^\/f\/[^/]+$/.test(p));
 const sampleSponsor = pickByPath(sitemapUrls, (p) => /^\/sponsors\/[^/]+$/.test(p));
-const sampleMerch = pickByPath(sitemapUrls, (p) => isMerchProductPath(p));
 const sampleBlog = pickByPath(sitemapUrls, (p) => /^\/blog\/[^/]+$/.test(p) && !p.startsWith("/blog/category") && !p.startsWith("/blog/tag") && !p.startsWith("/blog/author"));
 const sampleHelp = pickByPath(sitemapUrls, (p) => /^\/help\/articles\/[^/]+$/.test(p));
 const sampleLocation = pickByPath(
@@ -402,6 +401,82 @@ const sampleLocation = pickByPath(
   (p) =>
     /^\/events\/(city|state|country|area)\/[^/]+$/.test(p),
 );
+
+/** Prefer sitemap; if ISR lags, probe live product pages / marketplace API. */
+async function resolveMerchProductSample() {
+  const fromSitemap = pickByPath(sitemapUrls, (p) => isMerchProductPath(p));
+  if (fromSitemap) return fromSitemap;
+
+  const candidates = [
+    "mainland-vibes-logo-tee",
+    "island-nights-dad-cap",
+    "alte-cruise-tote-bag",
+    "lagos-nightlife-sticker-pack",
+    "campus-rave-hoodie",
+    "comedy-night-mug",
+    "praise-experience-soft-cap",
+  ];
+
+  for (const slug of candidates) {
+    if (!isMerchProductPath(`/merch/${slug}`)) continue;
+    const url = `${BASE}/merch/${slug}`;
+    const r = await fetchFollow(url);
+    if (!r.ok || !r.res || r.res.status !== 200 || !r.html) continue;
+    const ld = extractJsonLd(r.html);
+    if (jsonLdHasType(ld, "Product")) {
+      console.warn(
+        `  ⚠ merch product not yet in sitemap; using live page ${url}`,
+      );
+      return url;
+    }
+  }
+
+  const apiBase = (
+    process.env.SEO_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    (BASE.includes("padeya.com") ? "https://padeyawebsite.onrender.com" : "")
+  )
+    .trim()
+    .replace(/\/$/, "");
+  if (apiBase) {
+    const r = await fetchFollow(
+      `${apiBase}/api/v1/merch?limit=50&sort=newest`,
+      { accept: "application/json" },
+    );
+    if (r.ok && r.html) {
+      try {
+        const data = JSON.parse(r.html);
+        const items = data?.items || [];
+        for (const item of items) {
+          const slug = (item?.slug || "").trim();
+          if (!slug || !isMerchProductPath(`/merch/${slug}`)) continue;
+          const vis = String(item.storefront_visibility || "").toLowerCase();
+          if (
+            item.indexable === false ||
+            item.is_vault_exclusive ||
+            ["vault_exclusive", "private_link", "hidden", "event_only"].includes(
+              vis,
+            )
+          ) {
+            continue;
+          }
+          const url = `${BASE}/merch/${encodeURIComponent(slug)}`;
+          console.warn(
+            `  ⚠ merch product not yet in sitemap; using API sample ${url}`,
+          );
+          return url;
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  return null;
+}
+
+const sampleMerch = await resolveMerchProductSample();
+
 
 await checkIndexablePage(home, {
   label: "home",

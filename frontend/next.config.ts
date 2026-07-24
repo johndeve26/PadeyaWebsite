@@ -12,8 +12,6 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: [
     "padeya.com",
     "www.padeya.com",
-    "padeya.smartlancedesigns.com",
-    "*.smartlancedesigns.com",
     "rat-meetings-parish-fair.trycloudflare.com",
     "*.trycloudflare.com",
     "mesic-lera-indigestive.ngrok-free.dev",

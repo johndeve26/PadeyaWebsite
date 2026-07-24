@@ -131,7 +131,7 @@ describe("getCanonicalSiteOrigin", () => {
     expect(isForbiddenCanonicalHost("padeya-git-main.vercel.app")).toBe(true);
     expect(isForbiddenCanonicalHost("padeya.onrender.com")).toBe(true);
     expect(isForbiddenCanonicalHost("foo.trycloudflare.com")).toBe(true);
-    expect(isForbiddenCanonicalHost("padeya.smartlancedesigns.com")).toBe(true);
+    expect(isForbiddenCanonicalHost("legacy.smartlancedesigns.com")).toBe(true);
 
     expect(
       getCanonicalSiteOrigin({

@@ -158,7 +158,7 @@ describe("production URL / HTML check helpers", () => {
     expect(isForbiddenLiveHost("localhost")).toBe(true);
     expect(isForbiddenLiveHost("foo.vercel.app")).toBe(true);
     expect(isForbiddenLiveHost("padeya.onrender.com")).toBe(true);
-    expect(isForbiddenLiveHost("padeya.smartlancedesigns.com")).toBe(true);
+    expect(isForbiddenLiveHost("legacy.smartlancedesigns.com")).toBe(true);
     expect(isForbiddenLiveHost("padeya.com")).toBe(false);
 
     expect(assertPadeyaAbsoluteUrl("https://padeya.com/events").ok).toBe(true);

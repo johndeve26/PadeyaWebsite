@@ -113,6 +113,28 @@ describe("sitemap merch + blog hubs", () => {
     );
   });
 
+  it("derives eligibility when indexable is omitted from list payloads", () => {
+    expect(
+      isSitemapEligibleMerch({
+        slug: "mainland-vibes-logo-tee",
+        storefront_visibility: "host_storefront",
+        marketplace_listed: true,
+      }),
+    ).toBe(true);
+    expect(
+      isSitemapEligibleMerch({
+        slug: "vault-member-hoodie",
+        storefront_visibility: "vault_exclusive",
+      }),
+    ).toBe(false);
+    expect(
+      isSitemapEligibleMerch({
+        slug: "event-face-mask",
+        storefront_visibility: "event_only",
+      }),
+    ).toBe(false);
+  });
+
   it("only marks hubs with published posts as non-empty", () => {
     const hubs = collectNonEmptyBlogHubSlugs([
       {

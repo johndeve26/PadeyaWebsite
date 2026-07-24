@@ -17,10 +17,7 @@ def frontend_padeya(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_normalize_demo_asset_url_rewrites_old_origin(frontend_padeya) -> None:
-    old = (
-        "http://padeya.smartlancedesigns.com/demo/events/"
-        "mainland-vibes-summer-gallery.svg"
-    )
+    old = "http://legacy.example/demo/events/mainland-vibes-summer-gallery.svg"
     assert assets.normalize_demo_asset_url(old) == (
         "https://padeya.com/demo/events/mainland-vibes-summer-gallery.svg"
     )

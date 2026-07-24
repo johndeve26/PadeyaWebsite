@@ -23,6 +23,9 @@ export type SitemapSponsorLike = {
 export type SitemapMerchLike = {
   slug?: string | null;
   indexable?: boolean | null;
+  marketplace_listed?: boolean | null;
+  storefront_visibility?: string | null;
+  is_vault_exclusive?: boolean | null;
 };
 
 export type SitemapBlogPostLike = {
@@ -124,7 +127,21 @@ export function filterSponsorsForSitemap<T extends SitemapSponsorLike>(
 export function isSitemapEligibleMerch(item: SitemapMerchLike): boolean {
   if (!item.slug?.trim()) return false;
   if (isReservedMerchSlug(item.slug)) return false;
-  return item.indexable !== false;
+  if (item.indexable === false) return false;
+  if (item.indexable === true) return true;
+
+  // List API historically omitted `indexable` — derive from visibility flags.
+  const vis = (item.storefront_visibility || "").trim().toLowerCase();
+  if (
+    vis === "vault_exclusive" ||
+    vis === "private_link" ||
+    vis === "hidden" ||
+    vis === "event_only"
+  ) {
+    return false;
+  }
+  if (item.is_vault_exclusive) return false;
+  return item.marketplace_listed !== false;
 }
 
 export function filterMerchForSitemap<T extends SitemapMerchLike>(items: T[]): T[] {

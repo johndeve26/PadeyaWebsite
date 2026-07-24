@@ -62,7 +62,7 @@ export function isForbiddenCanonicalHost(hostname: string): boolean {
   ) {
     return true;
   }
-  if (host === "padeya.smartlancedesigns.com" || host.endsWith(".smartlancedesigns.com")) {
+  if (host.endsWith(".smartlancedesigns.com")) {
     return true;
   }
   if (host.endsWith(".vercel.app")) return true;

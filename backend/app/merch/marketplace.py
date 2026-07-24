@@ -191,6 +191,12 @@ def _enrich_marketplace_row(
         from app.merch.post_event_drops import audience_from_product
 
         row["audience"] = audience_from_product(product)
+    row["indexable"] = bool(
+        getattr(product, "marketplace_listed", True)
+        and product.storefront_visibility
+        not in {"vault_exclusive", "private_link", "hidden", "event_only"}
+        and not bool(getattr(product, "is_vault_exclusive", False))
+    )
     return row
 
 
