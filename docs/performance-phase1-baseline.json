@@ -1,0 +1,360 @@
+{
+  "label": "PHASE1_BASELINE_PRE_CHANGE",
+  "note": "Low-volume diagnostic against current production. app_dur_ms from Server-Timing if Phase 0 deployed; else null.",
+  "api": "https://padeyawebsite.onrender.com",
+  "captured_at": "2026-07-25T23:37:18.612160Z",
+  "endpoints": [
+    {
+      "path": "/health",
+      "status": 200,
+      "app_dur_ms_median": null,
+      "app_dur_ms_samples": [],
+      "total_s_median": 0.630442,
+      "bytes_uncompressed": 104,
+      "server_timing_present": false,
+      "samples": [
+        {
+          "path": "/health",
+          "status": 200,
+          "total_s": 0.659854,
+          "ttfb_s": 0.659428,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 104,
+          "content_encoding": null
+        },
+        {
+          "path": "/health",
+          "status": 200,
+          "total_s": 0.630442,
+          "ttfb_s": 0.629891,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 104,
+          "content_encoding": null
+        },
+        {
+          "path": "/health",
+          "status": 200,
+          "total_s": 0.51187,
+          "ttfb_s": 0.511307,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 104,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/ready",
+      "status": 404,
+      "app_dur_ms_median": null,
+      "app_dur_ms_samples": [],
+      "total_s_median": 0.697591,
+      "bytes_uncompressed": 41,
+      "server_timing_present": false,
+      "samples": [
+        {
+          "path": "/ready",
+          "status": 404,
+          "total_s": 0.743601,
+          "ttfb_s": 0.743252,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 41,
+          "content_encoding": null
+        },
+        {
+          "path": "/ready",
+          "status": 404,
+          "total_s": 0.680918,
+          "ttfb_s": 0.680738,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 41,
+          "content_encoding": null
+        },
+        {
+          "path": "/ready",
+          "status": 404,
+          "total_s": 0.697591,
+          "ttfb_s": 0.697354,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 41,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/events",
+      "status": 200,
+      "app_dur_ms_median": null,
+      "app_dur_ms_samples": [],
+      "total_s_median": 0.978976,
+      "bytes_uncompressed": 155187,
+      "server_timing_present": false,
+      "samples": [
+        {
+          "path": "/api/v1/events",
+          "status": 200,
+          "total_s": 1.739365,
+          "ttfb_s": 1.629253,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 155187,
+          "content_encoding": null
+        },
+        {
+          "path": "/api/v1/events",
+          "status": 200,
+          "total_s": 0.978976,
+          "ttfb_s": 0.795525,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 155187,
+          "content_encoding": null
+        },
+        {
+          "path": "/api/v1/events",
+          "status": 200,
+          "total_s": 0.924691,
+          "ttfb_s": 0.808784,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 155187,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/events/demo-afrobeats-night-live",
+      "status": 200,
+      "app_dur_ms_median": null,
+      "app_dur_ms_samples": [],
+      "total_s_median": 0.707755,
+      "bytes_uncompressed": 12918,
+      "server_timing_present": false,
+      "samples": [
+        {
+          "path": "/api/v1/events/demo-afrobeats-night-live",
+          "status": 200,
+          "total_s": 0.95705,
+          "ttfb_s": 0.956615,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 12918,
+          "content_encoding": null
+        },
+        {
+          "path": "/api/v1/events/demo-afrobeats-night-live",
+          "status": 200,
+          "total_s": 0.707755,
+          "ttfb_s": 0.704368,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 12918,
+          "content_encoding": null
+        },
+        {
+          "path": "/api/v1/events/demo-afrobeats-night-live",
+          "status": 200,
+          "total_s": 0.697282,
+          "ttfb_s": 0.690992,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 12918,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/legacy/mainlandvibes",
+      "status": 200,
+      "app_dur_ms_median": null,
+      "app_dur_ms_samples": [],
+      "total_s_median": 1.520167,
+      "bytes_uncompressed": 8052,
+      "server_timing_present": false,
+      "samples": [
+        {
+          "path": "/api/v1/legacy/mainlandvibes",
+          "status": 200,
+          "total_s": 1.520167,
+          "ttfb_s": 1.519779,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 8052,
+          "content_encoding": null
+        },
+        {
+          "path": "/api/v1/legacy/mainlandvibes",
+          "status": 200,
+          "total_s": 1.501899,
+          "ttfb_s": 1.501427,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 8052,
+          "content_encoding": null
+        },
+        {
+          "path": "/api/v1/legacy/mainlandvibes",
+          "status": 200,
+          "total_s": 1.526622,
+          "ttfb_s": 1.52499,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 8052,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/u/mainlandvibes/legacy",
+      "status": 200,
+      "app_dur_ms_median": null,
+      "app_dur_ms_samples": [],
+      "total_s_median": 1.505678,
+      "bytes_uncompressed": 8052,
+      "server_timing_present": false,
+      "samples": [
+        {
+          "path": "/api/v1/u/mainlandvibes/legacy",
+          "status": 200,
+          "total_s": 1.505678,
+          "ttfb_s": 1.504369,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 8052,
+          "content_encoding": null
+        },
+        {
+          "path": "/api/v1/u/mainlandvibes/legacy",
+          "status": 200,
+          "total_s": 1.566423,
+          "ttfb_s": 1.566051,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 8052,
+          "content_encoding": null
+        },
+        {
+          "path": "/api/v1/u/mainlandvibes/legacy",
+          "status": 200,
+          "total_s": 1.4998,
+          "ttfb_s": 1.497889,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 8052,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/sponsors/public/korawave-pay",
+      "status": 200,
+      "app_dur_ms_median": null,
+      "app_dur_ms_samples": [],
+      "total_s_median": 1.57741,
+      "bytes_uncompressed": 5777,
+      "server_timing_present": false,
+      "samples": [
+        {
+          "path": "/api/v1/sponsors/public/korawave-pay",
+          "status": 200,
+          "total_s": 1.598778,
+          "ttfb_s": 1.598303,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 5777,
+          "content_encoding": null
+        },
+        {
+          "path": "/api/v1/sponsors/public/korawave-pay",
+          "status": 200,
+          "total_s": 1.57741,
+          "ttfb_s": 1.57718,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 5777,
+          "content_encoding": null
+        },
+        {
+          "path": "/api/v1/sponsors/public/korawave-pay",
+          "status": 200,
+          "total_s": 1.548422,
+          "ttfb_s": 1.547403,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 5777,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/merch?limit=50&sort=newest",
+      "status": 200,
+      "app_dur_ms_median": null,
+      "app_dur_ms_samples": [],
+      "total_s_median": 0.847378,
+      "bytes_uncompressed": 61105,
+      "server_timing_present": false,
+      "samples": [
+        {
+          "path": "/api/v1/merch?limit=50&sort=newest",
+          "status": 200,
+          "total_s": 1.040713,
+          "ttfb_s": 1.021976,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 61105,
+          "content_encoding": null
+        },
+        {
+          "path": "/api/v1/merch?limit=50&sort=newest",
+          "status": 200,
+          "total_s": 0.847378,
+          "ttfb_s": 0.828324,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 61105,
+          "content_encoding": null
+        },
+        {
+          "path": "/api/v1/merch?limit=50&sort=newest",
+          "status": 200,
+          "total_s": 0.82588,
+          "ttfb_s": 0.801962,
+          "app_dur_ms": null,
+          "server_timing": null,
+          "x_request_id": null,
+          "bytes_uncompressed": 61105,
+          "content_encoding": null
+        }
+      ]
+    }
+  ]
+}

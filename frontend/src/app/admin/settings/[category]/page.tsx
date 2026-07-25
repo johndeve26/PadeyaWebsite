@@ -9,8 +9,6 @@ const ALLOWED = new Set([
   "storage",
   "integrations",
   "notifications",
-  "feature-toggles",
-  "features",
   "security-runtime",
   "system-status",
 ]);
@@ -22,6 +20,11 @@ export default function AdminSettingsLegacyCategoryRedirect() {
   const category = String(params.category ?? "");
 
   useEffect(() => {
+    // Feature toggles are managed under AI controls, not runtime settings registry.
+    if (category === "feature-toggles" || category === "features") {
+      router.replace("/admin/ai/features");
+      return;
+    }
     if (ALLOWED.has(category)) {
       router.replace(`/admin/settings/runtime/${category}`);
     } else {

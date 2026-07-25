@@ -28,10 +28,19 @@ Optional `NEXT_PUBLIC_SITE_URL` / `SITE_URL` overrides are accepted **only** whe
 |-------------|--------|
 | Production (`APP_ENV=production` and/or `VERCEL_ENV=production`, or `NODE_ENV=production` with no non-prod signals) | Yes |
 | Development | No |
-| Staging / test / preview | No |
+| Staging / test / preview (genuine non-production hosts) | No |
 | Vercel preview (`VERCEL_ENV=preview`) | No (even if `APP_ENV=production`) |
 
+**Precedence (2026-07-26 indexability hardening):**
+
+1. `VERCEL_ENV=preview|development` and `NODE_ENV=development` → **never index**
+2. `VERCEL_ENV=production` → **index** (even if `APP_ENV`/`NEXT_PUBLIC_APP_ENV` is mis-set to staging/preview) — emits a console warning; do not silent-noindex true production
+3. Non-production `APP_ENV` on non-Vercel-production hosts → **no index** (protects genuine staging)
+4. `APP_ENV=production` or production Node with `APP_ENV` unset → **index**
+
 **Important:** Missing `APP_ENV` on a production Node/`VERCEL_ENV=production` deploy does **not** force noindex.
+
+**Metadata merge invariant:** `buildPageMetadata` must never return `robots: undefined`. Next.js treats that key as present and clears root `index,follow`, which previously left public hubs without an explicit robots directive.
 
 Non-production protections (layered):
 
@@ -346,11 +355,16 @@ Do not add GTM unless product explicitly requires it. GA4 is optional for launch
 ```bash
 cd frontend
 SEO_BASE_URL=https://padeya.com npm run seo:production-smoke
+SEO_BASE_URL=https://padeya.com npm run seo:indexability-audit
 ```
 
-Script: `frontend/scripts/seo-production-smoke.mjs`. Pure helpers: `frontend/src/lib/seo/production-checks.ts`.
+Scripts:
 
-Checks: robots, sitemap safety, HTTP status (200/404), redirect chains, canonicals, meta/OG/Twitter, JSON-LD type presence, private/noindex samples, faceted `/events` → canonical `/events`.
+- `frontend/scripts/seo-production-smoke.mjs` — hard-fails accidental public `noindex` / Googlebot noindex / `X-Robots-Tag` noindex / robots.txt blocks; samples sitemap categories
+- `frontend/scripts/seo-indexability-audit.mjs` — matrix audit across hubs + sitemap samples
+- Helpers: `frontend/src/lib/seo/production-checks.ts`, `frontend/src/lib/seo/indexability.ts`
+
+Checks: robots, sitemap safety, HTTP status (200/404), redirect chains, canonicals, meta/OG/Twitter, JSON-LD type presence, private/noindex samples, faceted `/events` → canonical `/events`, tracking-only params stay indexable, sitemap URL indexability conflicts.
 
 ### Verification
 
@@ -359,9 +373,16 @@ cd frontend
 npm run test:seo   # includes seo-phase1c-smoke + phase1c vitest
 npm run build
 SEO_BASE_URL=https://padeya.com npm run seo:production-smoke
+SEO_BASE_URL=https://padeya.com npm run seo:indexability-audit
 ```
 
 Launch steps: [SEO_LAUNCH_CHECKLIST.md](./SEO_LAUNCH_CHECKLIST.md).
+
+---
+
+## Production indexability regression audit (2026-07-26)
+
+See [SEO_AUDIT.md](./SEO_AUDIT.md#production-indexability-regression-audit--2026-07-26) for the full live/code findings and fix list.
 
 ---
 

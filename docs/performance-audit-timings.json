@@ -1,0 +1,2879 @@
+{
+  "brand": "Pàdéyá",
+  "started": "2026-07-25T23:17:26.611Z",
+  "finished": "2026-07-25T23:19:12.546Z",
+  "fe_base": "https://padeya.com",
+  "api_base": "https://padeyawebsite.onrender.com",
+  "samples_per_route": 3,
+  "frontend": [
+    {
+      "label": "FE /",
+      "url": "https://padeya.com/",
+      "samples": 3,
+      "median_ms": 383.1835839999999,
+      "min_ms": 290.63312500000006,
+      "max_ms": 974.049333,
+      "first_ms": 974.049333,
+      "warm_median_ms": 336.9083545,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 471498,
+      "last_headers": {
+        "cache_control": "public, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": "W/\"huo6qatw5oa2qy\"",
+        "age": "300",
+        "server_timing": null,
+        "x_vercel_cache": "STALE",
+        "x_vercel_id": "cpt1::iad1::wrrlz-1785021449027-752987b8bd57",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 974.049333,
+          "bytes": 471498,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"huo6qatw5oa2qy\"",
+            "age": "299",
+            "server_timing": null,
+            "x_vercel_cache": "STALE",
+            "x_vercel_id": "cpt1::iad1::98nj5-1785021447277-1bb5a78bc3f5",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 290.63312500000006,
+          "bytes": 471498,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"huo6qatw5oa2qy\"",
+            "age": "300",
+            "server_timing": null,
+            "x_vercel_cache": "STALE",
+            "x_vercel_id": "cpt1::iad1::bt4zj-1785021448333-27c9c179fbd6",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 383.1835839999999,
+          "bytes": 471498,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"huo6qatw5oa2qy\"",
+            "age": "300",
+            "server_timing": null,
+            "x_vercel_cache": "STALE",
+            "x_vercel_id": "cpt1::iad1::wrrlz-1785021449027-752987b8bd57",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /events",
+      "url": "https://padeya.com/events",
+      "samples": 3,
+      "median_ms": 1174.7210420000001,
+      "min_ms": 1160.4415,
+      "max_ms": 1378.7070000000003,
+      "first_ms": 1174.7210420000001,
+      "warm_median_ms": 1269.5742500000001,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 267634,
+      "last_headers": {
+        "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": null,
+        "age": "0",
+        "server_timing": null,
+        "x_vercel_cache": "MISS",
+        "x_vercel_id": "cpt1::iad1::2m8rp-1785021452957-54396325d2ad",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1174.7210420000001,
+          "bytes": 267634,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::bt4zj-1785021449704-b4d9e7772bc3",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1378.7070000000003,
+          "bytes": 267634,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::bt4zj-1785021451236-774019ea960a",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1160.4415,
+          "bytes": 267634,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::2m8rp-1785021452957-54396325d2ad",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /events/demo-afrobeats-night-live",
+      "url": "https://padeya.com/events/demo-afrobeats-night-live",
+      "samples": 3,
+      "median_ms": 762.208125000001,
+      "min_ms": 535.9749170000014,
+      "max_ms": 949.151917000001,
+      "first_ms": 762.208125000001,
+      "warm_median_ms": 742.5634170000012,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 126320,
+      "last_headers": {
+        "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": null,
+        "age": "0",
+        "server_timing": null,
+        "x_vercel_cache": "MISS",
+        "x_vercel_id": "cpt1::iad1::7n2nc-1785021456472-6dbefef7271d",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 762.208125000001,
+          "bytes": 126320,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::t7fh4-1785021454477-2a7783358348",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 535.9749170000014,
+          "bytes": 126320,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::2m8rp-1785021455576-0d576953f8eb",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 949.151917000001,
+          "bytes": 126320,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::7n2nc-1785021456472-6dbefef7271d",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /hosts",
+      "url": "https://padeya.com/hosts",
+      "samples": 3,
+      "median_ms": 703.9752500000013,
+      "min_ms": 662.4668750000001,
+      "max_ms": 919.6759999999995,
+      "first_ms": 703.9752500000013,
+      "warm_median_ms": 791.0714374999998,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 50688,
+      "last_headers": {
+        "cache_control": "public, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": "W/\"29m8vrw7bv131e\"",
+        "age": "1106",
+        "server_timing": null,
+        "x_vercel_cache": "STALE",
+        "x_vercel_id": "cpt1::iad1::94gdc-1785021460238-2e366fcc44f0",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 703.9752500000013,
+          "bytes": 50688,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"29m8vrw7bv131e\"",
+            "age": "1104",
+            "server_timing": null,
+            "x_vercel_cache": "STALE",
+            "x_vercel_id": "cpt1::iad1::7n2nc-1785021457784-bb151c7f3541",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 919.6759999999995,
+          "bytes": 50688,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"29m8vrw7bv131e\"",
+            "age": "1105",
+            "server_timing": null,
+            "x_vercel_cache": "STALE",
+            "x_vercel_id": "cpt1::iad1::2m8rp-1785021459187-8bb1ef07e318",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 662.4668750000001,
+          "bytes": 50688,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"29m8vrw7bv131e\"",
+            "age": "1106",
+            "server_timing": null,
+            "x_vercel_cache": "STALE",
+            "x_vercel_id": "cpt1::iad1::94gdc-1785021460238-2e366fcc44f0",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /u/mainlandvibes",
+      "url": "https://padeya.com/u/mainlandvibes",
+      "samples": 3,
+      "median_ms": 838.3883749999986,
+      "min_ms": 535.3927910000002,
+      "max_ms": 1244.9975830000003,
+      "first_ms": 1244.9975830000003,
+      "warm_median_ms": 686.8905829999994,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 100012,
+      "last_headers": {
+        "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": null,
+        "age": "0",
+        "server_timing": null,
+        "x_vercel_cache": "MISS",
+        "x_vercel_id": "cpt1::iad1::sscgw-1785021463597-724941e77fd4",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1244.9975830000003,
+          "bytes": 100012,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::94gdc-1785021461280-36722f033e2c",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 535.3927910000002,
+          "bytes": 100012,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::94gdc-1785021462701-c4a8945c14be",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 838.3883749999986,
+          "bytes": 100012,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::sscgw-1785021463597-724941e77fd4",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /fans",
+      "url": "https://padeya.com/fans",
+      "samples": 3,
+      "median_ms": 311.1906249999993,
+      "min_ms": 249.21516600000177,
+      "max_ms": 558.2768749999996,
+      "first_ms": 558.2768749999996,
+      "warm_median_ms": 280.2028955000005,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 55422,
+      "last_headers": {
+        "cache_control": "public, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": "W/\"vwo3la866o16of\"",
+        "age": "1114",
+        "server_timing": null,
+        "x_vercel_cache": "STALE",
+        "x_vercel_id": "cpt1::iad1::845wz-1785021466350-48813cdcec53",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 558.2768749999996,
+          "bytes": 55422,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"vwo3la866o16of\"",
+            "age": "1113",
+            "server_timing": null,
+            "x_vercel_cache": "STALE",
+            "x_vercel_id": "cpt1::iad1::94gdc-1785021464777-634a93dd7f31",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 311.1906249999993,
+          "bytes": 55422,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"vwo3la866o16of\"",
+            "age": "1113",
+            "server_timing": null,
+            "x_vercel_cache": "STALE",
+            "x_vercel_id": "cpt1::iad1::845wz-1785021465688-650606fd3252",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 249.21516600000177,
+          "bytes": 55422,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"vwo3la866o16of\"",
+            "age": "1114",
+            "server_timing": null,
+            "x_vercel_cache": "STALE",
+            "x_vercel_id": "cpt1::iad1::845wz-1785021466350-48813cdcec53",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /f/pizzlecole",
+      "url": "https://padeya.com/f/pizzlecole",
+      "samples": 3,
+      "median_ms": 1220.5250840000008,
+      "min_ms": 1026.2390830000004,
+      "max_ms": 1340.4533340000016,
+      "first_ms": 1340.4533340000016,
+      "warm_median_ms": 1123.3820835000006,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 57629,
+      "last_headers": {
+        "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": null,
+        "age": "0",
+        "server_timing": null,
+        "x_vercel_cache": "MISS",
+        "x_vercel_id": "cpt1::iad1::x82rk-1785021470015-5f87e0b627b7",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1340.4533340000016,
+          "bytes": 57629,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::98nj5-1785021466957-76a8688525aa",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1026.2390830000004,
+          "bytes": 57629,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::x82rk-1785021468651-2d55fd9c1326",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1220.5250840000008,
+          "bytes": 57629,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::x82rk-1785021470015-5f87e0b627b7",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /sponsorships",
+      "url": "https://padeya.com/sponsorships",
+      "samples": 3,
+      "median_ms": 749.8507500000014,
+      "min_ms": 595.1946669999998,
+      "max_ms": 755.1649160000015,
+      "first_ms": 755.1649160000015,
+      "warm_median_ms": 672.5227085000006,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 77392,
+      "last_headers": {
+        "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": null,
+        "age": "0",
+        "server_timing": null,
+        "x_vercel_cache": "MISS",
+        "x_vercel_id": "cpt1::iad1::t7fh4-1785021473860-773bc61708c2",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 755.1649160000015,
+          "bytes": 77392,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::x82rk-1785021471590-53788661e7c8",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 749.8507500000014,
+          "bytes": 77392,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::2m8rp-1785021472700-ed4d5fcf75a4",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 595.1946669999998,
+          "bytes": 77392,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::t7fh4-1785021473860-773bc61708c2",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /sponsors/korawave-pay",
+      "url": "https://padeya.com/sponsors/korawave-pay",
+      "samples": 3,
+      "median_ms": 758.0359169999974,
+      "min_ms": 561.6714580000007,
+      "max_ms": 765.025625000002,
+      "first_ms": 765.025625000002,
+      "warm_median_ms": 659.8536874999991,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 89755,
+      "last_headers": {
+        "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": null,
+        "age": "0",
+        "server_timing": null,
+        "x_vercel_cache": "MISS",
+        "x_vercel_id": "cpt1::iad1::t7fh4-1785021477003-6a7f56f6bc67",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 765.025625000002,
+          "bytes": 89755,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::7n2nc-1785021474740-8d0cb801cfb9",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 758.0359169999974,
+          "bytes": 89755,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::wrrlz-1785021475863-57b881a1b406",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 561.6714580000007,
+          "bytes": 89755,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::t7fh4-1785021477003-6a7f56f6bc67",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /merch",
+      "url": "https://padeya.com/merch",
+      "samples": 3,
+      "median_ms": 308.92308299999786,
+      "min_ms": 265.3875410000037,
+      "max_ms": 892.3426250000011,
+      "first_ms": 892.3426250000011,
+      "warm_median_ms": 287.1553120000008,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 52776,
+      "last_headers": {
+        "cache_control": "public, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": "W/\"c99c1bfc1df7d106308734956dab4c90\"",
+        "age": "1",
+        "server_timing": null,
+        "x_vercel_cache": "HIT",
+        "x_vercel_id": "cpt1::wrrlz-1785021479792-62f03a97c190",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 892.3426250000011,
+          "bytes": 52776,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"c99c1bfc1df7d106308734956dab4c90\"",
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "PRERENDER",
+            "x_vercel_id": "cpt1::tjs75-1785021477880-de5da6743320",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 308.92308299999786,
+          "bytes": 52776,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"c99c1bfc1df7d106308734956dab4c90\"",
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::t7fh4-1785021479136-66fc745394d5",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 265.3875410000037,
+          "bytes": 52776,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"c99c1bfc1df7d106308734956dab4c90\"",
+            "age": "1",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::wrrlz-1785021479792-62f03a97c190",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /merch/mainland-vibes-logo-tee",
+      "url": "https://padeya.com/merch/mainland-vibes-logo-tee",
+      "samples": 3,
+      "median_ms": 620.6098750000019,
+      "min_ms": 521.0809999999983,
+      "max_ms": 1207.429624999997,
+      "first_ms": 1207.429624999997,
+      "warm_median_ms": 570.8454375000001,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 69654,
+      "last_headers": {
+        "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": null,
+        "age": "0",
+        "server_timing": null,
+        "x_vercel_cache": "MISS",
+        "x_vercel_id": "cpt1::iad1::vn45j-1785021482932-bdf49920417d",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1207.429624999997,
+          "bytes": 70886,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::2m8rp-1785021480484-6f2431fd9b56",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 620.6098750000019,
+          "bytes": 69654,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::sscgw-1785021481960-830a7b1bd3ed",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 521.0809999999983,
+          "bytes": 69654,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::vn45j-1785021482932-bdf49920417d",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /blog",
+      "url": "https://padeya.com/blog",
+      "samples": 3,
+      "median_ms": 333.07162499999686,
+      "min_ms": 263.98179099999834,
+      "max_ms": 873.9269580000037,
+      "first_ms": 873.9269580000037,
+      "warm_median_ms": 298.5267079999976,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 79854,
+      "last_headers": {
+        "cache_control": "public, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": "W/\"b8435f9eb633e0f98ac76cb6ce099947\"",
+        "age": "1",
+        "server_timing": null,
+        "x_vercel_cache": "HIT",
+        "x_vercel_id": "cpt1::2m8rp-1785021485724-af763f22444a",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 873.9269580000037,
+          "bytes": 79854,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"b8435f9eb633e0f98ac76cb6ce099947\"",
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "PRERENDER",
+            "x_vercel_id": "cpt1::sscgw-1785021483824-66c2e0d42142",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 263.98179099999834,
+          "bytes": 79854,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"b8435f9eb633e0f98ac76cb6ce099947\"",
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::x82rk-1785021485033-eb542c12ac53",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 333.07162499999686,
+          "bytes": 79854,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"b8435f9eb633e0f98ac76cb6ce099947\"",
+            "age": "1",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::2m8rp-1785021485724-af763f22444a",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /help",
+      "url": "https://padeya.com/help",
+      "samples": 3,
+      "median_ms": 735.8451659999992,
+      "min_ms": 583.7107500000056,
+      "max_ms": 787.950582999998,
+      "first_ms": 787.950582999998,
+      "warm_median_ms": 659.7779580000024,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 171786,
+      "last_headers": {
+        "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": null,
+        "age": "0",
+        "server_timing": null,
+        "x_vercel_cache": "MISS",
+        "x_vercel_id": "cpt1::iad1::x82rk-1785021488401-59c9c8e39f40",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 787.950582999998,
+          "bytes": 171786,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::2m8rp-1785021486333-b033a92503d6",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 583.7107500000056,
+          "bytes": 171786,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::2m8rp-1785021487492-b43986e37394",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 735.8451659999992,
+          "bytes": 171786,
+          "redirect": null,
+          "headers": {
+            "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": null,
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "MISS",
+            "x_vercel_id": "cpt1::iad1::x82rk-1785021488401-59c9c8e39f40",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /login",
+      "url": "https://padeya.com/login",
+      "samples": 3,
+      "median_ms": 260.27004200000374,
+      "min_ms": 258.32220800000505,
+      "max_ms": 348.25958399999945,
+      "first_ms": 258.32220800000505,
+      "warm_median_ms": 304.2648130000016,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 42911,
+      "last_headers": {
+        "cache_control": "public, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": "W/\"491e183b6c6570e558a4576e744cd997\"",
+        "age": "4731",
+        "server_timing": null,
+        "x_vercel_cache": "HIT",
+        "x_vercel_id": "cpt1::tjs75-1785021490808-f924f4e1de66",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 258.32220800000505,
+          "bytes": 42911,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"491e183b6c6570e558a4576e744cd997\"",
+            "age": "4730",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::t7fh4-1785021489492-3f536efaa65d",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 348.25958399999945,
+          "bytes": 42911,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"491e183b6c6570e558a4576e744cd997\"",
+            "age": "4731",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::vn45j-1785021490116-bf5f331a006d",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 260.27004200000374,
+          "bytes": 42911,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"491e183b6c6570e558a4576e744cd997\"",
+            "age": "4731",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::tjs75-1785021490808-f924f4e1de66",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /register",
+      "url": "https://padeya.com/register",
+      "samples": 3,
+      "median_ms": 397.32483299999876,
+      "min_ms": 258.52649999999994,
+      "max_ms": 907.0326659999992,
+      "first_ms": 907.0326659999992,
+      "warm_median_ms": 327.92566649999935,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 42924,
+      "last_headers": {
+        "cache_control": "public, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": "W/\"46e187fed878e75bc469a1aa1a060126\"",
+        "age": "1",
+        "server_timing": null,
+        "x_vercel_cache": "HIT",
+        "x_vercel_id": "cpt1::x82rk-1785021493429-a3de88bf81eb",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 907.0326659999992,
+          "bytes": 42924,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"46e187fed878e75bc469a1aa1a060126\"",
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "PRERENDER",
+            "x_vercel_id": "cpt1::94gdc-1785021491501-697990ec7b34",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 397.32483299999876,
+          "bytes": 42924,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"46e187fed878e75bc469a1aa1a060126\"",
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::x82rk-1785021492737-9e7e2fca5846",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 258.52649999999994,
+          "bytes": 42924,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"46e187fed878e75bc469a1aa1a060126\"",
+            "age": "1",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::x82rk-1785021493429-a3de88bf81eb",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /dashboard",
+      "url": "https://padeya.com/dashboard",
+      "samples": 3,
+      "median_ms": 382.7253750000018,
+      "min_ms": 271.6049170000042,
+      "max_ms": 927.289334000001,
+      "first_ms": 927.289334000001,
+      "warm_median_ms": 327.165146000003,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 26299,
+      "last_headers": {
+        "cache_control": "public, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": "W/\"6a1dd05278ca58e00f2f801e755d56ba\"",
+        "age": "1",
+        "server_timing": null,
+        "x_vercel_cache": "HIT",
+        "x_vercel_id": "cpt1::2dlh9-1785021496048-301b08372977",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 927.289334000001,
+          "bytes": 26299,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"6a1dd05278ca58e00f2f801e755d56ba\"",
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "PRERENDER",
+            "x_vercel_id": "cpt1::2m8rp-1785021494118-11d52468b38e",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 382.7253750000018,
+          "bytes": 26299,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"6a1dd05278ca58e00f2f801e755d56ba\"",
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::2dlh9-1785021495357-eaee87bf9c0d",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 271.6049170000042,
+          "bytes": 26299,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"6a1dd05278ca58e00f2f801e755d56ba\"",
+            "age": "1",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::2dlh9-1785021496048-301b08372977",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /host",
+      "url": "https://padeya.com/host",
+      "samples": 3,
+      "median_ms": 390.3591250000027,
+      "min_ms": 277.16441699999996,
+      "max_ms": 906.0677920000016,
+      "first_ms": 906.0677920000016,
+      "warm_median_ms": 333.7617710000013,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 26269,
+      "last_headers": {
+        "cache_control": "public, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": "W/\"49abc738dff1630e26aa91700625b3d8\"",
+        "age": "1",
+        "server_timing": null,
+        "x_vercel_cache": "HIT",
+        "x_vercel_id": "cpt1::2m8rp-1785021498673-51e030dca1fd",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 906.0677920000016,
+          "bytes": 26269,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"49abc738dff1630e26aa91700625b3d8\"",
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "PRERENDER",
+            "x_vercel_id": "cpt1::2dlh9-1785021496732-fb438fa2ec23",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 390.3591250000027,
+          "bytes": 26269,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"49abc738dff1630e26aa91700625b3d8\"",
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::2m8rp-1785021497984-a4be2aad794f",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 277.16441699999996,
+          "bytes": 26269,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"49abc738dff1630e26aa91700625b3d8\"",
+            "age": "1",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::2m8rp-1785021498673-51e030dca1fd",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    },
+    {
+      "label": "FE /sponsor",
+      "url": "https://padeya.com/sponsor",
+      "samples": 3,
+      "median_ms": 347.07600000000093,
+      "min_ms": 265.1700420000052,
+      "max_ms": 942.4809590000004,
+      "first_ms": 942.4809590000004,
+      "warm_median_ms": 306.12302100000306,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 45194,
+      "last_headers": {
+        "cache_control": "public, max-age=0, must-revalidate",
+        "content_encoding": "br",
+        "content_type": "text/html; charset=utf-8",
+        "etag": "W/\"c26a2a6aec59e793ddf1dc416b3b210b\"",
+        "age": "1",
+        "server_timing": null,
+        "x_vercel_cache": "HIT",
+        "x_vercel_id": "cpt1::2m8rp-1785021501298-4de625ea8490",
+        "cf_cache_status": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 942.4809590000004,
+          "bytes": 45194,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"c26a2a6aec59e793ddf1dc416b3b210b\"",
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "PRERENDER",
+            "x_vercel_id": "cpt1::2dlh9-1785021499369-bd4176dc499d",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 347.07600000000093,
+          "bytes": 45194,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"c26a2a6aec59e793ddf1dc416b3b210b\"",
+            "age": "0",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::x82rk-1785021500609-4117f31005f9",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 265.1700420000052,
+          "bytes": 45194,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=0, must-revalidate",
+            "content_encoding": "br",
+            "content_type": "text/html; charset=utf-8",
+            "etag": "W/\"c26a2a6aec59e793ddf1dc416b3b210b\"",
+            "age": "1",
+            "server_timing": null,
+            "x_vercel_cache": "HIT",
+            "x_vercel_id": "cpt1::2m8rp-1785021501298-4de625ea8490",
+            "cf_cache_status": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+          }
+        }
+      ]
+    }
+  ],
+  "api": [
+    {
+      "label": "API /health",
+      "url": "https://padeyawebsite.onrender.com/health",
+      "samples": 3,
+      "median_ms": 345.0265419999996,
+      "min_ms": 328.8961660000059,
+      "max_ms": 547.4014999999999,
+      "first_ms": 547.4014999999999,
+      "warm_median_ms": 336.96135400000276,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 104,
+      "last_headers": {
+        "cache_control": null,
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 547.4014999999999,
+          "bytes": 104,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 328.8961660000059,
+          "bytes": 104,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 345.0265419999996,
+          "bytes": 104,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        }
+      ]
+    },
+    {
+      "label": "API /api/v1/events",
+      "url": "https://padeyawebsite.onrender.com/api/v1/events",
+      "samples": 3,
+      "median_ms": 870.8478749999995,
+      "min_ms": 627.1348749999961,
+      "max_ms": 1622.0002079999977,
+      "first_ms": 1622.0002079999977,
+      "warm_median_ms": 748.9913749999978,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 155187,
+      "last_headers": {
+        "cache_control": "public, max-age=90, stale-while-revalidate=60",
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding, Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1622.0002079999977,
+          "bytes": 155187,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=90, stale-while-revalidate=60",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 870.8478749999995,
+          "bytes": 155187,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=90, stale-while-revalidate=60",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 627.1348749999961,
+          "bytes": 155187,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=90, stale-while-revalidate=60",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        }
+      ]
+    },
+    {
+      "label": "API /api/v1/events/demo-afrobeats-night-live",
+      "url": "https://padeyawebsite.onrender.com/api/v1/events/demo-afrobeats-night-live",
+      "samples": 3,
+      "median_ms": 536.1919160000034,
+      "min_ms": 526.9081670000014,
+      "max_ms": 579.9507079999967,
+      "first_ms": 526.9081670000014,
+      "warm_median_ms": 558.071312,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 12918,
+      "last_headers": {
+        "cache_control": "public, max-age=120, stale-while-revalidate=60",
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding, Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 526.9081670000014,
+          "bytes": 12918,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=120, stale-while-revalidate=60",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 536.1919160000034,
+          "bytes": 12918,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=120, stale-while-revalidate=60",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 579.9507079999967,
+          "bytes": 12918,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=120, stale-while-revalidate=60",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        }
+      ]
+    },
+    {
+      "label": "API /api/v1/legacy/mainlandvibes",
+      "url": "https://padeyawebsite.onrender.com/api/v1/legacy/mainlandvibes",
+      "samples": 3,
+      "median_ms": 1339.3705410000039,
+      "min_ms": 1338.047166000004,
+      "max_ms": 1499.875165999998,
+      "first_ms": 1339.3705410000039,
+      "warm_median_ms": 1418.961166000001,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 8052,
+      "last_headers": {
+        "cache_control": null,
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1339.3705410000039,
+          "bytes": 8052,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1338.047166000004,
+          "bytes": 8052,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1499.875165999998,
+          "bytes": 8052,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        }
+      ]
+    },
+    {
+      "label": "API /api/v1/u/mainlandvibes/legacy",
+      "url": "https://padeyawebsite.onrender.com/api/v1/u/mainlandvibes/legacy",
+      "samples": 3,
+      "median_ms": 1345.4501670000027,
+      "min_ms": 1332.0849170000001,
+      "max_ms": 1452.5242500000022,
+      "first_ms": 1332.0849170000001,
+      "warm_median_ms": 1398.9872085000025,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 8052,
+      "last_headers": {
+        "cache_control": null,
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1332.0849170000001,
+          "bytes": 8052,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1345.4501670000027,
+          "bytes": 8052,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1452.5242500000022,
+          "bytes": 8052,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        }
+      ]
+    },
+    {
+      "label": "API /api/v1/f/pizzlecole",
+      "url": "https://padeyawebsite.onrender.com/api/v1/f/pizzlecole",
+      "samples": 3,
+      "median_ms": 523.4715410000063,
+      "min_ms": 496.6034170000057,
+      "max_ms": 629.5195419999945,
+      "first_ms": 523.4715410000063,
+      "warm_median_ms": 563.0614795000001,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 524,
+      "last_headers": {
+        "cache_control": "public, max-age=180, stale-while-revalidate=60",
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding, Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 523.4715410000063,
+          "bytes": 524,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=180, stale-while-revalidate=60",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 629.5195419999945,
+          "bytes": 524,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=180, stale-while-revalidate=60",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 496.6034170000057,
+          "bytes": 524,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=180, stale-while-revalidate=60",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        }
+      ]
+    },
+    {
+      "label": "API /api/v1/sponsors/public/korawave-pay",
+      "url": "https://padeyawebsite.onrender.com/api/v1/sponsors/public/korawave-pay",
+      "samples": 3,
+      "median_ms": 1461.8742079999938,
+      "min_ms": 1406.8994999999995,
+      "max_ms": 1763.413167000006,
+      "first_ms": 1763.413167000006,
+      "warm_median_ms": 1434.3868539999967,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 5777,
+      "last_headers": {
+        "cache_control": null,
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1763.413167000006,
+          "bytes": 5777,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1461.8742079999938,
+          "bytes": 5777,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 1406.8994999999995,
+          "bytes": 5777,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        }
+      ]
+    },
+    {
+      "label": "API /api/v1/merch?limit=50&sort=newest",
+      "url": "https://padeyawebsite.onrender.com/api/v1/merch?limit=50&sort=newest",
+      "samples": 3,
+      "median_ms": 806.6408329999977,
+      "min_ms": 695.6080000000075,
+      "max_ms": 936.5198329999985,
+      "first_ms": 806.6408329999977,
+      "warm_median_ms": 816.063916500003,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 61105,
+      "last_headers": {
+        "cache_control": "no-store",
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 806.6408329999977,
+          "bytes": 61105,
+          "redirect": null,
+          "headers": {
+            "cache_control": "no-store",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 695.6080000000075,
+          "bytes": 61105,
+          "redirect": null,
+          "headers": {
+            "cache_control": "no-store",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 936.5198329999985,
+          "bytes": 61105,
+          "redirect": null,
+          "headers": {
+            "cache_control": "no-store",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        }
+      ]
+    },
+    {
+      "label": "API /api/v1/merch/mainland-vibes-logo-tee",
+      "url": "https://padeyawebsite.onrender.com/api/v1/merch/mainland-vibes-logo-tee",
+      "samples": 3,
+      "median_ms": 707.2162499999977,
+      "min_ms": 618.3802089999954,
+      "max_ms": 733.330375000005,
+      "first_ms": 733.330375000005,
+      "warm_median_ms": 662.7982294999965,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 8928,
+      "last_headers": {
+        "cache_control": "no-store",
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 733.330375000005,
+          "bytes": 8928,
+          "redirect": null,
+          "headers": {
+            "cache_control": "no-store",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 618.3802089999954,
+          "bytes": 8928,
+          "redirect": null,
+          "headers": {
+            "cache_control": "no-store",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 707.2162499999977,
+          "bytes": 8928,
+          "redirect": null,
+          "headers": {
+            "cache_control": "no-store",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        }
+      ]
+    },
+    {
+      "label": "API /api/v1/blog/posts?limit=20",
+      "url": "https://padeyawebsite.onrender.com/api/v1/blog/posts?limit=20",
+      "samples": 3,
+      "median_ms": 683.6140840000007,
+      "min_ms": 509.65004199999385,
+      "max_ms": 746.5590840000077,
+      "first_ms": 746.5590840000077,
+      "warm_median_ms": 596.6320629999973,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 6313,
+      "last_headers": {
+        "cache_control": "public, max-age=3600, stale-while-revalidate=600",
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding, Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 746.5590840000077,
+          "bytes": 6313,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=3600, stale-while-revalidate=600",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 509.65004199999385,
+          "bytes": 6313,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=3600, stale-while-revalidate=600",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 683.6140840000007,
+          "bytes": 6313,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=3600, stale-while-revalidate=600",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        }
+      ]
+    },
+    {
+      "label": "API /api/v1/help/articles?limit=20",
+      "url": "https://padeyawebsite.onrender.com/api/v1/help/articles?limit=20",
+      "samples": 3,
+      "median_ms": 528.2202089999919,
+      "min_ms": 516.3835000000108,
+      "max_ms": 719.9991670000018,
+      "first_ms": 719.9991670000018,
+      "warm_median_ms": 522.3018545000014,
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "bytes_median": 21637,
+      "last_headers": {
+        "cache_control": "public, max-age=3600, stale-while-revalidate=600",
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding, Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 719.9991670000018,
+          "bytes": 21637,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=3600, stale-while-revalidate=600",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 528.2202089999919,
+          "bytes": 21637,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=3600, stale-while-revalidate=600",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 516.3835000000108,
+          "bytes": 21637,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=3600, stale-while-revalidate=600",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        }
+      ]
+    },
+    {
+      "label": "API /api/v1/hosts?limit=50",
+      "url": "https://padeyawebsite.onrender.com/api/v1/hosts?limit=50",
+      "samples": 3,
+      "median_ms": 558.8485409999994,
+      "min_ms": 509.61474999999336,
+      "max_ms": 687.3508750000037,
+      "first_ms": 558.8485409999994,
+      "warm_median_ms": 598.4828124999985,
+      "statuses": [
+        404,
+        404,
+        404
+      ],
+      "bytes_median": 41,
+      "last_headers": {
+        "cache_control": null,
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 404,
+          "total_ms": 558.8485409999994,
+          "bytes": 41,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 404,
+          "total_ms": 509.61474999999336,
+          "bytes": 41,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 404,
+          "total_ms": 687.3508750000037,
+          "bytes": 41,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        }
+      ]
+    },
+    {
+      "label": "API /api/v1/passport/directory?limit=50",
+      "url": "https://padeyawebsite.onrender.com/api/v1/passport/directory?limit=50",
+      "samples": 3,
+      "median_ms": 915.8159159999923,
+      "min_ms": 517.2224169999972,
+      "max_ms": 1195.4347500000003,
+      "first_ms": 517.2224169999972,
+      "warm_median_ms": 1055.6253329999963,
+      "statuses": [
+        404,
+        404,
+        404
+      ],
+      "bytes_median": 41,
+      "last_headers": {
+        "cache_control": null,
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 404,
+          "total_ms": 517.2224169999972,
+          "bytes": 41,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 404,
+          "total_ms": 1195.4347500000003,
+          "bytes": 41,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 404,
+          "total_ms": 915.8159159999923,
+          "bytes": 41,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        }
+      ]
+    }
+  ],
+  "coldProbe": {
+    "note": "Not a true Render idle cold start unless service was idle; compare first vs subsequent.",
+    "health": {
+      "label": "cold-health",
+      "url": "https://padeyawebsite.onrender.com/health",
+      "samples": 2,
+      "median_ms": 418.78439549999894,
+      "min_ms": 404.0584999999992,
+      "max_ms": 433.5102909999987,
+      "first_ms": 404.0584999999992,
+      "warm_median_ms": 433.5102909999987,
+      "statuses": [
+        200,
+        200
+      ],
+      "bytes_median": 104,
+      "last_headers": {
+        "cache_control": null,
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 404.0584999999992,
+          "bytes": 104,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 433.5102909999987,
+          "bytes": 104,
+          "redirect": null,
+          "headers": {
+            "cache_control": null,
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding"
+          }
+        }
+      ]
+    },
+    "events": {
+      "label": "cold-events",
+      "url": "https://padeyawebsite.onrender.com/api/v1/events",
+      "samples": 2,
+      "median_ms": 558.308729000004,
+      "min_ms": 556.7806669999991,
+      "max_ms": 559.8367910000088,
+      "first_ms": 559.8367910000088,
+      "warm_median_ms": 556.7806669999991,
+      "statuses": [
+        200,
+        200
+      ],
+      "bytes_median": 155187,
+      "last_headers": {
+        "cache_control": "public, max-age=90, stale-while-revalidate=60",
+        "content_encoding": "br",
+        "content_type": "application/json",
+        "etag": null,
+        "age": null,
+        "server_timing": null,
+        "x_vercel_cache": null,
+        "x_vercel_id": null,
+        "cf_cache_status": "DYNAMIC",
+        "vary": "Accept-Encoding, Accept-Encoding"
+      },
+      "errors": [],
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 559.8367910000088,
+          "bytes": 155187,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=90, stale-while-revalidate=60",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "total_ms": 556.7806669999991,
+          "bytes": 155187,
+          "redirect": null,
+          "headers": {
+            "cache_control": "public, max-age=90, stale-while-revalidate=60",
+            "content_encoding": "br",
+            "content_type": "application/json",
+            "etag": null,
+            "age": null,
+            "server_timing": null,
+            "x_vercel_cache": null,
+            "x_vercel_id": null,
+            "cf_cache_status": "DYNAMIC",
+            "vary": "Accept-Encoding, Accept-Encoding"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -9,7 +9,7 @@ from decimal import Decimal
 from typing import Any
 
 from fastapi import HTTPException, status
-from sqlalchemy import or_, select
+from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.orm import Session, object_session, selectinload
 
 from app.core.audit import write_audit_log
@@ -70,7 +70,12 @@ def unique_event_slug(db: Session, base: str) -> str:
     return candidate
 
 
+# Safe max page for public marketplace list (external API still returns a list).
+PUBLIC_EVENTS_LIST_MAX = 100
+
+
 def _event_query():
+    """Full event graph for detail / host / admin paths."""
     return select(Event).options(
         selectinload(Event.category),
         selectinload(Event.location),
@@ -80,6 +85,16 @@ def _event_query():
         selectinload(Event.agenda_items),
         selectinload(Event.people),
         selectinload(Event.checkout_questions),
+        selectinload(Event.host),
+    )
+
+
+def _event_list_query():
+    """Lean graph for marketplace cards — no agenda/people/checkout/media/venue."""
+    return select(Event).options(
+        selectinload(Event.category),
+        selectinload(Event.location),
+        selectinload(Event.ticket_types),
         selectinload(Event.host),
     )
 
@@ -174,12 +189,18 @@ def serialize_event(
     access: AccessLevel = "host",
     include_checklist: bool = False,
     preview_checked: bool = False,
+    list_mode: bool = False,
 ) -> dict[str, Any]:
+    description = event.description or ""
+    if list_mode and len(description) > 160:
+        # Hover preview only needs a short blurb; keep EventPublic.description required.
+        description = description[:157].rstrip() + "..."
+
     data: dict[str, Any] = {
         "id": event.id,
         "title": event.title,
         "slug": event.slug,
-        "description": event.description,
+        "description": description,
         "short_tagline": getattr(event, "short_tagline", None),
         "vibe": getattr(event, "vibe", None),
         "event_type": getattr(event, "event_type", None) or "public",
@@ -276,12 +297,16 @@ def serialize_event(
         "published_at": event.published_at,
         "created_at": event.created_at,
         "category": event.category,
-        "venue": event.venue,
-        "media": event.media or [],
+        "venue": None if list_mode else event.venue,
+        "media": [] if list_mode else (event.media or []),
         "ticket_types": event.ticket_types or [],
-        "agenda_items": getattr(event, "agenda_items", None) or [],
-        "people": getattr(event, "people", None) or [],
-        "checkout_questions": [
+        "agenda_items": []
+        if list_mode
+        else (getattr(event, "agenda_items", None) or []),
+        "people": [] if list_mode else (getattr(event, "people", None) or []),
+        "checkout_questions": []
+        if list_mode
+        else [
             q
             for q in (getattr(event, "checkout_questions", None) or [])
             if access in {"host", "admin"}
@@ -293,14 +318,16 @@ def serialize_event(
     loc = getattr(event, "location", None)
     if loc is not None:
         ancestors: list[dict[str, str]] = []
-        session = object_session(event) or object_session(loc)
-        if session is not None:
-            from app.taxonomy.service import location_ancestors
+        # List cards only need kind/name/slug — skip ancestor walk (extra queries).
+        if not list_mode:
+            session = object_session(event) or object_session(loc)
+            if session is not None:
+                from app.taxonomy.service import location_ancestors
 
-            ancestors = [
-                {"slug": a.slug, "name": a.name, "kind": a.kind}
-                for a in location_ancestors(session, loc)
-            ]
+                ancestors = [
+                    {"slug": a.slug, "name": a.name, "kind": a.kind}
+                    for a in location_ancestors(session, loc)
+                ]
         data["location"] = {
             "slug": loc.slug,
             "name": loc.name,
@@ -556,6 +583,31 @@ def _apply_category_dual_write(db: Session, event: Event) -> None:
         event.primary_category_id = tax.id
 
 
+def _city_slug_expr():
+    """SQL equivalent of Python city slugify used by discovery filters."""
+    return func.replace(
+        func.replace(
+            func.lower(func.trim(func.coalesce(Event.city, ""))),
+            " ",
+            "-",
+        ),
+        "_",
+        "-",
+    )
+
+
+def _state_slug_expr():
+    return func.replace(
+        func.replace(
+            func.lower(func.trim(func.coalesce(Event.state, ""))),
+            " ",
+            "-",
+        ),
+        "_",
+        "-",
+    )
+
+
 def list_published_events(
     db: Session,
     *,
@@ -567,8 +619,9 @@ def list_published_events(
     weekend: bool = False,
     paid: str | None = None,
     sort: str | None = None,
+    limit: int | None = None,
 ) -> list[Event]:
-    """Published listed events with optional discovery filters."""
+    """Published listed events with SQL filters, order, and limit (marketplace LIST)."""
     from datetime import UTC, datetime, timedelta
 
     from app.taxonomy.service import (
@@ -576,119 +629,158 @@ def list_published_events(
         get_location_by_kind_slug,
     )
 
-    rows = list(
-        db.scalars(
-            _event_query()
-            .where(Event.status == "published")
-            .where(Event.visibility.in_(("listed", "approval_required")))
-            .order_by(Event.start_datetime.asc())
-        )
+    now = datetime.now(UTC)
+    try:
+        lim = int(limit) if limit is not None else PUBLIC_EVENTS_LIST_MAX
+    except (TypeError, ValueError):
+        lim = PUBLIC_EVENTS_LIST_MAX
+    lim = max(1, min(lim, PUBLIC_EVENTS_LIST_MAX))
+
+    stmt = (
+        _event_list_query()
+        .where(Event.status == "published")
+        .where(Event.visibility.in_(("listed", "approval_required")))
+        .where(Event.end_datetime.is_not(None))
+        .where(Event.end_datetime >= now)
     )
 
-    now = datetime.now(UTC)
-    rows = [
-        e
-        for e in rows
-        if e.end_datetime is not None
-        and (
-            e.end_datetime.replace(tzinfo=UTC)
-            if e.end_datetime.tzinfo is None
-            else e.end_datetime
-        )
-        >= now
-    ]
-
-    def _slug(s: str | None) -> str:
-        if not s:
-            return ""
-        return (
-            s.strip()
-            .lower()
-            .replace(" ", "-")
-            .replace("_", "-")
+    if q and q.strip():
+        needle = f"%{q.strip().lower()}%"
+        stmt = stmt.where(
+            or_(
+                func.lower(Event.title).like(needle),
+                func.lower(func.coalesce(Event.city, "")).like(needle),
+                func.lower(func.coalesce(Event.venue_name, "")).like(needle),
+                func.lower(func.coalesce(Event.description, "")).like(needle),
+            )
         )
 
-    if q:
-        needle = q.strip().lower()
-        rows = [
-            e
-            for e in rows
-            if needle in (e.title or "").lower()
-            or needle in (e.city or "").lower()
-            or needle in (e.venue_name or "").lower()
-            or needle in (e.description or "").lower()
-        ]
     if category_slug:
-        rows = [
-            e
-            for e in rows
-            if e.category is not None and e.category.slug == category_slug
-        ]
+        stmt = stmt.join(Event.category).where(EventCategory.slug == category_slug)
+
     if location_kind and location_slug:
         node = get_location_by_kind_slug(
             db, kind=location_kind, slug=location_slug, active_only=True
         )
         if node is None:
-            rows = []
+            return []
+        allowed = list(descendant_location_ids(db, node))
+        free_text = []
+        if node.kind in {"city", "area"}:
+            free_text.append(
+                and_(
+                    Event.location_id.is_(None),
+                    or_(
+                        _city_slug_expr() == node.slug,
+                        _city_slug_expr()
+                        == func.replace(
+                            func.replace(
+                                func.lower(func.trim(node.name)), " ", "-"
+                            ),
+                            "_",
+                            "-",
+                        ),
+                    ),
+                )
+            )
+        elif node.kind == "state":
+            name_slug = func.replace(
+                func.replace(func.lower(func.trim(node.name)), " ", "-"),
+                "_",
+                "-",
+            )
+            free_text.append(
+                and_(
+                    Event.location_id.is_(None),
+                    or_(
+                        _state_slug_expr() == node.slug,
+                        _state_slug_expr() == name_slug,
+                        _city_slug_expr() == node.slug,
+                        _city_slug_expr() == name_slug,
+                    ),
+                )
+            )
+        loc_clause = Event.location_id.in_(allowed) if allowed else False
+        if free_text:
+            stmt = stmt.where(or_(loc_clause, *free_text))
+        elif allowed:
+            stmt = stmt.where(loc_clause)
         else:
-            allowed = descendant_location_ids(db, node)
-            filtered: list[Event] = []
-            for e in rows:
-                if e.location_id and e.location_id in allowed:
-                    filtered.append(e)
-                elif not e.location_id:
-                    # Free-text fallback for events not yet dual-written.
-                    if node.kind in {"city", "area"} and (
-                        _slug(e.city) in {node.slug, _slug(node.name)}
-                    ):
-                        filtered.append(e)
-                    elif node.kind == "state" and (
-                        _slug(e.state) in {node.slug, _slug(node.name)}
-                        or _slug(e.city) in {node.slug, _slug(node.name)}
-                    ):
-                        filtered.append(e)
-            rows = filtered
+            return []
     elif city_slug:
-        rows = [e for e in rows if _slug(e.city) == city_slug.lower()]
+        stmt = stmt.where(_city_slug_expr() == city_slug.strip().lower())
+
     if weekend:
-        # Approximate upcoming Fri–Sun window in UTC
-        day = now.weekday()  # Mon=0 … Fri=4
+        day = now.weekday()
         days_to_fri = (4 - day) % 7
         start = (now + timedelta(days=days_to_fri)).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
         end = start + timedelta(days=3)
-        rows = [
-            e
-            for e in rows
-            if e.start_datetime and start <= e.start_datetime < end
-        ]
+        stmt = stmt.where(
+            Event.start_datetime.is_not(None),
+            Event.start_datetime >= start,
+            Event.start_datetime < end,
+        )
+
     if paid in {"free", "paid"}:
-        filtered = []
-        for e in rows:
-            prices = [
-                float(tt.price)
-                for tt in (e.ticket_types or [])
-                if getattr(tt, "visibility", "public") == "public"
-            ]
-            if not prices:
-                continue
-            mn = min(prices)
-            if paid == "free" and mn <= 0:
-                filtered.append(e)
-            elif paid == "paid" and mn > 0:
-                filtered.append(e)
-        rows = filtered
+        tt = TicketType
+        price_pred = tt.price <= 0 if paid == "free" else tt.price > 0
+        stmt = stmt.where(
+            exists(
+                select(tt.id).where(
+                    tt.event_id == Event.id,
+                    tt.visibility == "public",
+                    price_pred,
+                )
+            )
+        )
 
     if sort == "newest":
-        rows.sort(
-            key=lambda e: e.published_at or e.created_at or e.start_datetime,
-            reverse=True,
+        stmt = stmt.order_by(
+            func.coalesce(
+                Event.published_at, Event.created_at, Event.start_datetime
+            ).desc()
         )
     elif sort == "featured":
-        rows.sort(key=lambda e: (not e.featured, e.start_datetime or now))
+        stmt = stmt.order_by(Event.featured.desc(), Event.start_datetime.asc())
+    else:
+        stmt = stmt.order_by(Event.start_datetime.asc())
 
-    return rows
+    stmt = stmt.limit(lim)
+    # join(category) may duplicate rows — unique() on the Result.
+    return list(db.scalars(stmt).unique().all())
+
+
+def serialize_event_list_item(event: Event) -> dict[str, Any]:
+    """Marketplace card payload — EventPublic-compatible without detail nests."""
+    data = serialize_event(event, access="public", list_mode=True)
+    for key in (
+        "what_to_expect",
+        "what_to_bring",
+        "prohibited_items",
+        "entry_requirements",
+        "parking_info",
+        "accessibility_notes",
+        "safety_notice",
+        "terms_acknowledgement",
+        "refund_policy",
+        "refund_policy_text",
+        "cancellation_policy",
+        "seo_title",
+        "seo_description",
+        "social_share_title",
+        "social_share_description",
+        "teaser_video_url",
+        "sponsor_logo_urls",
+    ):
+        data[key] = None
+    data["ticket_types"] = [
+        tt
+        for tt in (event.ticket_types or [])
+        if getattr(tt, "visibility", "public") == "public"
+    ]
+    return data
 
 
 def list_host_events(db: Session, host: Host) -> list[Event]:

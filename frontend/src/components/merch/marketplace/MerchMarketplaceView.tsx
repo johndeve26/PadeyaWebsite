@@ -21,6 +21,7 @@ import { MerchTypeCards } from "@/components/merch/marketplace/MerchTypeCards";
 import { MerchFaqSection } from "@/components/marketing/merch/MerchFaqSection";
 import { Alert, Button, Container, SkeletonCard } from "@/components/ui";
 import { ApiError } from "@/lib/api";
+import { timeoutOrErrorMessage } from "@/lib/api-timeouts";
 import {
   curateMarketplaceHome,
   excludeShown,
@@ -134,9 +135,12 @@ export function MerchMarketplaceView() {
       } catch (err) {
         if (active) {
           setHomeError(
-            err instanceof ApiError
-              ? err.detail
-              : "Could not load merch marketplace",
+            timeoutOrErrorMessage(
+              err,
+              err instanceof ApiError
+                ? err.detail
+                : "Could not load merch marketplace",
+            ),
           );
           setHome({
             featured: [],
@@ -180,7 +184,10 @@ export function MerchMarketplaceView() {
         setCatalogTotal(result.total);
       } catch (err) {
         setCatalogError(
-          err instanceof ApiError ? err.detail : "Could not load merch catalog",
+          timeoutOrErrorMessage(
+            err,
+            err instanceof ApiError ? err.detail : "Could not load merch catalog",
+          ),
         );
         if (!append) {
           setCatalog([]);

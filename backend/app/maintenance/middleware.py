@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -13,12 +14,18 @@ from starlette.responses import JSONResponse, Response
 from starlette.types import ASGIApp
 
 from app.core import database as database
+from app.core.request_context import get_maintenance_obs, request_id_var
 from app.core.security import decode_access_token
 from app.maintenance.sections import (
     ALWAYS_ALLOW_EXACT,
     ALWAYS_ALLOW_PREFIXES,
     SAFE_METHODS,
     SECTION_BY_KEY,
+)
+from app.maintenance.decision_cache import (
+    get_cached_off_allow,
+    store_off_allow,
+    store_requires_db,
 )
 from app.maintenance.service import (
     BYPASS_HEADER,
@@ -73,8 +80,13 @@ def _decide(request: Request) -> _MaintenanceDecision:
     """Sync DB work only. Caller must not hold the session across awaits."""
     path = request.url.path
     method = request.method.upper()
-    db = database.SessionLocal()
+    obs = get_maintenance_obs()
+    obs.looked_up = True
+    obs.db_touched = True
+    started = time.perf_counter()
+    db = None
     try:
+        db = database.SessionLocal()
         try:
             apply_due_schedules(db)
         except Exception:  # noqa: BLE001
@@ -86,8 +98,11 @@ def _decide(request: Request) -> _MaintenanceDecision:
         mode = (settings.mode or "off").strip().lower()
         if mode in {"off", "scheduled"}:
             if not any(s.enabled and _section_window_active(s) for s in sections):
+                obs.allowed = True
+                store_off_allow(mode=mode or "off")
                 return _MaintenanceDecision(allow=True)
             mode = "section_only"
+            store_requires_db(mode=mode)
 
         user = None
         auth = request.headers.get("Authorization") or ""
@@ -109,6 +124,7 @@ def _decide(request: Request) -> _MaintenanceDecision:
                 or user_has_permission(user, "admin.maintenance.manage")
             )
         ):
+            obs.allowed = True
             return _MaintenanceDecision(allow=True)
 
         bypass_tok = request.headers.get(BYPASS_HEADER)
@@ -118,6 +134,7 @@ def _decide(request: Request) -> _MaintenanceDecision:
             and user_has_permission(user, "admin.maintenance.bypass")
             and validate_bypass_token(db, token=bypass_tok, user_id=user.id)
         ):
+            obs.allowed = True
             return _MaintenanceDecision(allow=True)
 
         expected = (
@@ -126,7 +143,11 @@ def _decide(request: Request) -> _MaintenanceDecision:
             else None
         )
 
+        if mode in {"active", "read_only", "section_only"}:
+            store_requires_db(mode=mode)
+
         if mode == "active":
+            obs.allowed = False
             return _MaintenanceDecision(
                 allow=False,
                 block=_block(
@@ -140,7 +161,9 @@ def _decide(request: Request) -> _MaintenanceDecision:
 
         if mode == "read_only":
             if method in SAFE_METHODS:
+                obs.allowed = True
                 return _MaintenanceDecision(allow=True)
+            obs.allowed = False
             return _MaintenanceDecision(
                 allow=False,
                 block=_block(
@@ -167,12 +190,15 @@ def _decide(request: Request) -> _MaintenanceDecision:
                 break
 
         if matched is None:
+            obs.allowed = True
             return _MaintenanceDecision(allow=True)
 
         sec_expected = matched.ends_at.isoformat() if matched.ends_at else expected
         if matched.mode == "read_only":
             if method in SAFE_METHODS:
+                obs.allowed = True
                 return _MaintenanceDecision(allow=True)
+            obs.allowed = False
             return _MaintenanceDecision(
                 allow=False,
                 block=_block(
@@ -184,6 +210,7 @@ def _decide(request: Request) -> _MaintenanceDecision:
                 ),
             )
 
+        obs.allowed = False
         return _MaintenanceDecision(
             allow=False,
             block=_block(
@@ -200,9 +227,22 @@ def _decide(request: Request) -> _MaintenanceDecision:
             db.rollback()
         except Exception:  # noqa: BLE001
             pass
+        obs.allowed = True
+        obs.notes.append("fail_open")
         return _MaintenanceDecision(allow=True)
     finally:
-        db.close()
+        obs.duration_ms = (time.perf_counter() - started) * 1000.0
+        rid = request_id_var.get()
+        logger.info(
+            "[MAINTENANCE] request_id=%s duration_ms=%.0f db_touched=%s "
+            "allowed=%s path_skipped=false",
+            rid or "-",
+            obs.duration_ms or 0.0,
+            obs.db_touched,
+            obs.allowed,
+        )
+        if db is not None:
+            db.close()
 
 
 class MaintenanceMiddleware(BaseHTTPMiddleware):
@@ -213,6 +253,20 @@ class MaintenanceMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         method = request.method.upper()
         if method == "OPTIONS" or _allowed_always(path):
+            obs = get_maintenance_obs()
+            obs.skipped = True
+            obs.looked_up = False
+            obs.db_touched = False
+            return await call_next(request)
+
+        cached = get_cached_off_allow()
+        if cached is True:
+            obs = get_maintenance_obs()
+            obs.looked_up = True
+            obs.db_touched = False
+            obs.allowed = True
+            obs.notes.append("decision_cache_hit")
+            obs.duration_ms = 0.0
             return await call_next(request)
 
         # Sync SQLAlchemy off the event loop; never hold a Session across await.

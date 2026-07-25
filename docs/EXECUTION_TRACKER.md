@@ -6,6 +6,64 @@ Lightweight log of verification runs for major product domains. Not a roadmap.
 
 ---
 
+## SEO production indexability regression (2026-07-26)
+
+**Regression audit = implemented in workspace** — PageSpeed `/events` “blocked from indexing” investigation; live public inventory verified; `buildPageMetadata` robots wipe fixed; env contradiction hardened; www→apex redirect; smoke + `seo:indexability-audit` hardened.
+
+Canonical: [SEO_AUDIT.md](./SEO_AUDIT.md#production-indexability-regression-audit--2026-07-26) · [SEO_IMPLEMENTATION.md](./SEO_IMPLEMENTATION.md) · [SEO_LAUNCH_CHECKLIST.md](./SEO_LAUNCH_CHECKLIST.md).
+
+| Item | Status |
+|---|---|
+| Live `/events` noindex today | **Not present** (LIVE VERIFIED indexable; missing explicit robots meta pre-fix) |
+| Root cause class | Metadata merge wipe + env contradiction risk + www duplicate host |
+| Accidental public noindex on live | **0** found |
+| Code fixes | **Done** (await deploy for LIVE re-verify of explicit `index,follow` + www redirect) |
+| `seo:production-smoke` noindex hard-fail | **Done** |
+| `seo:indexability-audit` | **Done** |
+
+---
+
+## Performance Phase 1 — API/query latency (2026-07-26)
+
+**Phase 1 = implemented in workspace** — events list SQL filters/order/limit + lean list DTO (`listv2` cache key), sponsor public batched loads, Legacy public no-rescore path, maintenance 15s off-allow cache, request-scoped RBAC memo, host workspaces single-flight. **No speculative DB indexes. Production improvement not claimed until post-deploy measurement.**
+
+Canonical: [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md) · [PERFORMANCE_AUDIT.md](./PERFORMANCE_AUDIT.md) · baseline [`performance-phase1-baseline.json`](./performance-phase1-baseline.json).
+
+| Item | Status |
+|---|---|
+| Phase 1 baseline capture (pre-change prod) | **Done** (Phase 0 undeployed → no Server-Timing) |
+| Events SQL list + lean DTO | **Done** (CODE-LEVEL) |
+| Sponsor / Legacy public optimizations | **Done** (CODE-LEVEL) |
+| Maintenance decision cache | **Done** (CODE-LEVEL) |
+| Request-scoped RBAC memo | **Done** (CODE-LEVEL) |
+| Host workspaces single-flight | **Done** (CODE-LEVEL + vitest) |
+| Speculative indexes | **None** |
+| Local tests (`test_performance_phase1` + vitest) | **Passed** |
+| Deployed before/after production timings | **Pending deploy** |
+| Phase 2 SSR / images / CDN / geography | **Out of scope** (next) |
+
+---
+
+## Performance Phase 0 — reliability & observability (2026-07-26)
+
+**Phase 0 = implemented** — request timing middleware, X-Request-ID, Server-Timing, `/health` vs `/ready`, frontend timeout policy, Redis socket timeouts, maintenance/RBAC instrumentation, safe global 500 handler, audit script terminology cleanup, regression tests for maintenance seed + unread poll guard.
+
+Canonical: [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md) · [PERFORMANCE_AUDIT.md](./PERFORMANCE_AUDIT.md).
+
+| Item | Status |
+|---|---|
+| FastAPI timing + slow labels | **Done** |
+| X-Request-ID + Server-Timing | **Done** |
+| `/ready` (SELECT 1) vs cheap `/health` | **Done** |
+| Frontend central timeouts | **Done** |
+| Redis socket timeouts (fail-open cache) | **Done** |
+| Maintenance/RBAC observability | **Done** |
+| Exception handler (no traceback to clients) | **Done** |
+| Regression: maintenance seed + unread poll | **Done** |
+| Phase 1 query optimizations | **See Phase 1 section above** |
+
+---
+
 ## SEO post-implementation audit (2026-07-24)
 
 **Re-audit after Phases 0A–0C + 1A–1C.** Dual scores: code **88 / 100** (was **52**); live `padeya.com` **54 / 100**. Production smoke **FAILED** — phases implemented in workspace but **not deployed** at audit time. Launch: **not ready**.

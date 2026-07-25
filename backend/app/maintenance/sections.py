@@ -148,6 +148,8 @@ ALWAYS_ALLOW_EXACT = frozenset(
     {
         "/health",
         "/api/v1/health",
+        "/ready",
+        "/api/v1/ready",
         "/docs",
         "/redoc",
         "/openapi.json",

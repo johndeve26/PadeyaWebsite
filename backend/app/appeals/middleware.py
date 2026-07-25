@@ -17,7 +17,7 @@ from app.users.account_status_constants import (
     ACCOUNT_STATUS_DELETED,
     ACCOUNT_STATUS_SUSPENDED,
 )
-from app.users.service import get_user_by_id
+from app.users.service import get_user_account_gate
 
 # Paths suspended users may still call.
 _SUSPENDED_ALLOWED_EXACT = frozenset(
@@ -67,7 +67,8 @@ class SuspendedAccountMiddleware(BaseHTTPMiddleware):
 
         db = SessionLocal()
         try:
-            user = get_user_by_id(db, user_id)
+            # Status-only load — avoid duplicating full RBAC selectinload here.
+            user = get_user_account_gate(db, user_id)
             if user is None:
                 blocked = False
                 detail = ""

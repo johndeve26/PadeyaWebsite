@@ -20,6 +20,7 @@ import {
   trackFanDirectoryView,
 } from "@/lib/analytics";
 import { isOwnFanPassport } from "@/lib/own-fan-ctas";
+import { timeoutOrErrorMessage } from "@/lib/api-timeouts";
 import { fetchFanDirectory } from "@/lib/passport-api";
 import type { FanDirectoryCard } from "@/lib/types/passport";
 
@@ -58,6 +59,7 @@ export function FansDirectory() {
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
     const timer = window.setTimeout(() => {
       void (async () => {
         try {
@@ -73,9 +75,14 @@ export function FansDirectory() {
           setItems(res.items);
           setTotal(res.total);
           setError(null);
-        } catch {
+        } catch (err) {
           if (!active) return;
-          setError("Could not load the Fan Passport Directory.");
+          setError(
+            timeoutOrErrorMessage(
+              err,
+              "Could not load the Fan Passport Directory.",
+            ),
+          );
           setItems([]);
           setTotal(0);
         } finally {
@@ -231,7 +238,17 @@ export function FansDirectory() {
         </p>
 
         {error ? (
-          <p className="text-sm font-semibold text-danger">{error}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm font-semibold text-danger">{error}</p>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => setRefreshKey((n) => n + 1)}
+            >
+              Retry
+            </Button>
+          </div>
         ) : null}
 
         {loading ? <SkeletonLoader lines={6} /> : null}

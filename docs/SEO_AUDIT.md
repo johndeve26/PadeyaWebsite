@@ -887,4 +887,55 @@ SEO endpoints should never emit ticket ownership, CRM notes, or Vault unlocks �
 
 ---
 
-*End of audit. No application code was modified.*
+## Production indexability regression audit — 2026-07-26
+
+### PageSpeed `/events` finding
+
+PageSpeed Insights reported `https://padeya.com/events` as **“Page is blocked from indexing”**. Prior production SEO smoke was green but did **not** hard-fail accidental public `noindex`.
+
+### Exact `/events` root cause (LIVE + CODE)
+
+| Layer | Finding | Status |
+|-------|---------|--------|
+| LIVE HTML meta robots | No `noindex` / no `googlebot` noindex on `/events` | **LIVE VERIFIED** indexable-by-default |
+| LIVE `X-Robots-Tag` | Absent on `/events` | **LIVE VERIFIED** |
+| LIVE robots.txt | Allows `/events` (checkout wildcards do not match) | **LIVE VERIFIED** |
+| LIVE canonical | `https://padeya.com/events` | **LIVE VERIFIED** |
+| CODE defect | `buildPageMetadata({… robots: undefined })` clears root `index,follow` in Next.js metadata merge — public hubs emit **no** robots meta | **CODE VERIFIED** (fixed) |
+| CODE risk | `APP_ENV`/`NEXT_PUBLIC_APP_ENV=staging` previously beat `VERCEL_ENV=production` → sitewide noindex | **CODE VERIFIED** (fixed: production platform wins + warning) |
+| WWW | `https://www.padeya.com/events` served **200** (canonical apex) — duplicate host | **LIVE VERIFIED** (www→apex redirect added) |
+
+**Blocker classification for the PageSpeed report:** most consistent with a **historical / env-misclassification meta robots noindex** (or PSI/Search Console stale signal). At audit time the live `/events` response was **not** blocked by meta, Googlebot meta, `X-Robots-Tag`, or robots.txt.
+
+### Inventory checked
+
+- **45** static public/intentional routes probed live
+- **196** sitemap URLs; sampled **5+5+5+4+5+5+5+10** across events/hosts/fans/sponsors/merch/blog/help/hubs
+- **0** accidental public noindex routes on live production
+- **0** sitemap URL indexability conflicts on live samples
+
+### Fixes shipped in workspace
+
+1. Explicit `INDEXABLE_ROBOTS` from `buildPageMetadata` (never `robots: undefined`)
+2. Env precedence: true `VERCEL_ENV=production` is not silent-noindexed by mis-set `APP_ENV`
+3. www → apex permanent redirect in `next.config.ts`
+4. Ambassadors + Support public layouts get canonical metadata
+5. Soft facet/thin-hub noindex uses `noIndexFollow`
+6. `seo:production-smoke` hard-fails public noindex + samples sitemap categories
+7. New `seo:indexability-audit` matrix script + `indexability.ts` helpers/tests
+
+### Intentionally noindex (confirmed LIVE)
+
+`/login`, `/register`, `/dashboard`, `/host`, `/sponsor`, `/events/search`, faceted `/events?q|sort|category=…`, checkout/private trees (middleware `X-Robots-Tag`).
+
+### Post-deploy verification
+
+```bash
+curl -sL https://padeya.com/events | grep -iE 'name="robots"|name="googlebot"'
+curl -sI https://padeya.com/events | grep -i 'x-robots-tag'
+curl -sIL https://www.padeya.com/events | grep -iE 'HTTP/|location:|x-robots-tag'
+cd frontend && SEO_BASE_URL=https://padeya.com npm run seo:production-smoke
+cd frontend && SEO_BASE_URL=https://padeya.com npm run seo:indexability-audit
+```
+
+Expected after deploy: public hubs emit `index, follow`; www redirects to apex; smoke green.

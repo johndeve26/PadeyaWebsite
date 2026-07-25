@@ -1,0 +1,1118 @@
+[
+  {
+    "kind": "FE",
+    "path": "/",
+    "url": "https://padeya.com/",
+    "median_dns_s": 0.002641,
+    "median_tcp_s": 0.026693,
+    "median_tls_s": 0.171885,
+    "median_ttfb_s": 0.464712,
+    "median_total_s": 0.77944,
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "median_bytes": 471498.0,
+    "redirects": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first": {
+      "http_code": 200,
+      "size": 471498.0,
+      "redirects": 0.0,
+      "namelookup": 0.002046,
+      "connect": 0.030412,
+      "appconnect": 0.171885,
+      "pretransfer": 0.172064,
+      "starttransfer": 0.703527,
+      "total": 0.841526,
+      "headers": {
+        "age": "3",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "content-type": "text/html; charset=utf-8",
+        "x-vercel-cache": "HIT",
+        "x-vercel-id": "cpt1::iad1::x82rk-1785021453917-d0085e19d35b"
+      }
+    },
+    "warm": [
+      {
+        "http_code": 200,
+        "size": 471498.0,
+        "redirects": 0.0,
+        "namelookup": 0.002641,
+        "connect": 0.022638,
+        "appconnect": 0.165732,
+        "pretransfer": 0.165868,
+        "starttransfer": 0.464712,
+        "total": 0.77944,
+        "headers": {
+          "age": "5",
+          "cache-control": "public, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "HIT",
+          "x-vercel-id": "cpt1::iad1::98nj5-1785021456523-b84d55b0fbeb"
+        }
+      },
+      {
+        "http_code": 200,
+        "size": 471498.0,
+        "redirects": 0.0,
+        "namelookup": 0.003533,
+        "connect": 0.026693,
+        "appconnect": 0.175812,
+        "pretransfer": 0.175909,
+        "starttransfer": 0.46298,
+        "total": 0.700169,
+        "headers": {
+          "age": "8",
+          "cache-control": "public, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "HIT",
+          "x-vercel-id": "cpt1::iad1::h678l-1785021458690-0d66bebc12b1"
+        }
+      }
+    ],
+    "headers_sample": {
+      "age": "8",
+      "cache-control": "public, max-age=0, must-revalidate",
+      "content-type": "text/html; charset=utf-8",
+      "x-vercel-cache": "HIT",
+      "x-vercel-id": "cpt1::iad1::h678l-1785021458690-0d66bebc12b1"
+    }
+  },
+  {
+    "kind": "FE",
+    "path": "/events",
+    "url": "https://padeya.com/events",
+    "median_dns_s": 0.003797,
+    "median_tcp_s": 0.027987,
+    "median_tls_s": 0.183036,
+    "median_ttfb_s": 1.351029,
+    "median_total_s": 1.739991,
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "median_bytes": 267634.0,
+    "redirects": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first": {
+      "http_code": 200,
+      "size": 267634.0,
+      "redirects": 0.0,
+      "namelookup": 0.009139,
+      "connect": 0.027987,
+      "appconnect": 0.302265,
+      "pretransfer": 0.302362,
+      "starttransfer": 1.351029,
+      "total": 1.646577,
+      "headers": {
+        "age": "0",
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/html; charset=utf-8",
+        "x-vercel-cache": "MISS",
+        "x-vercel-id": "cpt1::iad1::sscgw-1785021463202-88bb28ef6eef"
+      }
+    },
+    "warm": [
+      {
+        "http_code": 200,
+        "size": 267634.0,
+        "redirects": 0.0,
+        "namelookup": 0.003797,
+        "connect": 0.032897,
+        "appconnect": 0.183036,
+        "pretransfer": 0.183154,
+        "starttransfer": 1.385759,
+        "total": 1.788529,
+        "headers": {
+          "age": "0",
+          "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "MISS",
+          "x-vercel-id": "cpt1::iad1::7n2nc-1785021467072-ed5a32282722"
+        }
+      },
+      {
+        "http_code": 200,
+        "size": 267634.0,
+        "redirects": 0.0,
+        "namelookup": 0.002652,
+        "connect": 0.024902,
+        "appconnect": 0.165823,
+        "pretransfer": 0.165887,
+        "starttransfer": 1.006221,
+        "total": 1.739991,
+        "headers": {
+          "age": "0",
+          "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "MISS",
+          "x-vercel-id": "cpt1::iad1::tjs75-1785021470739-3d69162c9aba"
+        }
+      }
+    ],
+    "headers_sample": {
+      "age": "0",
+      "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "content-type": "text/html; charset=utf-8",
+      "x-vercel-cache": "MISS",
+      "x-vercel-id": "cpt1::iad1::tjs75-1785021470739-3d69162c9aba"
+    }
+  },
+  {
+    "kind": "FE",
+    "path": "/events/demo-afrobeats-night-live",
+    "url": "https://padeya.com/events/demo-afrobeats-night-live",
+    "median_dns_s": 0.003831,
+    "median_tcp_s": 0.064794,
+    "median_tls_s": 0.244823,
+    "median_ttfb_s": 0.891696,
+    "median_total_s": 1.170008,
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "median_bytes": 126320.0,
+    "redirects": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first": {
+      "http_code": 200,
+      "size": 126320.0,
+      "redirects": 0.0,
+      "namelookup": 0.003995,
+      "connect": 0.064794,
+      "appconnect": 0.244823,
+      "pretransfer": 0.244934,
+      "starttransfer": 0.891696,
+      "total": 1.170008,
+      "headers": {
+        "age": "0",
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/html; charset=utf-8",
+        "x-vercel-cache": "MISS",
+        "x-vercel-id": "cpt1::iad1::vn45j-1785021474040-3396286c8df9"
+      }
+    },
+    "warm": [
+      {
+        "http_code": 200,
+        "size": 126320.0,
+        "redirects": 0.0,
+        "namelookup": 0.003831,
+        "connect": 0.100778,
+        "appconnect": 0.62512,
+        "pretransfer": 0.62526,
+        "starttransfer": 1.180863,
+        "total": 1.676527,
+        "headers": {
+          "age": "0",
+          "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "MISS",
+          "x-vercel-id": "cpt1::iad1::9l5jq-1785021477362-d408911d2e92"
+        }
+      },
+      {
+        "http_code": 200,
+        "size": 126320.0,
+        "redirects": 0.0,
+        "namelookup": 0.003801,
+        "connect": 0.032807,
+        "appconnect": 0.183351,
+        "pretransfer": 0.18343,
+        "starttransfer": 0.712733,
+        "total": 1.132705,
+        "headers": {
+          "age": "0",
+          "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "MISS",
+          "x-vercel-id": "cpt1::iad1::h678l-1785021479800-d43f0f09374c"
+        }
+      }
+    ],
+    "headers_sample": {
+      "age": "0",
+      "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "content-type": "text/html; charset=utf-8",
+      "x-vercel-cache": "MISS",
+      "x-vercel-id": "cpt1::iad1::h678l-1785021479800-d43f0f09374c"
+    }
+  },
+  {
+    "kind": "FE",
+    "path": "/u/mainlandvibes",
+    "url": "https://padeya.com/u/mainlandvibes",
+    "median_dns_s": 0.003288,
+    "median_tcp_s": 0.101273,
+    "median_tls_s": 0.250479,
+    "median_ttfb_s": 0.789453,
+    "median_total_s": 1.149925,
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "median_bytes": 100012.0,
+    "redirects": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first": {
+      "http_code": 200,
+      "size": 100012.0,
+      "redirects": 0.0,
+      "namelookup": 0.003573,
+      "connect": 0.10214,
+      "appconnect": 0.250479,
+      "pretransfer": 0.250627,
+      "starttransfer": 0.789453,
+      "total": 1.149925,
+      "headers": {
+        "age": "0",
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/html; charset=utf-8",
+        "x-vercel-cache": "MISS",
+        "x-vercel-id": "cpt1::iad1::wrrlz-1785021482441-a38b422e126b"
+      }
+    },
+    "warm": [
+      {
+        "http_code": 200,
+        "size": 100012.0,
+        "redirects": 0.0,
+        "namelookup": 0.003183,
+        "connect": 0.101273,
+        "appconnect": 0.295352,
+        "pretransfer": 0.295467,
+        "starttransfer": 0.820482,
+        "total": 1.150651,
+        "headers": {
+          "age": "0",
+          "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "MISS",
+          "x-vercel-id": "cpt1::iad1::h678l-1785021484877-3ec85c8ec74f"
+        }
+      },
+      {
+        "http_code": 200,
+        "size": 100012.0,
+        "redirects": 0.0,
+        "namelookup": 0.003288,
+        "connect": 0.026288,
+        "appconnect": 0.1671,
+        "pretransfer": 0.167193,
+        "starttransfer": 0.690236,
+        "total": 0.755938,
+        "headers": {
+          "age": "0",
+          "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "MISS",
+          "x-vercel-id": "cpt1::iad1::7rdh4-1785021486981-ca6ee7a62a24"
+        }
+      }
+    ],
+    "headers_sample": {
+      "age": "0",
+      "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "content-type": "text/html; charset=utf-8",
+      "x-vercel-cache": "MISS",
+      "x-vercel-id": "cpt1::iad1::7rdh4-1785021486981-ca6ee7a62a24"
+    }
+  },
+  {
+    "kind": "FE",
+    "path": "/f/pizzlecole",
+    "url": "https://padeya.com/f/pizzlecole",
+    "median_dns_s": 0.004044,
+    "median_tcp_s": 0.054993,
+    "median_tls_s": 0.199191,
+    "median_ttfb_s": 0.946561,
+    "median_total_s": 1.185463,
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "median_bytes": 57629.0,
+    "redirects": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first": {
+      "http_code": 200,
+      "size": 57629.0,
+      "redirects": 0.0,
+      "namelookup": 0.003246,
+      "connect": 0.054993,
+      "appconnect": 0.199191,
+      "pretransfer": 0.199302,
+      "starttransfer": 0.93536,
+      "total": 1.185463,
+      "headers": {
+        "age": "0",
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/html; charset=utf-8",
+        "x-vercel-cache": "MISS",
+        "x-vercel-id": "cpt1::iad1::wrrlz-1785021489409-883a16893150"
+      }
+    },
+    "warm": [
+      {
+        "http_code": 200,
+        "size": 57629.0,
+        "redirects": 0.0,
+        "namelookup": 0.004044,
+        "connect": 0.098284,
+        "appconnect": 0.245666,
+        "pretransfer": 0.245764,
+        "starttransfer": 0.946561,
+        "total": 1.207865,
+        "headers": {
+          "age": "0",
+          "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "MISS",
+          "x-vercel-id": "cpt1::iad1::9zwjb-1785021492112-27a135f7aa98"
+        }
+      },
+      {
+        "http_code": 200,
+        "size": 57629.0,
+        "redirects": 0.0,
+        "namelookup": 0.004274,
+        "connect": 0.024423,
+        "appconnect": 0.173343,
+        "pretransfer": 0.173396,
+        "starttransfer": 1.023112,
+        "total": 1.048009,
+        "headers": {
+          "age": "0",
+          "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "MISS",
+          "x-vercel-id": "cpt1::iad1::x82rk-1785021494537-5d6622f5080c"
+        }
+      }
+    ],
+    "headers_sample": {
+      "age": "0",
+      "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "content-type": "text/html; charset=utf-8",
+      "x-vercel-cache": "MISS",
+      "x-vercel-id": "cpt1::iad1::x82rk-1785021494537-5d6622f5080c"
+    }
+  },
+  {
+    "kind": "FE",
+    "path": "/sponsors/korawave-pay",
+    "url": "https://padeya.com/sponsors/korawave-pay",
+    "median_dns_s": 0.003976,
+    "median_tcp_s": 0.032206,
+    "median_tls_s": 0.175699,
+    "median_ttfb_s": 0.717702,
+    "median_total_s": 0.82973,
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "median_bytes": 89755.0,
+    "redirects": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first": {
+      "http_code": 200,
+      "size": 89755.0,
+      "redirects": 0.0,
+      "namelookup": 0.004237,
+      "connect": 0.025264,
+      "appconnect": 0.163863,
+      "pretransfer": 0.163948,
+      "starttransfer": 0.711835,
+      "total": 0.820099,
+      "headers": {
+        "age": "0",
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/html; charset=utf-8",
+        "x-vercel-cache": "MISS",
+        "x-vercel-id": "cpt1::iad1::9zwjb-1785021496947-13525273d039"
+      }
+    },
+    "warm": [
+      {
+        "http_code": 200,
+        "size": 89755.0,
+        "redirects": 0.0,
+        "namelookup": 0.003976,
+        "connect": 0.070453,
+        "appconnect": 0.235545,
+        "pretransfer": 0.235682,
+        "starttransfer": 0.809716,
+        "total": 1.131888,
+        "headers": {
+          "age": "0",
+          "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "MISS",
+          "x-vercel-id": "cpt1::iad1::9zwjb-1785021499596-ac90ff303cb5"
+        }
+      },
+      {
+        "http_code": 200,
+        "size": 89755.0,
+        "redirects": 0.0,
+        "namelookup": 0.003542,
+        "connect": 0.032206,
+        "appconnect": 0.175699,
+        "pretransfer": 0.175804,
+        "starttransfer": 0.717702,
+        "total": 0.82973,
+        "headers": {
+          "age": "0",
+          "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "MISS",
+          "x-vercel-id": "cpt1::iad1::7rdh4-1785021501669-902bc4510eff"
+        }
+      }
+    ],
+    "headers_sample": {
+      "age": "0",
+      "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "content-type": "text/html; charset=utf-8",
+      "x-vercel-cache": "MISS",
+      "x-vercel-id": "cpt1::iad1::7rdh4-1785021501669-902bc4510eff"
+    }
+  },
+  {
+    "kind": "FE",
+    "path": "/merch/mainland-vibes-logo-tee",
+    "url": "https://padeya.com/merch/mainland-vibes-logo-tee",
+    "median_dns_s": 0.002483,
+    "median_tcp_s": 0.099594,
+    "median_tls_s": 0.254409,
+    "median_ttfb_s": 0.798584,
+    "median_total_s": 0.837564,
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "median_bytes": 69654.0,
+    "redirects": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first": {
+      "http_code": 200,
+      "size": 69654.0,
+      "redirects": 0.0,
+      "namelookup": 0.002483,
+      "connect": 0.099708,
+      "appconnect": 0.263276,
+      "pretransfer": 0.263316,
+      "starttransfer": 0.809469,
+      "total": 0.837564,
+      "headers": {
+        "age": "0",
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/html; charset=utf-8",
+        "x-vercel-cache": "MISS",
+        "x-vercel-id": "cpt1::iad1::vn45j-1785021504019-7470ff4e1e05"
+      }
+    },
+    "warm": [
+      {
+        "http_code": 200,
+        "size": 69654.0,
+        "redirects": 0.0,
+        "namelookup": 0.003602,
+        "connect": 0.099594,
+        "appconnect": 0.254409,
+        "pretransfer": 0.254502,
+        "starttransfer": 0.798584,
+        "total": 1.063398,
+        "headers": {
+          "age": "0",
+          "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "MISS",
+          "x-vercel-id": "cpt1::iad1::9zwjb-1785021506551-f1d45ab95790"
+        }
+      },
+      {
+        "http_code": 200,
+        "size": 69654.0,
+        "redirects": 0.0,
+        "namelookup": 0.002125,
+        "connect": 0.029067,
+        "appconnect": 0.202911,
+        "pretransfer": 0.203005,
+        "starttransfer": 0.738344,
+        "total": 0.765359,
+        "headers": {
+          "age": "0",
+          "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "MISS",
+          "x-vercel-id": "cpt1::iad1::845wz-1785021508684-91d28983c768"
+        }
+      }
+    ],
+    "headers_sample": {
+      "age": "0",
+      "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "content-type": "text/html; charset=utf-8",
+      "x-vercel-cache": "MISS",
+      "x-vercel-id": "cpt1::iad1::845wz-1785021508684-91d28983c768"
+    }
+  },
+  {
+    "kind": "FE",
+    "path": "/login",
+    "url": "https://padeya.com/login",
+    "median_dns_s": 0.00295,
+    "median_tcp_s": 0.082575,
+    "median_tls_s": 0.23326,
+    "median_ttfb_s": 0.499173,
+    "median_total_s": 0.606864,
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "median_bytes": 42911.0,
+    "redirects": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first": {
+      "http_code": 200,
+      "size": 42911.0,
+      "redirects": 0.0,
+      "namelookup": 0.00264,
+      "connect": 0.073284,
+      "appconnect": 0.211347,
+      "pretransfer": 0.211506,
+      "starttransfer": 0.484648,
+      "total": 0.584999,
+      "headers": {
+        "age": "4751",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "content-type": "text/html; charset=utf-8",
+        "x-vercel-cache": "HIT",
+        "x-vercel-id": "cpt1::t7fh4-1785021510787-c914115270f2"
+      }
+    },
+    "warm": [
+      {
+        "http_code": 200,
+        "size": 42911.0,
+        "redirects": 0.0,
+        "namelookup": 0.003374,
+        "connect": 0.082575,
+        "appconnect": 0.23326,
+        "pretransfer": 0.233339,
+        "starttransfer": 0.499173,
+        "total": 0.611665,
+        "headers": {
+          "age": "4753",
+          "cache-control": "public, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "HIT",
+          "x-vercel-id": "cpt1::98nj5-1785021512348-34a0401ce323"
+        }
+      },
+      {
+        "http_code": 200,
+        "size": 42911.0,
+        "redirects": 0.0,
+        "namelookup": 0.00295,
+        "connect": 0.103592,
+        "appconnect": 0.255653,
+        "pretransfer": 0.255705,
+        "starttransfer": 0.516423,
+        "total": 0.606864,
+        "headers": {
+          "age": "4755",
+          "cache-control": "public, max-age=0, must-revalidate",
+          "content-type": "text/html; charset=utf-8",
+          "x-vercel-cache": "HIT",
+          "x-vercel-id": "cpt1::9l5jq-1785021513919-f25bc0f1d40c"
+        }
+      }
+    ],
+    "headers_sample": {
+      "age": "4755",
+      "cache-control": "public, max-age=0, must-revalidate",
+      "content-type": "text/html; charset=utf-8",
+      "x-vercel-cache": "HIT",
+      "x-vercel-id": "cpt1::9l5jq-1785021513919-f25bc0f1d40c"
+    }
+  },
+  {
+    "kind": "API",
+    "path": "/health",
+    "url": "https://padeyawebsite.onrender.com/health",
+    "median_dns_s": 0.005492,
+    "median_tcp_s": 0.081923,
+    "median_tls_s": 0.172703,
+    "median_ttfb_s": 0.526347,
+    "median_total_s": 0.526535,
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "median_bytes": 104.0,
+    "redirects": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first": {
+      "http_code": 200,
+      "size": 104.0,
+      "redirects": 0.0,
+      "namelookup": 0.002646,
+      "connect": 0.173314,
+      "appconnect": 0.267854,
+      "pretransfer": 0.267921,
+      "starttransfer": 0.608241,
+      "total": 0.608455,
+      "headers": {
+        "content-type": "application/json",
+        "cf-ray": "a20ee277db79300f-CPT"
+      }
+    },
+    "warm": [
+      {
+        "http_code": 200,
+        "size": 104.0,
+        "redirects": 0.0,
+        "namelookup": 0.006129,
+        "connect": 0.081923,
+        "appconnect": 0.172703,
+        "pretransfer": 0.172825,
+        "starttransfer": 0.5025,
+        "total": 0.502659,
+        "headers": {
+          "content-type": "application/json",
+          "cf-ray": "a20ee280ea161b23-CPT"
+        }
+      },
+      {
+        "http_code": 200,
+        "size": 104.0,
+        "redirects": 0.0,
+        "namelookup": 0.005492,
+        "connect": 0.080476,
+        "appconnect": 0.166131,
+        "pretransfer": 0.166358,
+        "starttransfer": 0.526347,
+        "total": 0.526535,
+        "headers": {
+          "content-type": "application/json",
+          "cf-ray": "a20ee28a1ccfe2c5-CPT"
+        }
+      }
+    ],
+    "headers_sample": {
+      "content-type": "application/json",
+      "cf-ray": "a20ee28a1ccfe2c5-CPT"
+    }
+  },
+  {
+    "kind": "API",
+    "path": "/api/v1/events",
+    "url": "https://padeyawebsite.onrender.com/api/v1/events",
+    "median_dns_s": 0.004989,
+    "median_tcp_s": 0.106993,
+    "median_tls_s": 0.225883,
+    "median_ttfb_s": 1.133683,
+    "median_total_s": 1.258845,
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "median_bytes": 155187.0,
+    "redirects": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first": {
+      "http_code": 200,
+      "size": 155187.0,
+      "redirects": 0.0,
+      "namelookup": 0.002503,
+      "connect": 0.106993,
+      "appconnect": 0.20278,
+      "pretransfer": 0.202884,
+      "starttransfer": 1.150974,
+      "total": 1.286306,
+      "headers": {
+        "content-type": "application/json",
+        "cache-control": "public, max-age=90, stale-while-revalidate=60",
+        "cf-ray": "a20ee2980b438e2e-CPT"
+      }
+    },
+    "warm": [
+      {
+        "http_code": 200,
+        "size": 155187.0,
+        "redirects": 0.0,
+        "namelookup": 0.004989,
+        "connect": 0.083902,
+        "appconnect": 0.298234,
+        "pretransfer": 0.298303,
+        "starttransfer": 0.930802,
+        "total": 1.243164,
+        "headers": {
+          "content-type": "application/json",
+          "cache-control": "public, max-age=90, stale-while-revalidate=60",
+          "cf-ray": "a20ee2a90d93aa64-CPT"
+        }
+      },
+      {
+        "http_code": 200,
+        "size": 155187.0,
+        "redirects": 0.0,
+        "namelookup": 0.005913,
+        "connect": 0.110344,
+        "appconnect": 0.225883,
+        "pretransfer": 0.225996,
+        "starttransfer": 1.133683,
+        "total": 1.258845,
+        "headers": {
+          "content-type": "application/json",
+          "cache-control": "public, max-age=90, stale-while-revalidate=60",
+          "cf-ray": "a20ee2b968944193-CPT"
+        }
+      }
+    ],
+    "headers_sample": {
+      "content-type": "application/json",
+      "cache-control": "public, max-age=90, stale-while-revalidate=60",
+      "cf-ray": "a20ee2b968944193-CPT"
+    }
+  },
+  {
+    "kind": "API",
+    "path": "/api/v1/events/demo-afrobeats-night-live",
+    "url": "https://padeyawebsite.onrender.com/api/v1/events/demo-afrobeats-night-live",
+    "median_dns_s": 0.004851,
+    "median_tcp_s": 0.107023,
+    "median_tls_s": 0.213569,
+    "median_ttfb_s": 0.868289,
+    "median_total_s": 0.86853,
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "median_bytes": 12918.0,
+    "redirects": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first": {
+      "http_code": 200,
+      "size": 12918.0,
+      "redirects": 0.0,
+      "namelookup": 0.002893,
+      "connect": 0.110859,
+      "appconnect": 0.219806,
+      "pretransfer": 0.219881,
+      "starttransfer": 0.868289,
+      "total": 0.86853,
+      "headers": {
+        "content-type": "application/json",
+        "cache-control": "public, max-age=120, stale-while-revalidate=60",
+        "cf-ray": "a20ee2c9ef8941e2-CPT"
+      }
+    },
+    "warm": [
+      {
+        "http_code": 200,
+        "size": 12918.0,
+        "redirects": 0.0,
+        "namelookup": 0.004851,
+        "connect": 0.107023,
+        "appconnect": 0.213569,
+        "pretransfer": 0.213681,
+        "starttransfer": 1.1479,
+        "total": 1.148223,
+        "headers": {
+          "content-type": "application/json",
+          "cache-control": "public, max-age=120, stale-while-revalidate=60",
+          "cf-ray": "a20ee2d91c6d039a-CPT"
+        }
+      },
+      {
+        "http_code": 200,
+        "size": 12918.0,
+        "redirects": 0.0,
+        "namelookup": 0.004975,
+        "connect": 0.088196,
+        "appconnect": 0.192677,
+        "pretransfer": 0.192801,
+        "starttransfer": 0.705261,
+        "total": 0.710289,
+        "headers": {
+          "content-type": "application/json",
+          "cache-control": "public, max-age=120, stale-while-revalidate=60",
+          "cf-ray": "a20ee2e4ef94bf11-CPT"
+        }
+      }
+    ],
+    "headers_sample": {
+      "content-type": "application/json",
+      "cache-control": "public, max-age=120, stale-while-revalidate=60",
+      "cf-ray": "a20ee2e4ef94bf11-CPT"
+    }
+  },
+  {
+    "kind": "API",
+    "path": "/api/v1/legacy/mainlandvibes",
+    "url": "https://padeyawebsite.onrender.com/api/v1/legacy/mainlandvibes",
+    "median_dns_s": 0.003953,
+    "median_tcp_s": 0.105396,
+    "median_tls_s": 0.237856,
+    "median_ttfb_s": 1.728115,
+    "median_total_s": 1.728611,
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "median_bytes": 8052.0,
+    "redirects": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first": {
+      "http_code": 200,
+      "size": 8052.0,
+      "redirects": 0.0,
+      "namelookup": 0.003328,
+      "connect": 0.105396,
+      "appconnect": 0.237856,
+      "pretransfer": 0.238184,
+      "starttransfer": 1.678966,
+      "total": 1.679251,
+      "headers": {
+        "content-type": "application/json",
+        "cf-ray": "a20ee2f67d101673-CPT"
+      }
+    },
+    "warm": [
+      {
+        "http_code": 200,
+        "size": 8052.0,
+        "redirects": 0.0,
+        "namelookup": 0.004256,
+        "connect": 0.170594,
+        "appconnect": 0.266599,
+        "pretransfer": 0.26671,
+        "starttransfer": 1.753011,
+        "total": 1.753475,
+        "headers": {
+          "content-type": "application/json",
+          "cf-ray": "a20ee30ddeec4807-CPT"
+        }
+      },
+      {
+        "http_code": 200,
+        "size": 8052.0,
+        "redirects": 0.0,
+        "namelookup": 0.003953,
+        "connect": 0.081413,
+        "appconnect": 0.17702,
+        "pretransfer": 0.177102,
+        "starttransfer": 1.728115,
+        "total": 1.728611,
+        "headers": {
+          "content-type": "application/json",
+          "cf-ray": "a20ee3254da21673-CPT"
+        }
+      }
+    ],
+    "headers_sample": {
+      "content-type": "application/json",
+      "cf-ray": "a20ee3254da21673-CPT"
+    }
+  },
+  {
+    "kind": "API",
+    "path": "/api/v1/f/pizzlecole",
+    "url": "https://padeyawebsite.onrender.com/api/v1/f/pizzlecole",
+    "median_dns_s": 0.004118,
+    "median_tcp_s": 0.087314,
+    "median_tls_s": 0.17949,
+    "median_ttfb_s": 0.687187,
+    "median_total_s": 0.687421,
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "median_bytes": 524.0,
+    "redirects": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first": {
+      "http_code": 200,
+      "size": 524.0,
+      "redirects": 0.0,
+      "namelookup": 0.009244,
+      "connect": 0.087314,
+      "appconnect": 0.17949,
+      "pretransfer": 0.179594,
+      "starttransfer": 0.687187,
+      "total": 0.687421,
+      "headers": {
+        "content-type": "application/json",
+        "cache-control": "public, max-age=180, stale-while-revalidate=60",
+        "cf-ray": "a20ee3374dc152ad-CPT"
+      }
+    },
+    "warm": [
+      {
+        "http_code": 200,
+        "size": 524.0,
+        "redirects": 0.0,
+        "namelookup": 0.004118,
+        "connect": 0.082112,
+        "appconnect": 0.170771,
+        "pretransfer": 0.170909,
+        "starttransfer": 0.906257,
+        "total": 0.906428,
+        "headers": {
+          "content-type": "application/json",
+          "cache-control": "public, max-age=180, stale-while-revalidate=60",
+          "cf-ray": "a20ee3446db73fe2-CPT"
+        }
+      },
+      {
+        "http_code": 200,
+        "size": 524.0,
+        "redirects": 0.0,
+        "namelookup": 0.003953,
+        "connect": 0.097132,
+        "appconnect": 0.187478,
+        "pretransfer": 0.187598,
+        "starttransfer": 0.68104,
+        "total": 0.681425,
+        "headers": {
+          "content-type": "application/json",
+          "cache-control": "public, max-age=180, stale-while-revalidate=60",
+          "cf-ray": "a20ee3527c3c0db4-CPT"
+        }
+      }
+    ],
+    "headers_sample": {
+      "content-type": "application/json",
+      "cache-control": "public, max-age=180, stale-while-revalidate=60",
+      "cf-ray": "a20ee3527c3c0db4-CPT"
+    }
+  },
+  {
+    "kind": "API",
+    "path": "/api/v1/sponsors/public/korawave-pay",
+    "url": "https://padeyawebsite.onrender.com/api/v1/sponsors/public/korawave-pay",
+    "median_dns_s": 0.004613,
+    "median_tcp_s": 0.08469,
+    "median_tls_s": 0.177174,
+    "median_ttfb_s": 1.703883,
+    "median_total_s": 1.704205,
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "median_bytes": 5777.0,
+    "redirects": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first": {
+      "http_code": 200,
+      "size": 5777.0,
+      "redirects": 0.0,
+      "namelookup": 0.004613,
+      "connect": 0.08033,
+      "appconnect": 0.172095,
+      "pretransfer": 0.172218,
+      "starttransfer": 1.701664,
+      "total": 1.701884,
+      "headers": {
+        "content-type": "application/json",
+        "cf-ray": "a20ee363fd85ad07-CPT"
+      }
+    },
+    "warm": [
+      {
+        "http_code": 200,
+        "size": 5777.0,
+        "redirects": 0.0,
+        "namelookup": 0.005288,
+        "connect": 0.08469,
+        "appconnect": 0.177174,
+        "pretransfer": 0.177277,
+        "starttransfer": 1.726261,
+        "total": 1.72651,
+        "headers": {
+          "content-type": "application/json",
+          "cf-ray": "a20ee37c19834bcb-CPT"
+        }
+      },
+      {
+        "http_code": 200,
+        "size": 5777.0,
+        "redirects": 0.0,
+        "namelookup": 0.004079,
+        "connect": 0.132503,
+        "appconnect": 0.216547,
+        "pretransfer": 0.216682,
+        "starttransfer": 1.703883,
+        "total": 1.704205,
+        "headers": {
+          "content-type": "application/json",
+          "cf-ray": "a20ee3942e86f047-CPT"
+        }
+      }
+    ],
+    "headers_sample": {
+      "content-type": "application/json",
+      "cf-ray": "a20ee3942e86f047-CPT"
+    }
+  }
+]

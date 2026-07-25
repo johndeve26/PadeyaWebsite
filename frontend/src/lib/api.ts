@@ -20,6 +20,12 @@ import type {
   User,
 } from "@/lib/auth/types";
 import { getApiBaseUrl, getApiPrefix } from "@/lib/api-base";
+import {
+  type ApiTimeoutBudget,
+  createTimeoutSignal,
+  mapAbortToTimeoutError,
+  timeoutMsFor,
+} from "@/lib/api-timeouts";
 
 const API_URL = getApiBaseUrl();
 const API_PREFIX = getApiPrefix();
@@ -35,12 +41,42 @@ export class ApiError extends Error {
   }
 }
 
+export {
+  TimeoutError,
+  API_TIMEOUT_MS,
+  isTimeoutError,
+  timeoutOrErrorMessage,
+} from "@/lib/api-timeouts";
+
 type RequestOptions = {
   method?: string;
   body?: unknown;
   auth?: boolean;
   skipRefresh?: boolean;
+  /** Named budget or explicit milliseconds. */
+  timeout?: ApiTimeoutBudget | number;
+  signal?: AbortSignal;
 };
+
+const CHROME_PATH_PREFIXES = [
+  "/notifications/unread-count",
+  "/messages/unread-count",
+] as const;
+
+function defaultBudgetFor(
+  path: string,
+  method: string,
+  options: RequestOptions,
+): ApiTimeoutBudget | number {
+  if (options.timeout !== undefined) return options.timeout;
+  if (CHROME_PATH_PREFIXES.some((p) => path.startsWith(p))) {
+    return "chrome";
+  }
+  // Auth refresh stays on default — not chrome poll.
+  if (path.startsWith("/auth/")) return "default";
+  if (method === "GET" && options.auth === false) return "public";
+  return "default";
+}
 
 type FastApiValidationItem = {
   msg?: string;
@@ -136,17 +172,27 @@ export async function apiRequest<T>(
     }
   }
 
-  const response = await fetch(`${API_URL}${API_PREFIX}${path}`, {
-    method: options.method ?? (options.body ? "POST" : "GET"),
-    headers,
-    // Callers may pass an object (preferred) or a pre-stringified JSON body.
-    body:
-      options.body === undefined || options.body === null
-        ? undefined
-        : typeof options.body === "string"
-          ? options.body
-          : JSON.stringify(options.body),
-  });
+  const method = options.method ?? (options.body ? "POST" : "GET");
+  const timeoutMs = timeoutMsFor(defaultBudgetFor(path, method, options));
+  const signal = createTimeoutSignal(timeoutMs, options.signal);
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${API_PREFIX}${path}`, {
+      method,
+      headers,
+      signal,
+      // Callers may pass an object (preferred) or a pre-stringified JSON body.
+      body:
+        options.body === undefined || options.body === null
+          ? undefined
+          : typeof options.body === "string"
+            ? options.body
+            : JSON.stringify(options.body),
+    });
+  } catch (err) {
+    mapAbortToTimeoutError(err);
+  }
 
   if (
     response.status === 401 &&
@@ -157,6 +203,7 @@ export async function apiRequest<T>(
   ) {
     const refreshed = await refreshTokens();
     if (refreshed) {
+      // Single refresh retry only — never auto-retry mutations on timeout.
       return apiRequest<T>(path, { ...options, skipRefresh: true });
     }
     markSessionExpired(DEFAULT_SESSION_EXPIRED_MESSAGE);
@@ -197,6 +244,8 @@ export async function apiDownload(
     auth?: boolean;
     skipRefresh?: boolean;
     fallbackFilename?: string;
+    timeout?: ApiTimeoutBudget | number;
+    signal?: AbortSignal;
   } = {},
 ): Promise<{ filename: string; blob: Blob }> {
   const headers: Record<string, string> = {};
@@ -207,10 +256,18 @@ export async function apiDownload(
     }
   }
 
-  const response = await fetch(`${API_URL}${API_PREFIX}${path}`, {
-    method: "GET",
-    headers,
-  });
+  const timeoutMs = timeoutMsFor(options.timeout ?? "long");
+  const signal = createTimeoutSignal(timeoutMs, options.signal);
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${API_PREFIX}${path}`, {
+      method: "GET",
+      headers,
+      signal,
+    });
+  } catch (err) {
+    mapAbortToTimeoutError(err);
+  }
 
   if (
     response.status === 401 &&
@@ -242,7 +299,12 @@ export async function apiDownload(
 export async function apiUpload<T>(
   path: string,
   formData: FormData,
-  options: { auth?: boolean; skipRefresh?: boolean } = {},
+  options: {
+    auth?: boolean;
+    skipRefresh?: boolean;
+    timeout?: ApiTimeoutBudget | number;
+    signal?: AbortSignal;
+  } = {},
 ): Promise<T> {
   const headers: Record<string, string> = {};
   if (options.auth !== false) {
@@ -252,11 +314,20 @@ export async function apiUpload<T>(
     }
   }
 
-  const response = await fetch(`${API_URL}${API_PREFIX}${path}`, {
-    method: "POST",
-    headers,
-    body: formData,
-  });
+  // Uploads often need a longer budget — callers may override.
+  const timeoutMs = timeoutMsFor(options.timeout ?? "long");
+  const signal = createTimeoutSignal(timeoutMs, options.signal);
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${API_PREFIX}${path}`, {
+      method: "POST",
+      headers,
+      body: formData,
+      signal,
+    });
+  } catch (err) {
+    mapAbortToTimeoutError(err);
+  }
 
   if (
     response.status === 401 &&

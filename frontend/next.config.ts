@@ -44,6 +44,19 @@ const nextConfig: NextConfig = {
     // Host Command Center stays canonical at `/host`.
     // Do not add `/dashboard/host` aliases in this phase (Option B rejected).
     return [
+      // Apex canonical — www must not serve a separate indexable duplicate.
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.padeya.com" }],
+        destination: "https://padeya.com/:path*",
+        permanent: true,
+      },
+      {
+        source: "/",
+        has: [{ type: "host", value: "www.padeya.com" }],
+        destination: "https://padeya.com/",
+        permanent: true,
+      },
       {
         source: "/host/dashboard",
         destination: "/host",

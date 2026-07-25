@@ -1,3 +1,4 @@
+import type { SeoEnvInput } from "@/lib/seo/env-policy";
 import { buildPageMetadata, siteOrigin } from "@/lib/seo/site";
 import {
   breadcrumbJsonLd,
@@ -70,14 +71,19 @@ export function hubPageMetadata(opts: {
   seoTitle?: string | null;
   seoDescription?: string | null;
   noIndex?: boolean;
+  /** Soft public noindex (facets/thin hubs) — keep follow when true. */
+  noIndexFollow?: boolean;
   /** When set, canonical points here instead of `path` (e.g. /events/search → /events). */
   canonicalPath?: string;
+  env?: SeoEnvInput;
 }) {
   return buildPageMetadata({
     title: opts.seoTitle || opts.title,
     description: opts.seoDescription || opts.description,
     path: opts.canonicalPath || opts.path,
     noIndex: opts.noIndex,
+    noIndexFollow: opts.noIndexFollow,
+    env: opts.env,
   });
 }
 

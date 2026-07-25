@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { RuntimeSettingField } from "@/components/admin/runtime-settings/RuntimeSettingField";
@@ -50,6 +51,7 @@ export function RuntimeSettingsCategoryPage({ category }: Props) {
   const { user } = useAuth();
   const caps = getRuntimeSettingsCapabilities(user);
   const toast = useToast();
+  const router = useRouter();
   const [data, setData] = useState<RuntimeSettingsCategoryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -58,12 +60,23 @@ export function RuntimeSettingsCategoryPage({ category }: Props) {
   const isSystem = category === "system-status";
   const specialist = specialistHrefFor(category);
   const specialistMode = isSpecialistCategory(category);
+  const isAiFeatureToggles =
+    category === "feature-toggles" || category === "features";
 
   const canOpen =
     isSystem ? caps.viewSystemStatus : caps.view;
   const [loading, setLoading] = useState(true);
 
+  // Phantom runtime category — real toggles live under AI controls.
+  useEffect(() => {
+    if (!isAiFeatureToggles) return;
+    router.replace(specialist || "/admin/ai/features");
+  }, [isAiFeatureToggles, router, specialist]);
+
   const load = useCallback(async () => {
+    if (isAiFeatureToggles) {
+      return;
+    }
     if (isSystem) {
       // System status may come from dashboard or category endpoint.
       const res = await fetchRuntimeSettingsCategory(category);
@@ -110,10 +123,13 @@ export function RuntimeSettingsCategoryPage({ category }: Props) {
     }
     const res = await fetchRuntimeSettingsCategory(category);
     setData(res);
-  }, [category, isSystem, specialistMode]);
+  }, [category, isAiFeatureToggles, isSystem, specialistMode]);
 
   useEffect(() => {
-    if (!canOpen) return;
+    if (!canOpen || isAiFeatureToggles) {
+      if (isAiFeatureToggles) setLoading(false);
+      return;
+    }
     let active = true;
     void (async () => {
       try {
@@ -135,7 +151,7 @@ export function RuntimeSettingsCategoryPage({ category }: Props) {
     return () => {
       active = false;
     };
-  }, [canOpen, load]);
+  }, [canOpen, isAiFeatureToggles, load]);
 
   const title = useMemo(
     () => formatCategoryLabel(category, data?.label),
@@ -219,6 +235,18 @@ export function RuntimeSettingsCategoryPage({ category }: Props) {
     } finally {
       setBusyKey(null);
     }
+  }
+
+  if (isAiFeatureToggles) {
+    return (
+      <Alert tone="info" title="Redirecting">
+        Feature toggles are managed in{" "}
+        <Link href="/admin/ai/features" className="font-semibold underline">
+          AI Control Center
+        </Link>
+        .
+      </Alert>
+    );
   }
 
   if (!canOpen) {

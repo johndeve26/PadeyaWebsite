@@ -33,6 +33,7 @@ export async function generateMetadata({
       "Discover events on Pàdéyá — search by city, category, date, and vibe. Verified tickets, QR check-in, and trusted hosts.",
     path: EVENTS_FACET_CANONICAL_PATH,
     noIndex: hasEventsFacetQuery(sp),
+    noIndexFollow: true,
   });
 }
 

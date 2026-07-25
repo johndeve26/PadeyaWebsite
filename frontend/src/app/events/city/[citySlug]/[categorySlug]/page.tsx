@@ -52,6 +52,7 @@ export async function generateMetadata({ params }: Props) {
     seoTitle: term?.seo_title ? `${term.seo_title} · ${city}` : undefined,
     seoDescription: term?.seo_description,
     noIndex: !eligibility.indexable,
+    noIndexFollow: true,
   });
 }
 

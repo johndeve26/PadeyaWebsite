@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     app_env: str = "development"
     debug: bool = True
     api_prefix: str = "/api/v1"
+    # Optional deploy labels for timing logs (never required for boot).
+    app_version: str = "0.17.0"
+    build_sha: str = ""
 
     # Local demo helper (/demo) + seed tooling. Never enable in production.
     demo_mode: bool = False

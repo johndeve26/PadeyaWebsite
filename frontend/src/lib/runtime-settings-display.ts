@@ -193,6 +193,9 @@ export const SPECIALIST_CATEGORIES: Record<
 > = {
   email: { href: "/admin/email/settings", label: "Email settings" },
   push: { href: "/admin/push/settings", label: "Push settings" },
+  // Not a runtime-settings registry category — AI feature toggles live here.
+  "feature-toggles": { href: "/admin/ai/features", label: "AI feature toggles" },
+  features: { href: "/admin/ai/features", label: "AI feature toggles" },
 };
 
 export function isSpecialistCategory(category: string): boolean {

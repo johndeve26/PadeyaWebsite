@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useMessageSocket } from "@/hooks/useMessageSocket";
 import { apiRequest } from "@/lib/api";
-import { getAccessToken } from "@/lib/auth/storage";
+import { canPollAuthenticatedChrome } from "@/lib/auth/unread-poll-guard";
 import type { MessagingSocketEvent } from "@/lib/messaging/socket-types";
 
 const POLL_LIVE_MS = 90_000;
@@ -23,13 +23,14 @@ export function useUnreadNotifications(enabled = true): number {
   const active = Boolean(enabled && user);
 
   const refresh = useCallback(async () => {
-    if (!active || !getAccessToken()) {
+    if (!active || !canPollAuthenticatedChrome()) {
       setUnread(0);
       return;
     }
     try {
       const data = await apiRequest<{ unread_count: number }>(
         "/notifications/unread-count",
+        { timeout: "chrome" },
       );
       setUnread(data.unread_count || 0);
     } catch {

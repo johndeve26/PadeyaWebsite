@@ -1,4 +1,5 @@
 import { apiRequest } from "@/lib/api";
+import { getAccessToken } from "@/lib/auth/storage";
 import type { Host } from "@/lib/types/events";
 import type {
   HostDiscovery,
@@ -95,17 +96,59 @@ export async function fetchMyHost(): Promise<Host | null> {
   }
 }
 
+type WorkspacesCache = {
+  token: string;
+  promise: Promise<HostWorkspace[]>;
+  result?: HostWorkspace[];
+};
+
+let workspacesFlight: WorkspacesCache | null = null;
+
+/** Drop cached host workspaces (login/logout / workspace mutations). */
+export function invalidateHostWorkspacesCache(): void {
+  workspacesFlight = null;
+}
+
+/**
+ * Single-flight host workspaces fetch.
+ * Multiple marketplace cards share one in-flight/result per access token.
+ */
 export async function fetchHostWorkspaces(): Promise<HostWorkspace[]> {
-  return apiRequest<HostWorkspace[]>("/me/team-workspaces");
+  const token = getAccessToken() || "";
+  if (!token) {
+    invalidateHostWorkspacesCache();
+    return [];
+  }
+  if (workspacesFlight && workspacesFlight.token === token) {
+    if (workspacesFlight.result) return workspacesFlight.result;
+    return workspacesFlight.promise;
+  }
+  const promise = apiRequest<HostWorkspace[]>("/me/team-workspaces")
+    .then((rows) => {
+      if (workspacesFlight?.token === token) {
+        workspacesFlight.result = rows;
+      }
+      return rows;
+    })
+    .catch((err) => {
+      if (workspacesFlight?.token === token) {
+        workspacesFlight = null;
+      }
+      throw err;
+    });
+  workspacesFlight = { token, promise };
+  return promise;
 }
 
 export async function setActiveHostWorkspace(
   hostId: string,
 ): Promise<{ host_id: string }> {
-  return apiRequest<{ host_id: string }>("/me/active-workspace", {
+  const res = await apiRequest<{ host_id: string }>("/me/active-workspace", {
     method: "POST",
     body: { host_id: hostId },
   });
+  invalidateHostWorkspacesCache();
+  return res;
 }
 
 export async function fetchWorkspaceDeskEvents(
@@ -122,7 +165,12 @@ export async function onboardHost(input: {
   state?: string;
   country?: string;
 }): Promise<Host> {
-  return apiRequest<Host>("/hosts/onboard", { method: "POST", body: input });
+  const host = await apiRequest<Host>("/hosts/onboard", {
+    method: "POST",
+    body: input,
+  });
+  invalidateHostWorkspacesCache();
+  return host;
 }
 
 export async function updateMyHost(input: Record<string, unknown>): Promise<Host> {

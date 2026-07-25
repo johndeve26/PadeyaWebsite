@@ -17,10 +17,39 @@ def get_user_by_email(db: Session, email: str) -> User | None:
 
 
 def get_user_by_id(db: Session, user_id) -> User | None:
-    return db.scalar(
+    """Load user + roles + permissions once per request/session (memoized)."""
+    from app.core.request_context import (
+        get_cached_user_for_session,
+        note_user_rbac_load,
+        store_cached_user_for_session,
+    )
+
+    cached = get_cached_user_for_session(db, user_id)
+    if cached is not None:
+        return cached
+
+    note_user_rbac_load()
+    user = db.scalar(
         select(User)
         .where(User.id == user_id)
         .options(selectinload(User.roles).selectinload(Role.permissions))
+    )
+    if user is not None:
+        store_cached_user_for_session(db, user)
+    return user
+
+
+def get_user_account_gate(db: Session, user_id) -> User | None:
+    """Thin user load for suspension gate — no roles/permissions/admin notes."""
+    from sqlalchemy.orm import noload
+
+    return db.scalar(
+        select(User)
+        .where(User.id == user_id)
+        .options(
+            noload(User.roles),
+            noload("*"),
+        )
     )
 
 

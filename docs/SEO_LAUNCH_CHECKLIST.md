@@ -34,9 +34,12 @@ Observed live blockers (pre-deploy):
 ```bash
 cd frontend
 SEO_BASE_URL=https://padeya.com npm run seo:production-smoke
+SEO_BASE_URL=https://padeya.com npm run seo:indexability-audit
 # Optional stricter sample requirements:
 # SEO_SMOKE_STRICT=1 SEO_BASE_URL=https://padeya.com npm run seo:production-smoke
 ```
+
+Smoke must fail if any intended-indexable public sample has meta/Googlebot/`X-Robots-Tag` `noindex` or a matching robots.txt Disallow.
 
 3. Confirm local regression suite still passes:
 

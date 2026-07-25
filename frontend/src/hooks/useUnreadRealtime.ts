@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useMessageSocket } from "@/hooks/useMessageSocket";
-import { getAccessToken } from "@/lib/auth/storage";
+import { canPollAuthenticatedChrome } from "@/lib/auth/unread-poll-guard";
 import { fetchUnreadCount } from "@/lib/messaging-api";
 import type {
   MessagingSocketEvent,
@@ -26,7 +26,7 @@ export function useUnreadRealtime(enabled = true): {
   const [count, setCount] = useState(0);
 
   const refresh = useCallback(async () => {
-    if (!user || !enabled || !getAccessToken()) {
+    if (!user || !enabled || !canPollAuthenticatedChrome()) {
       setCount(0);
       return;
     }

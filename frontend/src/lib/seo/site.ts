@@ -11,7 +11,11 @@ import {
   shouldIndexEnvironment,
   type SeoEnvInput,
 } from "@/lib/seo/env-policy";
-import { NOINDEX_ROBOTS } from "@/lib/seo/noindex";
+import {
+  INDEXABLE_ROBOTS,
+  NOINDEX_FOLLOW_ROBOTS,
+  NOINDEX_ROBOTS,
+} from "@/lib/seo/noindex";
 import { resolveOgImageUrl } from "@/lib/seo/public-asset";
 import { buildSiteVerificationMetadata } from "@/lib/seo/verification";
 
@@ -36,7 +40,12 @@ export {
   X_ROBOTS_NOINDEX,
 } from "@/lib/seo/env-policy";
 
-export { NOINDEX_ROBOTS, privateAreaMetadata } from "@/lib/seo/noindex";
+export {
+  INDEXABLE_ROBOTS,
+  NOINDEX_FOLLOW_ROBOTS,
+  NOINDEX_ROBOTS,
+  privateAreaMetadata,
+} from "@/lib/seo/noindex";
 
 function isLocalOrigin(origin: string): boolean {
   try {
@@ -125,6 +134,12 @@ export function buildPageMetadata(opts: {
   path: string;
   image?: string | null;
   noIndex?: boolean;
+  /**
+   * When noIndex is set for a public duplicate/filter URL, keep follow
+   * (default true). Private callers should use `privateAreaMetadata` /
+   * `NOINDEX_ROBOTS` instead.
+   */
+  noIndexFollow?: boolean;
   env?: SeoEnvInput;
 }): Metadata {
   const env = opts.env ?? readSeoEnv();
@@ -145,11 +160,23 @@ export function buildPageMetadata(opts: {
       }
     : { url: image };
 
+  // Never set `robots: undefined` — Next.js merge treats the key as present and
+  // clears parent root robots (wiping production index,follow).
+  let robots: Metadata["robots"] = INDEXABLE_ROBOTS;
+  if (noIndex) {
+    // Soft public duplicates (facets) may opt into follow; default is nofollow
+    // for private/unlisted/password and non-production environments.
+    robots =
+      !envBlocksIndex && opts.noIndexFollow === true
+        ? NOINDEX_FOLLOW_ROBOTS
+        : NOINDEX_ROBOTS;
+  }
+
   return {
     title: opts.title,
     description: opts.description,
     alternates: { canonical: url },
-    robots: noIndex ? NOINDEX_ROBOTS : undefined,
+    robots,
     openGraph: {
       title: opts.title,
       description: opts.description,

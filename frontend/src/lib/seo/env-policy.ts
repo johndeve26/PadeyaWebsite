@@ -102,18 +102,35 @@ function stripTrailingSlash(origin: string): string {
   return origin.replace(/\/$/, "");
 }
 
+let warnedContradictorySeoEnv = false;
+
+function warnContradictorySeoEnv(env: SeoEnvInput): void {
+  if (warnedContradictorySeoEnv) return;
+  warnedContradictorySeoEnv = true;
+  const app = env.appEnv ?? "";
+  const vercel = env.vercelEnv ?? "";
+  console.warn(
+    `[seo/env-policy] Contradictory environment signals: VERCEL_ENV=${JSON.stringify(
+      vercel,
+    )} with APP_ENV/NEXT_PUBLIC_APP_ENV=${JSON.stringify(
+      app,
+    )}. Treating true platform production as indexable; fix APP_ENV so staging/preview stay protected.`,
+  );
+}
+
 /**
  * True only for real production SEO environments.
  *
- * Hard blocks (never production):
- * - VERCEL_ENV = preview | development
- * - APP_ENV in non-production set
- * - NODE_ENV = development
- *
- * Allowed (production):
- * - APP_ENV = production
- * - VERCEL_ENV = production
- * - NODE_ENV = production with APP_ENV unset/empty and VERCEL_ENV unset or production
+ * Precedence:
+ * 1. Hard non-production platform signals win:
+ *    - VERCEL_ENV = preview | development
+ *    - NODE_ENV = development
+ * 2. True platform production (VERCEL_ENV=production) is indexable even if
+ *    APP_ENV/NEXT_PUBLIC_APP_ENV is mis-set to staging/preview — with a warning.
+ *    Silent production noindex from a bad APP_ENV is not allowed.
+ * 3. APP_ENV in the non-production set blocks when not on Vercel production
+ *    (genuine staging / custom hosts).
+ * 4. APP_ENV=production or NODE_ENV=production with APP_ENV unset → indexable.
  */
 export function isProductionSeoEnvironment(env: SeoEnvInput = readSeoEnv()): boolean {
   const vercel = norm(env.vercelEnv);
@@ -121,11 +138,19 @@ export function isProductionSeoEnvironment(env: SeoEnvInput = readSeoEnv()): boo
   const node = norm(env.nodeEnv);
 
   if (vercel === "preview" || vercel === "development") return false;
-  if (app && NON_PRODUCTION_APP_ENVS.has(app)) return false;
   if (node === "development") return false;
 
+  // True Vercel (or compatible) production deployment — do not silent-noindex.
+  if (vercel === "production") {
+    if (app && NON_PRODUCTION_APP_ENVS.has(app)) {
+      warnContradictorySeoEnv(env);
+    }
+    return true;
+  }
+
+  if (app && NON_PRODUCTION_APP_ENVS.has(app)) return false;
+
   if (app === "production") return true;
-  if (vercel === "production") return true;
 
   // Production Node build without APP_ENV — do not accidental-noindex.
   if (node === "production" && !app) return true;

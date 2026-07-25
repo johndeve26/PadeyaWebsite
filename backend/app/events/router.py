@@ -437,10 +437,16 @@ def list_public_events(
     weekend: bool = False,
     paid: str | None = None,
     sort: str | None = None,
+    limit: Annotated[int | None, Query(ge=1, le=100)] = None,
 ) -> list[EventPublic]:
-    """Public event list with optional discovery filters (also filterable client-side)."""
+    """Public marketplace LIST — lean payload, SQL filters/order/limit."""
     from app.events.public_cache import TTL, cached_public, events_list_key
+    from app.events.service import (
+        PUBLIC_EVENTS_LIST_MAX,
+        serialize_event_list_item,
+    )
 
+    effective_limit = limit or PUBLIC_EVENTS_LIST_MAX
     key = events_list_key(
         q=q,
         category=category,
@@ -450,6 +456,8 @@ def list_public_events(
         weekend=weekend,
         paid=paid,
         sort=sort,
+        limit=effective_limit,
+        v="listv2",
     )
 
     def _produce() -> list[dict]:
@@ -464,12 +472,14 @@ def list_public_events(
             weekend=weekend,
             paid=paid,
             sort=sort,
+            limit=effective_limit,
         ):
-            data = serialize_event(event, access="public")
+            data = serialize_event_list_item(event)
             data["ticket_types"] = [
-                TicketTypePublic.model_validate(tt).model_copy(update={"access_code": None})
-                for tt in event.ticket_types
-                if tt.visibility == "public"
+                TicketTypePublic.model_validate(tt).model_copy(
+                    update={"access_code": None}
+                )
+                for tt in data["ticket_types"]
             ]
             result.append(EventPublic.model_validate(data).model_dump(mode="json"))
         return result

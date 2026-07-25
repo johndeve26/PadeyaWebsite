@@ -186,6 +186,14 @@ def apply_due_schedules(db: Session) -> None:
         )
     if pending or active:
         db.commit()
+        try:
+            from app.maintenance.decision_cache import (
+                invalidate_maintenance_decision_cache,
+            )
+
+            invalidate_maintenance_decision_cache()
+        except Exception:  # noqa: BLE001
+            pass
 
 
 def hash_bypass_token(token: str) -> str:

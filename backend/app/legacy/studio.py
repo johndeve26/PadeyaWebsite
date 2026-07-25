@@ -826,8 +826,11 @@ def assemble_legacy_payload(
     """Assemble public or host-studio Legacy payload with content blocks."""
     from app.legacy.service import build_legacy_page
 
-    # Reuse existing aggregation for events/reviews/memories/stats
-    base = build_legacy_page(db, slug=host.slug)
+    # Reuse existing aggregation for events/reviews/memories/stats.
+    # Public GETs must not rescore (expensive metrics + commit) on every view.
+    base = build_legacy_page(
+        db, host=host, rescore=not public_only
+    )
     page = ensure_legacy_page(db, host.id)
     contact = ensure_contact_settings(db, host.id)
     blocks = list_blocks(db, host.id)

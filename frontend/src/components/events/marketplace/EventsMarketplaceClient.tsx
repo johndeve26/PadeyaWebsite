@@ -24,6 +24,7 @@ import { EventsResults } from "@/components/events/marketplace/EventsResults";
 import { EventsResultsToolbar } from "@/components/events/marketplace/EventsResultsToolbar";
 import { EventsSearchHero } from "@/components/events/marketplace/EventsSearchHero";
 import { Button, Container, SkeletonCard } from "@/components/ui";
+import { timeoutOrErrorMessage } from "@/lib/api-timeouts";
 import { useDiscoveryLocation } from "@/hooks/useDiscoveryLocation";
 import type { SortKey } from "@/lib/discovery/event-filters";
 import {
@@ -189,7 +190,7 @@ function EventsMarketplaceInner({
         setEvents(rows);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load events");
+          setError(timeoutOrErrorMessage(err, "Failed to load events"));
           setEvents([]);
         }
       }
@@ -464,7 +465,36 @@ function EventsMarketplaceInner({
             </div>
           ) : null}
 
-          {error ? <p className="text-sm text-danger">{error}</p> : null}
+          {error ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-sm text-danger">{error}</p>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setError(null);
+                  void (async () => {
+                    try {
+                      const [cats, rows] = await Promise.all([
+                        fetchCategories(),
+                        fetchPublicEvents(),
+                      ]);
+                      setCategories(cats);
+                      setEvents(rows);
+                    } catch (err) {
+                      setError(
+                        timeoutOrErrorMessage(err, "Failed to load events"),
+                      );
+                      setEvents([]);
+                    }
+                  })();
+                }}
+              >
+                Retry
+              </Button>
+            </div>
+          ) : null}
 
           {sort === "recommended" && !user ? (
             <p className="text-sm text-muted-foreground">

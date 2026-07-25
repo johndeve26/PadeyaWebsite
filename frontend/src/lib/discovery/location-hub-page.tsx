@@ -84,6 +84,7 @@ export async function locationHubMetadata(
       : undefined,
     seoDescription: loc?.seo_description,
     noIndex: !eligibility.indexable,
+    noIndexFollow: true,
   });
 }
 

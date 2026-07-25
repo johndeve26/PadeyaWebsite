@@ -9,6 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from sqlalchemy import text
+
 from app.admin.events_buyers_router import router as admin_events_buyers_router
 from app.admin.impersonation_middleware import ImpersonationAuditMiddleware
 from app.admin import impersonation_models as admin_impersonation_models  # noqa: F401
@@ -52,9 +54,11 @@ from app.knowledge_base import models as knowledge_base_models  # noqa: F401
 from app.knowledge_base.seed import seed_knowledge_base
 from app.core.config import get_settings
 from app.core.database import SessionLocal
+from app.core.exception_handlers import unhandled_exception_handler
 from app.core.http_errors import http_exception_handler
 from app.core.cache_headers import CacheControlMiddleware
 from app.core.redis import redis_health
+from app.core.timing_middleware import RequestTimingMiddleware
 from app.crm.router import router as crm_router
 from app.email.router import router as email_router
 from app.email.admin_templates_router import router as admin_email_templates_router
@@ -250,12 +254,13 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title=settings.app_name,
-    version="0.17.0",
+    version=settings.app_version or "0.17.0",
     description="Pàdéyá platform API — commerce, advanced ticketing, Legacy, analytics, AI, and sponsorships.",
     lifespan=lifespan,
 )
 
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_exception_handler(Exception, unhandled_exception_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -263,13 +268,16 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID", "Server-Timing"],
 )
-# Outer → inner: CORS → CacheControl → AuthSession → Impersonation → Suspended → Maintenance → app
+# Outer → inner (last added = outermost after CORS):
+# RequestTiming → CacheControl → AuthSession → Impersonation → Suspended → Maintenance → app
 app.add_middleware(MaintenanceMiddleware)
 app.add_middleware(SuspendedAccountMiddleware)
 app.add_middleware(ImpersonationAuditMiddleware)
 app.add_middleware(AuthSessionMiddleware)
 app.add_middleware(CacheControlMiddleware)
+app.add_middleware(RequestTimingMiddleware)
 
 api = settings.api_prefix
 
@@ -359,6 +367,7 @@ app.mount("/media", StaticFiles(directory=str(MEDIA_ROOT)), name="media")
 
 @app.get("/health")
 async def health() -> dict[str, object]:
+    """Liveness — process is up. No DB query (keep cheap for probes)."""
     return {
         "status": "ok",
         "service": settings.app_name,
@@ -374,10 +383,50 @@ async def api_v1_health() -> dict[str, object]:
     return await health()
 
 
+def _readiness_payload() -> tuple[dict[str, object], int]:
+    """Trivial readiness checks — no secrets/hostnames/connection strings."""
+    db_status = "error"
+    try:
+        db = SessionLocal()
+        try:
+            db.execute(text("SELECT 1"))
+            db_status = "ok"
+        finally:
+            db.close()
+    except Exception:  # noqa: BLE001
+        db_status = "error"
+
+    redis_status = redis_health().get("redis", "unavailable")
+    # Redis is fail-open for cache — readiness stays ready when Redis is down.
+    ready = db_status == "ok"
+    body: dict[str, object] = {
+        "status": "ready" if ready else "not_ready",
+        "database": db_status,
+        "redis": redis_status,
+    }
+    return body, (200 if ready else 503)
+
+
+@app.get("/ready")
+async def ready():
+    """Readiness — app initialized and PostgreSQL reachable (SELECT 1)."""
+    from fastapi.responses import JSONResponse
+
+    body, code = _readiness_payload()
+    return JSONResponse(status_code=code, content=body)
+
+
+@app.get(f"{api}/ready")
+async def api_v1_ready():
+    """Same as ``/ready`` for frontends probing ``/api/v1/ready``."""
+    return await ready()
+
+
 @app.get("/")
 async def root() -> dict[str, str]:
     return {
         "message": "Pàdéyá API foundation",
         "docs": "/docs",
         "health": "/health",
+        "ready": "/ready",
     }

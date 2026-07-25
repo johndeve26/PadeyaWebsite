@@ -380,13 +380,37 @@ def _event_card(event: Event, *, memory_path: str | None = None) -> dict:
     }
 
 
-def build_legacy_page(db: Session, *, slug: str) -> dict:
-    host = get_host_by_slug(db, slug)
+def build_legacy_page(
+    db: Session,
+    *,
+    slug: str | None = None,
+    host: Host | None = None,
+    rescore: bool = True,
+) -> dict:
+    """Assemble Legacy page stats/events/reviews.
+
+    ``rescore=False`` serves the stored score (public page reads) so GET does not
+    run collect_host_metrics + commit on every view. Missing scores still refresh.
+    """
+    if host is None:
+        if not slug:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Legacy Page not found"
+            )
+        host = get_host_by_slug(db, slug)
     if host is None or host.status != "active":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Legacy Page not found")
 
-    score = refresh_host_legacy_score(db, host.id, reason="page_view")
-    db.commit()
+    if rescore:
+        score = refresh_host_legacy_score(db, host.id, reason="page_view")
+        db.commit()
+    else:
+        score = db.scalar(
+            select(HostLegacyScore).where(HostLegacyScore.host_id == host.id)
+        )
+        if score is None:
+            score = refresh_host_legacy_score(db, host.id, reason="page_view_bootstrap")
+            db.commit()
 
     now = datetime.now(UTC)
     events = db.scalars(
@@ -396,6 +420,7 @@ def build_legacy_page(db: Session, *, slug: str) -> dict:
             Event.status.in_(["published", "completed", "paused"]),
         )
         .order_by(Event.start_datetime.desc())
+        .limit(80)
     ).all()
 
     from app.memories.service import list_public_host_memories

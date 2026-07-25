@@ -33,6 +33,7 @@ import {
   DEMO_DISCOVER_HOSTS,
   DEMO_LEGACY_QUICK_LINKS,
 } from "@/lib/hosts-demo";
+import { timeoutOrErrorMessage } from "@/lib/api-timeouts";
 import { fetchDiscoverHosts, fetchHostRecommendations } from "@/lib/hosts-api";
 import type { HostDiscovery } from "@/lib/types/hosts-discovery";
 
@@ -248,6 +249,7 @@ function HostsMarketplaceInner({
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [locationFilter, setLocationFilter] = useState<string | null>(null);
   const [directoryExpanded, setDirectoryExpanded] = useState(false);
+  const [clientLoadError, setClientLoadError] = useState<string | null>(null);
   const [followingIds, setFollowingIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -260,9 +262,17 @@ function HostsMarketplaceInner({
     let cancelled = false;
     void fetchDiscoverHosts()
       .then((rows) => {
-        if (!cancelled && rows.length > 0) setClientHosts(rows);
+        if (cancelled) return;
+        setClientLoadError(null);
+        if (rows.length > 0) setClientHosts(rows);
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (!cancelled) {
+          setClientLoadError(
+            timeoutOrErrorMessage(err, "Could not load hosts. Please try again."),
+          );
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -426,6 +436,36 @@ function HostsMarketplaceInner({
 
   return (
     <main className="min-w-0 overflow-x-clip bg-background">
+      {clientLoadError ? (
+        <Container className="pt-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">
+            <p>{clientLoadError}</p>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                setClientLoadError(null);
+                void fetchDiscoverHosts()
+                  .then((rows) => {
+                    setClientLoadError(null);
+                    if (rows.length > 0) setClientHosts(rows);
+                  })
+                  .catch((err) => {
+                    setClientLoadError(
+                      timeoutOrErrorMessage(
+                        err,
+                        "Could not load hosts. Please try again.",
+                      ),
+                    );
+                  });
+              }}
+            >
+              Retry
+            </Button>
+          </div>
+        </Container>
+      ) : null}
       <section
         {...headerDarkSurfaceProps}
         className="relative overflow-hidden bg-ink text-paper"

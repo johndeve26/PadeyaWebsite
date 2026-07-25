@@ -20,6 +20,7 @@ from app.maintenance.models import (
 )
 from app.maintenance.notify import deliver_maintenance_notification, send_test_to_self
 from app.maintenance.sections import SECTION_DEFINITIONS
+from app.maintenance.decision_cache import invalidate_maintenance_decision_cache
 from app.maintenance.service import (
     GLOBAL_MODES,
     SECTION_MODES,
@@ -184,6 +185,7 @@ def admin_patch_maintenance(
         user_agent=ua,
     )
     db.commit()
+    invalidate_maintenance_decision_cache()
     db.refresh(settings)
     return serialize_settings(settings)
 
@@ -237,6 +239,7 @@ def admin_patch_section(
         user_agent=ua,
     )
     db.commit()
+    invalidate_maintenance_decision_cache()
     db.refresh(row)
     return serialize_section(row)
 
@@ -283,6 +286,7 @@ def admin_create_schedule(
         user_agent=ua,
     )
     db.commit()
+    invalidate_maintenance_decision_cache()
     db.refresh(row)
     return {"id": str(row.id), "status": row.status}
 
@@ -309,6 +313,7 @@ def admin_cancel_schedule(
         user_agent=ua,
     )
     db.commit()
+    invalidate_maintenance_decision_cache()
     return {"status": "cancelled"}
 
 

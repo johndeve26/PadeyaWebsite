@@ -4,6 +4,11 @@
  */
 
 import { getApiBaseUrl, getApiPrefix } from "@/lib/api-base";
+import {
+  API_TIMEOUT_MS,
+  createTimeoutSignal,
+  isTimeoutError,
+} from "@/lib/api-timeouts";
 
 /** Backend origin for RSC — never empty relative `/api` on the server. */
 export function publicApiRoot(): string {
@@ -15,13 +20,23 @@ export function publicApiRoot(): string {
 
 export async function fetchPublicJson<T>(
   path: string,
-  init?: RequestInit & { next?: { revalidate?: number; tags?: string[] } },
+  init?: RequestInit & {
+    next?: { revalidate?: number; tags?: string[] };
+    timeoutMs?: number;
+  },
 ): Promise<T | null> {
   try {
-    const res = await fetch(`${publicApiRoot()}${path}`, init);
+    const timeoutMs = init?.timeoutMs ?? API_TIMEOUT_MS.public;
+    const { timeoutMs: _omit, ...rest } = init ?? {};
+    void _omit;
+    const signal = createTimeoutSignal(timeoutMs, rest.signal);
+    const res = await fetch(`${publicApiRoot()}${path}`, { ...rest, signal });
     if (!res.ok) return null;
     return (await res.json()) as T;
-  } catch {
+  } catch (err) {
+    if (isTimeoutError(err) || (err instanceof Error && err.name === "AbortError")) {
+      return null;
+    }
     return null;
   }
 }

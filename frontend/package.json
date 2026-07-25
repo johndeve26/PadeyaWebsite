@@ -47,6 +47,7 @@
     "test:messaging": "node scripts/messaging-attachments-smoke.mjs",
     "test:seo": "node scripts/seo-phase0a-smoke.mjs && node scripts/seo-phase0b-smoke.mjs && node scripts/seo-phase0c-smoke.mjs && node scripts/seo-phase1a-smoke.mjs && node scripts/seo-phase1b-smoke.mjs && node scripts/seo-phase1c-smoke.mjs && vitest run src/lib/seo",
     "seo:production-smoke": "node scripts/seo-production-smoke.mjs",
+    "seo:indexability-audit": "node scripts/seo-indexability-audit.mjs",
     "generate:demo-assets": "node scripts/generate-demo-assets.mjs"
   },
   "dependencies": {

@@ -89,14 +89,24 @@ describe("isProductionSeoEnvironment / shouldIndexEnvironment", () => {
     ).toBe(false);
   });
 
-  it("blocks staging", () => {
+  it("keeps genuine staging noindex when not on Vercel production", () => {
+    expect(
+      shouldIndexEnvironment({
+        appEnv: "staging",
+        nodeEnv: "production",
+        vercelEnv: null,
+      }),
+    ).toBe(false);
+  });
+
+  it("does not silent-noindex true Vercel production when APP_ENV is mis-set", () => {
     expect(
       shouldIndexEnvironment({
         appEnv: "staging",
         nodeEnv: "production",
         vercelEnv: "production",
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("blocks Vercel preview even if APP_ENV=production", () => {
@@ -196,7 +206,7 @@ describe("rootSeoMetadataFields / buildPageMetadata", () => {
     expect(meta.robots).toMatchObject({ index: false, follow: false });
   });
 
-  it("keeps production public pages indexable without noIndex flag", () => {
+  it("keeps production public pages explicitly indexable (never robots:undefined)", () => {
     const meta = buildPageMetadata({
       title: "Events",
       description: "Discover events",
@@ -204,7 +214,19 @@ describe("rootSeoMetadataFields / buildPageMetadata", () => {
       env: prodEnv,
     });
     expect(meta.alternates?.canonical).toBe("https://padeya.com/events");
-    expect(meta.robots).toBeUndefined();
+    expect(meta.robots).toMatchObject({ index: true, follow: true });
+  });
+
+  it("soft-noindexes faceted public pages when noIndexFollow is set", () => {
+    const meta = buildPageMetadata({
+      title: "Events",
+      description: "Discover events",
+      path: "/events",
+      noIndex: true,
+      noIndexFollow: true,
+      env: prodEnv,
+    });
+    expect(meta.robots).toMatchObject({ index: false, follow: true });
   });
 
   it("never puts tracking params in canonical", () => {
@@ -230,7 +252,7 @@ describe("event visibility SEO", () => {
     expect(meta.alternates?.canonical).toBe(
       "https://padeya.com/events/lagos-night",
     );
-    expect(meta.robots).toBeUndefined();
+    expect(meta.robots).toMatchObject({ index: true, follow: true });
   });
 
   it("noindexes unlisted events", () => {

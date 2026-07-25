@@ -6,23 +6,19 @@ import { HubJsonLd, hubPageMetadata } from "@/lib/seo/hub-page";
 
 const searchPolicy = eventsSearchPageMetadataPolicy();
 
-const baseMeta = hubPageMetadata({
+/**
+ * Legacy search surface — never index; follow allowed; canonical → /events.
+ * SearchAction targets `/events?q=` (working public search), not this route.
+ */
+export const metadata = hubPageMetadata({
   title: "Search events",
   description:
     "Search events on Pàdéyá by keyword, city, category, and date filters.",
   path: searchPolicy.path,
   canonicalPath: searchPolicy.canonicalPath,
   noIndex: searchPolicy.noIndex,
+  noIndexFollow: true,
 });
-
-/**
- * Legacy search surface — never index; follow allowed; canonical → /events.
- * SearchAction targets `/events?q=` (working public search), not this route.
- */
-export const metadata = {
-  ...baseMeta,
-  robots: { index: false, follow: true },
-};
 
 export default function EventsSearchPage() {
   const crumbs = [

@@ -217,24 +217,38 @@ def _event_is_public(event: Event | None) -> bool:
     return vis in ("listed", "approval_required")
 
 
-def _host_is_public(db: Session, host: Host | None, profile: HostProfile | None) -> bool:
+def _host_is_public(
+    db: Session,
+    host: Host | None,
+    profile: HostProfile | None,
+    *,
+    verified_host_ids: set[UUID] | None = None,
+    settings_by_host: dict[UUID, HostSponsorshipSettings] | None = None,
+) -> bool:
     if host is None or host.status != "active":
         return False
     if host.status in ("suspended", "archived", "disabled"):
         return False
-    verification = db.scalar(
-        select(HostVerification).where(
-            HostVerification.host_id == host.id,
-            HostVerification.status == "verified",
+    if verified_host_ids is not None:
+        if host.id not in verified_host_ids:
+            return False
+    else:
+        verification = db.scalar(
+            select(HostVerification).where(
+                HostVerification.host_id == host.id,
+                HostVerification.status == "verified",
+            )
         )
-    )
-    if verification is None:
-        return False
-    settings = db.scalar(
-        select(HostSponsorshipSettings).where(
-            HostSponsorshipSettings.host_id == host.id
+        if verification is None:
+            return False
+    if settings_by_host is not None:
+        settings = settings_by_host.get(host.id)
+    else:
+        settings = db.scalar(
+            select(HostSponsorshipSettings).where(
+                HostSponsorshipSettings.host_id == host.id
+            )
         )
-    )
     if settings is not None and not settings.accepting_sponsors:
         return False
     return True
@@ -277,6 +291,9 @@ def _coerce_utc(dt: datetime | None) -> datetime:
 
 
 def _list_sponsored_events(db: Session, sponsor_id: UUID) -> list[dict[str, Any]]:
+    """Public placements with batched lookups (same filters as prior N+1 path)."""
+    from sqlalchemy import or_
+
     placements = list(
         db.scalars(
             select(SponsorshipPlacement).where(
@@ -285,43 +302,109 @@ def _list_sponsored_events(db: Session, sponsor_id: UUID) -> list[dict[str, Any]
             )
         )
     )
+    if not placements:
+        return []
+
+    slot_ids = {pl.slot_id for pl in placements}
+    slots = {
+        s.id: s
+        for s in db.scalars(
+            select(SponsorshipSlot).where(SponsorshipSlot.id.in_(slot_ids))
+        )
+    }
+    host_ids = {s.host_id for s in slots.values()}
+    hosts = {
+        h.id: h
+        for h in db.scalars(select(Host).where(Host.id.in_(host_ids))).all()
+    } if host_ids else {}
+    profiles = {
+        p.host_id: p
+        for p in db.scalars(
+            select(HostProfile).where(HostProfile.host_id.in_(host_ids))
+        ).all()
+    } if host_ids else {}
+    verified_host_ids = {
+        v.host_id
+        for v in db.scalars(
+            select(HostVerification).where(
+                HostVerification.host_id.in_(host_ids),
+                HostVerification.status == "verified",
+            )
+        ).all()
+    } if host_ids else set()
+    settings_by_host = {
+        s.host_id: s
+        for s in db.scalars(
+            select(HostSponsorshipSettings).where(
+                HostSponsorshipSettings.host_id.in_(host_ids)
+            )
+        ).all()
+    } if host_ids else {}
+    event_ids = {s.event_id for s in slots.values() if s.event_id}
+    events = {
+        e.id: e
+        for e in db.scalars(select(Event).where(Event.id.in_(event_ids))).all()
+    } if event_ids else {}
+    cat_ids = {e.category_id for e in events.values() if e.category_id}
+    categories = {
+        c.id: c
+        for c in db.scalars(
+            select(EventCategory).where(EventCategory.id.in_(cat_ids))
+        ).all()
+    } if cat_ids else {}
+
+    placement_ids = {pl.id for pl in placements}
+    deal_clauses = []
+    if placement_ids:
+        deal_clauses.append(SponsorshipDeal.placement_id.in_(placement_ids))
+    if slot_ids:
+        deal_clauses.append(SponsorshipDeal.slot_id.in_(slot_ids))
+    deals = list(
+        db.scalars(
+            select(SponsorshipDeal).where(
+                SponsorshipDeal.sponsor_id == sponsor_id,
+                or_(*deal_clauses) if deal_clauses else SponsorshipDeal.id.is_(None),
+            )
+        )
+    ) if deal_clauses else []
+    deal_by_placement = {d.placement_id: d for d in deals if d.placement_id}
+    deal_by_slot = {d.slot_id: d for d in deals if d.slot_id}
+    deal_ids = {d.id for d in deals}
+    deliverables_by_deal: dict[UUID, list[SponsorshipDeliverable]] = {}
+    if deal_ids:
+        for drow in db.scalars(
+            select(SponsorshipDeliverable).where(
+                SponsorshipDeliverable.deal_id.in_(deal_ids)
+            )
+        ):
+            deliverables_by_deal.setdefault(drow.deal_id, []).append(drow)
+
     out: list[dict[str, Any]] = []
     seen: set[str] = set()
-
     for pl in placements:
         if str(pl.id) in seen:
             continue
-        slot = db.get(SponsorshipSlot, pl.slot_id)
+        slot = slots.get(pl.slot_id)
         if not _slot_is_public(slot):
             continue
-        host = db.get(Host, slot.host_id)
-        profile = (
-            db.scalar(select(HostProfile).where(HostProfile.host_id == host.id))
-            if host
-            else None
-        )
-        if not _host_is_public(db, host, profile):
+        assert slot is not None
+        host = hosts.get(slot.host_id)
+        profile = profiles.get(slot.host_id) if host else None
+        if not _host_is_public(
+            db,
+            host,
+            profile,
+            verified_host_ids=verified_host_ids,
+            settings_by_host=settings_by_host,
+        ):
+            continue
+        assert host is not None
+
+        event: Event | None = events.get(slot.event_id) if slot.event_id else None
+        if slot.event_id and not _event_is_public(event):
             continue
 
-        event: Event | None = None
-        if slot.event_id:
-            event = db.get(Event, slot.event_id)
-            if not _event_is_public(event):
-                continue
-
-        deal = db.scalar(
-            select(SponsorshipDeal).where(
-                SponsorshipDeal.sponsor_id == sponsor_id,
-                SponsorshipDeal.placement_id == pl.id,
-            )
-        )
-        if deal is None:
-            deal = db.scalar(
-                select(SponsorshipDeal).where(
-                    SponsorshipDeal.sponsor_id == sponsor_id,
-                    SponsorshipDeal.slot_id == slot.id,
-                )
-            )
+        deal = deal_by_placement.get(pl.id) or deal_by_slot.get(slot.id)
         if deal and deal.status in (
             "cancelled",
             "rejected",
@@ -336,38 +419,26 @@ def _list_sponsored_events(db: Session, sponsor_id: UUID) -> list[dict[str, Any]
         campaign_id: UUID | None = None
         if deal:
             campaign_id = deal.campaign_id
-            for d in db.scalars(
-                select(SponsorshipDeliverable).where(
-                    SponsorshipDeliverable.deal_id == deal.id
-                )
-            ):
+            for d in deliverables_by_deal.get(deal.id, []):
                 if d.deliverable_type in DELIVERABLE_TYPES:
                     label = _DELIVERABLE_LABELS.get(d.deliverable_type, d.title)
                     if label not in deliverable_labels:
                         deliverable_labels.append(label)
         deliverable_labels = deliverable_labels[:4]
 
-        event_title = event.title if event else slot.title
+        cat_label = None
+        if event and event.category_id and event.category_id in categories:
+            cat_label = categories[event.category_id].name
         seen.add(str(pl.id))
-
-        verification = (
-            db.scalar(
-                select(HostVerification).where(HostVerification.host_id == host.id)
-            )
-            if host
-            else None
-        )
-        cat_label = _event_category_label(db, event)
         out.append(
             {
                 "event_id": event.id if event else None,
-                "event_title": event_title,
+                "event_title": event.title if event else slot.title,
                 "event_slug": event.slug if event else None,
                 "host_id": host.id,
                 "host_slug": host.slug,
                 "host_display_name": host.display_name,
-                "host_verified": verification is not None
-                and verification.status == "verified",
+                "host_verified": host.id in verified_host_ids,
                 "category": cat_label,
                 "city": profile.city if profile else None,
                 "area": _event_area(event, profile),
@@ -385,23 +456,18 @@ def _list_sponsored_events(db: Session, sponsor_id: UUID) -> list[dict[str, Any]
 def _list_partner_hosts(
     db: Session, sponsor_id: UUID, sponsored: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
+    # Use fields already present on sponsored rows — no per-host re-fetch.
     by_id: dict[UUID, dict[str, Any]] = {}
     for row in sponsored:
         hid = row["host_id"]
-        host = db.get(Host, hid)
-        profile = db.scalar(select(HostProfile).where(HostProfile.host_id == hid))
-        verification = db.scalar(
-            select(HostVerification).where(HostVerification.host_id == hid)
-        )
         if hid not in by_id:
             by_id[hid] = {
                 "host_id": hid,
-                "slug": host.slug if host else row["host_slug"],
+                "slug": row["host_slug"],
                 "display_name": row["host_display_name"],
-                "city": row.get("area") or row.get("city"),
+                "city": row.get("city"),
                 "categories": [],
-                "verified": row.get("host_verified", False)
-                or (verification is not None and verification.status == "verified"),
+                "verified": bool(row.get("host_verified", False)),
                 "sponsored_events_together": 0,
             }
         entry = by_id[hid]
@@ -417,16 +483,24 @@ def _list_partner_hosts(
 
 
 def _related_sponsors(db: Session, sponsor: Sponsor, *, limit: int = 3) -> list[dict[str, Any]]:
-    from app.sponsor_profiles.service import list_public_sponsors
-
-    peers = list_public_sponsors(db)
+    """Related peers without scanning the full public sponsor directory."""
+    peers = list(
+        db.scalars(
+            select(Sponsor).where(
+                Sponsor.id != sponsor.id,
+                Sponsor.status == "active",
+                Sponsor.visibility == "public",
+                Sponsor.slug.is_not(None),
+            ).limit(48)
+        )
+    )
     cats = {str(c).lower() for c in (sponsor.categories or [])}
     locs = {str(x).lower() for x in (sponsor.target_locations or [])}
     industry = (sponsor.industry or "").lower()
 
     scored: list[tuple[int, Sponsor]] = []
     for p in peers:
-        if p.id == sponsor.id or not p.slug:
+        if not p.slug:
             continue
         score = 0
         pc = {str(c).lower() for c in (p.categories or [])}
@@ -446,9 +520,7 @@ def _related_sponsors(db: Session, sponsor: Sponsor, *, limit: int = 3) -> list[
     related = [p for _, p in scored[:limit]]
     if len(related) < limit:
         for p in peers:
-            if p.id == sponsor.id or not p.slug:
-                continue
-            if p in related:
+            if not p.slug or p in related:
                 continue
             related.append(p)
             if len(related) >= limit:

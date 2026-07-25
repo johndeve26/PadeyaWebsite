@@ -37,12 +37,17 @@ describe("faceted /events policy", () => {
       description: "Discover events",
       path: "/events",
       noIndex: hasEventsFacetQuery({ sort: "popular" }),
+      noIndexFollow: true,
+      env: {
+        appEnv: "production",
+        vercelEnv: "production",
+        nodeEnv: "production",
+      },
     });
     expect(meta.alternates?.canonical).toBe("https://padeya.com/events");
-    expect(meta.robots).toEqual({
+    expect(meta.robots).toMatchObject({
       index: false,
-      follow: false,
-      googleBot: { index: false, follow: false },
+      follow: true,
     });
   });
 

@@ -85,12 +85,21 @@ export function getRefreshToken(): string | null {
   return ensureMigrated()?.getItem(REFRESH_KEY) ?? null;
 }
 
+function invalidateHostWorkspacesCacheLazy(): void {
+  void import("@/lib/hosts-api")
+    .then((m) => m.invalidateHostWorkspacesCache())
+    .catch(() => {
+      /* ignore */
+    });
+}
+
 export function setTokens(tokens: AuthTokens): void {
   const s = ensureMigrated();
   if (!s) return;
   s.setItem(ACCESS_KEY, tokens.access_token);
   s.setItem(REFRESH_KEY, tokens.refresh_token);
   recordRefreshTimestamp();
+  invalidateHostWorkspacesCacheLazy();
   // Drop any leftover sessionStorage copies.
   try {
     window.sessionStorage.removeItem(ACCESS_KEY);
@@ -105,6 +114,7 @@ export function clearTokens(): void {
   removeFromBoth(ACCESS_KEY);
   removeFromBoth(REFRESH_KEY);
   clearAuthSessionMeta();
+  invalidateHostWorkspacesCacheLazy();
 }
 
 export function hasStoredSession(): boolean {

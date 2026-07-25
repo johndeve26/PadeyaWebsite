@@ -29,6 +29,7 @@ import {
   SkeletonCard,
 } from "@/components/ui";
 import { ApiError } from "@/lib/api";
+import { timeoutOrErrorMessage } from "@/lib/api-timeouts";
 import { brand } from "@/lib/brand";
 import {
   enrichSponsorHosts,
@@ -114,7 +115,12 @@ function SponsorsMarketplaceInner() {
         setHosts(hostRows);
       } catch (err) {
         if (active) {
-          setError(err instanceof ApiError ? err.detail : "Failed to load slots");
+          setError(
+            timeoutOrErrorMessage(
+              err,
+              err instanceof ApiError ? err.detail : "Failed to load slots",
+            ),
+          );
           setSlots([]);
         }
       }
@@ -356,7 +362,42 @@ function SponsorsMarketplaceInner() {
           />
 
           {error ? (
-            <Alert tone="danger" title="Could not load slots">
+            <Alert
+              tone="danger"
+              title="Could not load slots"
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setError(null);
+                    void (async () => {
+                      try {
+                        const [slotRows, hostRows] = await Promise.all([
+                          fetchPublicSponsorshipSlots(),
+                          fetchSponsorHosts().catch(() => [] as SponsorHost[]),
+                        ]);
+                        setSlots(slotRows);
+                        setHosts(hostRows);
+                      } catch (err) {
+                        setError(
+                          timeoutOrErrorMessage(
+                            err,
+                            err instanceof ApiError
+                              ? err.detail
+                              : "Failed to load slots",
+                          ),
+                        );
+                        setSlots([]);
+                      }
+                    })();
+                  }}
+                >
+                  Retry
+                </Button>
+              }
+            >
               {error}
             </Alert>
           ) : null}

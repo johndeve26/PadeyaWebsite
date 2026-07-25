@@ -59,11 +59,14 @@ def _admin_headers(client: TestClient, db: Session, assign_role, email: str) -> 
 
 
 def _set_mode(db: Session, mode: str, **kwargs) -> MaintenanceSettings:
+    from app.maintenance.decision_cache import invalidate_maintenance_decision_cache
+
     settings = get_or_create_settings(db)
     settings.mode = mode
     for k, v in kwargs.items():
         setattr(settings, k, v)
     db.commit()
+    invalidate_maintenance_decision_cache()
     return settings
 
 
@@ -295,3 +298,6 @@ def test_public_status_and_health_allowed_during_maintenance(
     assert status.json()["mode"] == "active"
     health = client.get("/health")
     assert health.status_code == 200
+    ready = client.get("/ready")
+    assert ready.status_code == 200
+    assert ready.json()["status"] == "ready"

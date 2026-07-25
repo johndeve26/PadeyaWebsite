@@ -36,7 +36,6 @@ const FALLBACK_CARDS: RuntimeSettingsCategorySummary[] = [
   { category: "payments", label: "Payments", testable: true },
   { category: "storage", label: "Storage", testable: true },
   { category: "integrations", label: "Integrations", testable: true },
-  { category: "feature-toggles", label: "Feature toggles", testable: false },
   { category: "system-status", label: "System status", testable: false },
 ];
 

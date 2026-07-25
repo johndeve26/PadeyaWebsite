@@ -587,9 +587,14 @@ export const adminNav: NavItem[] = [
     permissions: ["admin.settings.view", "admin.full_access"],
   }),
   adminNavItem("system", {
-    href: "/admin/settings/runtime/feature-toggles",
+    href: "/admin/ai/features",
     label: "Feature toggles",
-    permissions: ["admin.settings.view", "admin.full_access"],
+    permissions: [
+      "admin.ai.view",
+      "admin.ai.manage_features",
+      "admin.settings.view",
+      "admin.full_access",
+    ],
   }),
   adminNavItem("system", {
     href: "/admin/settings/runtime/system-status",
