@@ -9,6 +9,7 @@ import {
 } from "@/components/discovery/LocationSelector";
 import { Button, Input } from "@/components/ui";
 import { ApiError } from "@/lib/api";
+import { authFieldOnDarkHintClass } from "@/lib/ui/auth-field-on-dark";
 import {
   fetchTaxonomyLocations,
   findTaxonomyLocationByName,
@@ -54,13 +55,18 @@ export function ProfileLocationTaxonomyFields({
   onChange,
   seed,
   hint,
+  surface = "default",
 }: {
   value: ProfileLocationLabels;
   onChange: (next: ProfileLocationLabels) => void;
   /** Prefill cascade once (e.g. from signup or saved preference). */
   seed?: ProfileLocationSeed | null;
   hint?: string;
+  /** Match dark glass auth cards (login/register). */
+  surface?: "default" | "onDark";
 }) {
+  const onDark = surface === "onDark";
+  const hintClass = onDark ? authFieldOnDarkHintClass : "text-xs text-muted-foreground";
   const [countries, setCountries] = useState<TaxonomyLocation[]>([]);
   const [states, setStates] = useState<TaxonomyLocation[]>([]);
   const [cities, setCities] = useState<TaxonomyLocation[]>([]);
@@ -219,12 +225,14 @@ export function ProfileLocationTaxonomyFields({
   return (
     <div className="space-y-3">
       {hint ? (
-        <p className="text-xs text-muted-foreground">{hint}</p>
+        <p className={hintClass}>{hint}</p>
       ) : (
-        <p className="text-xs text-muted-foreground">
+        <p className={hintClass}>
           Pick from Pàdéyá locations. Missing a city? Choose{" "}
-          <span className="font-semibold text-foreground">Other…</span> under City
-          to suggest one for other hosts.
+          <span className={onDark ? "font-semibold text-white" : "font-semibold text-foreground"}>
+            Other…
+          </span>{" "}
+          under City to suggest one for other hosts.
         </p>
       )}
       {loadError ? (
@@ -235,6 +243,7 @@ export function ProfileLocationTaxonomyFields({
         options={{ countries, states, cities, areas: [] }}
         showArea={false}
         allowSuggestCity
+        surface={surface}
         onCountryChange={(id) => {
           const country = countries.find((c) => c.id === id) ?? null;
           applyCascade({ country, state: null, city: null, area: null });

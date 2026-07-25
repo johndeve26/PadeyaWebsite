@@ -324,19 +324,39 @@ input:disabled {
 
 /* Login/register glass card — readable typing in light + dark site theme */
 input.auth-field-on-dark,
-input.auth-field-on-dark:hover {
+input.auth-field-on-dark:hover,
+input.auth-field-on-dark:focus,
+textarea.auth-field-on-dark,
+select.auth-field-on-dark {
   color: #ffffff;
   -webkit-text-fill-color: #ffffff;
   caret-color: #ffffff;
+  background-color: #141414;
 }
 
+/*
+ * Chrome / Safari / iOS paint a yellow autofill wash that fights white text.
+ * Freeze background via a long transition + opaque inset shadow.
+ */
 input.auth-field-on-dark:-webkit-autofill,
 input.auth-field-on-dark:-webkit-autofill:hover,
-input.auth-field-on-dark:-webkit-autofill:focus {
+input.auth-field-on-dark:-webkit-autofill:focus,
+input.auth-field-on-dark:-webkit-autofill:active,
+textarea.auth-field-on-dark:-webkit-autofill,
+textarea.auth-field-on-dark:-webkit-autofill:hover,
+textarea.auth-field-on-dark:-webkit-autofill:focus,
+textarea.auth-field-on-dark:-webkit-autofill:active {
   -webkit-text-fill-color: #ffffff !important;
-  caret-color: #ffffff;
+  color: #ffffff !important;
+  caret-color: #ffffff !important;
+  border-color: rgb(255 255 255 / 0.2) !important;
+  background-color: #141414 !important;
+  background-image: none !important;
+  -webkit-box-shadow: 0 0 0 1000px #141414 inset !important;
   box-shadow: 0 0 0 1000px #141414 inset !important;
-  border-color: rgb(255 255 255 / 0.2);
+  transition:
+    background-color 99999s ease-out 0s,
+    color 99999s ease-out 0s !important;
 }
 
 /* Full-bleed hero media — slow ken-burns for presence without distraction */

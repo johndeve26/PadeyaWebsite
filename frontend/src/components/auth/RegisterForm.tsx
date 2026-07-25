@@ -211,6 +211,7 @@ export function RegisterForm() {
           value={location}
           onChange={setLocation}
           seed={{ country: "Nigeria" }}
+          surface="onDark"
           hint="Optional — pre-fills host onboarding if you become a host later."
         />
         <label className="flex cursor-pointer items-start gap-2.5 text-sm leading-snug text-paper/85">

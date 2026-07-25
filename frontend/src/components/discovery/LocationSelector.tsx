@@ -1,6 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/cn";
+import {
+  authFieldOnDarkLabelClass,
+  authFieldOnDarkSelectClass,
+} from "@/lib/ui/auth-field-on-dark";
 import type { TaxonomyLocation } from "@/lib/taxonomy-api";
 
 export type LocationCascadeValue = {
@@ -17,13 +21,16 @@ export type LocationSelectorOptions = {
   areas: TaxonomyLocation[];
 };
 
-/** Sentinel value for the City select “Other…” option. */
+/** Sentinel value for the City select “Other…”. */
 export const CITY_SUGGEST_OPTION = "__suggest_city__";
-/** Sentinel value for the Area select “Suggest new…” option. */
+/** Sentinel value for the Area select “Suggest a new area…”. */
 export const AREA_SUGGEST_OPTION = "__suggest_area__";
 
-const selectClass =
+const selectClassDefault =
   "h-11 w-full rounded-[var(--radius-md)] border border-border bg-card px-3 text-sm font-semibold text-foreground disabled:opacity-45";
+
+const labelClassDefault =
+  "text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground";
 
 /**
  * Country → state → city → area cascade selects.
@@ -41,6 +48,7 @@ export function LocationSelector({
   showArea = true,
   className = "",
   disabled = false,
+  surface = "default",
 }: {
   value: LocationCascadeValue;
   options: LocationSelectorOptions;
@@ -56,7 +64,13 @@ export function LocationSelector({
   showArea?: boolean;
   className?: string;
   disabled?: boolean;
+  /** Match dark glass auth cards (login/register). */
+  surface?: "default" | "onDark";
 }) {
+  const onDark = surface === "onDark";
+  const selectClass = onDark ? authFieldOnDarkSelectClass : selectClassDefault;
+  const labelClass = onDark ? authFieldOnDarkLabelClass : labelClassDefault;
+
   return (
     <div
       className={cn(
@@ -67,9 +81,7 @@ export function LocationSelector({
       )}
     >
       <label className="space-y-1.5">
-        <span className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
-          Country
-        </span>
+        <span className={labelClass}>Country</span>
         <select
           className={selectClass}
           value={value.country?.id ?? ""}
@@ -85,9 +97,7 @@ export function LocationSelector({
         </select>
       </label>
       <label className="space-y-1.5">
-        <span className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
-          State
-        </span>
+        <span className={labelClass}>State</span>
         <select
           className={selectClass}
           value={value.state?.id ?? ""}
@@ -103,9 +113,7 @@ export function LocationSelector({
         </select>
       </label>
       <label className="space-y-1.5">
-        <span className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
-          City
-        </span>
+        <span className={labelClass}>City</span>
         <select
           className={selectClass}
           value={value.city?.id ?? ""}
@@ -124,27 +132,25 @@ export function LocationSelector({
         </select>
       </label>
       {showArea ? (
-      <label className="space-y-1.5">
-        <span className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
-          Area
-        </span>
-        <select
-          className={selectClass}
-          value={value.area?.id ?? ""}
-          disabled={disabled || !value.city}
-          onChange={(e) => onAreaChange(e.target.value)}
-        >
-          <option value="">Select area (optional)</option>
-          {options.areas.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-          {allowSuggestArea && value.city ? (
-            <option value={AREA_SUGGEST_OPTION}>Suggest a new area…</option>
-          ) : null}
-        </select>
-      </label>
+        <label className="space-y-1.5">
+          <span className={labelClass}>Area</span>
+          <select
+            className={selectClass}
+            value={value.area?.id ?? ""}
+            disabled={disabled || !value.city}
+            onChange={(e) => onAreaChange(e.target.value)}
+          >
+            <option value="">Select area (optional)</option>
+            {options.areas.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+            {allowSuggestArea && value.city ? (
+              <option value={AREA_SUGGEST_OPTION}>Suggest a new area…</option>
+            ) : null}
+          </select>
+        </label>
       ) : null}
     </div>
   );
