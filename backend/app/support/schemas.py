@@ -56,6 +56,14 @@ class SupportMessageCreate(BaseModel):
     body: str = Field(min_length=1, max_length=8000)
 
 
+class SupportPublicReply(BaseModel):
+    """Guest / email-track reply — prove ownership with email and/or public token."""
+
+    body: str = Field(min_length=1, max_length=8000)
+    email: str | None = Field(default=None, max_length=320)
+    token: str | None = Field(default=None, max_length=128)
+
+
 class SupportInternalNoteCreate(BaseModel):
     body: str = Field(min_length=1, max_length=8000)
 

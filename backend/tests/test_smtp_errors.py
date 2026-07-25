@@ -14,3 +14,10 @@ def test_humanize_from_domain_rejected() -> None:
     assert "From address" in msg
     assert "bankoleabiodun366@gmail.com" in msg
     assert "padeya.com" in msg
+
+
+def test_humanize_timeout_points_at_host_smtp_block() -> None:
+    msg = humanize_smtp_error_for_admin("timed out")
+    assert "timed out" in msg.lower()
+    assert "587" in msg
+    assert "Render" in msg

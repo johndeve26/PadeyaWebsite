@@ -2,21 +2,18 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { RequireHost } from "@/components/hosts/RequireHost";
 import { SupportConversation } from "@/components/support/SupportConversation";
+import { SupportRequesterReplyForm } from "@/components/support/SupportRequesterReplyForm";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import {
-  Alert,
   Badge,
   Button,
-  Card,
   EmptyState,
   SkeletonLoader,
   StatusBadge,
-  Textarea,
-  useToast,
 } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import {
@@ -29,11 +26,8 @@ import type { SupportCase } from "@/lib/types/support";
 
 function HostSupportDetailInner() {
   const params = useParams<{ ticketId: string }>();
-  const toast = useToast();
   const [ticket, setTicket] = useState<SupportCase | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [replyBody, setReplyBody] = useState("");
-  const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     const data = await fetchSupportTicket(params.ticketId);
@@ -59,27 +53,6 @@ function HostSupportDetailInner() {
       active = false;
     };
   }, [load]);
-
-  async function onReply(event: FormEvent) {
-    event.preventDefault();
-    const body = replyBody.trim();
-    if (!body || !ticket) return;
-    setBusy(true);
-    try {
-      const updated = await replySupportTicket(ticket.id, body);
-      setTicket(updated);
-      setReplyBody("");
-      toast.push({ tone: "success", title: "Reply sent" });
-    } catch (err) {
-      toast.push({
-        tone: "danger",
-        title: "Reply failed",
-        description: err instanceof ApiError ? err.detail : "Try again",
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
 
   if (error) {
     return (
@@ -112,11 +85,6 @@ function HostSupportDetailInner() {
     );
   }
 
-  const closed =
-    ticket.status === "closed" ||
-    ticket.status === "archived" ||
-    ticket.archived_at != null;
-
   return (
     <DashboardShell
       tone="soft"
@@ -137,31 +105,14 @@ function HostSupportDetailInner() {
         </div>
       }
     >
-      {closed ? (
-        <Alert tone="warning" title="Ticket closed">
-          This conversation is closed. Open a new ticket if you need more help.
-        </Alert>
-      ) : null}
-
-      <SupportConversation ticket={ticket} />
-
-      {!closed ? (
-        <Card className="space-y-4 p-5">
-          <h2 className="text-lg font-extrabold text-foreground">Reply</h2>
-          <form onSubmit={onReply} className="space-y-3">
-            <Textarea
-              label="Message"
-              value={replyBody}
-              onChange={(e) => setReplyBody(e.target.value)}
-              rows={4}
-              placeholder="Add context for support…"
-            />
-            <Button type="submit" disabled={busy || !replyBody.trim()}>
-              {busy ? "Sending…" : "Send reply"}
-            </Button>
-          </form>
-        </Card>
-      ) : null}
+      <div className="space-y-4">
+        <SupportConversation ticket={ticket} />
+        <SupportRequesterReplyForm
+          ticket={ticket}
+          onSent={setTicket}
+          sendReply={(body) => replySupportTicket(ticket.id, body)}
+        />
+      </div>
     </DashboardShell>
   );
 }

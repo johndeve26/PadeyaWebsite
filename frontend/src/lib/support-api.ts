@@ -115,6 +115,26 @@ export async function fetchSupportTicketByNumber(
   );
 }
 
+/** Public track-page reply — prove ownership with the same email/token as lookup. */
+export async function replyPublicSupportTicket(
+  ticketNumber: string,
+  body: string,
+  opts: { email?: string; token?: string },
+): Promise<SupportCase> {
+  return apiRequest<SupportCase>(
+    `/support/tickets/by-number/${encodeURIComponent(ticketNumber)}/reply`,
+    {
+      method: "POST",
+      body: {
+        body,
+        email: opts.email || undefined,
+        token: opts.token || undefined,
+      },
+      auth: false,
+    },
+  );
+}
+
 export async function replySupportTicket(
   id: string,
   body: string,

@@ -48,6 +48,7 @@ from app.support.schemas import (
     SupportMessageCreate,
     SupportPriorityUpdate,
     SupportPublicCreate,
+    SupportPublicReply,
     SupportSettingsUpdate,
     SupportStatusUpdate,
 )
@@ -652,10 +653,8 @@ def get_case(db: Session, *, user: User, case_id: UUID) -> dict:
     return serialize_case(db, case, include_internal=is_support_staff(user))
 
 
-def get_case_by_number_public(
-    db: Session, *, ticket_number: str, email: str | None, token: str | None
-) -> dict:
-    case = db.scalar(
+def _load_case_by_number(db: Session, ticket_number: str) -> SupportCase | None:
+    return db.scalar(
         select(SupportCase)
         .where(SupportCase.case_number == ticket_number.upper().strip())
         .options(
@@ -665,17 +664,85 @@ def get_case_by_number_public(
             selectinload(SupportCase.events),
         )
     )
-    if case is None:
-        raise HTTPException(status_code=404, detail="Support ticket not found")
+
+
+def _assert_public_ticket_access(
+    case: SupportCase, *, email: str | None, token: str | None
+) -> None:
     email_ok = (
         email
         and case.requester_email
         and email.lower().strip() == case.requester_email.lower()
     )
-    token_ok = token and case.public_token and secrets.compare_digest(token, case.public_token)
+    token_ok = (
+        token
+        and case.public_token
+        and secrets.compare_digest(token, case.public_token)
+    )
     if not email_ok and not token_ok:
         raise HTTPException(status_code=403, detail="Email or tracking token required")
+
+
+def get_case_by_number_public(
+    db: Session, *, ticket_number: str, email: str | None, token: str | None
+) -> dict:
+    case = _load_case_by_number(db, ticket_number)
+    if case is None:
+        raise HTTPException(status_code=404, detail="Support ticket not found")
+    _assert_public_ticket_access(case, email=email, token=token)
     return serialize_case(db, case, include_internal=False)
+
+
+def add_public_message(
+    db: Session, *, ticket_number: str, payload: SupportPublicReply
+) -> dict:
+    """Requester follow-up via public track page (email and/or tracking token)."""
+    case = _load_case_by_number(db, ticket_number)
+    if case is None:
+        raise HTTPException(status_code=404, detail="Support ticket not found")
+    _assert_public_ticket_access(
+        case, email=payload.email, token=payload.token
+    )
+    if case.status in {"closed", "archived"} or case.archived_at is not None:
+        raise HTTPException(status_code=400, detail="Ticket is closed")
+    body = sanitize_support_text(payload.body)
+    if len(body) < 1:
+        raise HTTPException(status_code=400, detail="Empty message")
+    db.add(
+        SupportMessage(
+            case_id=case.id,
+            author_user_id=case.requester_user_id,
+            author_label=(
+                None
+                if case.requester_user_id
+                else (case.requester_name or "Requester")
+            ),
+            body=body,
+            is_internal=False,
+        )
+    )
+    if case.status == "waiting_on_user":
+        case.status = "pending"
+    _record_event(
+        db,
+        case=case,
+        actor_user_id=case.requester_user_id,
+        event_type="reply",
+        summary="Public reply added",
+    )
+    write_audit_log(
+        db,
+        action="support.message_public",
+        actor_user_id=case.requester_user_id,
+        resource_type="support_case",
+        resource_id=str(case.id),
+        details={"case_number": case.case_number},
+    )
+    support_notify.notify_user_reply_to_assignee(db, case)
+    db.commit()
+    return serialize_case(
+        db, _load_case(db, case.id), include_internal=False  # type: ignore[arg-type]
+    )
 
 
 def add_message(

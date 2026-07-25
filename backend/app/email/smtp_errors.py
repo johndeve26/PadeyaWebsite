@@ -71,4 +71,14 @@ def humanize_smtp_error_for_admin(
             f"Raw: {text[:220]}"
         )
 
+    if "timed out" in lower or "timeout" in lower or "etimedout" in lower:
+        return (
+            "SMTP connection timed out reaching the mail server. "
+            "Your SMTP host/port may be wrong, or the app host is blocking outbound "
+            "SMTP ports 25/465/587 (common on Render free web services). "
+            "Fix: upgrade the API host to a paid instance that allows SMTP, "
+            "or send via an HTTPS email API (Resend/Brevo/Postmark) instead of raw SMTP. "
+            f"Raw: {text[:160]}"
+        )
+
     return text

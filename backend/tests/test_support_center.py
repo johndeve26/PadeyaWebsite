@@ -93,6 +93,51 @@ def test_visitor_public_ticket_and_lookup(client: TestClient):
     assert ok.json()["internal_notes"] == []
 
 
+def test_visitor_can_reply_on_public_track(client: TestClient, assign_role):
+    created = client.post(
+        "/api/v1/support/tickets/public",
+        json={
+            "subject": "Need account help",
+            "category": "account_login",
+            "body": "I need help with fixing my account.",
+            "requester_email": "track-reply@example.com",
+            "requester_name": "Abiodun",
+            "website": "",
+        },
+    )
+    assert created.status_code == 201, created.text
+    number = created.json()["case_number"]
+    tid = created.json()["id"]
+
+    admin = _role(client, assign_role, "track-reply-admin@example.com", "support_agent")
+    staff_reply = client.post(
+        f"/api/v1/admin/support/tickets/{tid}/reply",
+        headers=admin,
+        json={"body": "Please reply with more details."},
+    )
+    assert staff_reply.status_code == 200
+    assert staff_reply.json()["status"] == "waiting_on_user"
+
+    denied = client.post(
+        f"/api/v1/support/tickets/by-number/{number}/reply",
+        json={"body": "Here are more details about my account."},
+    )
+    assert denied.status_code == 403
+
+    replied = client.post(
+        f"/api/v1/support/tickets/by-number/{number}/reply",
+        json={
+            "body": "Here are more details about my account.",
+            "email": "track-reply@example.com",
+        },
+    )
+    assert replied.status_code == 200, replied.text
+    assert replied.json()["status"] == "pending"
+    bodies = [m["body"] for m in replied.json()["messages"]]
+    assert "Here are more details about my account." in bodies
+    assert replied.json()["internal_notes"] == []
+
+
 def test_honeypot_does_not_leak_real_ticket(client: TestClient, db_session: Session):
     from app.support.models import SupportCase
 

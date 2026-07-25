@@ -21,6 +21,7 @@ from app.support.schemas import (
     SupportMessageCreate,
     SupportPriorityUpdate,
     SupportPublicCreate,
+    SupportPublicReply,
     SupportSettingsPublic,
     SupportSettingsUpdate,
     SupportStatusUpdate,
@@ -29,6 +30,7 @@ from app.support.service import (
     add_attachment,
     add_internal_note,
     add_message,
+    add_public_message,
     archive_case,
     assign_case,
     close_case,
@@ -137,6 +139,23 @@ def public_ticket_lookup(
         get_case_by_number_public(
             db, ticket_number=ticket_number, email=email, token=token
         )
+    )
+
+
+@router.post(
+    "/support/tickets/by-number/{ticket_number}/reply",
+    response_model=SupportCasePublic,
+)
+def public_ticket_reply(
+    ticket_number: str,
+    payload: SupportPublicReply,
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+) -> SupportCasePublic:
+    """Requester follow-up without login — same email/token proof as lookup."""
+    rate_limit_public_support(request)
+    return SupportCasePublic.model_validate(
+        add_public_message(db, ticket_number=ticket_number, payload=payload)
     )
 
 

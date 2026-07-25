@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState, type FormEvent } from "react";
 
 import { SupportConversation } from "@/components/support/SupportConversation";
+import { SupportRequesterReplyForm } from "@/components/support/SupportRequesterReplyForm";
 import {
   Alert,
   Badge,
@@ -20,6 +21,7 @@ import { ApiError } from "@/lib/api";
 import { brand } from "@/lib/brand";
 import {
   fetchSupportTicketByNumber,
+  replyPublicSupportTicket,
   supportTicketNumber,
 } from "@/lib/support-api";
 import { formatSupportLabel, priorityTone } from "@/lib/support-ui";
@@ -32,6 +34,12 @@ function TrackTicketInner() {
 
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [token, setToken] = useState(searchParams.get("token") ?? "");
+  const [verifiedEmail, setVerifiedEmail] = useState(
+    searchParams.get("email") ?? "",
+  );
+  const [verifiedToken, setVerifiedToken] = useState(
+    searchParams.get("token") ?? "",
+  );
   const [ticket, setTicket] = useState<SupportCase | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,6 +55,8 @@ function TrackTicketInner() {
           token: accessToken || undefined,
         });
         setTicket(data);
+        setVerifiedEmail(mail.trim());
+        setVerifiedToken((accessToken || "").trim());
       } catch (err) {
         setTicket(null);
         setError(
@@ -124,7 +134,19 @@ function TrackTicketInner() {
               {supportTicketNumber(ticket)}
             </span>
           </p>
-          <SupportConversation ticket={ticket} />
+          <div className="space-y-4">
+            <SupportConversation ticket={ticket} />
+            <SupportRequesterReplyForm
+              ticket={ticket}
+              onSent={setTicket}
+              sendReply={(body) =>
+                replyPublicSupportTicket(ticketNumberParam, body, {
+                  email: verifiedEmail || undefined,
+                  token: verifiedToken || undefined,
+                })
+              }
+            />
+          </div>
           {/* Guard: never surface internal_notes on public track */}
           {ticket.internal_notes?.length ? null : null}
         </>
