@@ -48,8 +48,11 @@ export function NavLabel({
   item: NavItem;
   active?: boolean;
 }) {
-  const messagesUnread = useUnreadMessages();
-  const notificationsUnread = useUnreadNotifications();
+  // Only the matching badge subscribes — every NavLabel used to poll both.
+  const messagesUnread = useUnreadMessages(item.badge === "messages");
+  const notificationsUnread = useUnreadNotifications(
+    item.badge === "notifications",
+  );
   const unread =
     item.badge === "messages"
       ? messagesUnread

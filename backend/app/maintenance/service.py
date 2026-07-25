@@ -10,6 +10,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.maintenance.models import (
@@ -28,6 +29,10 @@ GLOBAL_MODES = frozenset({"off", "scheduled", "active", "read_only", "section_on
 SECTION_MODES = frozenset({"maintenance", "read_only"})
 BYPASS_HEADER = "X-Maintenance-Bypass"
 BYPASS_TTL_HOURS = 8
+
+# Process-local short-circuit: middleware used to INSERT+flush without commit on
+# every request when the table was empty, deadlocking Neon under load.
+_SECTIONS_SEEDED = False
 
 
 def _utcnow() -> datetime:
@@ -59,33 +64,57 @@ def get_or_create_settings(db: Session) -> MaintenanceSettings:
     if row is None:
         row = MaintenanceSettings(mode="off")
         db.add(row)
-        db.flush()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            row = db.scalar(select(MaintenanceSettings).limit(1))
+            if row is None:
+                raise
+        else:
+            db.refresh(row)
     return row
 
 
 def ensure_section_rows(db: Session) -> list[MaintenanceSection]:
+    """Idempotent seed of section rows. Commits when creating (safe for middleware)."""
+    global _SECTIONS_SEEDED
+
     existing = {
         r.section_key: r
         for r in db.scalars(select(MaintenanceSection)).all()
     }
-    out: list[MaintenanceSection] = []
-    for defn in SECTION_DEFINITIONS:
-        row = existing.get(defn.key)
-        if row is None:
-            row = MaintenanceSection(
-                section_key=defn.key,
-                enabled=False,
-                mode="maintenance",
-                title=defn.label,
-                message=f"{defn.label} is temporarily unavailable.",
-                affected_routes=list(defn.fe_prefixes),
-                affected_api_scopes=list(defn.api_prefixes),
-            )
-            db.add(row)
-            db.flush()
-        out.append(row)
-    return out
+    if _SECTIONS_SEEDED and len(existing) >= len(SECTION_DEFINITIONS):
+        return [existing[d.key] for d in SECTION_DEFINITIONS if d.key in existing]
 
+    missing = [d for d in SECTION_DEFINITIONS if d.key not in existing]
+    if missing:
+        for defn in missing:
+            db.add(
+                MaintenanceSection(
+                    section_key=defn.key,
+                    enabled=False,
+                    mode="maintenance",
+                    title=defn.label,
+                    message=f"{defn.label} is temporarily unavailable.",
+                    affected_routes=list(defn.fe_prefixes),
+                    affected_api_scopes=list(defn.api_prefixes),
+                )
+            )
+        try:
+            db.commit()
+        except IntegrityError:
+            # Concurrent middleware seeds — reload winners.
+            db.rollback()
+        existing = {
+            r.section_key: r
+            for r in db.scalars(select(MaintenanceSection)).all()
+        }
+
+    if len(existing) >= len(SECTION_DEFINITIONS):
+        _SECTIONS_SEEDED = True
+
+    return [existing[d.key] for d in SECTION_DEFINITIONS if d.key in existing]
 
 def apply_due_schedules(db: Session) -> None:
     """Auto-enable/disable schedules based on wall clock (called from middleware)."""

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useMessageSocket } from "@/hooks/useMessageSocket";
+import { getAccessToken } from "@/lib/auth/storage";
 import { fetchUnreadCount } from "@/lib/messaging-api";
 import type {
   MessagingSocketEvent,
@@ -25,7 +26,10 @@ export function useUnreadRealtime(enabled = true): {
   const [count, setCount] = useState(0);
 
   const refresh = useCallback(async () => {
-    if (!user || !enabled) return;
+    if (!user || !enabled || !getAccessToken()) {
+      setCount(0);
+      return;
+    }
     try {
       setCount(await fetchUnreadCount());
     } catch {

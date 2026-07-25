@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useMessageSocket } from "@/hooks/useMessageSocket";
 import { apiRequest } from "@/lib/api";
+import { getAccessToken } from "@/lib/auth/storage";
 import type { MessagingSocketEvent } from "@/lib/messaging/socket-types";
 
 const POLL_LIVE_MS = 90_000;
@@ -15,13 +16,14 @@ const POLL_FALLBACK_MS = 30_000;
  * In-app notification unread count (independent of browser push).
  * WebSocket `notification.created` + HTTP fallback.
  */
-export function useUnreadNotifications(): number {
+export function useUnreadNotifications(enabled = true): number {
   const { user } = useAuth();
   const pathname = usePathname();
   const [unread, setUnread] = useState(0);
+  const active = Boolean(enabled && user);
 
   const refresh = useCallback(async () => {
-    if (!user) {
+    if (!active || !getAccessToken()) {
       setUnread(0);
       return;
     }
@@ -33,7 +35,7 @@ export function useUnreadNotifications(): number {
     } catch {
       /* keep last */
     }
-  }, [user]);
+  }, [active]);
 
   const onEvent = useCallback(
     (event: MessagingSocketEvent) => {
@@ -48,10 +50,16 @@ export function useUnreadNotifications(): number {
     [refresh],
   );
 
-  const { isLive } = useMessageSocket(user ? onEvent : undefined, Boolean(user));
+  const { isLive } = useMessageSocket(
+    active ? onEvent : undefined,
+    active,
+  );
 
   useEffect(() => {
-    if (!user) return;
+    if (!active) {
+      setUnread(0);
+      return;
+    }
     let cancelled = false;
     queueMicrotask(() => {
       if (!cancelled) void refresh();
@@ -67,7 +75,7 @@ export function useUnreadNotifications(): number {
       window.removeEventListener("padeya:notifications-changed", onChanged);
       window.clearInterval(id);
     };
-  }, [user, isLive, refresh, pathname]);
+  }, [active, isLive, refresh, pathname]);
 
-  return user ? unread : 0;
+  return active ? unread : 0;
 }

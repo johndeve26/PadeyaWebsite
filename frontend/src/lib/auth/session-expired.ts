@@ -1,5 +1,8 @@
 const SESSION_EXPIRED_KEY = "padeya.auth.session_expired_message";
 
+/** Dispatched when refresh fails and local tokens are cleared — AuthProvider must drop `user`. */
+export const SESSION_EXPIRED_EVENT = "padeya:session-expired";
+
 export const DEFAULT_SESSION_EXPIRED_MESSAGE =
   "Your session has expired. Please log in again.";
 
@@ -9,6 +12,13 @@ export function markSessionExpired(
   if (typeof window === "undefined") return;
   try {
     sessionStorage.setItem(SESSION_EXPIRED_KEY, message);
+  } catch {
+    /* ignore */
+  }
+  try {
+    window.dispatchEvent(
+      new CustomEvent(SESSION_EXPIRED_EVENT, { detail: { message } }),
+    );
   } catch {
     /* ignore */
   }

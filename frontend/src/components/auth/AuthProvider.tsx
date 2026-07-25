@@ -21,6 +21,7 @@ import {
   endImpersonationRequest,
 } from "@/lib/api";
 import { getOrCreateDeviceId } from "@/lib/auth/session-meta";
+import { SESSION_EXPIRED_EVENT } from "@/lib/auth/session-expired";
 import {
   clearImpersonationStash,
   clearTokens,
@@ -134,6 +135,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
     return () => {
       active = false;
+    };
+  }, []);
+
+  // When API refresh fails, tokens are cleared but React `user` used to stay set —
+  // unread/message polls then hammer /messages/unread-count with 401 forever.
+  useEffect(() => {
+    const onSessionExpired = () => {
+      clearImpersonationStash();
+      setUser(null);
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+    return () => {
+      window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
     };
   }, []);
 
