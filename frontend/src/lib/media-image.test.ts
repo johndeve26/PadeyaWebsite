@@ -21,6 +21,11 @@ describe("media-image helpers", () => {
         "https://padeyawebsite.onrender.com/media/covers/a.jpg",
       ),
     ).toBe(true);
+    expect(
+      isOptimizableMediaSrc(
+        "https://media.padeya.com/memories/events/abc/photo.webp",
+      ),
+    ).toBe(true);
     expect(isOptimizableMediaSrc("https://evil.example/media/x.jpg")).toBe(
       false,
     );

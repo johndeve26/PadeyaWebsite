@@ -19,6 +19,7 @@ os.environ["PUSH_QUEUE_ENABLED"] = "true"
 os.environ["EMAIL_SETTINGS_ENCRYPTION_KEY"] = "test-email-settings-encryption-key"
 os.environ["MEDIA_PUBLIC_BASE_URL"] = "http://testserver"
 os.environ["MEDIA_ROOT"] = "media_uploads_test"
+os.environ["MEDIA_STORAGE_PROVIDER"] = "local"
 
 import pytest
 from fastapi.testclient import TestClient

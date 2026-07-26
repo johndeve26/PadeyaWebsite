@@ -2122,7 +2122,8 @@ def public_event_detail(db: Session, slug: str) -> Event:
     from app.core.http_errors import raise_not_found
 
     event = get_event_by_slug(db, slug)
-    if event is None or event.status != "published":
+    # Completed events stay publicly reachable for Past Event + Memories UX.
+    if event is None or event.status not in {"published", "completed"}:
         # Privacy-safe: do not distinguish missing vs unpublished/deleted.
         raise_not_found()
     return event

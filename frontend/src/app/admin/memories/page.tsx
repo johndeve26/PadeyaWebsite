@@ -19,11 +19,17 @@ import {
   Textarea,
 } from "@/components/ui";
 import { ApiError } from "@/lib/api";
-import { fetchAdminMemories, moderateMemory } from "@/lib/memories-api";
-import type { EventMemory } from "@/lib/types/memories";
+import {
+  fetchAdminMemories,
+  fetchAdminMemoryPhotos,
+  moderateAdminPhoto,
+  moderateMemory,
+} from "@/lib/memories-api";
+import type { AdminMemoryPhoto, EventMemory } from "@/lib/types/memories";
 
 export default function AdminMemoriesPage() {
   const [items, setItems] = useState<EventMemory[]>([]);
+  const [photos, setPhotos] = useState<AdminMemoryPhoto[]>([]);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -33,7 +39,12 @@ export default function AdminMemoriesPage() {
   const [loading, setLoading] = useState(true);
 
   async function load() {
-    setItems(await fetchAdminMemories());
+    const [memories, photoRows] = await Promise.all([
+      fetchAdminMemories(),
+      fetchAdminMemoryPhotos(100),
+    ]);
+    setItems(memories);
+    setPhotos(photoRows);
   }
 
   useEffect(() => {
@@ -295,6 +306,110 @@ export default function AdminMemoriesPage() {
             </Card>
           )}
         />
+      ) : null}
+
+      {!loading && photos.length > 0 ? (
+        <Card className="mt-8 space-y-4 p-5">
+          <h2 className="text-lg font-extrabold tracking-tight">Photo moderation</h2>
+          <p className="text-sm text-muted-foreground">
+            Per-photo hide / restore / remove. No ticket or payment data.
+          </p>
+          <ul className="space-y-3">
+            {photos.slice(0, 40).map((photo) => (
+              <li
+                key={photo.id}
+                className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{photo.event_title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {photo.uploader_role} · {photo.status}
+                    {photo.caption ? ` · ${photo.caption}` : ""}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <StatusBadge status={photo.status} />
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={busyId === photo.id}
+                    onClick={() =>
+                      void (async () => {
+                        setBusyId(photo.id);
+                        try {
+                          await moderateAdminPhoto(photo.id, { action: "hide" });
+                          setNote("Photo hidden");
+                          await load();
+                        } catch (err) {
+                          setError(
+                            err instanceof ApiError ? err.detail : "Failed",
+                          );
+                        } finally {
+                          setBusyId(null);
+                        }
+                      })()
+                    }
+                  >
+                    Hide
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={busyId === photo.id}
+                    onClick={() =>
+                      void (async () => {
+                        setBusyId(photo.id);
+                        try {
+                          await moderateAdminPhoto(photo.id, {
+                            action: "restore",
+                          });
+                          setNote("Photo restored");
+                          await load();
+                        } catch (err) {
+                          setError(
+                            err instanceof ApiError ? err.detail : "Failed",
+                          );
+                        } finally {
+                          setBusyId(null);
+                        }
+                      })()
+                    }
+                  >
+                    Restore
+                  </Button>
+                  <ConfirmAction
+                    label="Remove"
+                    title="Remove this photo?"
+                    description="Marks the photo removed for public views."
+                    confirmLabel="Remove"
+                    tone="danger"
+                    disabled={busyId === photo.id}
+                    busy={busyId === photo.id}
+                    onConfirm={async () => {
+                      setBusyId(photo.id);
+                      try {
+                        await moderateAdminPhoto(photo.id, { action: "remove" });
+                        setNote("Photo removed");
+                        await load();
+                      } catch (err) {
+                        setError(
+                          err instanceof ApiError ? err.detail : "Failed",
+                        );
+                      } finally {
+                        setBusyId(null);
+                      }
+                    }}
+                  />
+                  <Link href={`/events/${photo.event_slug}/memories`}>
+                    <Button size="sm" variant="ghost">
+                      Open
+                    </Button>
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
       ) : null}
     </DashboardShell>
   );

@@ -27,6 +27,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "media.padeya.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "padeya.com",
         pathname: "/media/**",
       },

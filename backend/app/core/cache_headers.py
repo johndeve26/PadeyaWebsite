@@ -43,7 +43,6 @@ _NO_STORE_PREFIXES = (
     "/promos",  # validate/redeem can be sensitive
     "/ambassadors",
     "/fan-connect",
-    "/memories",
     "/analytics",
     "/me",
     "/team-invites",
@@ -77,11 +76,19 @@ _PUBLIC_GET_RULES: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"^/f/[a-zA-Z0-9_]+(/activity|/badges)?/?$"), "public, max-age=180, stale-while-revalidate=60"),
     (re.compile(r"^/pricing/public/?$"), "public, max-age=600, stale-while-revalidate=120"),
     (re.compile(r"^/placements/public/"), "public, max-age=120, stale-while-revalidate=60"),
+    # event memories (public albums + album detail)
+    (re.compile(r"^/memories/albums/?$"), "public, max-age=120, stale-while-revalidate=60"),
+    (re.compile(r"^/memories/events/[a-z0-9-]+/?$"), "public, max-age=120, stale-while-revalidate=60"),
+    (re.compile(r"^/memories/public/[a-zA-Z0-9_-]+/[a-z0-9-]+/?$"), "public, max-age=120, stale-while-revalidate=60"),
 ]
 
 # Event paths that look like public slugs but are private
 _EVENT_PRIVATE = re.compile(
     r"^/events/(mine|admin|templates|by-id|media|health)(/|$)|^/events/[^/]+/fan-connect/?$"
+)
+
+_MEMORY_PRIVATE = re.compile(
+    r"^/memories/(host|admin)(/|$)|^/memories/events/[^/]+/(photos|eligibility)(/|$)|^/memories/health/?$"
 )
 
 
@@ -95,6 +102,8 @@ def _strip_api_prefix(path: str) -> str:
 def is_no_store_path(api_path: str) -> bool:
     p = api_path if api_path.startswith("/") else f"/{api_path}"
     if _EVENT_PRIVATE.match(p):
+        return True
+    if _MEMORY_PRIVATE.match(p):
         return True
     if p.startswith("/taxonomy/admin") or p.startswith("/cms/admin") or p.startswith("/blog/admin"):
         return True

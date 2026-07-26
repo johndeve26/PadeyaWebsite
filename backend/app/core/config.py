@@ -66,11 +66,20 @@ class Settings(BaseSettings):
     # Required for fan directory/sitemap purge after visibility changes.
     revalidate_secret: str = ""
 
-    # Local media uploads (swap storage backend later without changing routes)
+    # Public media uploads — local disk (dev) or Cloudflare R2 (production).
+    # MEDIA_STORAGE_PROVIDER=local|r2
+    media_storage_provider: str = "local"
     media_root: str = "media_uploads"
     # Public origin prefix for /media/... URLs in API responses (optional).
     # Leave empty to use relative paths (/media/...) — best with Next.js /media rewrites.
     media_public_base_url: str = ""
+    # Cloudflare R2 (S3-compatible). Required when media_storage_provider=r2.
+    # Never expose access keys to the frontend.
+    r2_bucket_name: str = ""
+    r2_endpoint: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_public_url: str = ""  # e.g. https://media.padeya.com
 
     # Paystack — Admin → Payment integration only (runtime_settings); not in .env
 

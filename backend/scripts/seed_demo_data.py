@@ -47,6 +47,38 @@ from app.placements import models as placements_models  # noqa: F401
 from app.demo.seed import seed_demo_data
 
 
+def _print_memories_summary(value: dict) -> None:
+    print("Memories demo seed complete")
+    food = value.get("food_and_flow") or value.get("albums", {}).get("food-and-flow")
+    if isinstance(food, dict):
+        print(
+            "\nFood & Flow\n"
+            f"Host memories: {food.get('host')}\n"
+            f"Community memories: {food.get('community')}\n"
+            f"Contributors: {food.get('contributors')}\n"
+            f"Total: {food.get('total')}\n"
+            "Cover: set\n"
+            "External gallery: unset"
+        )
+    for album_key, stats in (value.get("albums") or {}).items():
+        if album_key == "food-and-flow" or not isinstance(stats, dict):
+            continue
+        print(
+            f"\n{album_key}\n"
+            f"Total: {stats.get('total')} "
+            f"(host={stats.get('host')} community={stats.get('community')})"
+        )
+    integrity = value.get("integrity")
+    if isinstance(integrity, dict):
+        print(
+            f"\nIntegrity: {'OK' if integrity.get('ok') else 'FAILED'} "
+            f"(demo_rows={integrity.get('demo_media_rows')} "
+            f"unique_keys={integrity.get('unique_demo_keys')})"
+        )
+        for issue in integrity.get("issues") or []:
+            print(f"  - {issue}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Seed local Pàdéyá demo data")
     parser.add_argument(
@@ -59,6 +91,11 @@ def main() -> int:
         action="store_true",
         help="Repair partial demo data (demo-scoped rows only)",
     )
+    parser.add_argument(
+        "--memories-only",
+        action="store_true",
+        help="Idempotent Event Memories seed only (requires existing demo events)",
+    )
     args = parser.parse_args()
 
     settings = get_settings()
@@ -70,6 +107,17 @@ def main() -> int:
 
     db = SessionLocal()
     try:
+        if args.memories_only:
+            from app.demo.memories_seed import seed_memories_only
+
+            result = seed_memories_only(db)
+            print("Demo seed result:")
+            print(f"  status: {result.get('status')}")
+            if result.get("message"):
+                print(f"  message: {result['message']}")
+            _print_memories_summary(result)
+            return 0 if result.get("status") == "ok" else 1
+
         result = seed_demo_data(db, reset=args.reset, repair=args.repair)
     except DemoEnvironmentError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
@@ -79,6 +127,9 @@ def main() -> int:
 
     print("Demo seed result:")
     for key, value in result.items():
+        if key == "memories" and isinstance(value, dict):
+            _print_memories_summary(value)
+            continue
         print(f"  {key}: {value}")
     return 0
 

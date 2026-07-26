@@ -198,6 +198,17 @@ async def lifespan(_: FastAPI):
     email_sweeper: asyncio.Task | None = None
     push_sweeper: asyncio.Task | None = None
     if settings.app_env != "test":
+        from app.core.media import (
+            get_media_storage,
+            log_media_storage_status,
+            media_storage_provider,
+            validate_media_storage_config,
+        )
+
+        validate_media_storage_config()
+        if media_storage_provider() == "r2":
+            get_media_storage()
+        log_media_storage_status()
         db = SessionLocal()
         try:
             seed_roles_and_permissions(db)

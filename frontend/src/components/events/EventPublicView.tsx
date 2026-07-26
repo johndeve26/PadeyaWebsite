@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { TrackImpression } from "@/components/analytics/TrackImpression";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { CompletedEventPublicView } from "@/components/events/completed/CompletedEventPublicView";
 import { EventDetailRecommendationsRail } from "@/components/events/EventDetailRecommendationsRail";
 import { EventFanConnectSection } from "@/components/fan-connect/EventFanConnectSection";
 import { SponsorSaveButton } from "@/components/sponsor/SponsorSaveButton";
@@ -179,6 +180,19 @@ export function EventPublicView({
   const anyTicketOpen = (event.ticket_types ?? []).some(
     (t) => !ticketAvailability(t).closed,
   );
+  const isCompleted = event.status === "completed";
+  const canBuyTickets =
+    !previewMode && !isCompleted && hasTickets && anyTicketOpen;
+
+  if (isCompleted) {
+    return (
+      <CompletedEventPublicView
+        event={event}
+        related={related}
+        previewMode={previewMode}
+      />
+    );
+  }
 
   function onCheckoutIntent() {
     trackBuyTicketClick({
@@ -376,7 +390,7 @@ export function EventPublicView({
                       Manage event
                     </Button>
                   </Link>
-                ) : !previewMode && hasTickets && anyTicketOpen ? (
+                ) : canBuyTickets ? (
                   checkoutBlocked ? (
                     <Button
                       size="sm"
@@ -740,7 +754,7 @@ export function EventPublicView({
             ) : anyTicketOpen ? (
               checkoutBlocked ? (
                 <Button
-                  className="whitespace-nowrap"
+                  className="shrink-0 whitespace-nowrap"
                   disabled
                   title={USER_RESTRICTION_ACTION_MESSAGE}
                 >

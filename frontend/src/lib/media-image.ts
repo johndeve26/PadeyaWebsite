@@ -24,6 +24,7 @@ export type MediaSizesPreset = keyof typeof MEDIA_SIZES;
 
 /** Hosts Next/Image is allowed to optimize (no open wildcard). */
 export const OPTIMIZABLE_MEDIA_HOSTS = [
+  "media.padeya.com",
   "padeya.com",
   "www.padeya.com",
   "padeyawebsite.onrender.com",

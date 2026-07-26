@@ -57,7 +57,47 @@ def notify_fan_frontend_revalidate(
             res.status_code,
             (res.text or "")[:200],
         )
-        return False
     except Exception:  # noqa: BLE001
         logger.exception("fan frontend revalidate request failed")
         return False
+    return False
+
+
+def notify_memories_frontend_revalidate(*, slug: str | None) -> bool:
+    """POST /api/revalidate/memories — bust hub + album + event page ISR."""
+    settings = get_settings()
+    secret = (settings.revalidate_secret or "").strip()
+    frontend = (settings.frontend_url or "").rstrip("/")
+    if not secret or not frontend:
+        logger.warning(
+            "memories frontend revalidate skipped "
+            "(REVALIDATE_SECRET or FRONTEND_URL unset)"
+        )
+        return False
+
+    url = urljoin(frontend + "/", "api/revalidate/memories")
+    payload: dict[str, Any] = {}
+    if slug:
+        payload["slug"] = slug
+
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            res = client.post(
+                url,
+                json=payload,
+                headers={
+                    "Authorization": f"Bearer {secret}",
+                    "Content-Type": "application/json",
+                },
+            )
+        if 200 <= res.status_code < 300:
+            return True
+        logger.error(
+            "memories frontend revalidate failed status=%s body=%s",
+            res.status_code,
+            (res.text or "")[:200],
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception("memories frontend revalidate request failed")
+        return False
+    return False

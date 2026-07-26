@@ -70,9 +70,10 @@ Progress phases are printed with `flush=True` (`starting roles/permissions`, `st
 
 | Command | Behavior |
 | --- | --- |
-| `seed_demo_data` | If marker `seed/complete` exists: refresh + **idempotent** persona / passport / messaging / merch / open Ambassadors top-up. Does **not** re-run full commerce loops. |
+| `seed_demo_data` | If marker `seed/complete` exists: refresh + **idempotent** persona / passport / messaging / merch / open Ambassadors / **Event Memories** top-up. Does **not** re-run full commerce loops. |
 | `seed_demo_data --repair` | Completes missing demo users/hosts/events/**sponsorship_slots** and writes `seed/complete`. Only touches demo-marked rows / known demo emails and slugs. |
 | `seed_demo_data --reset` | Delete demo users/hosts/events/orders/tickets (scoped), then full seed. |
+| `seed_demo_data --memories-only` | Idempotent Event Memories photo albums only (requires existing demo events). Safe to rerun; upserts by `demo-mem:*` storage keys. |
 
 ### Rich sponsor demo (6 fictional brands)
 
@@ -257,6 +258,23 @@ Legacy QA: `/@djmaze`, `/@lagoscomedyhub`, `/@techconnectafrica`, `/@praiseexper
 | `fan8@` | Bayo Campus Fan | `bayocampus` | **unlisted** | no | Direct `/f/bayocampus` only |
 
 Persona product context (`DEMO_PERSONA_CONTEXT`): tickets, check-ins, reviews, Vault unlocks — keeps Message Host / Message Fan CTAs tied to real relationships.
+
+## Event Memories (demo)
+
+Seeded by `backend/app/demo/memories_seed.py` (`seed_demo_memories` via `_seed_memories` on full/refresh seed, or `python -m scripts.seed_demo_data --memories-only`).
+
+**Showcase:** `/events/demo-food-and-flow/memories` and hub `/memories`.
+
+**Food & Flow album (targets):** ~9 host photos (≤10), organic fan distribution 4+3+5+2 from `fan3` / `fan6` (private Passport) / `fan1` / `fan5`, with real paid demo tickets (`PDY-MEM-*` when checkout is blocked on completed events). `fan8` has **no** Food & Flow ticket (ineligible upload QA). External gallery left unset (no invented Instagram).
+
+**Secondary completed albums:** `demo-detty-friday-live`, `demo-island-comedy-night`, `demo-worship-under-stars` (fewer photos). `demo-startup-demo-evening` is seeded **hidden** (admin-moderation QA).
+
+**Assets:** Reuses `frontend/public/demo/**` SVGs via `app.demo.assets` (event banners/galleries, host covers, vault covers, memory placeholders). Idempotent upsert by `storage_key` prefix `demo-mem:`.
+
+**Guards:** Same as base demo seed — never auto-runs in production; CLI only.
+
+**Tests:** `pytest tests/test_memory_photos.py tests/test_memory_photos_extra.py`
+
 
 ## Fan Connect demo
 

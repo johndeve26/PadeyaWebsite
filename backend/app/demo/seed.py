@@ -3043,46 +3043,16 @@ def _seed_messaging(
     return seed_messaging_demo(db, users=users, hosts=hosts, events=events)
 
 
-def _seed_memories(db: Session, events: dict[str, Event]) -> None:
-    admin = get_user_by_email(db, f"admin@{DEMO_EMAIL_DOMAIN}")
-    mapping = {
-        "detty-friday-live": "detty-friday-memory",
-        "island-comedy-night": "island-comedy-memory",
-        "food-and-flow": "mainland-2025-memory",
-        "worship-under-stars": "detty-friday-memory",
-        "startup-demo-evening": "detty-friday-memory",
-    }
-    for key, mem_key in mapping.items():
-        event = events[key]
-        event.status = "completed"
-        memory = ensure_event_memory(db, event)
-        memory.host_recap_note = (
-            f"Thank you for joining {event.title} on Pàdéyá. See you next time."
-        )
-        memory.status = "published"
-        if not list(
-            db.scalars(
-                select(EventMemoryMedia).where(EventMemoryMedia.memory_id == memory.id)
-            ).all()
-        ):
-            db.add(
-                EventMemoryMedia(
-                    memory_id=memory.id,
-                    url=assets.memory_image(mem_key),
-                    media_type="gallery",
-                    sort_order=0,
-                    label="Recap",
-                )
-            )
-        if key == "startup-demo-evening":
-            memory.status = "hidden"
-            memory.moderation_status = "removed"
-            memory.moderation_note = "Demo admin-hidden memory"
-            if admin:
-                memory.moderated_by_user_id = admin.id
-                memory.moderated_at = _now()
-    db.commit()
+def _seed_memories(
+    db: Session,
+    *,
+    users: dict[str, User],
+    events: dict[str, Event],
+) -> dict:
+    """Rich Event Memories albums (idempotent). See app.demo.memories_seed."""
+    from app.demo.memories_seed import seed_demo_memories
 
+    return seed_demo_memories(db, users=users, events=events)
 
 def _seed_analytics(db: Session, events: dict[str, Event]) -> None:
     """Seed 90 days of funnel analytics (raw stream + rollups) for demo dashboards."""
@@ -3436,6 +3406,7 @@ def seed_demo_data(
         open_amb_counts = seed_demo_open_ambassadors(
             db, users=users, hosts=hosts, events=events
         )
+        memories_summary = _seed_memories(db, users=users, events=events)
         db.commit()
         return {
             "status": "already_seeded",
@@ -3447,6 +3418,7 @@ def seed_demo_data(
             "message_attachments": messaging_counts.get("attachments", 0),
             "merch_products_created": merch_counts.get("products", 0),
             "merch_fulfillments_created": merch_counts.get("fulfillments", 0),
+            "memories": memories_summary,
             **fan_connect_counts,
             **team_counts,
             **open_amb_counts,
@@ -3518,7 +3490,7 @@ def seed_demo_data(
     open_amb_counts = seed_demo_open_ambassadors(
         db, users=users, hosts=hosts, events=events
     )
-    _seed_memories(db, events)
+    memories_summary = _seed_memories(db, users=users, events=events)
     _seed_analytics(db, events)
     log_seed_phase("starting sponsorship slots", script="demo")
     slot_count = _seed_sponsorships(db, hosts)
@@ -3555,6 +3527,7 @@ def seed_demo_data(
         "message_attachments": messaging_counts.get("attachments", 0),
         "merch_products_created": merch_counts.get("products", 0),
         "merch_fulfillments_created": merch_counts.get("fulfillments", 0),
+        "memories": memories_summary,
         "password": DEMO_PASSWORD,
         **fan_connect_counts,
         **team_counts,

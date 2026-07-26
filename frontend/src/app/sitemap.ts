@@ -134,6 +134,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }> = [
     { path: "/", changeFrequency: "daily", priority: 1 },
     { path: "/events", changeFrequency: "hourly", priority: 0.9 },
+    { path: "/memories", changeFrequency: "daily", priority: 0.75 },
     { path: "/events/location", changeFrequency: "daily", priority: 0.75 },
     { path: "/hosts", changeFrequency: "weekly", priority: 0.7 },
     { path: "/fans", changeFrequency: "weekly", priority: 0.65 },
@@ -204,6 +205,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     discoverHosts,
     directoryFans,
     sponsors,
+    memoryAlbums,
   ] = await Promise.all([
     safeJson<PublicEvent[]>("/events"),
     safeJson<Category[]>("/events/categories"),
@@ -229,6 +231,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     safeJson<DiscoverHost[]>("/legacy/discover/hosts"),
     fetchAllDirectoryFans(),
     safeJson<SponsorDirectoryCard[]>("/sponsors/public/directory"),
+    safeJson<{
+      items?: Array<{ event_slug: string; memories_path?: string }>;
+    }>("/memories/albums?limit=48"),
   ]);
 
   for (const post of blogPosts) {
@@ -295,6 +300,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: sitemapLastModified(event.updated_at, event.published_at),
       changeFrequency: "daily",
       priority: 0.8,
+    });
+  }
+
+  for (const album of memoryAlbums?.items ?? []) {
+    const path =
+      album.memories_path || `/events/${album.event_slug}/memories`;
+    pushEntry(entries, `${origin}${path}`, {
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.65,
     });
   }
 

@@ -14,7 +14,7 @@ const HOST_LINKS: { suffix: string; label: string }[] = [
   { suffix: "/analytics", label: "Analytics" },
   { suffix: "/check-in", label: "Check-in" },
   { suffix: "/attendees", label: "Attendees" },
-  { suffix: "/memory", label: "Memory" },
+  { suffix: "/memory", label: "Memories" },
   { suffix: "/edit", label: "Studio" },
 ];
 

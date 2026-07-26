@@ -46,7 +46,13 @@ Status panel may show configured/missing, `APP_ENV`, version, build SHA, last bo
 | `REFRESH_TOKEN_EXPIRE_DAYS` | Session policy |
 | `IMPERSONATION_TOKEN_EXPIRE_MINUTES` | Admin impersonation TTL |
 | `AI_API_KEY` | Provider secret — env only |
-| `MEDIA_ROOT` | Filesystem mount / path |
+| `MEDIA_STORAGE_PROVIDER` | `local` (dev) or `r2` (production public media) |
+| `MEDIA_ROOT` | Filesystem mount / path (local provider + legacy `/media`) |
+| `R2_BUCKET_NAME` | Cloudflare R2 bucket (when provider=`r2`) |
+| `R2_ENDPOINT` | R2 S3-compatible endpoint (when provider=`r2`) |
+| `R2_ACCESS_KEY_ID` | R2 API token access key — env only |
+| `R2_SECRET_ACCESS_KEY` | R2 API token secret — env only |
+| `R2_PUBLIC_URL` | Public media origin (e.g. `https://media.padeya.com`) |
 | `MESSAGING_ATTACHMENT_STORAGE_PROVIDER` | Storage backend wiring |
 | `MESSAGING_ATTACHMENT_STORAGE_ROOT` | Private storage path |
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | Compose infra only |
