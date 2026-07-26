@@ -52,7 +52,8 @@ Do **not** delete only the complete marker and re-run full seed without `--reset
 - Set `DEMO_MODE=true` for the frontend `/demo` helper page.
 - Demo emails use `@demo.padeye.test`.
 - Demo event slugs use the `demo-` prefix.
-- Images are local SVG assets under `frontend/public/demo/` (no external URLs).
+- Images are local SVG assets under `frontend/public/demo/`, stored as site-relative
+  `/demo/...` paths (never `padeya.smartlancedesigns.com` or other absolute hosts).
 - Payments use mocked finalize paths (no live Paystack charges).
 - Email: use **Admin → Email settings** log / dev mode locally (no inbox delivery).
 

@@ -801,7 +801,7 @@ def _ensure_events(
 
 
 def _sync_demo_event_asset_urls(event: Event) -> None:
-    """Point stored demo media at the current FRONTEND_URL (domain migrations)."""
+    """Normalize stored demo media to site-relative `/demo/...` paths."""
     event.banner_url = assets.normalize_demo_asset_url(event.banner_url)
     event.mobile_banner_url = assets.normalize_demo_asset_url(event.mobile_banner_url)
     event.social_share_image_url = assets.normalize_demo_asset_url(

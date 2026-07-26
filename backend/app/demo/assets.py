@@ -1,30 +1,69 @@
-"""Local demo asset URL helpers (frontend/public/demo)."""
+"""Local demo asset URL helpers (frontend/public/demo).
+
+Static demo assets are stored as site-relative paths (`/demo/...`) so the same
+seed works on localhost, previews, and https://padeya.com without baking a
+hostname into the database.
+"""
 
 from __future__ import annotations
 
-from app.core.config import get_settings
+import re
+
+# Retired staging / marketing host that previously powered FRONTEND_URL.
+_LEGACY_SMARTLANCE_DEMO = re.compile(
+    r"^https?://(?:www\.)?padeya\.smartlancedesigns\.com(/demo/.+?)(?:\?.*)?$",
+    re.IGNORECASE,
+)
 
 
 def demo_asset_url(relative_path: str) -> str:
-    """Absolute http(s) URL to a local frontend demo asset."""
-    base = get_settings().frontend_url.rstrip("/")
+    """Site-relative path to a local frontend demo asset under /demo/."""
     path = relative_path.lstrip("/")
     if path.startswith("demo/"):
-        return f"{base}/{path}"
-    return f"{base}/demo/{path}"
+        return f"/{path}"
+    return f"/demo/{path}"
 
 
-def normalize_demo_asset_url(url: str | None) -> str | None:
-    """Rewrite a stored demo asset URL to the current FRONTEND_URL origin."""
+def extract_demo_static_path(url: str | None) -> str | None:
+    """Return `/demo/...` when url points at a Pàdéyá demo static asset."""
     if not url or not str(url).strip():
-        return url
+        return None
     value = str(url).strip()
+    legacy = _LEGACY_SMARTLANCE_DEMO.match(value)
+    if legacy:
+        return legacy.group(1)
     if value.startswith("/demo/"):
-        return demo_asset_url(value.removeprefix("/demo/"))
+        return value.split("?", 1)[0]
     marker = "/demo/"
     idx = value.find(marker)
     if idx >= 0:
-        return demo_asset_url(value[idx + len(marker) :])
+        # Absolute URL on any host that embeds our static demo path.
+        return value[idx:].split("?", 1)[0]
+    return None
+
+
+def rewrite_legacy_smartlance_demo_url(url: str | None) -> str | None:
+    """Rewrite only padeya.smartlancedesigns.com/demo/... → /demo/...
+
+    Leaves media.padeya.com, other absolute URLs, and already-relative paths alone.
+    """
+    if not url or not str(url).strip():
+        return url
+    value = str(url).strip()
+    legacy = _LEGACY_SMARTLANCE_DEMO.match(value)
+    if legacy:
+        return legacy.group(1)
+    return value
+
+
+def normalize_demo_asset_url(url: str | None) -> str | None:
+    """Normalize stored demo asset URLs to site-relative `/demo/...` paths."""
+    if not url or not str(url).strip():
+        return url
+    value = str(url).strip()
+    demo_path = extract_demo_static_path(value)
+    if demo_path is not None:
+        return demo_path
     return value
 
 
