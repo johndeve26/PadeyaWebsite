@@ -11,7 +11,7 @@ export function HostsToolsSection() {
       tone="dark"
       eyebrow="Host tools"
       title="Everything from listing to legacy"
-      description="Five pillars — Event Studio, the door, audience, growth monetization, and ops — not a feature dump."
+      description="Five pillars: Event Studio, the door, audience, growth monetization, and ops, not a feature dump."
     >
       <ul className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
         {forHostsToolCategories.map((cat, i) => (

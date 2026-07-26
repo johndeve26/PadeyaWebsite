@@ -10,7 +10,7 @@ export function FansFaqSection() {
     <MarketingSection
       eyebrow="FAQ"
       title="Questions fans ask first"
-      description="Tickets, Passport, Connect, refunds, and Support — answered clearly."
+      description="Tickets, Passport, Connect, refunds, and Support, answered clearly."
     >
       <MarketingFaq items={forFansFaqs} />
       <p className="text-sm leading-relaxed text-muted-foreground">

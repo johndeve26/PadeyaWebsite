@@ -12,7 +12,7 @@ import { cn } from "@/lib/cn";
 const LOGIN_HERO_BULLETS = [
   {
     title: "Tickets you can trust",
-    body: "QR codes only after payment is confirmed — no guesswork at the door.",
+    body: "QR codes only after payment is confirmed, with no guesswork at the door.",
   },
   {
     title: "Fan life in one place",
@@ -143,7 +143,7 @@ export function LoginPageLayout({
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 max-w-xl space-y-2">
                   <h2 className="font-display text-xl font-extrabold tracking-tight text-paper sm:text-2xl">
-                    Ready for your next night?
+                    Ready for your next adventure?
                   </h2>
                   <p className="text-sm leading-relaxed text-paper/70 sm:text-base">
                     Discover events, shop merch, or create an event on {brand.name}.

@@ -10,13 +10,13 @@ export const MERCH_PATH = "/merch";
 export const MERCH_GUIDE_PATH = "/merch-guide";
 
 export const merchSeo = {
-  title: "Shop merch on Pàdéyá — Host shops, drops & Vault exclusives",
+  title: "Shop merch on Pàdéyá: Host shops, drops & Vault exclusives",
   description: `Discover host merch, event add-ons, post-event drops, and Vault exclusives from ${brand.name} hosts. Shop the night. Wear the memory.`,
   path: MERCH_PATH,
 } as const;
 
 export const merchGuideSeo = {
-  title: "Merch that moves with the moment — How merch works on Pàdéyá",
+  title: "Merch that moves with the moment: How merch works on Pàdéyá",
   description: `Learn how merch works on ${brand.name}: event add-ons, host shops, post-event drops, Vault exclusives, pickup, fees, and policies.`,
   path: MERCH_GUIDE_PATH,
 } as const;
@@ -25,7 +25,7 @@ export const merchHero = {
   eyebrow: `Merch · ${brand.name}`,
   headline: "Merch that moves with the moment",
   support:
-    "Event add-ons, host shops, post-event drops, and Vault exclusives — how fans buy and hosts sell on Pàdéyá.",
+    "Event add-ons, host shops, post-event drops, and Vault exclusives: how fans buy and hosts sell on Pàdéyá.",
   trustLine: "Formats · Drops · Pickup · Fees · Policies",
   primary: { href: MERCH_PATH, label: "Shop merch" },
   secondary: { href: "#how-it-works", label: "How it works" },
@@ -144,7 +144,7 @@ export const merchWorkflow = [
   {
     id: "pay",
     label: "Payment is confirmed",
-    description: "Orders settle through verified payment — frontend success alone is never enough.",
+    description: "Orders settle through verified payment. Frontend success alone is never enough.",
   },
   {
     id: "fulfill",
@@ -217,7 +217,7 @@ export const merchNotificationsPoints: MarketingFeature[] = [
 export const merchFeesPoints: MarketingFeature[] = [
   {
     title: "Platform fees may apply",
-    body: "Merch sales may include platform fees or commission configured by admin — we do not invent percentages here.",
+    body: "Merch sales may include platform fees or commission configured by admin. We do not invent percentages here.",
   },
   {
     title: "Buyer fees at checkout",
@@ -238,7 +238,7 @@ export const merchPoliciesPoints: MarketingFeature[] = [
   },
   {
     title: "Platform & support tools",
-    body: `${brand.name} provides the marketplace, payments rails, and support tools — not the physical product itself.`,
+    body: `${brand.name} provides the marketplace, payments rails, and support tools, not the physical product itself.`,
   },
   {
     title: "Refunds & returns",
@@ -257,7 +257,7 @@ export const merchPoliciesPoints: MarketingFeature[] = [
 export const merchFaqs: MarketingFaqItem[] = [
   {
     q: "Can I buy merch without buying a ticket?",
-    a: "Sometimes. Standalone host merch and some storefront products do not require a ticket. Event add-ons and eligibility-gated drops may require a ticket, attendance, VIP, or Vault access — the product page shows what applies.",
+    a: "Sometimes. Standalone host merch and some storefront products do not require a ticket. Event add-ons and eligibility-gated drops may require a ticket, attendance, VIP, or Vault access. The product page shows what applies.",
   },
   {
     q: "Can merch be attached to an event?",
@@ -265,7 +265,7 @@ export const merchFaqs: MarketingFaqItem[] = [
   },
   {
     q: "What is a post-event merch drop?",
-    a: "A limited release after the event for eligible fans — such as checked-in attendees, ticket buyers, VIPs, or Vault members — when the host publishes the drop.",
+    a: "A limited release after the event for eligible fans, such as checked-in attendees, ticket buyers, VIPs, or Vault members, when the host publishes the drop.",
   },
   {
     q: "What is Vault-exclusive merch?",
@@ -293,7 +293,7 @@ export const merchFaqs: MarketingFaqItem[] = [
   },
   {
     q: "Are merch fees different from ticket fees?",
-    a: "They can be. Merch may use separate fee settings from tickets. Live rates appear on Pricing and in host finance views — we do not hardcode percentages on this page.",
+    a: "They can be. Merch may use separate fee settings from tickets. Live rates appear on Pricing and in host finance views. We do not hardcode percentages on this page.",
   },
 ];
 

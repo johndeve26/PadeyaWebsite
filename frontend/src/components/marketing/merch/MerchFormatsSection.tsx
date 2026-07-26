@@ -10,7 +10,7 @@ export function MerchFormatsSection() {
       tone="dark"
       eyebrow="Merch formats"
       title="Five ways merch works on Pàdéyá"
-      description="Event add-ons, standalone products, post-event drops, Vault exclusives, and pickup or fulfillment — pick what fits the night."
+      description="Event add-ons, standalone products, post-event drops, Vault exclusives, and pickup or fulfillment. Pick what fits the night."
     >
       <MarketingFeatureGrid
         items={merchFormats}

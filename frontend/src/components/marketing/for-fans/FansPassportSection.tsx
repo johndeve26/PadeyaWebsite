@@ -13,7 +13,7 @@ export function FansPassportSection() {
       tone="ink-soft"
       eyebrow="Fan Passport"
       title="Your public-safe identity for the scene"
-      description="Badges, attended nights, reviews, and a shareable profile — with visibility you control."
+      description="Badges, attended nights, reviews, and a shareable profile, with visibility you control."
     >
       <div className="grid items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-14">
         <ul className="space-y-6">

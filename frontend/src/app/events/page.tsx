@@ -22,7 +22,7 @@ export const revalidate = 90;
 export const metadata: Metadata = hubPageMetadata({
   title: "Events",
   description:
-    "Discover events on Pàdéyá — search by city, category, date, and vibe. Verified tickets, QR check-in, and trusted hosts.",
+    "Discover events on Pàdéyá: search by city, category, date, and vibe. Verified tickets, QR check-in, and trusted hosts.",
   path: EVENTS_FACET_CANONICAL_PATH,
 });
 
@@ -42,7 +42,7 @@ export default async function EventsIndexPage() {
       <ReferralLandingTracker />
       <HubJsonLd
         name="Events on Pàdéyá"
-        description="Find events on Pàdéyá — search by city, category, date, and vibe. Verified tickets with QR check-in."
+        description="Find events on Pàdéyá: search by city, category, date, and vibe. Verified tickets with QR check-in."
         path="/events"
         crumbs={crumbs}
       />

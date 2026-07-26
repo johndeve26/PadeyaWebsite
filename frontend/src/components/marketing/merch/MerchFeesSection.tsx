@@ -10,7 +10,7 @@ export function MerchFeesSection() {
     <MarketingSection
       id="fees"
       eyebrow="Fees and earnings"
-      title="Clear totals — no invented percentages"
+      title="Clear totals, no invented percentages"
       description="Merch may carry platform fees or commission. Buyer fees depend on admin settings. Hosts see gross, deductions, and net in finance views."
     >
       <MarketingFeatureGrid items={merchFeesPoints} columns={3} density="pillars" />

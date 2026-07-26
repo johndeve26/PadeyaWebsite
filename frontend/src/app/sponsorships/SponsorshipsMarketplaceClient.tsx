@@ -169,7 +169,7 @@ function SponsorsMarketplaceInner() {
       if (prev.message.trim()) return prev;
       return {
         ...prev,
-        message: `Hi — we're exploring a partnership with ${label} for an upcoming Pàdéyá activation. Here's our event context:`,
+        message: `Hi, we're exploring a partnership with ${label} for an upcoming Pàdéyá activation. Here's our event context:`,
       };
     });
   }, [sponsorSlugHint]);
@@ -275,7 +275,7 @@ function SponsorsMarketplaceInner() {
         campaign_id: inquiryCampaignId || undefined,
         sponsor_id: sponsorWorkspace?.sponsor_id,
       });
-      setNote("Inquiry submitted. The host will follow up — nothing is auto-approved.");
+      setNote("Inquiry submitted. The host will follow up. Nothing is auto-approved.");
       setActiveSlot(null);
       setForm(EMPTY_FORM);
       setInquiryCampaignId("");

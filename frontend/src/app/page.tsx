@@ -23,7 +23,7 @@ import { buildPageMetadata } from "@/lib/seo/site";
 
 export const metadata: Metadata = buildPageMetadata({
   title: brand.name,
-  description: `${brand.tagline} Tickets, Fan Passport, Host Legacy, merch, Vault, ambassadors, and sponsorships — built for the night.`,
+  description: `${brand.tagline} Tickets, Fan Passport, Host Legacy, merch, Vault, ambassadors, and sponsorships, built for the night.`,
   path: "/",
 });
 

@@ -4,7 +4,7 @@ import { HubJsonLd, hubPageMetadata } from "@/lib/seo/hub-page";
 
 const title = "Nights that cost nothing.";
 const description =
-  "Free and RSVP events on Pàdéyá — still verified hosts, still real tickets.";
+  "Free and RSVP events on Pàdéyá, still verified hosts, still real tickets.";
 const path = "/events/free";
 
 export const metadata = hubPageMetadata({
@@ -37,7 +37,7 @@ export default function FreeEventsPage() {
           sectionTitle: "Free nights to watch",
           sectionTitleWeekend: "This weekend · free",
           sectionDescription:
-            "RSVP and free-entry nights — still verified hosts and real tickets.",
+            "RSVP and free-entry nights, still verified hosts and real tickets.",
           emptyTitle: "No free events yet",
           emptyTitleWeekend: "No free weekend events yet",
           emptyDescription: "Check back soon, or browse under ₦5,000 nights.",

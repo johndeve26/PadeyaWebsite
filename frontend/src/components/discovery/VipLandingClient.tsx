@@ -6,7 +6,7 @@ import { isVipEvent } from "@/lib/discovery/event-filters";
 
 const title = "Tables, tiers, and VIP access.";
 const description =
-  "Nights with VIP or VVIP tickets — upgrade at checkout when the room goes deeper.";
+  "Nights with VIP or VVIP tickets. Upgrade at checkout when the room goes deeper.";
 const path = "/events/vip";
 
 export function VipLandingClient({ crumbs }: { crumbs: BreadcrumbItem[] }) {
@@ -25,7 +25,7 @@ export function VipLandingClient({ crumbs }: { crumbs: BreadcrumbItem[] }) {
         sectionTitle: "VIP nights to watch",
         sectionTitleWeekend: "This weekend · VIP",
         sectionDescription:
-          "Events that offer VIP or VVIP tiers — browse, then upgrade at checkout.",
+          "Events that offer VIP or VVIP tiers. Browse, then upgrade at checkout.",
         emptyTitle: "No VIP nights listed yet",
         emptyTitleWeekend: "No VIP nights this weekend yet",
         emptyDescription: "Check back soon, or browse all events on Pàdéyá.",

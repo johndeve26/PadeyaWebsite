@@ -14,7 +14,7 @@ const FAN_PILLARS = [
   {
     mark: "02",
     title: "Fan Connect",
-    body: "Meet people around shared events, interests, and nearby scenes — with controls you own.",
+    body: "Meet people around shared events, interests, and nearby scenes, with controls you own.",
     href: "/connect",
   },
   {

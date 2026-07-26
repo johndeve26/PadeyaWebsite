@@ -479,7 +479,7 @@ export function EventDiscoveryView({
         ? "Open a city hub to see this category in context."
       : locked?.city
         ? "Pick a category to narrow what’s on in this city."
-        : "Nightlife, comedy, tech, gospel, campus, and more — each with a clearer path in.";
+        : "Nightlife, comedy, tech, gospel, campus, and more, each with a clearer path in.";
 
   const showCollections =
     hubKind === "all" ||
@@ -505,7 +505,7 @@ export function EventDiscoveryView({
           {
             label: "This weekend",
             href: "/events/this-weekend",
-            hint: "Friday through Sunday — nights already on the calendar.",
+            hint: "Friday through Sunday. Nights already on the calendar.",
             cta: "View collection",
             count: collectionCounts.weekendCount,
             curator: "Pàdéyá",
@@ -542,7 +542,7 @@ export function EventDiscoveryView({
           {
             label: "This weekend",
             href: "/events/this-weekend",
-            hint: "Friday through Sunday — nights already on the calendar.",
+            hint: "Friday through Sunday. Nights already on the calendar.",
             cta: "View collection",
             count: collectionCounts.weekendCount,
             curator: "Pàdéyá",
@@ -723,7 +723,7 @@ export function EventDiscoveryView({
       (city !== "all"
         ? cities.find((c) => citySlugFromName(c) === city) || city
         : null);
-    if (n === 0) return "No events match — try another location or category.";
+    if (n === 0) return "No events match. Try another location or category.";
     const countLabel = `${n.toLocaleString()} verified`;
     if (cityLabel && catName) {
       return `Showing ${countLabel} ${catName} events in ${cityLabel}`;
@@ -1077,7 +1077,7 @@ export function EventDiscoveryView({
           }
           description={
             hubKind === "all"
-              ? "Weekend, free, VIP, and nearby — keep exploring without starting over."
+              ? "Weekend, free, VIP, and nearby. Keep exploring without starting over."
               : "Move between weekend, free, VIP, and the full marketplace without losing context."
           }
           collections={collections}

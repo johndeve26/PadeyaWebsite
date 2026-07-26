@@ -9,7 +9,7 @@ import type { FanDirectoryList } from "@/lib/types/passport";
 export const metadata: Metadata = buildPageMetadata({
   title: "Fans · Fan Passport",
   description:
-    "Discover public Fan Passports on Pàdéyá — fans who attend verified events, follow hosts, earn badges, and optionally use Fan Connect.",
+    "Discover public Fan Passports on Pàdéyá: fans who attend verified events, follow hosts, earn badges, and optionally use Fan Connect.",
   path: "/fans",
 });
 

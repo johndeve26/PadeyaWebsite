@@ -28,7 +28,7 @@ export function HomeLoyalty() {
           </h2>
           <p className="text-base leading-relaxed text-paper/75 sm:text-lg">
             Fan Passport, Vault access, badges, follows, and ticket-holder
-            content help fans keep a history with the hosts they love — not just
+            content help fans keep a history with the hosts they love, not just
             a receipt from one night.
           </p>
           <p className="text-sm font-semibold text-paper/70">
@@ -182,7 +182,7 @@ export function HomeLoyalty() {
                 Badges that mean something
               </h3>
               <p className="mt-2 flex-1 text-sm leading-relaxed text-subtle-foreground">
-                Badges come from real actions — buying tickets, checking in,
+                Badges come from real actions: buying tickets, checking in,
                 attending repeatedly, and supporting hosts.
               </p>
               <Link href="/dashboard/badges" className="mt-4 block">
@@ -201,7 +201,7 @@ export function HomeLoyalty() {
               </h3>
               <p className="mt-2 flex-1 text-sm leading-relaxed text-subtle-foreground">
                 Follow hosts for upcoming events, Vault drops, and Legacy updates
-                — without hunting for scattered links.
+                without hunting for scattered links.
               </p>
               <Link href="/hosts" className="mt-4 block">
                 <Button size="md" variant="outline-dark" className="w-full">

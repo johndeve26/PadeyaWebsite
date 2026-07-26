@@ -197,7 +197,7 @@ export function LocationFilterBar({
               Where do you want to go?
             </h2>
             <p className="text-base leading-relaxed text-muted-foreground">
-              Browse by country, state, city, or neighborhood — then refine the
+              Browse by country, state, city, or neighborhood, then refine the
               night.
             </p>
           </div>

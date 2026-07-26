@@ -12,7 +12,7 @@ export function FansRewardsSection() {
       tone="muted"
       eyebrow="Ambassadors & rewards"
       title="Share the night. Earn when campaigns are open."
-      description="Promote nights you love with tracked links. Rewards attach only to verified paid sales — honest about what hosts enable."
+      description="Promote nights you love with tracked links. Rewards attach only to verified paid sales, honest about what hosts enable."
       headerAction={
         <Link href="/ambassadors" className="hidden sm:inline-flex">
           <Button variant="secondary" size="lg">

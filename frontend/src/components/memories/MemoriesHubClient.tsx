@@ -19,7 +19,7 @@ export function MemoriesHubClient({ albums }: { albums: MemoryAlbumCard[] }) {
       <SectionHeader
         eyebrow="Memories"
         title="Relive the nights that brought people together."
-        description="Event albums shared by hosts and verified attendees — after the night ends."
+        description="Event albums shared by hosts and verified attendees, after the night ends."
       />
 
       <div className="mt-8 flex flex-wrap gap-3 text-sm">

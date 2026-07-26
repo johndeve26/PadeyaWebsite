@@ -31,7 +31,7 @@ export function AuthFormCard({
           </p>
           <p className="max-w-md text-base leading-relaxed text-paper/75">
             Secure tickets, verified host reputation, Vault exclusives, and Fan
-            Passport — all in one Pàdéyá account.
+            Passport, all in one Pàdéyá account.
           </p>
           <ul className="space-y-3 text-sm text-paper/75">
             {[

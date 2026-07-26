@@ -32,7 +32,7 @@ export function PriceLandingClient({
         sectionEyebrow: "Featured",
         sectionTitle: `Upcoming under ${priceLabel}`,
         sectionTitleWeekend: `This weekend under ${priceLabel}`,
-        sectionDescription: `Cheapest public ticket is ${priceLabel} or less — including free.`,
+        sectionDescription: `Cheapest public ticket is ${priceLabel} or less, including free.`,
         emptyTitle: `No events under ${priceLabel} yet`,
         emptyTitleWeekend: `No weekend events under ${priceLabel} yet`,
         emptyDescription:
@@ -45,7 +45,7 @@ export function PriceLandingClient({
           "Weekend only, free nights, or the full marketplace.",
         ctaTitle: "Need a different price band?",
         ctaDescription:
-          "From free RSVPs to VIP tables — find the night that fits.",
+          "From free RSVPs to VIP tables, find the night that fits.",
       }}
     />
   );

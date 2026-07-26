@@ -20,7 +20,7 @@ export function HomeLegacyCta() {
               variant="display"
               eyebrow="Host Legacy"
               title="A public page for hosts who keep showing up."
-              description="Legacy Pages are where fans follow creators, see what’s next, and trust the history behind the night — not a disposable flyer."
+              description="Legacy Pages are where fans follow creators, see what’s next, and trust the history behind the night."
             />
 
             <ul className="grid gap-2.5 sm:grid-cols-2 sm:gap-3">
@@ -84,7 +84,7 @@ export function HomeLegacyCta() {
               </p>
               <p className="max-w-md text-sm leading-relaxed text-paper/75 sm:text-base">
                 Sponsors, collaborators, and fans land on one URL that shows real
-                nights — with tools to grow Ambassadors, merch, and Vault around
+                nights, with tools to grow Ambassadors, merch, and Vault around
                 the same brand.
               </p>
             </div>

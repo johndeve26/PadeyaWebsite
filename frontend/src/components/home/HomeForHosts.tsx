@@ -13,7 +13,7 @@ const HOST_FEATURES = [
   {
     mark: "02",
     title: "QR check-in",
-    body: "Door scanning for staff — including offline-friendly foundations for busy nights.",
+    body: "Door scanning for staff, including offline-friendly foundations for busy nights.",
   },
   {
     mark: "03",

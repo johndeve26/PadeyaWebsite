@@ -354,7 +354,7 @@ function CategoryLandingInner({
       <CTASection
         tone="accent"
         title={`Into ${categoryName.toLowerCase()}?`}
-        description="Follow hosts who run these nights — or start hosting your own."
+        description="Follow hosts who run these nights, or start hosting your own."
         actions={
           <>
             <Link href="/hosts">

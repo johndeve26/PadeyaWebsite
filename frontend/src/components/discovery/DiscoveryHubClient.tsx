@@ -176,7 +176,7 @@ function DiscoveryHubInner({
   let crumbs = buildHomeEvents();
   let heroTitle = "Discover events worth showing up for.";
   let heroDescription =
-    "Browse verified experiences by city, category, and vibe — from nightlife and concerts to comedy, campus events, tech meetups, and culture.";
+    "Browse verified experiences by city, category, and vibe, from nightlife and concerts to comedy, campus events, tech meetups, and culture.";
   let heroEyebrow = "Events marketplace";
   let heroCtaLabel = "Explore this weekend";
   let heroCtaHref = "/events/this-weekend";
@@ -230,7 +230,7 @@ function DiscoveryHubInner({
     heroTitle = `${resolvedCategoryName} in ${cLabel}`;
     heroDescription =
       categoryDescription ||
-      `${story.story.replace(/\.$/, "")} — focused on ${cLabel}.`;
+      `${story.story.replace(/\.$/, "")}, focused on ${cLabel}.`;
     heroEyebrow = "City · Category";
     heroCtaLabel = "See Pàdéyá Picks";
     heroCtaHref = "#results";
@@ -256,7 +256,7 @@ function DiscoveryHubInner({
       },
     );
     heroTitle = `Events in ${label}`;
-    heroDescription = `Discover verified experiences in ${label} on Pàdéyá — drill into areas, categories, and weekends.`;
+    heroDescription = `Discover verified experiences in ${label} on Pàdéyá. Drill into areas, categories, and weekends.`;
     heroEyebrow =
       kind === "country" ? "Country" : kind === "state" ? "State" : "Area";
     heroCtaLabel = "Browse places";
@@ -286,7 +286,7 @@ function DiscoveryHubInner({
     ];
     heroTitle = "Events by Location";
     heroDescription =
-      "Explore Pàdéyá by country, state, city, and neighborhood — the same hierarchy hosts use to place nights.";
+      "Explore Pàdéyá by country, state, city, and neighborhood, the same hierarchy hosts use to place nights.";
     heroEyebrow = "Locations";
     heroCtaLabel = "Start with Nigeria";
     heroCtaHref = "/events/country/nigeria";
@@ -296,7 +296,7 @@ function DiscoveryHubInner({
     crumbs = buildDiscoveryTrail("weekend");
     heroTitle = "This weekend on Pàdéyá";
     heroDescription =
-      "Friday through Sunday — refine by city and category without losing your place.";
+      "Friday through Sunday. Refine by city and category without losing your place.";
     heroEyebrow = "Collection";
     heroCtaLabel = "See what’s on";
     heroCtaHref = "#results";
@@ -308,7 +308,7 @@ function DiscoveryHubInner({
     crumbs = buildDiscoveryTrail("free");
     heroTitle = "Free events worth showing up for";
     heroDescription =
-      "Zero-ticket and free RSVP nights — still organized by city and category.";
+      "Zero-ticket and free RSVP nights, still organized by city and category.";
     heroEyebrow = "Collection";
     heroCtaLabel = "See what’s on";
     heroCtaHref = "#results";
@@ -320,7 +320,7 @@ function DiscoveryHubInner({
     crumbs = buildDiscoveryTrail("vip");
     heroTitle = "VIP nights with clear tiers";
     heroDescription =
-      "Events with VIP or VVIP tickets — browse, then refine by city and category.";
+      "Events with VIP or VVIP tickets. Browse, then refine by city and category.";
     heroEyebrow = "Collection";
     heroCtaLabel = "See what’s on";
     heroCtaHref = "#results";
@@ -330,7 +330,7 @@ function DiscoveryHubInner({
     crumbs = buildDiscoveryTrail("near_me");
     heroTitle = "Start near you";
     heroDescription =
-      "Precise geo discovery is coming. Use city hubs meanwhile — Lagos is a strong start.";
+      "Precise geo discovery is coming. Use city hubs meanwhile. Lagos is a strong start.";
     heroEyebrow = "Collection";
     heroCtaLabel = "Browse Lagos";
     heroCtaHref = "/events/city/lagos";

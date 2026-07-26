@@ -127,7 +127,7 @@ export function RegisterForm() {
   return (
     <LoginPageLayout
       title="Create your account"
-      description="Pick a username once — it becomes your default on Fan Passport, and the starting point for host legacy and public fan pages."
+      description="Pick a username once. It becomes your default on Fan Passport, and the starting point for host legacy and public fan pages."
       footer={
         <div className="space-y-4 border-t border-paper/10 pt-5 text-sm">
           <p className="text-paper/80">
@@ -169,7 +169,7 @@ export function RegisterForm() {
           hint={
             normalizedUsername
               ? `Your fan page: /f/${normalizedUsername}`
-              : "Lowercase letters, numbers, underscore — 3 to 32 characters"
+              : "Lowercase letters, numbers, underscore. 3 to 32 characters"
           }
           value={username}
           onChange={(e) =>
@@ -212,7 +212,7 @@ export function RegisterForm() {
           onChange={setLocation}
           seed={{ country: "Nigeria" }}
           surface="onDark"
-          hint="Optional — pre-fills host onboarding if you become a host later."
+          hint="Optional. Pre-fills host onboarding if you become a host later."
         />
         <label className="flex cursor-pointer items-start gap-2.5 text-sm leading-snug text-paper/85">
           <input

@@ -13,7 +13,7 @@ export const revalidate = 120;
 export const metadata: Metadata = hubPageMetadata({
   title: "Memories",
   description:
-    "Relive nights on Pàdéyá — event photo albums shared by hosts and verified attendees.",
+    "Relive nights on Pàdéyá: event photo albums shared by hosts and verified attendees.",
   path: "/memories",
 });
 
@@ -24,7 +24,7 @@ export default async function MemoriesHubPage() {
     <>
       <HubJsonLd
         name="Event Memories on Pàdéyá"
-        description="Relive nights on Pàdéyá — photo albums from hosts and verified attendees."
+        description="Relive nights on Pàdéyá: photo albums from hosts and verified attendees."
         path="/memories"
         crumbs={[
           { label: "Home", href: "/" },

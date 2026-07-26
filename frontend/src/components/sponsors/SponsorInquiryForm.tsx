@@ -48,7 +48,7 @@ export function SponsorInquiryForm({
           {slot.slot_type_label} · {formatNgn(slot.price)}
         </p>
         <p className="mt-2 text-xs text-muted-foreground">
-          Inquiries stay inside Pàdéyá — host contact details are not exposed.
+          Inquiries stay inside Pàdéyá. Host contact details are not exposed.
         </p>
       </div>
 

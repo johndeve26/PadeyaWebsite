@@ -28,7 +28,7 @@ export function MerchFaqSection() {
             Merch questions
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Add-ons, drops, Vault, pickup, and refunds — the essentials.
+            Add-ons, drops, Vault, pickup, and refunds: the essentials.
           </p>
         </div>
         <MarketingFaq items={topFaqs} />

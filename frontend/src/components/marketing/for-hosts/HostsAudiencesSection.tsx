@@ -9,7 +9,7 @@ export function HostsAudiencesSection() {
       tone="ink-soft"
       eyebrow="Who it is for"
       title="Built for people who put on the night"
-      description="Promoters, venues, creators, communities, and brands — Pàdéyá is the workspace between the flyer and the door."
+      description="Promoters, venues, creators, communities, and brands. Pàdéyá is the workspace between the flyer and the door."
     >
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5">
         {forHostsAudiences.map((item) => (

@@ -4,7 +4,7 @@ import { HubJsonLd, hubPageMetadata } from "@/lib/seo/hub-page";
 
 const title = "What’s on today.";
 const description =
-  "Tonight and today on Pàdéyá — verified events already on the calendar.";
+  "Tonight and today on Pàdéyá: verified events already on the calendar.";
 const path = "/events/today";
 
 export const metadata = hubPageMetadata({

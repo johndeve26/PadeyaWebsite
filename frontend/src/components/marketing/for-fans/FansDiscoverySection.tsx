@@ -34,7 +34,7 @@ export function FansDiscoverySection() {
     <MarketingSection
       eyebrow="Discovery"
       title="What's happening around you"
-      description="Near you, categories, followed hosts, Pàdéyá Picks, and city pages — built for browsing the night, not doom-scrolling a feed."
+      description="Near you, categories, followed hosts, Pàdéyá Picks, and city pages, built for browsing the night, not doom-scrolling a feed."
       headerAction={
         <Link href="/events" className="hidden sm:inline-flex">
           <Button variant="secondary" size="lg">

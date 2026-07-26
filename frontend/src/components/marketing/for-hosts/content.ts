@@ -5,7 +5,7 @@ import type { MarketingFaqItem } from "@/components/marketing/MarketingFaq";
 export const FOR_HOSTS_PATH = "/for-hosts";
 
 export const forHostsSeo = {
-  title: "Host Events on Pàdéyá — Ticketing, QR Check-in, Merch & Growth Tools",
+  title: "Host Events on Pàdéyá: Ticketing, QR Check-in, Merch & Growth Tools",
   description: `Create events, sell verified tickets, run QR check-in, grow with Ambassadors and sponsorships, and build your Host Legacy on ${brand.name}.`,
   path: FOR_HOSTS_PATH,
 } as const;
@@ -14,7 +14,7 @@ export const forHostsHero = {
   eyebrow: `For hosts · ${brand.name}`,
   headline: "Create the night. Own the door. Grow the audience.",
   support:
-    "Event Studio, verified ticketing, QR check-in, audience tools, and a public Legacy — one workspace from flyer to packed door.",
+    "Event Studio, verified ticketing, QR check-in, audience tools, and a public Legacy in one workspace from flyer to packed door.",
   trustLine: "Verified payments · Signed QR · Host Legacy",
   primary: { href: "/host/events/new", label: "Create event" },
   secondary: { href: "#host-tools", label: "Explore host tools" },
@@ -53,12 +53,12 @@ export type HostToolCategory = {
 export const forHostsToolCategories: HostToolCategory[] = [
   {
     title: "Create & sell",
-    body: "Event Studio to verified checkout — listings, tiers, and capacity in one flow.",
+    body: "Event Studio to verified checkout, with listings, tiers, and capacity in one flow.",
     items: ["Event Studio", "Ticket types", "Verified checkout"],
   },
   {
     title: "Run the door",
-    body: "Staff-ready entry when the line is moving — signed QR, guest lists, scanner roles.",
+    body: "Staff-ready entry when the line is moving, with signed QR, guest lists, and scanner roles.",
     items: ["QR check-in", "Guest entry", "Staff roles"],
   },
   {
@@ -68,7 +68,7 @@ export const forHostsToolCategories: HostToolCategory[] = [
   },
   {
     title: "Merch, Vault & growth",
-    body: "Stack revenue and reach beyond the ticket — merch, Vault, Ambassadors, sponsors.",
+    body: "Stack revenue and reach beyond the ticket with merch, Vault, Ambassadors, and sponsors.",
     items: ["Merch", "Vault", "Ambassadors", "Sponsorships"],
   },
   {
@@ -114,7 +114,7 @@ export type HostTrustItem = {
 export const forHostsTicketing: HostTrustItem[] = [
   {
     title: "Verified ticketing",
-    body: "Tickets issue after payment confirmation — frontend “success” is never enough.",
+    body: "Tickets issue after payment confirmation. Frontend “success” is never enough.",
   },
   {
     title: "Ticket types",
@@ -122,7 +122,7 @@ export const forHostsTicketing: HostTrustItem[] = [
   },
   {
     title: "QR check-in",
-    body: "Signed payloads for staff scanning — including offline-friendly foundations.",
+    body: "Signed payloads for staff scanning, including offline-friendly foundations.",
   },
   {
     title: "Guest entry",
@@ -166,16 +166,16 @@ export const forHostsGrowth: HostGrowthItem[] = [
   },
   {
     title: "Merch",
-    body: "Physical proof of the night — sold with tickets or as follow-up drops.",
+    body: "Physical proof of the night, sold with tickets or as follow-up drops.",
     href: "/merch-guide",
     linkLabel: "How merch works",
   },
 ];
 
 export const forHostsFees = {
-  title: "Fees when you sell — not for an empty calendar",
+  title: "Fees when you sell, not for an empty calendar",
   lead: "Fees are shown before you publish or sell.",
-  body: `${brand.name} is free for fans to join. Hosts pay platform fees on successful sales. Live rates appear on Pricing and in your host finance views — we do not invent exact percentages here.`,
+  body: `${brand.name} is free for fans to join. Hosts pay platform fees on successful sales. Live rates appear on Pricing and in your host finance views. We do not invent exact percentages here.`,
   cta: { href: "/pricing", label: "View pricing" },
 } as const;
 
@@ -206,7 +206,7 @@ export const forHostsFaqs: MarketingFaqItem[] = [
   },
   {
     q: "How do payouts work?",
-    a: "Successful sales settle through the platform payout flow with ledger visibility in Host finance tools. Exact fee rates are shown in pricing/host finance views — we do not invent rates on this page.",
+    a: "Successful sales settle through the platform payout flow with ledger visibility in Host finance tools. Exact fee rates are shown in pricing/host finance views. We do not invent rates on this page.",
   },
   {
     q: "Can I contact support?",

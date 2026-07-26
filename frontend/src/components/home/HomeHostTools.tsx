@@ -25,7 +25,7 @@ const TOOLS = [
   },
   {
     title: "Analytics",
-    body: "Sales, funnel, and door metrics hosts can act on — not vanity charts.",
+    body: "Sales, funnel, and door metrics hosts can act on, not vanity charts.",
   },
 ] as const;
 

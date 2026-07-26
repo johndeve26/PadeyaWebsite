@@ -13,7 +13,7 @@ export function FansConnectSection() {
       tone="muted"
       eyebrow="Fan Connect"
       title="Meet people around the same nights"
-      description="Optional connections with privacy-safe discovery, messaging controls, and report/block tools — on your terms."
+      description="Optional connections with privacy-safe discovery, messaging controls, and report/block tools, on your terms."
       headerAction={
         <Link href="/connect" className="hidden sm:inline-flex">
           <Button variant="secondary" size="lg">

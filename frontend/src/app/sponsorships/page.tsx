@@ -9,7 +9,7 @@ import { sponsorshipsIndexMetadata } from "@/lib/seo/sponsor-metadata";
 import { siteOrigin } from "@/lib/seo/site";
 
 const INTRO =
-  "Discover open sponsorship slots and partner with verified Pàdéyá hosts — brand placements, event activations, and measurable nightlife audiences.";
+  "Discover open sponsorship slots and partner with verified Pàdéyá hosts: brand placements, event activations, and measurable nightlife audiences.";
 
 /**
  * Static metadata — facet noindex for ?host=&sponsor=&q=&sort= is applied in

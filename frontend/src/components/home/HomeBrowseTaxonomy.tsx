@@ -22,7 +22,7 @@ const RAIL_META: Record<
   interest: {
     label: "Scene",
     title: "Choose your kind of experience",
-    description: "Scenes and vibes — open the path that fits the night.",
+    description: "Scenes and vibes. Open the path that fits the night.",
   },
   city: {
     label: "Location",
@@ -32,7 +32,7 @@ const RAIL_META: Record<
   price: {
     label: "Budget",
     title: "Find events by budget",
-    description: "From free nights to VIP — filter before you browse.",
+    description: "From free nights to VIP. Filter before you browse.",
   },
   when: {
     label: "Schedule",

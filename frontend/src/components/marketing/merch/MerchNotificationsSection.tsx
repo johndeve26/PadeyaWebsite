@@ -9,7 +9,7 @@ export function MerchNotificationsSection() {
       id="notifications"
       tone="muted"
       eyebrow="Notifications"
-      title="Alerts when drops land — when settings allow"
+      title="Alerts when drops land, when settings allow"
       description="Admins control merch notification types. Hosts may notify eligible fans for drops. Your preferences are respected where they apply."
     >
       <MarketingFeatureGrid items={merchNotificationsPoints} columns={2} />

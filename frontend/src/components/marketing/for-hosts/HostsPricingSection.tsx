@@ -18,7 +18,7 @@ export function HostsPricingSection() {
           </p>
           <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
             See how host fees work, what fans get free, and when to talk about
-            volume pricing — on the live Pricing page.
+            volume pricing on the live Pricing page.
           </p>
         </div>
         <Link

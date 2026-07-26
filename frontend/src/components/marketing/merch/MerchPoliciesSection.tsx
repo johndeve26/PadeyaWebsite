@@ -12,7 +12,7 @@ export function MerchPoliciesSection() {
       tone="muted"
       eyebrow="Policies and support"
       title="Hosts fulfill. Pàdéyá powers the rails."
-      description="Product accuracy, pickup, and availability sit with the host. Refunds follow policy and host rules — Support and Help are here when you need them."
+      description="Product accuracy, pickup, and availability sit with the host. Refunds follow policy and host rules. Support and Help are here when you need them."
     >
       <MarketingFeatureGrid items={merchPoliciesPoints} columns={2} />
       <p className="text-sm leading-relaxed text-muted-foreground">

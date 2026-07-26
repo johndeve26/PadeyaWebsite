@@ -255,7 +255,7 @@ export function FeaturedEvents({
             {GEO_DECLINED_COPY.chooseCityCta}
           </Button>
           <p className="text-sm text-muted-foreground">
-            Optional — we only use location to sort by distance.
+            Optional. We only use location to sort by distance.
           </p>
         </div>
       ) : null}

@@ -180,7 +180,7 @@ function CollectionLandingInner({
             title={copy.jumpInTitle || "Refine this collection"}
             description={
               copy.jumpInDescription ||
-              "Tighten the list before you scroll — weekend energy, or a related path."
+              "Tighten the list before you scroll: weekend energy, or a related path."
             }
           />
           <div className="flex max-w-3xl flex-col gap-3 rounded-[var(--radius-lg)] border border-border bg-muted p-4 sm:flex-row sm:flex-wrap sm:items-center sm:p-5">
@@ -286,7 +286,7 @@ function CollectionLandingInner({
         title={copy.ctaTitle || "Looking for a different night?"}
         description={
           copy.ctaDescription ||
-          "Browse every verified event on Pàdéyá — or start hosting your own."
+          "Browse every verified event on Pàdéyá, or start hosting your own."
         }
         actions={
           <>

@@ -39,7 +39,7 @@ export function PassportPreview() {
 
       <div className="space-y-4 p-5 sm:p-6">
         <p className="text-sm leading-relaxed text-body">
-          Nightlife history on {brand.name} — badges, verified nights, and
+          Nightlife history on {brand.name}: badges, verified nights, and
           reviews you control.
         </p>
         <div className="flex flex-wrap gap-1.5">

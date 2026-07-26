@@ -5,9 +5,8 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
-import { CreateEventCta } from "@/components/layout/CreateEventCta";
 import { useHeaderAccess } from "@/components/layout/HeaderWorkspaceButton";
-import { Button, Container, Logo } from "@/components/ui";
+import { Container, Logo } from "@/components/ui";
 import { brand } from "@/lib/brand";
 import { cn } from "@/lib/cn";
 import { SPONSORSHIP_MARKETPLACE_PATH } from "@/lib/sponsor-marketplace-paths";
@@ -186,93 +185,62 @@ export function SiteFooter() {
   const pathname = usePathname();
   if (isWorkspacePath(pathname)) return null;
 
-  const hideMarketingCta =
-    pathname === "/login" ||
-    pathname === "/register" ||
-    pathname === "/forgot-password" ||
-    pathname === "/reset-password";
-
   return (
-    <>
-      {!hideMarketingCta ? (
-      <section className="border-t border-border bg-surface-muted/60 dark:bg-surface-elevated/40">
-        <Container className="flex flex-col items-start justify-between gap-5 py-8 sm:flex-row sm:items-center sm:py-10">
-          <div className="min-w-0 max-w-md">
-            <h2 className="font-display text-2xl font-extrabold tracking-tight text-heading sm:text-[1.65rem]">
-              Ready for your next night?
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Discover what is on, or create an event on {brand.name}.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link href="/events">
-              <Button variant="secondary" size="sm">
-                Explore events
-              </Button>
-            </Link>
-            <CreateEventCta />
-          </div>
-        </Container>
-      </section>
-      ) : null}
-
-      <footer className="mt-auto overflow-x-hidden bg-ink text-paper">
-        <Container className="space-y-10 py-10 lg:space-y-12 lg:py-14">
-          <div className="min-w-0 max-w-md space-y-4">
-            <Logo variant="dark" height={28} />
-            <p className="text-pretty text-sm leading-relaxed text-paper/75 sm:text-[0.95rem]">
-              {brand.tagline}
-            </p>
-            <FooterRoleCta />
-          </div>
-
-          {/* Desktop columns */}
-          <div className="hidden gap-8 sm:grid sm:grid-cols-2 lg:grid-cols-5 lg:gap-x-8">
-            <FooterColumn title="Discover" links={discoverLinks} />
-            <FooterColumn title="For Fans" links={forFansLinks} />
-            <FooterColumn title="For Hosts" links={forHostsLinks} />
-            <FooterColumn title="Resources" links={resourcesLinks} />
-            <FooterColumn title="Company" links={companyLinks} />
-          </div>
-
-          {/* Mobile accordion */}
-          <div className="sm:hidden" data-testid="footer-mobile-accordion">
-            {FOOTER_SECTIONS.map((section) => (
-              <FooterAccordionSection
-                key={section.id}
-                title={section.title}
-                links={[...section.links]}
-                defaultOpen={section.id === "discover"}
-              />
-            ))}
-          </div>
-        </Container>
-
-        <div className="border-t border-paper/10">
-          <Container className="flex flex-col gap-4 py-5 sm:gap-5 sm:py-6">
-            <nav
-              aria-label="Legal"
-              className="hidden flex-wrap gap-x-4 gap-y-1 text-sm text-paper/70 sm:flex"
-            >
-              {legalLinks.map((link) => (
-                <Link
-                  key={`${link.href}:${link.label}`}
-                  href={link.href}
-                  className="inline-flex min-h-11 items-center font-medium transition-colors hover:text-primary"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-            <p className="text-sm text-paper/65">
-              © {new Date().getFullYear()}{" "}
-              <span className="text-paper/90">{brand.name}</span>. All rights
-              reserved.
-            </p>
-          </Container>
+    <footer className="mt-auto overflow-x-hidden bg-ink text-paper">
+      <Container className="space-y-10 py-10 lg:space-y-12 lg:py-14">
+        <div className="min-w-0 max-w-md space-y-4">
+          <Logo variant="dark" height={28} />
+          <p className="text-pretty text-sm leading-relaxed text-paper/75 sm:text-[0.95rem]">
+            {brand.tagline}
+          </p>
+          <FooterRoleCta />
         </div>
-      </footer>
-    </>
+
+        {/* Desktop columns */}
+        <div className="hidden gap-8 sm:grid sm:grid-cols-2 lg:grid-cols-5 lg:gap-x-8">
+          <FooterColumn title="Discover" links={discoverLinks} />
+          <FooterColumn title="For Fans" links={forFansLinks} />
+          <FooterColumn title="For Hosts" links={forHostsLinks} />
+          <FooterColumn title="Resources" links={resourcesLinks} />
+          <FooterColumn title="Company" links={companyLinks} />
+        </div>
+
+        {/* Mobile accordion */}
+        <div className="sm:hidden" data-testid="footer-mobile-accordion">
+          {FOOTER_SECTIONS.map((section) => (
+            <FooterAccordionSection
+              key={section.id}
+              title={section.title}
+              links={[...section.links]}
+              defaultOpen={section.id === "discover"}
+            />
+          ))}
+        </div>
+      </Container>
+
+      <div className="border-t border-paper/10">
+        <Container className="flex flex-col gap-4 py-5 sm:gap-5 sm:py-6">
+          <nav
+            aria-label="Legal"
+            className="hidden flex-wrap gap-x-4 gap-y-1 text-sm text-paper/70 sm:flex"
+          >
+            {legalLinks.map((link) => (
+              <Link
+                key={`${link.href}:${link.label}`}
+                href={link.href}
+                className="inline-flex min-h-11 items-center font-medium transition-colors hover:text-primary"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+          <p className="text-sm text-paper/65">
+            © {new Date().getFullYear()}{" "}
+            <span className="text-paper/90">{brand.name}</span>. All rights
+            reserved.
+          </p>
+        </Container>
+      </div>
+    </footer>
   );
 }

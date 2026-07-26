@@ -151,7 +151,7 @@ export function HomeLegacyShowcase() {
 
             <figure className="rounded-[var(--radius-sm)] border border-dashed border-border px-3.5 py-3">
               <blockquote className="text-sm leading-relaxed text-foreground/90">
-                “Door was tight, set was fire — checked in on Pàdéyá and the
+                “Door was tight, set was fire. Checked in on Pàdéyá and the
                 room felt legit.”
               </blockquote>
               <figcaption className="mt-2 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">

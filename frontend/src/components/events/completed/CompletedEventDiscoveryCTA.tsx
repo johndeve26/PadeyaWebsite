@@ -29,12 +29,12 @@ export function CompletedEventDiscoveryCTA({
         What&apos;s next
       </p>
       <h2 className="mt-2 text-balance text-2xl font-extrabold tracking-tight sm:text-3xl">
-        Ready for your next night?
+        Ready for your next adventure?
       </h2>
       <p className="mt-3 max-w-xl text-sm leading-relaxed text-subtle-foreground sm:text-base">
         {event.title} may be over
         {event.city ? `, but ${event.city} isn\u2019t slowing down.` : "."} Find
-        the next night — or stay close to the host.
+        the next night, or stay close to the host.
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
         <Link href={cityHref}>

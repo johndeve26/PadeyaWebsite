@@ -61,7 +61,7 @@ export function SponsorBrandDirectory() {
       <SectionHeader
         eyebrow="Directory"
         title="Verified sponsor profiles"
-        description="Explore partnership-ready brands on Pàdéyá — public campaigns, placements, and host relationships. Open marketplace slots are below."
+        description="Explore partnership-ready brands on Pàdéyá: public campaigns, placements, and host relationships. Open marketplace slots are below."
       />
       <div className="flex flex-wrap items-end gap-3 rounded-[var(--radius-lg)] border border-border bg-muted/30 p-4">
         <label className="flex min-w-[12rem] flex-1 flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">

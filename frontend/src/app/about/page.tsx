@@ -19,7 +19,7 @@ export const revalidate = 3600;
 const pillars = [
   {
     title: "Discover & attend",
-    body: "Fans find events by place and vibe, buy verified tickets, and check in with QR — then keep proof on Fan Passport.",
+    body: "Fans find events by place and vibe, buy verified tickets, and check in with QR, then keep proof on Fan Passport.",
   },
   {
     title: "Host the night",
@@ -45,7 +45,7 @@ export default function AboutPage() {
   return (
     <PublicPageShell
       title="The marketplace for nights that matter"
-      description={`${brand.name} connects fans and hosts around real events — with ticketing, reputation, and growth tools designed for Nigeria’s nightlife and culture scenes, and ready to scale.`}
+      description={`${brand.name} connects fans and hosts around real events, with ticketing, reputation, and growth tools designed for Nigeria’s nightlife and culture scenes, and ready to scale.`}
       actions={
         <PublicCtaPair
           primaryHref="/events"
@@ -90,7 +90,7 @@ export default function AboutPage() {
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-paper/75 sm:text-base">
           Safety, clarity, and accountability matter on the door and in the
-          feed. We design for verified access, fair host payouts, and privacy —
+          feed. We design for verified access, fair host payouts, and privacy,
           without diluting the energy that makes a night unforgettable.
         </p>
         <p className="mt-4 text-sm text-paper/60">

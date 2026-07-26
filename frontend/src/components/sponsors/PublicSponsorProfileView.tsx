@@ -156,7 +156,7 @@ export function PublicSponsorProfileView({ profile }: { profile: SponsorPublicPr
           <SectionHeader
             eyebrow="Case studies"
             title="Public campaigns & case studies"
-            description="Approved public case studies only — never draft, private, or internal campaigns."
+            description="Approved public case studies only, never draft, private, or internal campaigns."
           />
           {profile.public_campaigns.length === 0 ? (
             <SectionEmpty
@@ -180,12 +180,12 @@ export function PublicSponsorProfileView({ profile }: { profile: SponsorPublicPr
           <SectionHeader
             eyebrow="Placements"
             title="Sponsored events & placements"
-            description="Listed events with active or completed public placements — no payment or attendee data."
+            description="Listed events with active or completed public placements, no payment or attendee data."
           />
           {profile.sponsored_events.length === 0 ? (
             <SectionEmpty
               title="No public sponsored events yet"
-              body="Completed and active placements on listed events appear here — never private attendee or payment data."
+              body="Completed and active placements on listed events appear here, never private attendee or payment data."
             />
           ) : (
             <div className="grid gap-4">

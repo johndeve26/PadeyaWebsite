@@ -39,7 +39,7 @@ export function HomePadeyaPicks({
             variant="display"
             eyebrow="Pàdéyá Picks"
             title="Editor’s picks"
-            description="Curated nights from the marketplace — check back as hosts publish."
+            description="Curated nights from the marketplace. Check back as hosts publish."
           />
           <EmptyState
             title="No picks yet"

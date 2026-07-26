@@ -11,7 +11,7 @@ export function HostsGrowthSection() {
       tone="ink-soft"
       eyebrow="Growth after the night"
       title="Tools that compound after one night"
-      description="Ambassadors, sponsorships, CRM, Legacy, Vault, and merch — so the next event starts warmer."
+      description="Ambassadors, sponsorships, CRM, Legacy, Vault, and merch, so the next event starts warmer."
     >
       <div className="mb-8 grid gap-3 sm:grid-cols-3">
         {[

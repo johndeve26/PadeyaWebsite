@@ -336,8 +336,23 @@ select.auth-field-on-dark {
 
 /*
  * Chrome / Safari / iOS paint a yellow autofill wash that fights white text.
- * Freeze background via a long transition + opaque inset shadow.
+ * Animation + inset shadow beat autofill more reliably than transition hacks
+ * (and survive Tailwind focus ring / shadow utilities).
  */
+@keyframes padeya-auth-autofill-dark {
+  from,
+  to {
+    color: #ffffff;
+    caret-color: #ffffff;
+    -webkit-text-fill-color: #ffffff;
+    border-color: rgb(255 255 255 / 0.2);
+    background-color: #141414;
+    background-image: none;
+    -webkit-box-shadow: 0 0 0 1000px #141414 inset;
+    box-shadow: 0 0 0 1000px #141414 inset;
+  }
+}
+
 input.auth-field-on-dark:-webkit-autofill,
 input.auth-field-on-dark:-webkit-autofill:hover,
 input.auth-field-on-dark:-webkit-autofill:focus,
@@ -354,9 +369,19 @@ textarea.auth-field-on-dark:-webkit-autofill:active {
   background-image: none !important;
   -webkit-box-shadow: 0 0 0 1000px #141414 inset !important;
   box-shadow: 0 0 0 1000px #141414 inset !important;
-  transition:
-    background-color 99999s ease-out 0s,
-    color 99999s ease-out 0s !important;
+  transition: border-color 150ms ease !important;
+  animation: padeya-auth-autofill-dark 0s forwards;
+}
+
+input.auth-field-on-dark:-webkit-autofill:focus,
+textarea.auth-field-on-dark:-webkit-autofill:focus {
+  border-color: #8ef012 !important;
+  -webkit-box-shadow:
+    0 0 0 1000px #141414 inset,
+    0 0 0 2px rgb(142 240 18 / 0.35) !important;
+  box-shadow:
+    0 0 0 1000px #141414 inset,
+    0 0 0 2px rgb(142 240 18 / 0.35) !important;
 }
 
 /* Full-bleed hero media — slow ken-burns for presence without distraction */

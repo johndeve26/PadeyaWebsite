@@ -555,7 +555,7 @@ export function EventPublicView({
                 sourcePage="event_detail"
                 listContext="event_detail"
                 title="Exclusive Vault drops"
-                description="Unlock recap content after the event — teasers only until you have access."
+                description="Unlock recap content after the event. Teasers only until you have access."
                 vaultHref={hostVaultHref || undefined}
                 ctaLabel="Browse host Vault"
               />

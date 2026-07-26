@@ -42,7 +42,7 @@ export function FormatLandingClient({
           "Weekend only, or jump back to the full marketplace.",
         ctaTitle: "Ready for a different format?",
         ctaDescription:
-          "In person, online, and hybrid — pick how you want in.",
+          "In person, online, and hybrid. Pick how you want in.",
         secondaryAction: { href: "/events/this-weekend", label: "This weekend" },
       }}
     />

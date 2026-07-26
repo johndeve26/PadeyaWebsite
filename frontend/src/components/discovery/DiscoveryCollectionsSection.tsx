@@ -17,7 +17,7 @@ const DEFAULT_COLLECTIONS: DiscoveryCollection[] = [
   {
     label: "This weekend",
     href: "/events/this-weekend",
-    hint: "Friday through Sunday — nights already on the calendar.",
+    hint: "Friday through Sunday. Nights already on the calendar.",
     cta: "View collection",
     curator: "Pàdéyá",
   },
@@ -47,7 +47,7 @@ const DEFAULT_COLLECTIONS: DiscoveryCollection[] = [
 export function DiscoveryCollectionsSection({
   collections = DEFAULT_COLLECTIONS,
   title = "Start with intent",
-  description = "Skip the scroll — jump straight into a useful discovery path.",
+  description = "Skip the scroll. Jump straight into a useful discovery path.",
   className = "",
 }: {
   collections?: DiscoveryCollection[];

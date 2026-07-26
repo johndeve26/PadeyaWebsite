@@ -7,7 +7,7 @@ import type { HostDiscovery } from "@/lib/types/hosts-discovery";
 export const metadata: Metadata = buildPageMetadata({
   title: "Hosts",
   description:
-    "Discover Host Legacy Pages on Pàdéyá — verified event creators with upcoming nights, reviews, Vault, and ticketing history.",
+    "Discover Host Legacy Pages on Pàdéyá: verified event creators with upcoming nights, reviews, Vault, and ticketing history.",
   path: "/hosts",
 });
 

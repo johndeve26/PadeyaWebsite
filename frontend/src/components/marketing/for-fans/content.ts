@@ -6,7 +6,7 @@ import type { MarketingFeature } from "@/components/marketing/MarketingFeatureGr
 export const FOR_FANS_PATH = "/for-fans";
 
 export const forFansSeo = {
-  title: "Discover Events on Pàdéyá — Tickets, Fan Passport, Fan Connect & More",
+  title: "Discover Events on Pàdéyá: Tickets, Fan Passport, Fan Connect & More",
   description: `Find events near you, buy verified tickets, build a Fan Passport, and connect around the scene on ${brand.name}.`,
   path: FOR_FANS_PATH,
 } as const;
@@ -34,7 +34,7 @@ export const forFansPillars: MarketingFeature[] = [
   },
   {
     title: "Fan Connect",
-    body: "Meet people around shared events, interests, and nearby scenes — with controls you own.",
+    body: "Meet people around shared events, interests, and nearby scenes, with controls you own.",
     href: "/connect",
     linkLabel: null,
   },
@@ -62,7 +62,7 @@ export const forFansBenefits: MarketingFeature[] = [
   },
   {
     title: "Connect",
-    body: "Optional Fan Connect around the same events — privacy, block, and report built in.",
+    body: "Optional Fan Connect around the same events, with privacy, block, and report built in.",
     href: "/connect",
     linkLabel: null,
   },
@@ -95,14 +95,14 @@ export const forFansPassportPoints = [
   },
   {
     title: "Privacy you control",
-    body: "Choose what is public from Passport settings — visibility stays yours.",
+    body: "Choose what is public from Passport settings. Visibility stays yours.",
   },
 ] as const;
 
 export const forFansConnect: MarketingFeature[] = [
   {
     title: "Same-event people",
-    body: "Find others going to the same nights — not a dating map or public attendee dump.",
+    body: "Find others going to the same nights, not a dating map or public attendee dump.",
   },
   {
     title: "Shared scene",
@@ -110,7 +110,7 @@ export const forFansConnect: MarketingFeature[] = [
   },
   {
     title: "Nearby, privacy-safe",
-    body: "Nearby discovery only where your settings allow — never forced exposure.",
+    body: "Nearby discovery only where your settings allow. Never forced exposure.",
   },
   {
     title: "Safety tools",
@@ -123,7 +123,7 @@ export const forFansConnect: MarketingFeature[] = [
 export const forFansTicketing: MarketingFeature[] = [
   {
     title: "Signed QR tickets",
-    body: "Tickets issue after verified payment — present a signed QR hosts can trust at the door.",
+    body: "Tickets issue after verified payment. Present a signed QR hosts can trust at the door.",
   },
   {
     title: "Door check-in",
@@ -150,13 +150,13 @@ export const forFansTicketing: MarketingFeature[] = [
 export const forFansDiscovery: MarketingFeature[] = [
   {
     title: "Events near you",
-    body: "Closest upcoming nights first — not a national feed that ignores your city.",
+    body: "Closest upcoming nights first, not a national feed that ignores your city.",
     href: "/events/near-me",
     linkLabel: "Near me",
   },
   {
     title: "Categories & vibe",
-    body: "Music, nightlife, culture, and more — filter to how you actually go out.",
+    body: "Music, nightlife, culture, and more. Filter to how you actually go out.",
     href: "/events",
     linkLabel: "Browse events",
   },
@@ -188,11 +188,11 @@ export const forFansRewards: MarketingFeature[] = [
   },
   {
     title: "Share the night",
-    body: "Send event pages to friends — discovery travels better person-to-person.",
+    body: "Send event pages to friends. Discovery travels better person-to-person.",
   },
   {
     title: "Honest rewards",
-    body: "Campaign perks and leaderboards depend on the host’s rules — we don’t invent guarantees.",
+    body: "Campaign perks and leaderboards depend on the host’s rules. We don’t invent guarantees.",
   },
 ];
 
@@ -203,15 +203,15 @@ export const forFansFaqs: MarketingFaqItem[] = [
   },
   {
     q: "Where do I find my ticket?",
-    a: "Go to Personal → Tickets. Your signed QR is there for door scan — including offline-friendly display when available.",
+    a: "Go to Personal → Tickets. Your signed QR is there for door scan, including offline-friendly display when available.",
   },
   {
     q: "What is Fan Passport?",
-    a: "Your fan identity on Pàdéyá — attended nights, badges, follows, and reviews you choose to show. Manage visibility from Passport settings.",
+    a: "Your fan identity on Pàdéyá: attended nights, badges, follows, and reviews you choose to show. Manage visibility from Passport settings.",
   },
   {
     q: "What is Fan Connect?",
-    a: "Optional connections around events. It is not dating or a public attendee dump — privacy rules apply, and you control who can reach you.",
+    a: "Optional connections around events. It is not dating or a public attendee dump. Privacy rules apply, and you control who can reach you.",
   },
   {
     q: "Can I control who sees my profile?",
@@ -223,7 +223,7 @@ export const forFansFaqs: MarketingFaqItem[] = [
   },
   {
     q: "Can I buy merch with my tickets?",
-    a: "Yes when a host attaches merch to an event. You may also see post-event drops or Vault exclusives. Orders live in Personal → Merch — see the Merch page for formats.",
+    a: "Yes when a host attaches merch to an event. You may also see post-event drops or Vault exclusives. Orders live in Personal → Merch. See the Merch page for formats.",
   },
   {
     q: "How do I contact support?",
@@ -234,7 +234,7 @@ export const forFansFaqs: MarketingFaqItem[] = [
 export const forFansFinalCta = {
   title: "Find the moment. Keep the proof.",
   description:
-    "Explore what’s happening around you — or create a Fan Passport and start collecting the proof.",
+    "Explore what’s happening around you, or create a Fan Passport and start collecting the proof.",
   primary: { href: "/events", label: "Explore events" },
   secondary: {
     href: "/register?next=/dashboard/passport",

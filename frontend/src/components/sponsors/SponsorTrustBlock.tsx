@@ -7,7 +7,7 @@ const DEFAULT_ITEMS = [
   },
   {
     title: "Checked-in audience history",
-    body: "Attendance signals from real QR check-ins — not vanity claims.",
+    body: "Attendance signals from real QR check-ins, not vanity claims.",
   },
   {
     title: "Sponsor-branded integrations",
@@ -19,11 +19,11 @@ const DEFAULT_ITEMS = [
   },
   {
     title: "Event-native placements",
-    body: "Sponsorships sit inside real nights — not generic ad inventory.",
+    body: "Sponsorships sit inside real nights, not generic ad inventory.",
   },
   {
     title: "Clear inquiry workflow",
-    body: "Brands inquire in-product. Hosts review — nothing auto-approves.",
+    body: "Brands inquire in-product. Hosts review. Nothing auto-approves.",
   },
 ];
 
