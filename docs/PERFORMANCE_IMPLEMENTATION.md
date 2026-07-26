@@ -122,32 +122,40 @@ Wired into `apiRequest`, `apiUpload`, `apiDownload`, `fetchPublicJson` (SEO + ca
 
 ---
 
+
+
 ## Phase 1 — API/query latency (implemented in workspace)
 
 Scope: reduce backend/API latency and DB work. **No** region moves, speculative indexes, auth/Paystack weakening, broad public cache TTL changes, UI redesign, or image/font work.
 
 Evidence labels:
 
-| Label | Meaning |
-|-------|---------|
-| **LOCAL TEST RESULT** | pytest / vitest in this workspace |
+
+| Label                      | Meaning                                                             |
+| -------------------------- | ------------------------------------------------------------------- |
+| **LOCAL TEST RESULT**      | pytest / vitest in this workspace                                   |
 | **CODE-LEVEL IMPROVEMENT** | Query/DTO/middleware changes landed; expected to help once deployed |
-| **DEPLOYED MEASUREMENT** | Production timings after deploy — **pending** |
+| **DEPLOYED MEASUREMENT**   | Production timings after deploy — **pending**                       |
+
+
+
 
 ### Phase 1 baseline (pre-change production)
 
-Captured low-volume against live API **before** these code changes (Phase 0 also not yet live — no `Server-Timing` / `/ready` 404). Artifact: [`performance-phase1-baseline.json`](./performance-phase1-baseline.json).
+Captured low-volume against live API **before** these code changes (Phase 0 also not yet live — no `Server-Timing` / `/ready` 404). Artifact: `[performance-phase1-baseline.json](./performance-phase1-baseline.json)`.
 
-| Endpoint | total_s median | bytes (uncompressed) | app;dur |
-|----------|---------------:|---------------------:|---------|
-| `GET /health` | ~0.63 | 104 | n/a (Phase 0 undeployed) |
-| `GET /ready` | ~0.70 | 41 | **404** |
-| `GET /api/v1/events` | ~0.98 | **155187** | n/a |
-| `GET /api/v1/events/{slug}` | ~0.71 | ~13 KB | n/a |
-| `GET /api/v1/legacy/{host}` | ~1.51 | ~8 KB | n/a |
-| `GET /api/v1/u/{username}/legacy` | ~1.52 | ~8 KB | n/a |
-| `GET /api/v1/sponsors/public/{slug}` | ~1.58 | ~6 KB | n/a |
-| `GET /api/v1/merch?limit=50` | ~0.85 | ~61 KB | n/a |
+
+| Endpoint                             | total_s median | bytes (uncompressed) | app;dur                  |
+| ------------------------------------ | -------------- | -------------------- | ------------------------ |
+| `GET /health`                        | ~0.63          | 104                  | n/a (Phase 0 undeployed) |
+| `GET /ready`                         | ~0.70          | 41                   | **404**                  |
+| `GET /api/v1/events`                 | ~0.98          | **155187**           | n/a                      |
+| `GET /api/v1/events/{slug}`          | ~0.71          | ~13 KB               | n/a                      |
+| `GET /api/v1/legacy/{host}`          | ~1.51          | ~8 KB                | n/a                      |
+| `GET /api/v1/u/{username}/legacy`    | ~1.52          | ~8 KB                | n/a                      |
+| `GET /api/v1/sponsors/public/{slug}` | ~1.58          | ~6 KB                | n/a                      |
+| `GET /api/v1/merch?limit=50`         | ~0.85          | ~61 KB               | n/a                      |
+
 
 Do **not** treat wall-clock alone as app duration. After deploy, prefer `Server-Timing: app;dur=`.
 
@@ -171,12 +179,16 @@ Preserves prior product filter semantics (listed + approval_required, upcoming b
 - Related sponsors capped query (no full directory scan)
 - Still public-safe only (no budgets/team/payment internals)
 
+
+
 ### Host Legacy public API
 
 **CODE-LEVEL IMPROVEMENT** — `legacy/service.py` + `studio.py`
 
 - `build_legacy_page(..., host=, rescore=)` — public path `rescore=False` (serve stored score; bootstrap only if missing)
 - Both `/legacy/{host}` and `/u/{username}/legacy` share assembly; events query capped at 80
+
+
 
 ### Maintenance short-circuit
 
@@ -187,6 +199,8 @@ Preserves prior product filter semantics (listed + approval_required, upcoming b
 - Does **not** cache secrets; does not skip DB when maintenance/sections are active
 - Observability: `decision_cache_hit` on maintenance obs notes; `maintenance_db=false` when short-circuited
 
+
+
 ### Request-scoped auth/RBAC
 
 **CODE-LEVEL IMPROVEMENT** — `request_context.py` + `users/service.get_user_by_id`
@@ -195,6 +209,8 @@ Preserves prior product filter semantics (listed + approval_required, upcoming b
 - Suspension gate uses thin `get_user_account_gate` (no roles/permissions load)
 - Counters still recorded for observability; JWT claims are not trusted as RBAC source of truth
 
+
+
 ### Host workspaces single-flight (FE)
 
 **CODE-LEVEL IMPROVEMENT** — `frontend/src/lib/hosts-api.ts` + auth storage invalidation
@@ -202,6 +218,8 @@ Preserves prior product filter semantics (listed + approval_required, upcoming b
 - Module-level in-flight/result cache per access token
 - Invalidate on login/logout (`setTokens` / `clearTokens`), active-workspace change, host onboard
 - Vitest: `hosts-api.workspaces.test.ts`
+
+
 
 ### Database indexes
 
@@ -213,21 +231,29 @@ Preserves prior product filter semantics (listed + approval_required, upcoming b
 - Cache miss runs optimized producer; outage still fail-open where intended
 - No broad TTL policy change
 
+
+
 ### Local tests
 
-| Suite | Result |
-|-------|--------|
-| `tests/test_performance_phase1.py` | **10 passed** (LOCAL) |
-| `tests/test_performance_phase0.py` | passed (LOCAL) |
+
+| Suite                                                          | Result                |
+| -------------------------------------------------------------- | --------------------- |
+| `tests/test_performance_phase1.py`                             | **10 passed** (LOCAL) |
+| `tests/test_performance_phase0.py`                             | passed (LOCAL)        |
 | vitest `hosts-api.workspaces.test.ts` + Phase 0 timeout/unread | **10 passed** (LOCAL) |
+
+
+
 
 ### Before / after measurements
 
-| Endpoint | Before median (prod total_s) | After median | % | Payload before | Payload after |
-|----------|-----------------------------:|-------------:|--:|---------------:|--------------:|
-| `/api/v1/events` | ~0.98 s | **pending deploy** | — | ~155 KB | **pending deploy** |
-| Sponsor public | ~1.58 s | **pending deploy** | — | ~6 KB | **pending deploy** |
-| Legacy public | ~1.51 s | **pending deploy** | — | ~8 KB | **pending deploy** |
+
+| Endpoint         | Before median (prod total_s) | After median       | %   | Payload before | Payload after      |
+| ---------------- | ---------------------------- | ------------------ | --- | -------------- | ------------------ |
+| `/api/v1/events` | ~0.98 s                      | **pending deploy** | —   | ~155 KB        | **pending deploy** |
+| Sponsor public   | ~1.58 s                      | **pending deploy** | —   | ~6 KB          | **pending deploy** |
+| Legacy public    | ~1.51 s                      | **pending deploy** | —   | ~8 KB          | **pending deploy** |
+
 
 After deploy:
 
@@ -242,15 +268,19 @@ Compare `Server-Timing` `app;dur=` and uncompressed JSON sizes. Do not claim pro
 
 ### Phase 1 targets (goals, not guarantees)
 
-| Metric | Goal |
-|--------|------|
-| Events list app p50 | &lt; 600 ms (stretch &lt; 400 ms warm/miss-optimized) |
-| Sponsor / Legacy app p50 | &lt; 700 ms |
-| Events list payload | meaningfully &lt; ~151 KB; prefer &lt; 75 KB / &lt; 50 KB if cards allow |
-| Maintenance | near-zero DB while cached off |
-| Auth | one user+RBAC load path per request where semantics allow |
+
+| Metric                   | Goal                                                            |
+| ------------------------ | --------------------------------------------------------------- |
+| Events list app p50      | < 600 ms (stretch < 400 ms warm/miss-optimized)                 |
+| Sponsor / Legacy app p50 | < 700 ms                                                        |
+| Events list payload      | meaningfully < ~151 KB; prefer < 75 KB / < 50 KB if cards allow |
+| Maintenance              | near-zero DB while cached off                                   |
+| Auth                     | one user+RBAC load path per request where semantics allow       |
+
 
 ---
+
+
 
 ## Phase 2 — Next.js SSR / CDN (implemented in workspace)
 
@@ -260,23 +290,25 @@ Evidence labels: **LOCAL TEST RESULT** · **CODE-LEVEL IMPROVEMENT** · **LIVE V
 
 ### Phase 2 baseline (pre-change production) — LIVE VERIFIED
 
-Artifact: [`performance-phase2-baseline.json`](./performance-phase2-baseline.json)
+Artifact: `[performance-phase2-baseline.json](./performance-phase2-baseline.json)`
 
-| Route | total_ms median | ttfb_ms median | X-Vercel-Cache | Cache-Control |
-|-------|----------------:|---------------:|----------------|---------------|
-| `/` | ~537 | ~432 | HIT | public |
-| `/events` | ~1077 | ~799 | **MISS×3** | **private, no-store** |
-| `/events/demo-…` | ~1064 | ~769 | MISS | private, no-store |
-| `/hosts` | ~508 | ~474 | HIT | public |
-| `/u/mainlandvibes` | ~906 | ~717 | MISS | private, no-store |
-| `/fans` | ~463 | ~433 | HIT | public |
-| `/f/pizzlecole` | ~1038 | ~782 | MISS | private, no-store |
-| `/sponsorships` | ~989 | ~688 | MISS | private, no-store |
-| `/sponsors/korawave-pay` | ~1040 | ~721 | MISS | private, no-store |
-| `/merch` | ~487 | ~462 | HIT | public |
-| `/merch/…tee` | ~964 | ~713 | MISS | private, no-store |
-| `/blog` | ~519 | ~484 | HIT | public |
-| `/help` | ~827 | ~729 | MISS | private, no-store |
+
+| Route                    | total_ms median | ttfb_ms median | X-Vercel-Cache | Cache-Control         |
+| ------------------------ | --------------- | -------------- | -------------- | --------------------- |
+| `/`                      | ~537            | ~432           | HIT            | public                |
+| `/events`                | ~1077           | ~799           | **MISS×3**     | **private, no-store** |
+| `/events/demo-…`         | ~1064           | ~769           | MISS           | private, no-store     |
+| `/hosts`                 | ~508            | ~474           | HIT            | public                |
+| `/u/mainlandvibes`       | ~906            | ~717           | MISS           | private, no-store     |
+| `/fans`                  | ~463            | ~433           | HIT            | public                |
+| `/f/pizzlecole`          | ~1038           | ~782           | MISS           | private, no-store     |
+| `/sponsorships`          | ~989            | ~688           | MISS           | private, no-store     |
+| `/sponsors/korawave-pay` | ~1040           | ~721           | MISS           | private, no-store     |
+| `/merch`                 | ~487            | ~462           | HIT            | public                |
+| `/merch/…tee`            | ~964            | ~713           | MISS           | private, no-store     |
+| `/blog`                  | ~519            | ~484           | HIT            | public                |
+| `/help`                  | ~827            | ~729           | MISS           | private, no-store     |
+
 
 Backend app medians (Phase 1 deployed): events ~132 ms · sponsor ~237 ms · Legacy ~554 ms.
 
@@ -294,75 +326,170 @@ Browser → Vercel MISS (private, no-store)
 
 Two independent forced-dynamic causes:
 
-1. **AbortSignal on RSC `fetch`** (Phase 0 timeout helper) — Next opts the fetch out of the Data Cache → route becomes `private, no-store` → permanent MISS. Confirmed by contrast: `/hosts` uses `Promise.race` without AbortSignal and HITs.
-2. **`searchParams` in page / `generateMetadata`** — dynamizes `/events`, `/help`, `/sponsorships` even for the bare path.
+1. **AbortSignal on RSC** `fetch` (Phase 0 timeout helper) — Next opts the fetch out of the Data Cache → route becomes `private, no-store` → permanent MISS. Confirmed by contrast: `/hosts` uses `Promise.race` without AbortSignal and HITs.
+2. `searchParams` **in page /** `generateMetadata` — dynamizes `/events`, `/help`, `/sponsorships` even for the bare path.
+
+
 
 ### Fixes (CODE-LEVEL IMPROVEMENT)
 
-| Change | Detail |
-|--------|--------|
-| Public fetch timeouts | `withTimeoutRace` — no AbortSignal on Next fetch (`seo/public-fetch.ts`, `cache/public-api.ts`) |
-| React `cache()` loaders | `lib/public-loaders/entities.ts` for event, Legacy, sponsor, fan, merch |
-| Blog/help articles | `cache()` around `fetchBlogPostServer` / `fetchHelpArticleServer` |
-| `/events` | No `searchParams` on RSC; ISR shell; facets client-side; middleware `noindex, follow` |
-| `/help` | ISR default; `HelpQueryResults` client island for `?q=` / audience |
-| `/sponsorships` | Static metadata + `revalidate`; facet noindex in middleware |
-| `/f/[username]` | **force-dynamic / no-store** (privacy-first; see below) |
-| Merch detail | No server `searchParams`; `?h=` via client; Suspense |
-| `/fans` | SSR seed directory; skip duplicate client fetch when unfiltered |
 
-### Fan Passport cache/privacy policy (hardened)
+| Change                  | Detail                                                                                          |
+| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| Public fetch timeouts   | `withTimeoutRace` — no AbortSignal on Next fetch (`seo/public-fetch.ts`, `cache/public-api.ts`) |
+| React `cache()` loaders | `lib/public-loaders/entities.ts` for event, Legacy, sponsor, fan, merch                         |
+| Blog/help articles      | `cache()` around `fetchBlogPostServer` / `fetchHelpArticleServer`                               |
+| `/events`               | No `searchParams` on RSC; ISR shell; facets client-side; middleware `noindex, follow`           |
+| `/help`                 | ISR default; `HelpQueryResults` client island for `?q=` / audience                              |
+| `/sponsorships`         | Static metadata + `revalidate`; facet noindex in middleware                                     |
+| `/f/[username]`         | **force-dynamic / revalidate=0** (privacy; no CDN HTML) — not short ISR                       |
+| Merch detail            | No server `searchParams`; `?h=` via client; Suspense                                            |
+| `/fans`                 | SSR seed directory; skip duplicate client fetch when unfiltered                                 |
 
-**Correction:** `API 404 + 180s ISR TTL` is **not** sufficient for PUBLIC→PRIVATE. A Vercel CDN HIT of `/f/{username}` HTML can outlive the API change until ISR expiry. That leak window is unacceptable for privacy.
 
-| Visibility | `/f/{username}` HTML | Index | Directory / sitemap |
-| ---------- | -------------------- | ----- | ------------------- |
-| PUBLIC | **force-dynamic / no-store** (React `cache()` request dedupe only) | indexable | eligible per product rules |
-| UNLISTED | **force-dynamic / no-store** | noindex | not discoverable |
-| PRIVATE | API 404 → `notFound()`; no CDN HTML to go stale | never | never |
 
-**Invalidation (directory / sitemap defense-in-depth):**
 
-- Redis: `invalidate_fan_public_caches(username=, previous_username=)`
-- Next.js: authenticated `POST /api/revalidate/fan` with `Authorization: Bearer $REVALIDATE_SECRET`
-- Purges `/f/{username}` path residue, `/fans`, tags `fans` / `fan-directory`, `/sitemap.xml`
-- Backend notifies via `notify_fan_frontend_revalidate` on settings / admin-hide
-- Endpoint: **401** without secret; **503** if secret unset — never an open purge
+### Fan Passport cache/privacy policy
 
-**On invalidation failure:** Fan HTML remains safe (not CDN-cached). Directory ISR may lag until TTL (~180s) or a successful purge — profile HTML cannot leak via CDN.
+**Hardened (privacy invariant):** HTML for `/f/[username]` is **not** CDN/ISR cached.
 
-### Cache invalidation (general)
 
-- TTL via `PUBLIC_REVALIDATE` + route `export const revalidate` for non-sensitive hubs
-- Fan profile HTML: **no TTL privacy dependence**
-- Existing `/api/revalidate/blog` and `/api/revalidate/help` unchanged (admin same-origin; separate hardening backlog)
-- Events/sponsors/merch: Redis invalidation + short TTL (not fan-grade privacy)
+| Visibility | Behavior                                              |
+| ---------- | ----------------------------------------------------- |
+| PUBLIC     | `force-dynamic` + `revalidate = 0`; indexable         |
+| UNLISTED   | Same dynamic/no-store HTML; noindex; link-only        |
+| PRIVATE    | API 404 — never HTML-cached                           |
+
+
+`API 404 + short TTL` alone is **not** enough for PUBLIC→PRIVATE safety on CDN HTML. Directory (`/fans`) remains short-ISR and is purged via authenticated `POST /api/revalidate/fan`.
+
+### Cache invalidation
+
+- TTL via `PUBLIC_REVALIDATE` + route `export const revalidate` for hubs/entities
+- Existing `/api/revalidate/blog` and `/api/revalidate/help` tags/paths unchanged
+- Fan directory/sitemap purge via `REVALIDATE_SECRET` on visibility changes
+- Fan Passport HTML stays no-store (never rely on TTL for privacy)
 
 ### Local proof
 
+
+| Check                                        | Result                                                                      |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| vitest loaders + cache policy + timeout race | **passed** (LOCAL)                                                          |
+| `npm run build`                              | **passed** — `/events`, `/help`, `/fans`, `/sponsorships` ○ ISR (LOCAL)     |
+| Production FE HIT remasure                   | **LIVE VERIFIED** (user) — see Phase 2 tracker                              |
+
+
+### Remaining after Phase 2
+
+Phase 3 browser/CWV work (below). Geography / speculative indexes only with new evidence.
+
+---
+
+## Phase 3 — Browser / Core Web Vitals
+
+Scope: what happens **after HTML begins reaching the browser** — LCP, CLS, TBT (lab INP proxy), images, fonts, public JS, hydration boundaries, third-party scope. **No** Phase 1 SQL rewrites, **no** Fan Passport CDN HTML caching, **no** SEO/privacy/auth/payment weakening.
+
+Evidence labels: **LIVE LAB MEASURED** · **LOCAL LAB MEASURED** · **CODE-LEVEL IMPROVEMENT** · **FIELD MEASURED** · **NOT MEASURED** · **NOT YET DEPLOYED**
+
+Artifacts:
+
+- Baseline: [`performance-phase3-baseline.json`](./performance-phase3-baseline.json)
+- After (workspace): [`performance-phase3-after.json`](./performance-phase3-after.json)
+
+### Baseline — LIVE LAB MEASURED (pre-deploy production, mobile Lighthouse n=1)
+
+| Route | Perf | LCP | CLS | TBT | JS xfer | Img xfer | Total xfer |
+| ----- | ---- | --- | --- | --- | ------- | -------- | ---------- |
+| `/` | 77 | 4.86 s | 0.078 | 54 ms | 361 KB | 195 KB | 731 KB |
+| `/events` | 84 | 4.29 s | 0.000 | 32 ms | 295 KB | 310 KB | 777 KB |
+| `/events/demo-…` | 53 | 5.22 s | **1.842** | 53 ms | **1243 KB** | 180 KB | 1717 KB |
+| `/merch/…tee` | 67 | 3.35 s | **1.842** | 50 ms | 278 KB | 159 KB | 566 KB |
+| `/sponsors/korawave-pay` | 96 | 2.51 s | 0.078 | 46 ms | 294 KB | 160 KB | 569 KB |
+
+Key baseline findings:
+
+- Event detail JS dominated by **YouTube embed player** (~860 KB+ third-party) — LIVE LAB
+- CLS ~1.84 on long pages attributed to **footer logo** (`width:auto` / “Media element lacking an explicit size”) — LIVE LAB
+- Shared `Media` used `loading="lazy"` on LCP heroes — CODE-LEVEL RISK
+- Manrope requested as five static weights — CODE-LEVEL RISK
+- `html5-qrcode` / auth notification chrome pulled earlier than needed — CODE-LEVEL RISK
+
+Field CWV (CrUX / Search Console / Speed Insights): **NOT MEASURED** / **NOT CONFIGURED**.
+
+### LCP elements (CODE-LEVEL)
+
+| Route | Probable LCP | Change |
+| ----- | ------------ | ------ |
+| `/` | Hero image | Already `next/image` + `priority` |
+| `/events` | Card cover / headline | Card `sizes="eventCard"`; no card `priority` |
+| Event detail | Banner cover | `Media` + `priority` + `sizes="hero"` |
+| Host `/u/*` | Cover | `priority` + `sizes="hero"`; avatar eager |
+| Fan `/f/*` | Avatar / H1 | Avatar eager + sizes; **HTML stays no-store** |
+| Sponsor | Cover / logo | Cover `priority`; logo sized |
+| Merch product | Product hero | `Media` + `priority` + `sizes="merchHero"` |
+
+### Image / next/image (CODE-LEVEL IMPROVEMENT)
+
+- `Media` prefers `next/image` for `/media`, `/brand`, trusted hosts; SVG / unknown remotes stay `<img>`
+- `next.config.ts` `images.remotePatterns` — **no** `hostname: "**"`
+- Layout presets in `lib/media-image.ts` (`hero`, `eventCard`, `merchHero`, …)
+- Original upload resizing: **deferred** — next/image delivery resize covers display dims for now
+
+### CLS (CODE-LEVEL IMPROVEMENT)
+
+- Logo: explicit `style={{ width, height }}` (removed `width: auto`)
+- Heroes/cards: aspect boxes + `fill` Image + accurate `sizes`
+- Skeletons for deferred map/gallery keep approximate height
+
+### Fonts (LOCAL LAB MEASURED + CODE-LEVEL)
+
+| | Before | After |
+| --- | --- | --- |
+| Config | weights `400…800` static | Variable Manrope (`font-weight: 200 800`) |
+| Display | `swap` | `swap` (unchanged) |
+| Primary latin WOFF2 | multi-file static set | **~24.6 KB** variable primary (`.p.` file); other unicode-range subsets only downloaded if needed |
+
+### JS / client boundaries (CODE-LEVEL IMPROVEMENT)
+
+| Change | Detail |
+| ------ | ------ |
+| Event detail | Dynamic `EventLocationMapCard`, dynamic `EventGallery` |
+| YouTube | Click-to-play facade — player JS not on initial load |
+| Check-in / merch desk | Dynamic `QrScanner` (`html5-qrcode` lazy chunk) |
+| Ticket QR modal | Dynamic `TicketQrPanel` |
+| Public header | Dynamic `NotificationBell` + `HeaderUserMenu` (anonymous skip) |
+| PWA | Idle/deferred SW registration |
+| Paystack / GA4 | Already scoped — verified unchanged |
+
+`EventPublicView` remains a large client tree (interactions) — full server island split deferred; secondary sections deferred first.
+
+### Marketplace rerenders
+
+No premature `useMemo` spray — existing `useMemo` on ranked/filter lists retained. No new filter debounce without profiling evidence.
+
+### Budgets (goals, not claims)
+
+Public initial JS < 200 KB compressed · lazy chunk < 100 KB gzip unless justified · lab LCP < 2.5 s · CLS < 0.1 · field INP < 200 ms.
+
+### Verification
+
 | Check | Result |
-|-------|--------|
-| vitest loaders + cache policy + timeout race | **passed** (LOCAL) |
-| `npm run build` | **passed** — `/events`, `/help`, `/fans`, `/sponsorships` now ○ ISR (LOCAL) |
-| Production after/before table | **NOT YET DEPLOYED** |
+| ----- | ------ |
+| vitest Phase 3 helpers/guards | **passed** (LOCAL) |
+| `npm run test:seo` | **passed** (LOCAL) |
+| Fan privacy (`force-dynamic` / `revalidate=0`) | **passed** (LOCAL) |
+| `npm run build` | **passed** (LOCAL) — `/f/[username]` remains `ƒ` |
+| Post-deploy Lighthouse | **NOT YET DEPLOYED** |
+| Post-deploy HTTP audit script | **NOT YET DEPLOYED** |
+| Field CWV | **NOT MEASURED** |
 
-### Expected `/events` flow after deploy (hypothesis until LIVE)
+### Remaining after Phase 3
 
-```
-Browser → Vercel HIT/STALE (public ISR)
-  → cached RSC / short regen
-    → deduped Data Cache fetch to API
-→ HTML
-```
+1. Post-deploy Lighthouse n≥3 medians on representative routes
+2. Optional first-party `web-vitals` sampling (consent + sampling, no PII)
+3. Compress oversized brand PNGs (~126 KB dark logo) if design allows
+4. Further split `EventPublicView` static SEO shell vs client islands
+5. Geography / DB indexes only with new evidence
 
-Do **not** claim HIT or latency wins until post-deploy headers/timings.
-
-### Remaining Phase 3
-
-1. `next/image` + dimensions / LCP heroes  
-2. Manrope weight trim  
-3. JS bundle / CWV field work  
-4. Geography only if still needed after SSR/CDN wins  
-5. Speculative indexes only with EXPLAIN  
-
-Do **not** weaken authorization or payment verification for speed.
+Do **not** weaken authorization, payment verification, Fan Passport privacy, or SEO for Lighthouse score chasing.

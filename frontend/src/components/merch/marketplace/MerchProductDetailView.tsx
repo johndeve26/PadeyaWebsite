@@ -14,6 +14,7 @@ import {
   Badge,
   Button,
   Container,
+  Media,
   QuantityInput,
   SkeletonLoader,
   useToast,
@@ -281,13 +282,14 @@ export function MerchProductDetailView({
       <Container className="py-8 sm:py-12">
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
           <div className="space-y-3">
-            <div className="aspect-[4/5] overflow-hidden bg-ink">
+            <div className="relative aspect-[4/5] overflow-hidden bg-ink">
               {image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Media
                   src={image}
                   alt={merchImageAlt(product.name)}
                   className="h-full w-full object-cover"
+                  priority
+                  sizes="merchHero"
                 />
               ) : (
                 <MerchFallbackVisual
@@ -304,18 +306,18 @@ export function MerchProductDetailView({
                     key={url}
                     type="button"
                     onClick={() => setActiveImage(i)}
-                    className={`h-16 w-16 shrink-0 overflow-hidden ring-2 ${
+                    className={`relative h-16 w-16 shrink-0 overflow-hidden ring-2 ${
                       i === activeImage ? "ring-primary" : "ring-transparent"
                     }`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Media
                       src={url}
                       alt={merchImageAlt(product.name, {
                         index: i,
                         total: gallery.length,
                       })}
                       className="h-full w-full object-cover"
+                      sizes="merchThumb"
                     />
                   </button>
                 ))}

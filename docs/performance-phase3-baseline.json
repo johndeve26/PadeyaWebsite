@@ -1,0 +1,162 @@
+{
+  "label": "PHASE3_BASELINE_PRE_DEPLOY",
+  "brand": "Pàdéyá",
+  "captured_at": "2026-07-26T00:48:00.000Z",
+  "production": "https://padeya.com",
+  "notes": [
+    "Lighthouse samples are LIVE LAB on current production BEFORE Phase 3 deploy (n=1 mobile each).",
+    "INP is field-only — not invented from Lighthouse; TBT is lab proxy only.",
+    "Fan Passport /f/* MISS/no-store is intentional — not a Phase 3 failure.",
+    "Do not stress production with Lighthouse loops."
+  ],
+  "http_context_phase2_live": {
+    "label": "LIVE MEASURED",
+    "routes": {
+      "/": { "total_response_ms_median": 528, "x_vercel_cache": "HIT" },
+      "/events": {
+        "total_response_ms_median": 347,
+        "x_vercel_cache": "PRERENDER→HIT→HIT"
+      },
+      "/events/demo-afrobeats-night-live": { "total_response_ms_median": 783 },
+      "/hosts": { "total_response_ms_median": 331 },
+      "/u/mainlandvibes": { "total_response_ms_median": 633 },
+      "/fans": { "total_response_ms_median": 302 },
+      "/f/pizzlecole": {
+        "total_response_ms_median": 809,
+        "x_vercel_cache": "MISS",
+        "note": "intentional force-dynamic/no-store"
+      },
+      "/sponsorships": { "total_response_ms_median": 289 },
+      "/sponsors/korawave-pay": { "total_response_ms_median": 534 },
+      "/merch": { "total_response_ms_median": 284 },
+      "/merch/mainland-vibes-logo-tee": { "total_response_ms_median": 845 },
+      "/blog": { "total_response_ms_median": 588 },
+      "/help": { "total_response_ms_median": 310 }
+    }
+  },
+  "lighthouse_lab_mobile_n1": {
+    "label": "LIVE LAB MEASURED",
+    "tool": "lighthouse@13.4.1",
+    "form_factor": "mobile",
+    "samples_per_route": 1,
+    "routes": [
+      {
+        "path": "/",
+        "perf": 77,
+        "lcp_ms": 4864,
+        "cls": 0.078,
+        "tbt_ms": 54,
+        "fcp_ms": 1443,
+        "si_ms": 5156,
+        "js_transfer_bytes": 361169,
+        "img_transfer_bytes": 195006,
+        "css_transfer_bytes": 32123,
+        "total_transfer_bytes": 730558
+      },
+      {
+        "path": "/events",
+        "perf": 84,
+        "lcp_ms": 4291,
+        "cls": 0.0,
+        "tbt_ms": 32,
+        "fcp_ms": 1441,
+        "si_ms": 3345,
+        "js_transfer_bytes": 295169,
+        "img_transfer_bytes": 310002,
+        "css_transfer_bytes": 32123,
+        "total_transfer_bytes": 776669
+      },
+      {
+        "path": "/events/demo-afrobeats-night-live",
+        "perf": 53,
+        "lcp_ms": 5221,
+        "cls": 1.842,
+        "tbt_ms": 53,
+        "fcp_ms": 1928,
+        "si_ms": 3325,
+        "js_transfer_bytes": 1242800,
+        "img_transfer_bytes": 179795,
+        "css_transfer_bytes": 89587,
+        "total_transfer_bytes": 1716597,
+        "notes": [
+          "YouTube embed player JS dominated transfer (~860KB+ third-party)",
+          "CLS culprit: footer logo img width:auto (Media element lacking explicit size)"
+        ]
+      },
+      {
+        "path": "/merch/mainland-vibes-logo-tee",
+        "perf": 67,
+        "lcp_ms": 3354,
+        "cls": 1.842,
+        "tbt_ms": 50,
+        "fcp_ms": 1291,
+        "si_ms": 2394,
+        "js_transfer_bytes": 277886,
+        "img_transfer_bytes": 158675,
+        "css_transfer_bytes": 32124,
+        "total_transfer_bytes": 565570,
+        "notes": [
+          "Same footer logo CLS signature as event detail"
+        ]
+      },
+      {
+        "path": "/sponsors/korawave-pay",
+        "perf": 96,
+        "lcp_ms": 2512,
+        "cls": 0.078,
+        "tbt_ms": 46,
+        "fcp_ms": 1237,
+        "si_ms": 2467,
+        "js_transfer_bytes": 293841,
+        "img_transfer_bytes": 160098,
+        "css_transfer_bytes": 32124,
+        "total_transfer_bytes": 568596
+      }
+    ]
+  },
+  "field_cwv": {
+    "label": "NOT MEASURED",
+    "vercel_speed_insights": "NOT CONFIGURED",
+    "search_console_cwv": "NOT ENOUGH DATA / NOT CHECKED",
+    "crux": "NOT ENOUGH DATA / NOT CHECKED",
+    "inp": "FIELD ONLY — do not invent from Lighthouse"
+  },
+  "lcp_elements_code_level": {
+    "label": "CODE-LEVEL RISK (pre-change)",
+    "routes": {
+      "/": "homepage hero image (already next/image + priority)",
+      "/events": "first card cover or hub headline — Media was lazy",
+      "/events/[slug]": "banner_url Media loading=lazy — LCP risk",
+      "/u/[username]": "host cover Media lazy",
+      "/f/[username]": "avatar or H1 — privacy no-store HTML",
+      "/sponsors/[slug]": "cover/logo raw img",
+      "/merch/[slug]": "product hero raw img",
+      "/help": "headline text"
+    }
+  },
+  "image_inventory_summary": {
+    "label": "CODE-LEVEL RISK",
+    "shared_media": "Media.tsx raw <img loading=lazy> — no sizes/priority",
+    "remote_patterns": "missing",
+    "cls_footer_logo": "Logo used width:auto → Lighthouse CLS ~1.84 on long pages"
+  },
+  "font_baseline": {
+    "label": "CODE-LEVEL RISK",
+    "config": "Manrope weights 400,500,600,700,800 static files",
+    "usage": {
+      "font-semibold": 896,
+      "font-bold": 813,
+      "font-extrabold": 686,
+      "font-medium": 139,
+      "font-black": 5
+    }
+  },
+  "performance_budgets_goals": {
+    "label": "GOALS ONLY (not measurements)",
+    "public_initial_js_kb_compressed": 200,
+    "lazy_chunk_kb_compressed": 100,
+    "lcp_lab_s": 2.5,
+    "cls": 0.1,
+    "inp_field_ms": 200
+  }
+}

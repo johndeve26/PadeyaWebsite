@@ -16,11 +16,14 @@
 |-------|--------|-----|
 | **Phase 0** — reliability & observability | **Implemented** | [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md) |
 | **Phase 1** — API/query latency | **Deployed** (API app medians hit targets) | [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md#phase-1--apiquery-latency-implemented-in-workspace) |
-| **Phase 2** — Next.js SSR / CDN | **Implemented in workspace** — **DEPLOYED MEASUREMENT pending** | [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md#phase-2--nextjs-ssr--cdn-implemented-in-workspace) |
+| **Phase 2** — Next.js SSR / CDN | **Deployed** (FE HIT + totals user-verified) | [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md#phase-2--nextjs-ssr--cdn-implemented-in-workspace) |
+| **Phase 3** — Browser / CWV | **Implemented in workspace** — **post-deploy Lighthouse pending** | [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md#phase-3--browser--core-web-vitals) |
 
 Phase 1 LIVE: `/api/v1/events` app ~132 ms · sponsor ~237 ms · Legacy ~554 ms.
 
-Phase 2 baseline (FE): [`performance-phase2-baseline.json`](./performance-phase2-baseline.json) — `/events` and entity pages were **MISS + private no-store** despite `revalidate` exports (AbortSignal + searchParams). Workspace fix restores ISR-capable public fetch/caching for hubs/entities **except Fan Passport HTML**, which stays **force-dynamic/no-store** so PUBLIC→PRIVATE cannot leave stale CDN HTML (TTL alone is insufficient). Post-deploy remeasure required before claiming CDN HIT.
+Phase 2 LIVE FE: `/events` ~347 ms HIT; Fan Passport intentionally MISS/no-store. Baseline: [`performance-phase2-baseline.json`](./performance-phase2-baseline.json).
+
+Phase 3 baseline (browser lab): [`performance-phase3-baseline.json`](./performance-phase3-baseline.json) · after workspace: [`performance-phase3-after.json`](./performance-phase3-after.json). Focus: LCP heroes, footer logo CLS, next/image, variable Manrope, scoped third-party/JS. **Do not CDN-cache `/f/*` HTML.**
 
 **Evidence labels used throughout:**
 - **MEASURED** — observed with low-volume production requests in this audit
@@ -737,12 +740,14 @@ Targets for Pàdéyá’s current architecture (Africa users + US origin):
 - Remove unnecessary `searchParams` dynamism on hubs  
 - Fetch timeouts (Phase 0 client; Phase 2 SSR-safe race)  
 
-### Phase 3 — Assets & CWV (3–5 days)
-- next/image + dimensions for heroes/avatars  
-- Font weight trim  
-- Field CWV (CrUX / Lighthouse)  
+### Phase 3 — Assets & CWV (3–5 days) — **workspace complete; await deploy + Lighthouse remeasure**
+- next/image + LCP priority on heroes (not card grids)  
+- Footer logo explicit size (CLS)  
+- Variable Manrope  
+- Dynamic map/gallery/QR/auth chrome; YouTube click-to-play  
+- Field CWV still **NOT MEASURED** (optional web-vitals later)  
 
-### Phase 4 — Geography (only if Phase 1–2 insufficient)
+### Phase 4 — Geography (only if Phase 1–3 insufficient)
 - Measure again from target markets  
 - Consider colocating Render/Neon/Upstash nearer users  
 

@@ -3,9 +3,10 @@
 import { MerchAccessBadge } from "@/components/merch/MerchAccessBadge";
 import { MerchFallbackVisual } from "@/components/merch/MerchFallbackVisual";
 import { SponsorBrandedMark } from "@/components/merch/SponsorBrandedMark";
-import { Badge, Button } from "@/components/ui";
+import { Badge, Button, Media } from "@/components/ui";
 import { formatNgn } from "@/lib/format";
 import { productImageUrl } from "@/lib/merch-fallback";
+import { merchImageAlt } from "@/lib/seo/image-alt";
 import {
   productStockStatus,
   productStockTotal,
@@ -94,11 +95,11 @@ export function MerchProductCard({
         aria-label={`View ${product.name}`}
       >
         {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Media
             src={image}
-            alt=""
+            alt={merchImageAlt(product.name)}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            sizes="merchCard"
           />
         ) : (
           <MerchFallbackVisual

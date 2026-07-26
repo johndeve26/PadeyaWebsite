@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -48,17 +49,43 @@ import { fetchVaultRelatedToEvent } from "@/lib/vault-api";
 import { EventAgendaSection } from "./EventAgendaSection";
 import { EventDateBadge } from "./EventDateBadge";
 import { EventDetailPanel, EventInfoTile } from "./EventDetailPanel";
-import { EventGallery } from "./EventGallery";
 import {
   EventAccessLogisticsSection,
   EventGuestPrepSection,
 } from "./EventGuestInfoSections";
 import { EventLineupSection } from "./EventLineupSection";
-import { EventLocationMapCard } from "./EventLocationMapCard";
 import { EventLocationPrivacyNotice } from "./EventLocationPrivacyNotice";
 import { EventMerchSection } from "@/components/merch/EventMerchSection";
 import { PromoteEventAmbassadors } from "./PromoteEventAmbassadors";
 import { TicketTierList } from "./TicketTierList";
+
+/** Maps / Places stay out of the initial event-detail chunk. */
+const EventLocationMapCard = dynamic(
+  () =>
+    import("./EventLocationMapCard").then((m) => m.EventLocationMapCard),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="min-h-[180px] animate-pulse rounded-[var(--radius-xl)] bg-surface-inset"
+        aria-hidden
+      />
+    ),
+  },
+);
+
+/** Gallery may embed YouTube — keep player JS off the critical path. */
+const EventGallery = dynamic(
+  () => import("./EventGallery").then((m) => m.EventGallery),
+  {
+    loading: () => (
+      <div
+        className="min-h-[120px] animate-pulse rounded-[var(--radius-xl)] bg-surface-inset"
+        aria-hidden
+      />
+    ),
+  },
+);
 
 
 export function EventPublicView({
@@ -234,6 +261,8 @@ export function EventPublicView({
               src={event.banner_url}
               alt={eventCoverAlt(event.title)}
               className="padeya-hero-media absolute inset-0 h-full w-full object-cover opacity-85"
+              priority
+              sizes="hero"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-ink/30 to-ink/55" />
           </>

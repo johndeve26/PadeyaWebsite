@@ -1,9 +1,24 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useState, type FormEvent } from "react";
 
-import { QrScanner } from "@/components/checkin/QrScanner";
 import { useAuth } from "@/components/auth/AuthProvider";
+
+const QrScanner = dynamic(
+  () => import("@/components/checkin/QrScanner").then((m) => m.QrScanner),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-[200px] items-center justify-center rounded-[var(--radius-lg)] bg-surface-inset text-sm text-muted-foreground"
+        aria-busy
+      >
+        Starting camera…
+      </div>
+    ),
+  },
+);
 import {
   Alert,
   Badge,

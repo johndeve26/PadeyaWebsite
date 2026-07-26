@@ -32,7 +32,18 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    // Defer registration so SW work does not contend with first paint / hydration.
+    const register = () => {
+      void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    };
+    const ric = window.requestIdleCallback?.bind(window);
+    const cic = window.cancelIdleCallback?.bind(window);
+    if (ric && cic) {
+      const id = ric(register, { timeout: 4000 });
+      return () => cic(id);
+    }
+    const t = setTimeout(register, 1500);
+    return () => clearTimeout(t);
   }, []);
 
   return (

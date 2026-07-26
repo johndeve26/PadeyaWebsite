@@ -23,23 +23,41 @@ Canonical: [SEO_AUDIT.md](./SEO_AUDIT.md#production-indexability-regression-audi
 
 ---
 
+## Performance Phase 3 — Browser / Core Web Vitals (2026-07-26)
+
+**Phase 3 = implemented in workspace** — next/image Media + trusted `remotePatterns`, LCP `priority` on heroes only, Logo CLS fix, variable Manrope, dynamic map/gallery/QR/auth chrome, YouTube click-to-play, idle PWA register. **Post-deploy Lighthouse/CWV not claimed until remeasure.** Fan Passport HTML remains **force-dynamic/no-store**.
+
+Canonical: [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md#phase-3--browser--core-web-vitals) · [`performance-phase3-baseline.json`](./performance-phase3-baseline.json) · [`performance-phase3-after.json`](./performance-phase3-after.json).
+
+| Item | Status |
+|---|---|
+| Phase 3 Lighthouse baseline (prod mobile n=1) | **LIVE LAB MEASURED** |
+| Media / next/image + remotePatterns | **Done** (CODE-LEVEL) |
+| LCP hero priority + card sizes | **Done** (CODE-LEVEL) |
+| Footer Logo CLS (`width:auto` removed) | **Done** (CODE-LEVEL) |
+| Variable Manrope | **Done** (~24.6 KB primary; LOCAL BUILD) |
+| Dynamic QR / map / gallery / auth chrome | **Done** (CODE-LEVEL) |
+| YouTube facade on event gallery | **Done** (CODE-LEVEL) |
+| Fan Passport no-store | **Preserved** (LOCAL test) |
+| `npm run build` + `test:seo` | **Passed** (LOCAL) |
+| Post-deploy Lighthouse / HTTP remeasure | **Pending deploy** |
+| Field CWV | **NOT MEASURED** |
+
+---
+
 ## Performance Phase 2 — Next.js SSR / CDN (2026-07-26)
 
-**Phase 2 = implemented in workspace** — RSC AbortSignal removed (restores Next Data Cache), React `cache()` entity loaders, `/events`/`/help`/`/sponsorships` no longer dynamized by searchParams, Fan Passport **force-dynamic/no-store** (privacy), authenticated `/api/revalidate/fan` for directory/sitemap, fans SSR seed, middleware facet `noindex,follow`. **Production FE improvement not claimed until post-deploy measurement.**
+**Phase 2 = deployed & production verified** — RSC AbortSignal removed, React `cache()` loaders, hub ISR, Fan Passport **force-dynamic/no-store**, fan revalidate route, facet `noindex,follow`.
 
 Canonical: [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md) · baseline [`performance-phase2-baseline.json`](./performance-phase2-baseline.json).
 
 | Item | Status |
 |---|---|
 | Phase 2 baseline (MISS + private no-store on hubs/entities) | **LIVE VERIFIED** |
-| AbortSignal / Data Cache root cause | **Fixed** (CODE-LEVEL) |
-| React cache entity loaders | **Done** |
+| AbortSignal / Data Cache root cause | **Fixed** |
 | Fan Passport HTML no-store (PUBLIC→PRIVATE safe) | **Done** (hardened) |
-| Fan directory purge via `REVALIDATE_SECRET` | **Done** |
-| Hub searchParams → middleware facet noindex | **Done** |
-| Local build (`/events` ○ ISR) | **Passed** |
-| Deployed FE before/after + X-Vercel-Cache | **Pending deploy** |
-| Phase 3 images/fonts/CWV | **Out of scope** (next) |
+| Deployed FE HIT + totals | **LIVE VERIFIED** (user) |
+| Phase 3 images/fonts/CWV | **Done in workspace** (see above) |
 
 ---
 

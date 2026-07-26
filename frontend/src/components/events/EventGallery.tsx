@@ -9,6 +9,39 @@ import type { EventItem, EventMedia } from "@/lib/types/events";
 
 import { EventDetailPanel } from "./EventDetailPanel";
 
+/** Click-to-load facade — avoids shipping YouTube player JS until interaction. */
+function LazyVideoEmbed({
+  title,
+  src,
+}: {
+  title: string;
+  src: string;
+}) {
+  const [active, setActive] = useState(false);
+  if (!active) {
+    return (
+      <button
+        type="button"
+        onClick={() => setActive(true)}
+        className="flex aspect-video w-full items-center justify-center bg-ink text-sm font-semibold text-paper transition-colors hover:bg-ink/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        aria-label={`Play ${title}`}
+      >
+        Play teaser
+      </button>
+    );
+  }
+  return (
+    <iframe
+      title={title}
+      src={src}
+      className="aspect-video w-full"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen
+      referrerPolicy="strict-origin-when-cross-origin"
+    />
+  );
+}
+
 function galleryItems(event: EventItem): EventMedia[] {
   const fromMedia = [...(event.media ?? [])]
     .filter((m) => m.media_type === "gallery" && m.url?.trim())
@@ -108,6 +141,7 @@ export function EventGallery({ event }: { event: EventItem }) {
                     src={item.url}
                     alt={item.alt_text || ""}
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                    sizes="(max-width: 640px) 50vw, 33vw"
                   />
                 </button>
               </li>
@@ -122,15 +156,7 @@ export function EventGallery({ event }: { event: EventItem }) {
             </p>
             {embed ? (
               <div className="overflow-hidden rounded-[var(--radius-md)] border border-border bg-surface-dark">
-                <iframe
-                  title="Event teaser video"
-                  src={embed}
-                  className="aspect-video w-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                />
+                <LazyVideoEmbed title="Event teaser video" src={embed} />
               </div>
             ) : (
               <a

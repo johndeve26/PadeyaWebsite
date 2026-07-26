@@ -92,6 +92,7 @@ export function EventCard({
               src={image}
               alt={eventCardAlt(event.title)}
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+              sizes="eventCard"
             />
             <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-ink/80 to-transparent" />
             <div className="absolute left-3 top-3 flex flex-wrap gap-2">

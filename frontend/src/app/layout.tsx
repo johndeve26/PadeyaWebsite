@@ -20,10 +20,14 @@ import { rootSeoMetadataFields } from "@/lib/seo/site";
 import { THEME_COLOR } from "@/lib/theme";
 import "@/styles/globals.css";
 
+/**
+ * Variable Manrope (single WOFF2) covers used weights:
+ * medium(500), semibold(600), bold(700), extrabold(800), rare black(900).
+ * Static multi-weight files were heavier with no design benefit.
+ */
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 

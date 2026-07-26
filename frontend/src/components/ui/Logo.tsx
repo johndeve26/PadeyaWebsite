@@ -28,7 +28,9 @@ export function Logo({
   // undefined → home link; "" / null-ish → bare image (parent may wrap its own Link)
   const resolvedHref = href === undefined ? "/" : href;
 
-  const imageClass = ["h-auto w-auto", className].filter(Boolean).join(" ");
+  // Explicit width+height (not width:auto) — footer/header CLS was attributed to
+  // "Media element lacking an explicit size" when only height was fixed.
+  const imageClass = ["block max-w-full", className].filter(Boolean).join(" ");
 
   const renderImage = (
     logoVariant: LogoVariant,
@@ -43,7 +45,7 @@ export function Logo({
       priority={imagePriority}
       unoptimized
       className={[imageClass, extraClass].filter(Boolean).join(" ")}
-      style={{ height, width: "auto" }}
+      style={{ width, height }}
     />
   );
 

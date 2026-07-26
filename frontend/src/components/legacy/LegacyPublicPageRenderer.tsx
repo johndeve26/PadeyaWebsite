@@ -860,6 +860,8 @@ export function LegacyPublicPageRenderer({ page }: { page: LegacyPage }) {
               src={media.coverUrl}
               alt={hostCoverAlt(page.display_name)}
               className="h-full w-full object-cover opacity-40 padeya-hero-media"
+              priority
+              sizes="hero"
             />
           </div>
         ) : null}
@@ -911,6 +913,8 @@ export function LegacyPublicPageRenderer({ page }: { page: LegacyPage }) {
                   src={media.avatarUrl}
                   alt={hostAvatarAlt(page.display_name)}
                   className="h-full w-full object-cover"
+                  sizes="avatarLg"
+                  loading="eager"
                 />
               ) : (
                 <span className="flex h-full w-full items-center justify-center text-4xl font-extrabold text-accent sm:text-5xl">

@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -9,18 +10,30 @@ import { CreateEventCta } from "@/components/layout/CreateEventCta";
 import { HeaderHostScanButton } from "@/components/layout/HeaderHostScanButton";
 import { HeaderMobileDrawer } from "@/components/layout/HeaderMobileDrawer";
 import { HeaderResourcesDropdown } from "@/components/layout/HeaderResourcesDropdown";
-import { HeaderUserMenu } from "@/components/layout/HeaderUserMenu";
 import {
   PUBLIC_NAV,
   isPublicNavActive,
 } from "@/components/layout/headerNav";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button, Container, Logo } from "@/components/ui";
 import { useHeaderSurface } from "@/hooks/useHeaderSurface";
 import { cn } from "@/lib/cn";
 
 import { isWorkspacePath } from "./workspacePath";
+
+/** Authenticated chrome — not downloaded for anonymous public visits. */
+const NotificationBell = dynamic(
+  () =>
+    import("@/components/notifications/NotificationBell").then(
+      (m) => m.NotificationBell,
+    ),
+  { ssr: false },
+);
+const HeaderUserMenu = dynamic(
+  () =>
+    import("@/components/layout/HeaderUserMenu").then((m) => m.HeaderUserMenu),
+  { ssr: false },
+);
 
 const navLinkBase =
   "rounded-[var(--radius-sm)] px-2.5 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 xl:px-3";

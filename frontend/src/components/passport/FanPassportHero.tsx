@@ -62,12 +62,14 @@ export function FanPassportHero({
             </div>
             <div className="flex items-start gap-4 sm:gap-5">
               <div className="relative shrink-0">
-                <div className="flex h-[4.5rem] w-[4.5rem] items-center justify-center overflow-hidden rounded-full border-2 border-primary/60 bg-surface-dark text-2xl font-extrabold text-primary shadow-[var(--shadow-glow)] sm:h-24 sm:w-24 sm:text-3xl">
+                <div className="relative flex h-[4.5rem] w-[4.5rem] items-center justify-center overflow-hidden rounded-full border-2 border-primary/60 bg-surface-dark text-2xl font-extrabold text-primary shadow-[var(--shadow-glow)] sm:h-24 sm:w-24 sm:text-3xl">
                   {page.avatar_url ? (
                     <Media
                       src={page.avatar_url}
                       alt={fanAvatarAlt(page.display_name)}
                       className="h-full w-full object-cover"
+                      sizes="avatarMd"
+                      loading="eager"
                     />
                   ) : (
                     mark

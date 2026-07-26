@@ -1,5 +1,5 @@
 import { headerDarkSurfaceProps } from "@/components/layout/headerSurface";
-import { Badge, Button, Container } from "@/components/ui";
+import { Badge, Button, Container, Media } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { sponsorCoverAlt, sponsorLogoAlt } from "@/lib/seo/image-alt";
 import Link from "next/link";
@@ -53,11 +53,12 @@ export function SponsorBrandProfileHero({
     >
       <div className="absolute inset-0">
         {coverUrl && !useCoverFallback ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Media
             src={coverUrl}
             alt={sponsorCoverAlt(displayName)}
             className="h-full w-full object-cover opacity-40 saturate-[0.9]"
+            priority
+            sizes="hero"
           />
         ) : (
           <div
@@ -87,12 +88,15 @@ export function SponsorBrandProfileHero({
       <Container className="relative pb-12 pt-10 sm:pb-16 sm:pt-14">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end">
           {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={logoUrl}
-              alt={sponsorLogoAlt(displayName)}
-              className="h-24 w-24 shrink-0 rounded-2xl border-4 border-ink/80 bg-card object-cover shadow-lg sm:h-28 sm:w-28"
-            />
+            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-4 border-ink/80 bg-card shadow-lg sm:h-28 sm:w-28">
+              <Media
+                src={logoUrl}
+                alt={sponsorLogoAlt(displayName)}
+                className="h-full w-full object-cover"
+                sizes="sponsorLogo"
+                loading="eager"
+              />
+            </div>
           ) : (
             <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-ink/80 bg-accent/20 text-xl font-bold text-paper shadow-lg sm:h-28 sm:w-28">
               {initials}

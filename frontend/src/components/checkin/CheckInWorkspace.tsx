@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 import { CheckInAttendeesPanel } from "@/components/checkin/CheckInAttendeesPanel";
@@ -7,7 +8,6 @@ import { CheckInCompactHeader } from "@/components/checkin/CheckInCompactHeader"
 import { CheckInDoorStatsPanel } from "@/components/checkin/CheckInDoorStatsPanel";
 import { CheckInOfflinePanel } from "@/components/checkin/CheckInOfflinePanel";
 import { CheckInTabNav, type CheckInTab } from "@/components/checkin/CheckInTabNav";
-import { QrScanner } from "@/components/checkin/QrScanner";
 import { RecentScansStrip } from "@/components/checkin/RecentScansStrip";
 import { ScanResultOverlay } from "@/components/checkin/ScanResultOverlay";
 import { toRecentScan, type RecentScanRow } from "@/components/checkin/scan-result-utils";
@@ -28,6 +28,21 @@ import {
   isBrowserOnline,
   loadScannerQueue,
 } from "@/lib/pwa/offline-scanner-queue";
+
+const QrScanner = dynamic(
+  () => import("@/components/checkin/QrScanner").then((m) => m.QrScanner),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-[240px] items-center justify-center rounded-[var(--radius-lg)] bg-surface-inset text-sm text-muted-foreground"
+        aria-busy
+      >
+        Starting camera…
+      </div>
+    ),
+  },
+);
 import { useOnlineStatus } from "@/lib/pwa/use-online-status";
 import { playCheckInScanSound } from "@/lib/ui-sounds";
 

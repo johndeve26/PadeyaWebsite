@@ -135,6 +135,7 @@ export function TaxonomyEventCard({
               "padeya-image-zoom h-full w-full object-cover",
               compact ? "absolute inset-0" : "",
             )}
+            sizes="eventCard"
           />
         ) : (
           <div

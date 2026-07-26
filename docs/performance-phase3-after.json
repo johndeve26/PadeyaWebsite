@@ -1,0 +1,74 @@
+{
+  "label": "PHASE3_AFTER_WORKSPACE",
+  "brand": "Pàdéyá",
+  "captured_at": "2026-07-26T00:50:00.000Z",
+  "deploy_status": "NOT YET DEPLOYED",
+  "notes": [
+    "Code + local build measurements only until production deploy.",
+    "Do not claim LIVE LAB CWV wins until post-deploy Lighthouse remeasure.",
+    "Fan Passport remains force-dynamic / revalidate=0 / no-store."
+  ],
+  "code_level_changes": {
+    "label": "CODE-LEVEL IMPROVEMENT",
+    "media": "Media.tsx → next/image for trusted hosts; priority/sizes/eager props",
+    "remote_patterns": [
+      "padeya.com/media/**",
+      "www.padeya.com/media/**",
+      "padeyawebsite.onrender.com/media/**",
+      "localhost:8000/media/**",
+      "127.0.0.1:8000/media/**"
+    ],
+    "no_hostname_wildcard": true,
+    "lcp_priority_routes": [
+      "EventPublicView banner",
+      "LegacyPublicPageRenderer cover",
+      "SponsorBrandProfileHero cover",
+      "MerchProductDetailView hero"
+    ],
+    "card_sizes": ["eventCard", "merchCard"],
+    "logo_cls": "explicit width+height style (removed width:auto)",
+    "font": "Manrope variable (font-weight 200 800) via next/font — unicode-range subsets",
+    "font_primary_latin_woff2_bytes_local_build": 24576,
+    "font_all_subset_woff2_bytes_local_build": 74804,
+    "dynamic_imports": [
+      "EventLocationMapCard",
+      "EventGallery (+ click-to-load YouTube facade)",
+      "QrScanner (check-in + merch pickup)",
+      "TicketQrPanel in TicketQrModal",
+      "NotificationBell + HeaderUserMenu in SiteHeader"
+    ],
+    "pwa": "service worker register deferred via requestIdleCallback",
+    "paystack": "already on-demand script — unchanged",
+    "ga4": "consent + production gated — unchanged"
+  },
+  "local_build": {
+    "label": "LOCAL LAB MEASURED",
+    "npm_run_build": "passed",
+    "fan_passport_route": "ƒ /f/[username] (dynamic)",
+    "events_hub": "○ /events ISR ≈2m",
+    "html5_qrcode_chunk": "isolated lazy chunk (~377KB raw / ~109KB gzip) — not in anonymous critical path",
+    "largest_js_chunks_raw_bytes": [
+      { "file": "1j8z6ug_koq2q.js", "bytes": 376989, "gzip_bytes": 109430, "contains": "html5-qrcode" },
+      { "file": "2-x9vpdvzi32f.js", "bytes": 232684, "gzip_bytes": 72664 },
+      { "file": "37n2y244i6xgf.js", "bytes": 141865, "gzip_bytes": 38731 }
+    ]
+  },
+  "lighthouse_after_deploy": {
+    "label": "NOT YET DEPLOYED",
+    "routes": []
+  },
+  "field_cwv": {
+    "label": "NOT MEASURED",
+    "recommendation": "Optional lightweight web-vitals sampling (LCP/CLS/INP/FCP/TTFB) with consent + sampling — not built in this phase"
+  },
+  "tests": {
+    "label": "LOCAL LAB MEASURED",
+    "vitest_phase3": "16 passed (media helpers, LCP priority scope, remotePatterns, anonymous chrome, logo CLS, fan privacy)",
+    "test_seo": "passed (smoke + 100 seo unit tests)",
+    "fan_passport_privacy": "force-dynamic + revalidate=0 asserted"
+  },
+  "http_after_deploy": {
+    "label": "NOT YET DEPLOYED",
+    "command": "PERF_BASE_URL=https://padeya.com PERF_API_URL=https://padeyawebsite.onrender.com PERF_SAMPLES=3 node frontend/scripts/performance-production-audit.mjs"
+  }
+}

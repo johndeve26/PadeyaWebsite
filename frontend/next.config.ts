@@ -23,6 +23,36 @@ const nextConfig: NextConfig = {
   images: {
     // Official brand PNGs are served from /public/brand
     formats: ["image/avif", "image/webp"],
+    // Trusted asset hosts only — no hostname "**" (SSRF-style risk).
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "padeya.com",
+        pathname: "/media/**",
+      },
+      {
+        protocol: "https",
+        hostname: "www.padeya.com",
+        pathname: "/media/**",
+      },
+      {
+        protocol: "https",
+        hostname: "padeyawebsite.onrender.com",
+        pathname: "/media/**",
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+        port: "8000",
+        pathname: "/media/**",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "8000",
+        pathname: "/media/**",
+      },
+    ],
   },
   async rewrites() {
     // beforeFiles: proxy API before App Router resolves /api/* as a page 404.

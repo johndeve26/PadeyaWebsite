@@ -1,8 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
-import { TicketQrPanel } from "@/components/tickets/TicketQrPanel";
 import {
   Alert,
   Badge,
@@ -11,6 +11,20 @@ import {
   SkeletonLoader,
   useToast,
 } from "@/components/ui";
+
+const TicketQrPanel = dynamic(
+  () =>
+    import("@/components/tickets/TicketQrPanel").then((m) => m.TicketQrPanel),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="mx-auto h-[280px] w-full max-w-[280px] animate-pulse rounded-[var(--radius-xl)] bg-surface-inset"
+        aria-busy
+      />
+    ),
+  },
+);
 import { trackTicketDownloaded, trackTicketQrClicked } from "@/lib/analytics";
 import { downloadTicketPdf, fetchTicket } from "@/lib/commerce-api";
 import {
