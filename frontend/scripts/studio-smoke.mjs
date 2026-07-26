@@ -127,7 +127,15 @@ assert.match(mapFields, /PlacesAutocompleteInput/);
 assert.match(mapFields, /Open map preview/);
 assert.match(mapFields, /Advanced location details/);
 assert.match(mapFields, /Map location is ready/);
+assert.match(mapFields, /ensureTaxonomyFromPlaceHints/);
 assert.doesNotMatch(mapFields, /Coordinates ready for map/);
+assert.ok(exists("src/lib/taxonomy-resolve-place.ts"));
+const locationStepSlim = read("src/components/events/studio/steps/LocationStep.tsx");
+assert.match(locationStepSlim, /Place on Pàdéyá taxonomy|LocationTaxonomyFields/);
+assert.doesNotMatch(
+  locationStepSlim,
+  /label="Area"[\s\S]*label="City"[\s\S]*label="State"[\s\S]*label="Country"/,
+);
 assert.ok(exists("src/components/events/studio/LocationPublicPreview.tsx"));
 assert.ok(exists("src/lib/location-studio-preview.ts"));
 assert.ok(exists("src/lib/location-studio.test.ts"));

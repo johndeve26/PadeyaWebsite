@@ -140,16 +140,26 @@ export function placeResultToSelection(
   if (!coords) return null;
 
   const components = place.address_components;
-  const areaHint =
-    component(components, "neighborhood") ||
-    component(components, "sublocality") ||
-    component(components, "sublocality_level_1");
   const cityHint =
     component(components, "locality") ||
+    component(components, "postal_town") ||
     component(components, "administrative_area_level_2");
   const stateHint = component(components, "administrative_area_level_1");
   const countryHint = component(components, "country");
   const postcode = component(components, "postal_code");
+  // Prefer neighbourhood / sublocality; fall back to LGA only when it differs
+  // from the city line (avoids cityHint === areaHint duplicates).
+  const areaRaw =
+    component(components, "neighborhood") ||
+    component(components, "sublocality") ||
+    component(components, "sublocality_level_1") ||
+    component(components, "sublocality_level_2");
+  const areaHint =
+    areaRaw ||
+    (component(components, "administrative_area_level_2") &&
+    component(components, "administrative_area_level_2") !== cityHint
+      ? component(components, "administrative_area_level_2")
+      : "");
 
   const placeId = place.place_id || "";
   const placeUrl =

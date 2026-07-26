@@ -10,6 +10,10 @@ import {
   type PlaceSelection,
 } from "@/lib/google-maps";
 import { studioMapsOpenUrl } from "@/lib/location-studio-preview";
+import {
+  publicLabelFromResolvedPlace,
+  ensureTaxonomyFromPlaceHints,
+} from "@/lib/taxonomy-resolve-place";
 
 import { StudioFieldGroup, StudioMicrocopy } from "./studio-ui";
 import type { EventStudioValues } from "./types";
@@ -55,6 +59,7 @@ export function LocationMapFields({
         ? values.country
         : null;
   const [searchDraft, setSearchDraft] = useState("");
+  const [resolvingTaxonomy, setResolvingTaxonomy] = useState(false);
 
   const applyPlace = useCallback(
     (place: PlaceSelection) => {
@@ -67,41 +72,79 @@ export function LocationMapFields({
       onChange("google_maps_place_url", place.placeUrl);
       onChange("google_maps_share_url", place.placeUrl);
       if (place.postcode) onChange("postcode", place.postcode);
-      if (place.cityHint && !values.city.trim()) onChange("city", place.cityHint);
-      if (place.stateHint && !values.state.trim()) onChange("state", place.stateHint);
-      if (place.countryHint && !values.country.trim()) {
-        onChange("country", place.countryHint);
-      }
-      if (place.areaHint && !values.area.trim()) {
-        onChange("area", place.areaHint);
-      }
-      if (!values.public_location_label.trim()) {
-        const label = [place.areaHint || place.name, place.cityHint || place.stateHint]
-          .filter(Boolean)
-          .join(", ");
-        if (label) onChange("public_location_label", label);
-      }
+
+      // Places is source of truth for a new pick — overwrite stale geo labels.
+      // Clear taxonomy leaf until resolve finishes so UI does not keep Lekki/etc.
+      onChange("location_id", "");
+      onChange("country", place.countryHint || "");
+      onChange("state", place.stateHint || "");
+      onChange("city", place.cityHint || "");
+      onChange("area", place.areaHint || "");
+
+      const publicLabel = [
+        place.areaHint || place.name,
+        place.cityHint || place.stateHint,
+      ]
+        .filter(Boolean)
+        .join(", ");
+      if (publicLabel) onChange("public_location_label", publicLabel);
+
       const approx = approximateCoordsFromExact(
         Number(place.latitude),
         Number(place.longitude),
       );
-      if (!values.approximate_latitude) {
-        onChange("approximate_latitude", approx.latitude);
-      }
-      if (!values.approximate_longitude) {
-        onChange("approximate_longitude", approx.longitude);
-      }
-      if (!values.approximate_map_label.trim()) {
-        const approxLabel =
-          values.public_location_label.trim() ||
-          [place.areaHint || place.cityHint, place.stateHint || place.countryHint]
-            .filter(Boolean)
-            .join(", ");
-        if (approxLabel) onChange("approximate_map_label", approxLabel);
-      }
+      onChange("approximate_latitude", approx.latitude);
+      onChange("approximate_longitude", approx.longitude);
+      const approxLabel =
+        publicLabel ||
+        [place.areaHint || place.cityHint, place.stateHint || place.countryHint]
+          .filter(Boolean)
+          .join(", ");
+      if (approxLabel) onChange("approximate_map_label", approxLabel);
+
       setSearchDraft("");
+
+      // Sync taxonomy cascade (location_id) from Places — create missing city/area.
+      setResolvingTaxonomy(true);
+      void ensureTaxonomyFromPlaceHints(
+        {
+          countryHint: place.countryHint,
+          stateHint: place.stateHint,
+          cityHint: place.cityHint,
+          areaHint: place.areaHint,
+        },
+        { createMissing: true },
+      )
+        .then((resolved) => {
+          if (!resolved) {
+            onChange("location_id", "");
+            return;
+          }
+          onChange("location_id", resolved.locationId);
+          // Prefer taxonomy display names when matched (canonical hub labels).
+          onChange("country", resolved.country || place.countryHint || "");
+          onChange("state", resolved.state || place.stateHint || "");
+          onChange("city", resolved.city || place.cityHint || "");
+          // Keep Google area hint when taxonomy has no matching area leaf.
+          onChange("area", resolved.area || place.areaHint || "");
+          const taxonomyLabel = publicLabelFromResolvedPlace(
+            resolved,
+            place.areaHint,
+            place.cityHint,
+          );
+          if (taxonomyLabel) {
+            onChange("public_location_label", taxonomyLabel);
+            onChange("approximate_map_label", taxonomyLabel);
+          }
+        })
+        .catch(() => {
+          /* keep Places labels; host can set taxonomy manually */
+        })
+        .finally(() => {
+          setResolvingTaxonomy(false);
+        });
     },
-    [onChange, values],
+    [onChange],
   );
 
   function tryApplyMapsLink(raw: string) {
@@ -133,7 +176,8 @@ export function LocationMapFields({
     <>
       <StudioFieldGroup title="Venue search">
         <StudioMicrocopy>
-          We&apos;ll fill the venue name, address, area, and coordinates automatically.
+          Search fills venue, address, coordinates, and the place hierarchy for
+          discovery.
         </StudioMicrocopy>
 
         {!values.latitude || !values.longitude ? (
@@ -141,12 +185,14 @@ export function LocationMapFields({
             className="rounded-[var(--radius-sm)] border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground"
             role="status"
           >
-            Pick a venue from search, paste a Google Maps link, or use Advanced location
-            details to enter coordinates manually.
+            Pick a venue from search, paste a Google Maps link, or use Advanced
+            location details to enter coordinates manually.
           </p>
         ) : (
           <p className="text-xs font-semibold text-primary" role="status">
-            Map location is ready.
+            {resolvingTaxonomy
+              ? "Matching place for discovery (adding missing city/area if needed)…"
+              : "Map location is ready."}
           </p>
         )}
 
@@ -185,8 +231,8 @@ export function LocationMapFields({
         </summary>
         <div className="space-y-4 border-t border-border px-4 py-4">
           <StudioMicrocopy>
-            These are filled automatically from Google Maps. Only edit if you know what
-            you&apos;re doing.
+            These are filled automatically from Google Maps. Only edit if you
+            know what you&apos;re doing.
           </StudioMicrocopy>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -217,7 +263,9 @@ export function LocationMapFields({
             <Input
               label="Approximate longitude"
               value={values.approximate_longitude}
-              onChange={(e) => onChange("approximate_longitude", e.target.value)}
+              onChange={(e) =>
+                onChange("approximate_longitude", e.target.value)
+              }
               disabled={disabled}
               placeholder="3.43"
             />

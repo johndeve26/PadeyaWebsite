@@ -129,35 +129,6 @@ export function LocationStep({
           disabled={onlineOnly}
           placeholder="14 Palm Close, Lekki Phase 1"
         />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Input
-            label="Area"
-            hint="Neighbourhood or district."
-            value={values.area}
-            onChange={(e) => onChange("area", e.target.value)}
-            disabled={onlineOnly}
-          />
-          <Input
-            label="City"
-            value={values.city}
-            onChange={(e) => onChange("city", e.target.value)}
-            disabled={onlineOnly}
-          />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Input
-            label="State"
-            value={values.state}
-            onChange={(e) => onChange("state", e.target.value)}
-            disabled={onlineOnly}
-          />
-          <Input
-            label="Country"
-            value={values.country}
-            onChange={(e) => onChange("country", e.target.value)}
-            disabled={onlineOnly}
-          />
-        </div>
         {countryUsesPostcode(values.country) && !onlineOnly ? (
           <Input
             label="Postcode"

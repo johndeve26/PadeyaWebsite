@@ -74,32 +74,108 @@ export function LocationTaxonomyFields({
 
   useEffect(() => {
     let alive = true;
-    if (!values.location_id) {
-      return () => {
-        alive = false;
-      };
+
+    async function hydrateFromLocationId(locationId: string) {
+      const all = await fetchTaxonomyLocations();
+      if (!alive) return false;
+      const node = all.find((l) => l.id === locationId);
+      if (!node) return false;
+      const detail = await fetchTaxonomyLocationDetail(node.kind, node.slug);
+      if (!alive) return false;
+      const byKind = Object.fromEntries(
+        [...detail.ancestors, detail.location].map((l) => [l.kind, l]),
+      ) as Partial<Record<LocationKind, TaxonomyLocation>>;
+      setCascade({
+        country: byKind.country ?? null,
+        state: byKind.state ?? null,
+        city: byKind.city ?? null,
+        area: byKind.area ?? null,
+      });
+      return true;
     }
-    void fetchTaxonomyLocations()
-      .then(async (all) => {
-        const node = all.find((l) => l.id === values.location_id);
-        if (!node || !alive) return;
-        const detail = await fetchTaxonomyLocationDetail(node.kind, node.slug);
+
+    async function hydrateFromLabels() {
+      if (!values.country.trim() || countries.length === 0) {
+        if (!values.location_id) resetCascadeUi();
+        return;
+      }
+      const country =
+        countries.find(
+          (c) =>
+            c.name.trim().toLowerCase() === values.country.trim().toLowerCase(),
+        ) ?? null;
+      if (!country) {
+        if (!values.location_id) resetCascadeUi();
+        return;
+      }
+      const nextStates = await loadChildren("state", country.id);
+      if (!alive) return;
+      setStates(nextStates);
+      const state =
+        nextStates.find(
+          (s) =>
+            s.name.trim().toLowerCase() === values.state.trim().toLowerCase(),
+        ) ?? null;
+      let nextCities: TaxonomyLocation[] = [];
+      let city: TaxonomyLocation | null = null;
+      if (state) {
+        nextCities = await loadChildren("city", state.id);
         if (!alive) return;
-        const byKind = Object.fromEntries(
-          [...detail.ancestors, detail.location].map((l) => [l.kind, l]),
-        ) as Partial<Record<LocationKind, TaxonomyLocation>>;
-        setCascade({
-          country: byKind.country ?? null,
-          state: byKind.state ?? null,
-          city: byKind.city ?? null,
-          area: byKind.area ?? null,
-        });
-      })
-      .catch(() => undefined);
+        setCities(nextCities);
+        city =
+          nextCities.find(
+            (c) =>
+              c.name.trim().toLowerCase() ===
+              values.city.trim().toLowerCase(),
+          ) ?? null;
+      } else {
+        setCities([]);
+      }
+      let area: TaxonomyLocation | null = null;
+      if (city) {
+        const nextAreas = await loadChildren("area", city.id);
+        if (!alive) return;
+        setAreas(nextAreas);
+        area =
+          nextAreas.find(
+            (a) =>
+              a.name.trim().toLowerCase() ===
+              values.area.trim().toLowerCase(),
+          ) ?? null;
+      } else {
+        setAreas([]);
+      }
+      setCascade({ country, state, city, area });
+    }
+
+    void (async () => {
+      if (values.location_id) {
+        const ok = await hydrateFromLocationId(values.location_id).catch(
+          () => false,
+        );
+        if (!ok && alive) await hydrateFromLabels().catch(() => undefined);
+        return;
+      }
+      if (values.country.trim()) {
+        await hydrateFromLabels().catch(() => undefined);
+        return;
+      }
+      resetCascadeUi();
+    })();
+
     return () => {
       alive = false;
     };
-  }, [values.location_id]);
+    // Re-hydrate when Maps resolve writes location_id or geo labels.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    values.location_id,
+    values.country,
+    values.state,
+    values.city,
+    values.area,
+    countries,
+  ]);
 
   useEffect(() => {
     let alive = true;
@@ -135,6 +211,14 @@ export function LocationTaxonomyFields({
     setSuggestKind(null);
     setSuggestName("");
     setSuggestError(null);
+  }
+
+  function resetCascadeUi() {
+    setCascade(emptyCascade());
+    setStates([]);
+    setCities([]);
+    setAreas([]);
+    closeSuggest();
   }
 
   function applyLeaf(node: TaxonomyLocation | null, next: LocationCascadeValue) {
@@ -242,10 +326,10 @@ export function LocationTaxonomyFields({
           {cityRequired ? " *" : ""}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Country → state → city → area. Missing a city? Choose{" "}
-          <span className="font-semibold text-foreground">Other…</span> under
-          City. Missing an area? Suggest one. Both are saved for other hosts to
-          use next time.
+          Filled from your Maps pick when possible (missing cities/areas are
+          added for other hosts). Adjust country → state → city → area, or choose{" "}
+          <span className="font-semibold text-foreground">Other…</span> to
+          suggest manually.
         </p>
       </div>
       <LocationSelector
