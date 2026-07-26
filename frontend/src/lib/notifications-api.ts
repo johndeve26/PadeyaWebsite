@@ -293,6 +293,14 @@ export type PushTestResult = {
   title?: string;
   body?: string;
   action_url?: string;
+  provider?: string;
+  /** True only when provider is web_push (real browser delivery). */
+  browser_delivery?: boolean;
+  subscriptions?: number;
+  sent?: number;
+  failed?: number;
+  removed_stale?: number;
+  status?: string | null;
 };
 
 export async function testMyPush() {
@@ -334,14 +342,5 @@ export async function lookupAdminPushSubscriptions(params: {
   );
 }
 
-/** Convert VAPID public key to Uint8Array for PushManager.subscribe */
-export function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(base64);
-  const output = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i += 1) {
-    output[i] = raw.charCodeAt(i);
-  }
-  return output;
-}
+/** @deprecated Prefer `@/lib/push-subscription` — kept for existing imports. */
+export { urlBase64ToUint8Array } from "@/lib/push-subscription";

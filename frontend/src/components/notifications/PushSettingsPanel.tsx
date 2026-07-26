@@ -8,6 +8,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { formatDateTime } from "@/lib/format";
 import type { PushSubscriptionDevice } from "@/lib/notifications-api";
 import {
+  buildPushDiagnosticLines,
   PUSH_UI_STATUS,
   resolvePushUiStatus,
   UNSUPPORTED_PUSH_HELPER,
@@ -27,6 +28,7 @@ function statusBadgeTone(
 /**
  * Compact push status card for notification settings.
  * Permission is requested only after Enable — never on load.
+ * Status reflects real subscription + server registration, not permission alone.
  */
 export function PushSettingsPanel() {
   const push = usePushNotifications();
@@ -38,22 +40,43 @@ export function PushSettingsPanel() {
     adminEnabled: push.adminEnabled,
     permission: push.permission,
     subscribed: push.subscribed,
+    serverRegisteredHere: push.serverRegisteredHere,
     activeDeviceCount: activeDevices.length,
     deviceCount: push.devices.length,
     needsHomeScreenForPush,
     isStandalone,
+    serviceWorkerActive: push.serviceWorkerActive,
+    error: push.error,
   });
   const meta = PUSH_UI_STATUS[status];
+  const diagnostics = buildPushDiagnosticLines({
+    permission: push.permission === "unsupported" ? null : push.permission,
+    serviceWorkerActive: push.serviceWorkerActive,
+    subscribed: push.subscribed,
+    serverRegisteredHere: push.serverRegisteredHere,
+  });
 
   const canEnable =
     (status === "not_enabled" || status === "no_active_device") &&
     push.supported &&
     push.adminEnabled &&
+    push.permission !== "granted" &&
     !push.busy;
+
+  const showRepair =
+    push.canRepair &&
+    (status === "permission_granted_not_subscribed" ||
+      status === "subscription_stale" ||
+      status === "no_active_device");
 
   const showDevices = push.devices.length > 0;
   const showInstallDetails =
     status === "install_required" || status === "unsupported";
+  const showDiagnostics =
+    push.supported ||
+    status === "permission_granted_not_subscribed" ||
+    status === "subscription_stale" ||
+    status === "enabled";
 
   return (
     <Card className="min-w-0 space-y-4 overflow-hidden p-4 sm:p-5">
@@ -71,6 +94,31 @@ export function PushSettingsPanel() {
       </div>
 
       <p className="min-w-0 text-sm leading-relaxed text-foreground">{meta.body}</p>
+
+      {showDiagnostics ? (
+        <dl className="grid min-w-0 grid-cols-1 gap-1.5 rounded-md border border-border/70 bg-muted/15 px-3 py-2.5 text-xs sm:grid-cols-2">
+          <div className="flex min-w-0 justify-between gap-2 sm:block">
+            <dt className="text-muted-foreground">Permission</dt>
+            <dd className="font-medium text-foreground">{diagnostics.permission}</dd>
+          </div>
+          <div className="flex min-w-0 justify-between gap-2 sm:block">
+            <dt className="text-muted-foreground">Service worker</dt>
+            <dd className="font-medium text-foreground">
+              {diagnostics.serviceWorker}
+            </dd>
+          </div>
+          <div className="flex min-w-0 justify-between gap-2 sm:block">
+            <dt className="text-muted-foreground">This device</dt>
+            <dd className="font-medium text-foreground">{diagnostics.thisDevice}</dd>
+          </div>
+          <div className="flex min-w-0 justify-between gap-2 sm:block">
+            <dt className="text-muted-foreground">Server registration</dt>
+            <dd className="font-medium text-foreground">
+              {diagnostics.serverRegistration}
+            </dd>
+          </div>
+        </dl>
+      ) : null}
 
       {push.error ? (
         <Alert tone="danger" title="Could not update">
@@ -104,6 +152,17 @@ export function PushSettingsPanel() {
             onClick={() => void push.enable()}
           >
             {push.busy ? "Enabling…" : "Enable notifications"}
+          </Button>
+        ) : null}
+
+        {showRepair ? (
+          <Button
+            className="w-full sm:w-auto"
+            size="sm"
+            disabled={push.busy}
+            onClick={() => void push.repair()}
+          >
+            {push.busy ? "Repairing…" : "Repair push notifications"}
           </Button>
         ) : null}
 

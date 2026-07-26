@@ -178,23 +178,31 @@ def enqueue_push(
         event.status == "pending"
         and not settings_cfg.push_queue_enabled
     ):
-        send_push_event(db, event.id)
+        send_push_event(db, event.id)  # discards provider result
 
     return event
 
 
-def send_push_event(db: Session, push_event_id: UUID) -> PushEvent:
-    """Attempt delivery for one outbox row."""
+def send_push_event(
+    db: Session, push_event_id: UUID
+) -> tuple[PushEvent, "ProviderSendResult | None"]:
+    """Attempt delivery for one outbox row.
+
+    Returns ``(event, provider_result)``. ``provider_result`` is set when a
+    provider send was attempted.
+    """
+    from app.push.provider import ProviderSendResult
+
     event = db.get(PushEvent, push_event_id)
     if event is None:
         raise LookupError("Push event not found")
     if event.status in {"sent", "skipped"}:
-        return event
+        return event, None
     if event.attempts >= MAX_ATTEMPTS:
         event.status = "failed"
         event.error_message = event.error_message or "max_attempts"
         db.flush()
-        return event
+        return event, None
 
     settings = get_active_push_settings(db)
     if settings is None or not settings.push_enabled:
@@ -202,7 +210,7 @@ def send_push_event(db: Session, push_event_id: UUID) -> PushEvent:
         event.error_message = "push_disabled"
         event.last_attempt_at = datetime.now(UTC)
         db.flush()
-        return event
+        return event, None
 
     event.attempts += 1
     event.last_attempt_at = datetime.now(UTC)
@@ -220,7 +228,7 @@ def send_push_event(db: Session, push_event_id: UUID) -> PushEvent:
         tag=str(event.notification_id or event.id),
         timestamp_ms=int(datetime.now(UTC).timestamp() * 1000),
     )
-    result = provider.send(
+    result: ProviderSendResult = provider.send(
         db,
         user_id=event.recipient_user_id,
         subscriptions=subs,
@@ -245,7 +253,7 @@ def send_push_event(db: Session, push_event_id: UUID) -> PushEvent:
         event.error_message = result.error
 
     db.flush()
-    return event
+    return event, result
 
 
 TEST_PUSH_TITLE = "Pàdéyá test notification"
@@ -303,7 +311,11 @@ def send_test_push(
     email: str | None = None,
     actor_user_id: UUID | None = None,
 ) -> dict[str, Any]:
-    """Enqueue + immediately deliver a fixed-copy test push for a user."""
+    """Enqueue + immediately deliver a fixed-copy test push for a user.
+
+    Returns sanitized per-subscription delivery counts. Never echoes endpoints
+    or push keys. Client cannot target an arbitrary endpoint.
+    """
     user = resolve_user_for_push(db, user_id=user_id, email=email)
 
     settings = get_active_push_settings(db)
@@ -314,6 +326,7 @@ def send_test_push(
         raise ValueError("Push is not enabled")
 
     provider_mode = (settings.provider or "log").strip().lower()
+    browser_delivery = provider_mode == "web_push"
     subs = list_user_subscriptions(db, user_id=user.id, include_inactive=False)
     if not subs:
         record_push_test(
@@ -351,10 +364,47 @@ def send_test_push(
         .order_by(PushEvent.created_at.desc())
         .limit(1)
     )
+    sent = 0
+    failed = 0
+    removed_stale = 0
+    provider_result = None
     if event is not None and event.status == "pending":
-        send_push_event(db, event.id)
+        event, provider_result = send_push_event(db, event.id)
+        if provider_result is not None:
+            sent = int(provider_result.delivered or 0)
+            failed = int(provider_result.failed or 0)
+            removed_stale = int(provider_result.removed_stale or 0)
+        elif event.status == "sent":
+            sent = len(subs)
+    elif event is not None and event.status == "sent":
+        # Inline drain already delivered (PUSH_QUEUE_ENABLED=false).
+        sent = len(subs)
+
+    if browser_delivery and (event is None or event.status != "sent" or sent < 1):
+        record_push_test(
+            db,
+            actor_user_id=actor_user_id or user.id,
+            ok=False,
+            error=(event.error_message if event else None) or "delivery_failed",
+        )
+        raise ValueError(
+            "Test push did not reach any active device. "
+            "Try Repair push notifications, then send again."
+        )
+
+    if not browser_delivery and sent < 1:
+        sent = len(subs)
 
     record_push_test(db, actor_user_id=actor_user_id or user.id, ok=True)
+    message = (
+        f"Test push processed ({provider_mode}) to "
+        f"{len(subs)} active device(s)."
+        if browser_delivery
+        else (
+            f"Test recorded with provider={provider_mode} "
+            f"({len(subs)} subscription(s)). Browser delivery requires web_push."
+        )
+    )
     return {
         "ok": True,
         "user_id": str(user.id),
@@ -362,16 +412,18 @@ def send_test_push(
         "notification_id": str(notif.id) if notif else None,
         "push_event_id": str(event.id) if event else None,
         "provider": provider_mode,
+        "browser_delivery": browser_delivery,
         "status": event.status if event else None,
+        "subscriptions": len(subs),
+        "sent": sent,
+        "failed": failed,
+        "removed_stale": removed_stale,
         "active_subscription_count": len(subs),
         "has_active_device": True,
         "title": TEST_PUSH_TITLE,
         "body": TEST_PUSH_BODY,
         "action_url": TEST_PUSH_ACTION_URL,
-        "message": (
-            f"Test push processed ({provider_mode}) to "
-            f"{len(subs)} active device(s)."
-        ),
+        "message": message,
     }
 
 

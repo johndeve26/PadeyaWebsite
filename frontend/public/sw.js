@@ -4,7 +4,7 @@
  * Never trust or surface sensitive fields from the payload.
  */
 
-const VERSION = "padeya-pwa-v24";
+const VERSION = "padeya-pwa-v25";
 const PRECACHE = [
   "/offline",
   "/manifest.webmanifest",
@@ -195,6 +195,15 @@ function parsePushEventData(event) {
 
 self.addEventListener("push", (event) => {
   const data = parsePushEventData(event);
+  // Safe observability only — never log payload secrets / endpoints / keys.
+  try {
+    console.info("[padeya.push] push_received_service_worker", {
+      tag: data.tag,
+      has_notification_id: Boolean(data.notification_id),
+    });
+  } catch {
+    /* ignore */
+  }
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,

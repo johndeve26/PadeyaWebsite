@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 
 import { ApiError } from "@/lib/api";
 import {
@@ -10,8 +10,8 @@ import {
   subscribePush,
   testMyPush,
   unsubscribePush,
-  urlBase64ToUint8Array,
   type PushSubscriptionDevice,
+  type PushTestResult,
 } from "@/lib/notifications-api";
 import {
   detectPushDeviceContext,
@@ -21,6 +21,12 @@ import {
   PUSH_ENABLED_COPY,
   type PushDeviceContext,
 } from "@/lib/push-device";
+import {
+  endpointMatchesHint,
+  ensurePushSubscription,
+  logPushClientEvent,
+  subscriptionKeysComplete,
+} from "@/lib/push-subscription";
 
 const DISMISS_KEY = "padeya-push-prompt-dismissed";
 
@@ -57,6 +63,33 @@ export function clearPushPromptDismissed(): void {
   }
 }
 
+async function waitForServiceWorkerReady(
+  timeoutMs = 12_000,
+): Promise<ServiceWorkerRegistration> {
+  return Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise<never>((_, reject) => {
+      window.setTimeout(() => {
+        reject(
+          new Error(
+            "Service worker did not become ready. Reload this page (or reopen the installed app), then try again.",
+          ),
+        );
+      }, timeoutMs);
+    }),
+  ]);
+}
+
+function thisDeviceServerRegistered(
+  localEndpoint: string | null,
+  devices: PushSubscriptionDevice[],
+): boolean {
+  if (!localEndpoint) return false;
+  return devices.some(
+    (d) => d.is_active && endpointMatchesHint(localEndpoint, d.endpoint_hint),
+  );
+}
+
 /**
  * Browser push registration for Pàdéyá.
  *
@@ -66,12 +99,18 @@ export function clearPushPromptDismissed(): void {
  * 3. Browser permission prompt
  * 4. On grant → subscribe → POST /push/subscriptions → success
  * 5. On deny → helpful denied state (no subscription)
+ *
+ * "Enabled" requires a real PushSubscription + backend registration — not
+ * Notification.permission alone.
  */
 export function usePushNotifications() {
   const [supported, setSupported] = useState(false);
   const [adminEnabled, setAdminEnabled] = useState(false);
   const [permission, setPermission] = useState<PushPermissionState>("unknown");
   const [subscribed, setSubscribed] = useState(false);
+  const [serverRegisteredHere, setServerRegisteredHere] = useState(false);
+  const [serviceWorkerActive, setServiceWorkerActive] = useState(false);
+  const [localEndpoint, setLocalEndpoint] = useState<string | null>(null);
   const [devices, setDevices] = useState<PushSubscriptionDevice[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +119,38 @@ export function usePushNotifications() {
     detectPushDeviceContext(),
   );
   const [, startTransition] = useTransition();
+  const autoRepairRef = useRef(false);
+
+  const persistSubscription = useCallback(
+    async (sub: PushSubscription): Promise<PushSubscriptionDevice> => {
+      const json = sub.toJSON();
+      if (!subscriptionKeysComplete(json)) {
+        throw new Error("Browser did not return a complete push subscription.");
+      }
+      const platform = guessPushPlatform();
+      try {
+        const saved = await subscribePush({
+          endpoint: json.endpoint,
+          p256dh: json.keys.p256dh,
+          auth: json.keys.auth,
+          platform,
+          device_label: platform
+            ? `${platform.charAt(0).toUpperCase()}${platform.slice(1)} browser`
+            : "This browser",
+        });
+        logPushClientEvent("push_subscription_saved", {
+          platform: platform || "web",
+        });
+        return saved;
+      } catch (err) {
+        logPushClientEvent("push_subscription_save_failed", {
+          reason: err instanceof ApiError ? err.status : "error",
+        });
+        throw err;
+      }
+    },
+    [],
+  );
 
   const refresh = useCallback(async () => {
     // UX detection only — not used for security/authorization.
@@ -87,6 +158,8 @@ export function usePushNotifications() {
     const apiSupported = deviceCtx.pushSupported;
     let vapidOn = false;
     let isSubscribed = false;
+    let swActive = false;
+    let endpoint: string | null = null;
     const perm: PushPermissionState = deviceCtx.permission ?? "unsupported";
 
     try {
@@ -99,10 +172,14 @@ export function usePushNotifications() {
     if (apiSupported) {
       try {
         const reg = await navigator.serviceWorker.ready;
+        swActive = Boolean(reg.active || navigator.serviceWorker.controller);
         const sub = await reg.pushManager.getSubscription();
         isSubscribed = Boolean(sub);
+        endpoint = sub?.endpoint ?? null;
       } catch {
         isSubscribed = false;
+        swActive = false;
+        endpoint = null;
       }
     }
 
@@ -114,28 +191,124 @@ export function usePushNotifications() {
       deviceRows = [];
     }
 
+    const serverHere = thisDeviceServerRegistered(endpoint, deviceRows);
+
     startTransition(() => {
       setSupported(apiSupported);
       setAdminEnabled(vapidOn);
       setPermission(perm);
       setSubscribed(isSubscribed);
+      setServerRegisteredHere(serverHere);
+      setServiceWorkerActive(swActive);
+      setLocalEndpoint(endpoint);
       setDevices(deviceRows);
       setDevice(deviceCtx);
     });
+
+    return {
+      apiSupported,
+      vapidOn,
+      perm,
+      isSubscribed,
+      serverHere,
+      swActive,
+      endpoint,
+      deviceRows,
+      deviceCtx,
+    };
   }, [startTransition]);
+
+  const repair = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      const silent = Boolean(opts?.silent);
+      if (!silent) {
+        setBusy(true);
+        setError(null);
+        setNote(null);
+      }
+      try {
+        const deviceCtx = detectPushDeviceContext();
+        setDevice(deviceCtx);
+        if (!deviceCtx.pushSupported || !isPushApiSupported()) {
+          if (deviceCtx.needsHomeScreenForPush) {
+            throw new Error(
+              `${IOS_PUSH_HELPER.body} ${IOS_PUSH_HELPER.browsersNote}`,
+            );
+          }
+          throw new Error("Browser push is not supported on this device.");
+        }
+        if (deviceCtx.permission !== "granted") {
+          throw new Error(
+            "Notification permission is not allowed. Tap Enable notifications to grant access.",
+          );
+        }
+        const vapid = await fetchVapidPublicKey();
+        if (!vapid.enabled || !vapid.public_key) {
+          throw new Error("Push is not enabled by Pàdéyá admin yet.");
+        }
+        // Repair reuses an already-granted permission; it never prompts again.
+        const reg = await waitForServiceWorkerReady();
+        const { subscription, created } = await ensurePushSubscription(
+          reg,
+          vapid.public_key,
+        );
+        await persistSubscription(subscription);
+        logPushClientEvent("push_subscription_repaired", { created });
+        if (!silent) {
+          setNote(
+            created
+              ? "Push subscription repaired on this device."
+              : "Push registration synced with Pàdéyá.",
+          );
+        }
+        await refresh();
+        return true;
+      } catch (err) {
+        if (!silent) {
+          setError(
+            err instanceof ApiError
+              ? err.detail
+              : err instanceof Error
+                ? err.message
+                : "Could not repair push",
+          );
+        } else {
+          logPushClientEvent("push_subscription_reconcile_skipped", {
+            reason: err instanceof Error ? err.message.slice(0, 80) : "error",
+          });
+        }
+        return false;
+      } finally {
+        if (!silent) setBusy(false);
+      }
+    },
+    [persistSubscription, refresh],
+  );
 
   useEffect(() => {
     let cancelled = false;
     queueMicrotask(() => {
       void (async () => {
         if (cancelled) return;
-        await refresh();
+        const snap = await refresh();
+        if (cancelled || autoRepairRef.current) return;
+        // Lightweight one-shot reconcile: permission granted but missing
+        // local subscription and/or backend registration for this device.
+        const needsRepair =
+          snap.apiSupported &&
+          snap.vapidOn &&
+          snap.perm === "granted" &&
+          (!snap.isSubscribed || !snap.serverHere) &&
+          !snap.deviceCtx.needsHomeScreenForPush;
+        if (!needsRepair) return;
+        autoRepairRef.current = true;
+        await repair({ silent: true });
       })();
     });
     return () => {
       cancelled = true;
     };
-  }, [refresh]);
+  }, [refresh, repair]);
 
   const enable = useCallback(async () => {
     setBusy(true);
@@ -166,7 +339,6 @@ export function usePushNotifications() {
       setPermission(nextPerm);
       setDevice(detectPushDeviceContext());
       if (next === "denied") {
-        // Helpful denied state — do not treat as a hard error toast.
         setError(null);
         setNote(null);
         return;
@@ -176,50 +348,42 @@ export function usePushNotifications() {
           "Notification permission was dismissed. Tap Enable notifications to try again.",
         );
       }
-      const reg = await Promise.race([
-        navigator.serviceWorker.ready,
-        new Promise<never>((_, reject) => {
-          window.setTimeout(() => {
-            reject(
-              new Error(
-                "Service worker did not become ready. Reload this page (or reopen the installed app), then try Enable again.",
-              ),
-            );
-          }, 12_000);
-        }),
-      ]);
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          vapid.public_key,
-        ) as BufferSource,
-      });
-      const json = sub.toJSON();
-      const p256dh = json.keys?.p256dh;
-      const auth = json.keys?.auth;
-      if (!json.endpoint || !p256dh || !auth) {
-        throw new Error("Browser did not return a complete push subscription.");
-      }
-      const platform = guessPushPlatform();
-      await subscribePush({
-        endpoint: json.endpoint,
-        p256dh,
-        auth,
-        platform,
-        device_label: platform
-          ? `${platform.charAt(0).toUpperCase()}${platform.slice(1)} browser`
-          : "This browser",
-      });
+      const reg = await waitForServiceWorkerReady();
+      const { subscription } = await ensurePushSubscription(
+        reg,
+        vapid.public_key,
+      );
+      // Success UI only after backend persistence succeeds.
+      await persistSubscription(subscription);
       clearPushPromptDismissed();
-      setSubscribed(true);
-      setNote(PUSH_ENABLED_COPY);
       await refresh();
+      setNote(PUSH_ENABLED_COPY);
       try {
-        await testMyPush();
-        setNote(
-          "Push is enabled on this device. Check for a test notification from Pàdéyá.",
-        );
+        logPushClientEvent("push_send_attempt", { kind: "user_test" });
+        const result: PushTestResult = await testMyPush();
+        if (result.ok === false) {
+          logPushClientEvent("push_send_failed", {
+            kind: "user_test",
+            sent: result.sent ?? 0,
+          });
+          setNote(
+            `${PUSH_ENABLED_COPY} Device registered, but the test push did not deliver. Tap "Send test notification" to retry.`,
+          );
+        } else if (result.browser_delivery === false) {
+          setNote(
+            `${PUSH_ENABLED_COPY} Server recorded the test in log mode — browser delivery is off until admin sets provider to web_push.`,
+          );
+        } else {
+          logPushClientEvent("push_send_success", {
+            kind: "user_test",
+            sent: result.sent ?? 0,
+          });
+          setNote(
+            "Push is enabled on this device. Check for a test notification from Pàdéyá.",
+          );
+        }
       } catch {
+        logPushClientEvent("push_send_failed", { kind: "user_test" });
         setNote(
           `${PUSH_ENABLED_COPY} Tap "Send test notification" below to verify delivery.`,
         );
@@ -235,7 +399,7 @@ export function usePushNotifications() {
     } finally {
       setBusy(false);
     }
-  }, [refresh]);
+  }, [persistSubscription, refresh]);
 
   const disableThisDevice = useCallback(async () => {
     setBusy(true);
@@ -249,6 +413,8 @@ export function usePushNotifications() {
         await sub.unsubscribe();
       }
       setSubscribed(false);
+      setServerRegisteredHere(false);
+      setLocalEndpoint(null);
       setNote("Browser push disabled on this device.");
       await refresh();
     } catch (err) {
@@ -264,18 +430,16 @@ export function usePushNotifications() {
       setError(null);
       setNote(null);
       try {
+        const target = devices.find((d) => d.id === subscriptionId) || null;
         await removePushSubscription(subscriptionId);
-        const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.getSubscription();
-        if (sub) {
-          const listed = await fetchPushSubscriptions(true);
-          const stillActiveHere = listed.items.some(
-            (d) =>
-              d.is_active &&
-              d.endpoint_hint &&
-              sub.endpoint.endsWith(d.endpoint_hint.replace(/^…/, "")),
-          );
-          if (!stillActiveHere) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          const sub = await reg.pushManager.getSubscription();
+          if (
+            sub &&
+            target &&
+            endpointMatchesHint(sub.endpoint, target.endpoint_hint)
+          ) {
             try {
               await unsubscribePush(sub.endpoint);
             } catch {
@@ -283,7 +447,11 @@ export function usePushNotifications() {
             }
             await sub.unsubscribe();
             setSubscribed(false);
+            setServerRegisteredHere(false);
+            setLocalEndpoint(null);
           }
+        } catch {
+          /* SW may be unavailable when removing another device */
         }
         setNote("Device removed. It will no longer receive Pàdéyá push alerts.");
         await refresh();
@@ -293,7 +461,7 @@ export function usePushNotifications() {
         setBusy(false);
       }
     },
-    [refresh],
+    [devices, refresh],
   );
 
   const sendTest = useCallback(async () => {
@@ -301,11 +469,41 @@ export function usePushNotifications() {
     setError(null);
     setNote(null);
     try {
-      await testMyPush();
+      logPushClientEvent("push_send_attempt", { kind: "user_test" });
+      const result = await testMyPush();
+      if (result.ok === false) {
+        logPushClientEvent("push_send_failed", {
+          kind: "user_test",
+          sent: result.sent ?? 0,
+          failed: result.failed ?? 0,
+        });
+        throw new Error(
+          result.message ||
+            "Test push failed. Try Repair push notifications, then send again.",
+        );
+      }
+      if (result.browser_delivery === false) {
+        setNote(
+          "Test recorded in log mode. Browser devices will not receive it until admin sets provider to web_push.",
+        );
+        return;
+      }
+      logPushClientEvent("push_send_success", {
+        kind: "user_test",
+        sent: result.sent ?? 0,
+      });
+      const stale =
+        typeof result.removed_stale === "number" && result.removed_stale > 0
+          ? ` Removed ${result.removed_stale} stale device registration(s).`
+          : "";
       setNote(
-        "Test notification sent. Check your system tray or notification center.",
+        `Test notification sent${
+          typeof result.sent === "number" ? ` (${result.sent} device${result.sent === 1 ? "" : "s"})` : ""
+        }. Check your system tray or notification center.${stale}`,
       );
+      await refresh();
     } catch (err) {
+      logPushClientEvent("push_send_failed", { kind: "user_test" });
       setError(
         err instanceof ApiError
           ? err.detail
@@ -316,29 +514,41 @@ export function usePushNotifications() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [refresh]);
 
   const canOfferOptIn =
     supported &&
     adminEnabled &&
     !subscribed &&
     permission !== "denied" &&
-    permission !== "unsupported";
+    permission !== "unsupported" &&
+    permission !== "granted";
+
+  const canRepair =
+    supported &&
+    adminEnabled &&
+    permission === "granted" &&
+    (!subscribed || !serverRegisteredHere);
 
   return {
     supported,
     adminEnabled,
     permission,
     subscribed,
+    serverRegisteredHere,
+    serviceWorkerActive,
+    localEndpoint,
     devices,
     busy,
     error,
     note,
     canOfferOptIn,
+    canRepair,
     /** iPhone/iPad Home Screen context for helper copy */
     device,
     refresh,
     enable,
+    repair,
     disableThisDevice,
     removeDevice,
     sendTest,

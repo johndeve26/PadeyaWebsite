@@ -194,7 +194,7 @@ Enforcement layers:
 
 1. **Enqueue** — `sanitize_push_context` whitelist (`app/push/privacy.py`)
 2. **Wire** — `PushPayload.to_json()` keys only: `title`, `body`, `action_url`, `notification_id`, `tag`, `timestamp`, `icon`, `badge`
-3. **Service worker** — `ALLOWED_PUSH_KEYS` + scrub + `safeActionUrl` (`padeya-pwa-v24` in `public/sw.js`); never open Vault/checkout deep links from push
+3. **Service worker** — `ALLOWED_PUSH_KEYS` + scrub + `safeActionUrl` (`padeya-pwa-v25` in `public/sw.js`); never open Vault/checkout deep links from push
 
 Messaging defaults:
 

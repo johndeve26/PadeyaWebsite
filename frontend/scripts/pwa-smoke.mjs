@@ -39,9 +39,10 @@ for (const icon of manifest.icons) {
 
 // --- Service worker present & safe ---
 const sw = read("public/sw.js");
-assert.match(sw, /padeya-pwa-v24/);
+assert.match(sw, /padeya-pwa-v25/);
 assert.match(sw, /addEventListener\("push"/);
 assert.match(sw, /addEventListener\("notificationclick"/);
+assert.match(sw, /push_received_service_worker/);
 assert.match(sw, /action_url/);
 assert.match(sw, /sanitizePushPayload/);
 assert.match(sw, /ALLOWED_PUSH_KEYS/);
@@ -166,8 +167,10 @@ assert.doesNotMatch(
 );
 const pushPanel = read("src/components/notifications/PushSettingsPanel.tsx");
 assert.match(pushPanel, /Enable notifications/);
+assert.match(pushPanel, /Repair push notifications/);
 assert.match(pushPanel, /resolvePushUiStatus|PUSH_UI_STATUS/);
 assert.match(pushPanel, /Push notifications/);
+assert.match(pushPanel, /Permission|Service worker|This device|Server registration/);
 assert.match(pushPanel, /PushInstallDetails|How to install/);
 assert.match(pushPanel, /w-full sm:w-auto/);
 assert.match(pushPanel, /overflow-hidden|min-w-0/);
@@ -176,7 +179,10 @@ assert.match(pushPanel, /isStandalone|needsHomeScreenForPush/);
 assert.match(pushPanel, /Last active|deviceLastActive/);
 assert.match(pushPanel, /Disable on this device/);
 assert.match(pushPanel, /Remove/);
-assert.match(pushPanel, /install_required|unsupported|admin_disabled|no_active_device/);
+assert.match(
+  pushPanel,
+  /install_required|unsupported|admin_disabled|no_active_device|permission_granted_not_subscribed|subscription_stale/,
+);
 
 const installDetails = read("src/components/notifications/PushInstallDetails.tsx");
 assert.match(installDetails, /<details/);
@@ -217,9 +223,23 @@ assert.match(
   /You’ll get system notifications on this device even when Pàdéyá is closed/,
 );
 assert.match(pushDevice, /resolvePushUiStatus/);
+assert.match(pushDevice, /resolvePushPipelineState|permission_granted_not_subscribed/);
+assert.match(pushDevice, /subscription_stale/);
 assert.match(pushDevice, /install_required/);
 assert.match(pushDevice, /admin_disabled/);
 assert.match(pushDevice, /no_active_device/);
+assert.match(pushDevice, /buildPushDiagnosticLines/);
+const pushSub = read("src/lib/push-subscription.ts");
+assert.match(pushSub, /ensurePushSubscription|userVisibleOnly/);
+assert.match(pushSub, /urlBase64ToUint8Array/);
+assert.match(pushSub, /Missing VAPID public key/);
+assert.doesNotMatch(pushSub, /VAPID_PRIVATE|private_key/);
+const pushHook = read("src/hooks/usePushNotifications.ts");
+assert.match(pushHook, /repair/);
+assert.match(pushHook, /ensurePushSubscription/);
+assert.match(pushHook, /persistSubscription/);
+assert.match(pushHook, /requestPermission/);
+assert.match(pushHook, /never prompts again|reuses an already-granted permission/);
 assert.match(pushDevice, /IOS_PUSH_HELPER/);
 assert.match(
   pushDevice,
@@ -258,7 +278,6 @@ assert.match(toastLib, /safeToastActionHref/);
 assert.match(toastLib, /vault|checkout/);
 const toastBridge = read("src/components/notifications/NotificationPopupBridge.tsx");
 assert.match(toastBridge, /safeToastActionHref/);
-const pushHook = read("src/hooks/usePushNotifications.ts");
 assert.match(pushHook, /Notification\.requestPermission/);
 assert.match(pushHook, /isPushApiSupported|pushSupported/);
 assert.match(pushHook, /unsupported/);
@@ -321,7 +340,12 @@ const popupBridge = read(
 assert.match(popupBridge, /toast\.push/);
 assert.match(popupBridge, /safeToastCopy/);
 assert.match(popupBridge, /notification\.created|fetchPopupNotifications/);
-const notifCenter = read("src/app/dashboard/notifications/page.tsx");
+const notifCenterPage = read("src/app/dashboard/notifications/page.tsx");
+assert.match(notifCenterPage, /AccountNotificationsPanel/);
+assert.match(notifCenterPage, /dashboard\/settings\/notifications/);
+const notifCenter = read(
+  "src/components/notifications/AccountNotificationsPanel.tsx",
+);
 assert.match(notifCenter, /fetchNotifications/);
 assert.match(notifCenter, /markNotificationRead/);
 assert.match(notifCenter, /markAllNotificationsRead/);

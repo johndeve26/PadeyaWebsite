@@ -479,10 +479,134 @@ def test_user_can_send_test_push_to_self(
     body = ok.json()
     assert body["ok"] is True
     assert body["title"] == "Pàdéyá test notification"
+    assert body["subscriptions"] == 1
+    assert body["sent"] >= 1
+    assert body["failed"] == 0
+    assert "removed_stale" in body
+    assert body["browser_delivery"] is False
+    assert body["provider"] == "log"
+    assert "endpoint" not in body
+    assert "p256dh" not in json.dumps(body)
+    assert "auth" not in json.dumps(body).lower().replace("authorization", "")
 
     again = client.post("/api/v1/push/test", headers=headers)
     assert again.status_code == 400
     assert "wait" in again.json()["detail"].lower()
+
+
+def test_multi_device_subscriptions_are_independent(
+    client: TestClient, db_session: Session, assign_role
+):
+    reg = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "multi-device-push@example.com",
+            "password": "Password123!",
+            "full_name": "Multi Device",
+        },
+    )
+    assert reg.status_code == 201
+    headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
+    assign_role("multi-device-push@example.com", "super_admin")
+    _enable_push(db_session)
+
+    first = client.post(
+        "/api/v1/push/subscriptions",
+        headers=headers,
+        json={
+            "endpoint": "https://push.example.com/device-a",
+            "p256dh": "p256dh-a",
+            "auth": "auth-a",
+            "device_label": "Phone A",
+        },
+    )
+    second = client.post(
+        "/api/v1/push/subscriptions",
+        headers=headers,
+        json={
+            "endpoint": "https://push.example.com/device-b",
+            "p256dh": "p256dh-b",
+            "auth": "auth-b",
+            "device_label": "Phone B",
+        },
+    )
+    assert first.status_code == 200, first.text
+    assert second.status_code == 200, second.text
+    listed = client.get("/api/v1/push/subscriptions", headers=headers)
+    assert listed.status_code == 200
+    assert listed.json()["total"] == 2
+
+    # Removing B must not revoke A.
+    removed = client.delete(
+        f"/api/v1/push/subscriptions/{second.json()['id']}",
+        headers=headers,
+    )
+    assert removed.status_code == 200
+    active = client.get("/api/v1/push/subscriptions", headers=headers).json()
+    assert active["total"] == 1
+    assert active["items"][0]["id"] == first.json()["id"]
+
+
+def test_web_push_test_send_reports_stale_cleanup(
+    db_session: Session, client: TestClient, assign_role
+):
+    from pywebpush import WebPushException
+
+    reg = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "stale-push@example.com",
+            "password": "Password123!",
+            "full_name": "Stale Push",
+        },
+    )
+    assert reg.status_code == 201
+    headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
+    user = db_session.scalar(
+        select(User).where(User.email == "stale-push@example.com")
+    )
+    assert user is not None
+    assign_role("stale-push@example.com", "super_admin")
+    _enable_push(db_session, provider="web_push", actor_user_id=user.id)
+
+    good = PushSubscription(
+        user_id=user.id,
+        endpoint="https://fcm.googleapis.com/fcm/send/good-device",
+        p256dh_encrypted=encrypt_secret("p256dh-good"),
+        auth_encrypted=encrypt_secret("auth-good"),
+        is_active=True,
+    )
+    stale = PushSubscription(
+        user_id=user.id,
+        endpoint="https://fcm.googleapis.com/fcm/send/stale-device",
+        p256dh_encrypted=encrypt_secret("p256dh-stale"),
+        auth_encrypted=encrypt_secret("auth-stale"),
+        is_active=True,
+    )
+    db_session.add_all([good, stale])
+    db_session.commit()
+
+    class _Resp:
+        status_code = 410
+
+    def fake_webpush(**kwargs):
+        endpoint = kwargs["subscription_info"]["endpoint"]
+        if "stale-device" in endpoint:
+            raise WebPushException("Gone", response=_Resp())
+        return MagicMock()
+
+    with patch("pywebpush.webpush", fake_webpush):
+        res = client.post("/api/v1/push/test", headers=headers)
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["ok"] is True
+    assert body["browser_delivery"] is True
+    assert body["subscriptions"] == 2
+    assert body["sent"] == 1
+    assert body["failed"] == 1
+    assert body["removed_stale"] == 1
+    db_session.refresh(stale)
+    assert stale.is_active is False
 
 
 def test_vapid_private_key_encrypted(

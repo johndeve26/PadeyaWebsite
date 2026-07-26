@@ -69,7 +69,11 @@ class ProviderSendResult:
     ok: bool
     status: str  # sent | logged | failed | revoked | skipped
     delivered: int = 0
+    failed: int = 0
+    removed_stale: int = 0
     error: str | None = None
+    # Sanitized per-subscription outcomes (no endpoints / keys).
+    results: list[dict[str, Any]] | None = None
 
 
 class BasePushProvider(ABC):
@@ -103,25 +107,48 @@ class LogPushProvider(BasePushProvider):
         push_event_id=None,
     ) -> ProviderSendResult:
         del push_event_id
-        event = PushDeliveryEvent(
-            user_id=user_id,
-            subscription_id=subscriptions[0].id if subscriptions else None,
-            notification_id=None,
-            kind=payload.kind[:64],
-            status="logged",
-            sent_at=datetime.now(UTC),
-        )
-        db.add(event)
-        if subscriptions:
-            mark_subscription_success(subscriptions[0])
+        if not subscriptions:
+            return ProviderSendResult(
+                ok=False,
+                status="skipped",
+                error="no_active_subscriptions",
+                results=[],
+            )
+        results: list[dict[str, Any]] = []
+        delivered = 0
+        for sub in subscriptions:
+            event = PushDeliveryEvent(
+                user_id=user_id,
+                subscription_id=sub.id,
+                notification_id=None,
+                kind=payload.kind[:64],
+                status="logged",
+                sent_at=datetime.now(UTC),
+            )
+            db.add(event)
+            mark_subscription_success(sub)
+            delivered += 1
+            results.append(
+                {
+                    "subscription_id": str(sub.id),
+                    "status": "logged",
+                    "http_status": None,
+                    "category": "logged",
+                }
+            )
         db.flush()
         logger.info(
-            "push logged user=%s kind=%s delivered=%s",
+            "push_send_success provider=log user=%s kind=%s delivered=%s",
             user_id,
             payload.kind,
-            1,
+            delivered,
         )
-        return ProviderSendResult(ok=True, status="logged", delivered=1)
+        return ProviderSendResult(
+            ok=True,
+            status="logged",
+            delivered=delivered,
+            results=results,
+        )
 
 
 class WebPushProvider(BasePushProvider):
@@ -171,7 +198,17 @@ class WebPushProvider(BasePushProvider):
         subject = (settings.vapid_subject or "mailto:support@padeya.com").strip()
         data = payload.to_json()
         delivered = 0
+        failed = 0
+        removed_stale = 0
         last_error: str | None = None
+        results: list[dict[str, Any]] = []
+
+        logger.info(
+            "push_send_attempt provider=web_push user=%s kind=%s subscriptions=%s",
+            user_id,
+            payload.kind,
+            len(subscriptions),
+        )
 
         for sub in subscriptions:
             delivery = PushDeliveryEvent(
@@ -199,6 +236,14 @@ class WebPushProvider(BasePushProvider):
                 delivery.sent_at = datetime.now(UTC)
                 mark_subscription_success(sub)
                 delivered += 1
+                results.append(
+                    {
+                        "subscription_id": str(sub.id),
+                        "status": "sent",
+                        "http_status": 201,
+                        "category": "success",
+                    }
+                )
             except WebPushException as exc:  # type: ignore[misc]
                 status_code = getattr(
                     getattr(exc, "response", None), "status_code", None
@@ -206,28 +251,82 @@ class WebPushProvider(BasePushProvider):
                 safe = sanitize_delivery_error(str(exc)) or "webpush_failed"
                 delivery.status = "failed"
                 delivery.error_message = safe
+                was_active = sub.is_active and sub.revoked_at is None
                 mark_subscription_failure(sub, status_code=status_code)
-                if sub.revoked_at is not None:
+                stale = sub.revoked_at is not None
+                if stale:
                     delivery.status = "revoked"
+                    if was_active:
+                        removed_stale += 1
+                        logger.info(
+                            "push_subscription_stale sub=%s http_status=%s",
+                            sub.id,
+                            status_code,
+                        )
+                failed += 1
                 last_error = safe
+                category = "gone" if status_code in {404, 410} else "provider_reject"
+                results.append(
+                    {
+                        "subscription_id": str(sub.id),
+                        "status": delivery.status,
+                        "http_status": status_code,
+                        "category": category,
+                    }
+                )
                 logger.warning(
-                    "webpush failed sub=%s status=%s", sub.id, status_code
+                    "push_send_failed sub=%s http_status=%s category=%s",
+                    sub.id,
+                    status_code,
+                    category,
                 )
             except Exception as exc:  # noqa: BLE001
                 safe = sanitize_delivery_error(str(exc)) or "provider_error"
                 delivery.status = "failed"
                 delivery.error_message = safe
                 mark_subscription_failure(sub)
+                failed += 1
                 last_error = safe
+                results.append(
+                    {
+                        "subscription_id": str(sub.id),
+                        "status": "failed",
+                        "http_status": None,
+                        "category": "temporary_or_unknown",
+                    }
+                )
+                logger.warning(
+                    "push_send_failed sub=%s category=temporary_or_unknown",
+                    sub.id,
+                )
 
         db.flush()
         if delivered:
-            return ProviderSendResult(ok=True, status="sent", delivered=delivered)
+            logger.info(
+                "push_send_success provider=web_push user=%s kind=%s "
+                "sent=%s failed=%s removed_stale=%s",
+                user_id,
+                payload.kind,
+                delivered,
+                failed,
+                removed_stale,
+            )
+            return ProviderSendResult(
+                ok=True,
+                status="sent",
+                delivered=delivered,
+                failed=failed,
+                removed_stale=removed_stale,
+                results=results,
+            )
         return ProviderSendResult(
             ok=False,
             status="failed",
             delivered=0,
+            failed=failed,
+            removed_stale=removed_stale,
             error=last_error or "all_subscriptions_failed",
+            results=results,
         )
 
 

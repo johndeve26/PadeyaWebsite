@@ -180,6 +180,24 @@ export const UNSUPPORTED_PUSH_HELPER = {
   centerHref: "/dashboard/notifications",
 } as const;
 
+/**
+ * Real push pipeline state — never treat Notification.permission alone as subscribed.
+ *
+ * A device is push-enabled only when permission is granted, a service worker is
+ * active, pushManager.getSubscription() returns a subscription, and that
+ * subscription is active on the backend for the current user.
+ */
+export type PushPipelineState =
+  | "unsupported"
+  | "permission_required"
+  | "permission_denied"
+  | "permission_granted_not_subscribed"
+  | "subscribed"
+  | "subscription_stale"
+  | "install_required"
+  | "admin_disabled"
+  | "error";
+
 /** Compact status labels for the settings push card. */
 export type PushUiStatus =
   | "enabled"
@@ -188,7 +206,9 @@ export type PushUiStatus =
   | "unsupported"
   | "install_required"
   | "admin_disabled"
-  | "no_active_device";
+  | "no_active_device"
+  | "permission_granted_not_subscribed"
+  | "subscription_stale";
 
 export const PUSH_UI_STATUS: Record<
   PushUiStatus,
@@ -229,39 +249,130 @@ export const PUSH_UI_STATUS: Record<
     body: "No active push device on this browser. Enable notifications to add one.",
     tone: "neutral",
   },
+  permission_granted_not_subscribed: {
+    label: "Not subscribed",
+    body: "Browser permission is allowed, but this device is not subscribed for Web Push. Tap Repair to finish setup.",
+    tone: "warning",
+  },
+  subscription_stale: {
+    label: "Needs repair",
+    body: "This browser’s push subscription is out of sync with Pàdéyá. Tap Repair push notifications.",
+    tone: "warning",
+  },
 };
+
+export type PushDiagnosticLines = {
+  permission: string;
+  serviceWorker: string;
+  thisDevice: string;
+  serverRegistration: string;
+};
+
+export function resolvePushPipelineState(input: {
+  supported: boolean;
+  adminEnabled: boolean;
+  permission: string;
+  /** Local PushManager subscription present */
+  subscribed: boolean;
+  /** Local subscription also active on backend for this user */
+  serverRegisteredHere: boolean;
+  activeDeviceCount: number;
+  needsHomeScreenForPush: boolean;
+  isStandalone: boolean;
+  serviceWorkerActive: boolean;
+  error?: string | null;
+}): PushPipelineState {
+  const {
+    supported,
+    adminEnabled,
+    permission,
+    subscribed,
+    serverRegisteredHere,
+    needsHomeScreenForPush,
+    isStandalone,
+    error,
+  } = input;
+
+  if (error) return "error";
+  if (needsHomeScreenForPush && !isStandalone) return "install_required";
+  if (!supported) return "unsupported";
+  if (!adminEnabled) return "admin_disabled";
+  if (permission === "denied") return "permission_denied";
+
+  if (subscribed && serverRegisteredHere) return "subscribed";
+  if (subscribed && !serverRegisteredHere) return "subscription_stale";
+  if (permission === "granted" && !subscribed) {
+    return "permission_granted_not_subscribed";
+  }
+  if (permission === "default" || permission === "unknown") {
+    return "permission_required";
+  }
+  return "permission_required";
+}
 
 export function resolvePushUiStatus(input: {
   supported: boolean;
   adminEnabled: boolean;
   permission: string;
   subscribed: boolean;
+  serverRegisteredHere?: boolean;
   activeDeviceCount: number;
   deviceCount: number;
   needsHomeScreenForPush: boolean;
   isStandalone: boolean;
+  serviceWorkerActive?: boolean;
+  error?: string | null;
 }): PushUiStatus {
-  const {
-    supported,
-    adminEnabled,
-    permission,
-    subscribed,
-    activeDeviceCount,
-    deviceCount,
-    needsHomeScreenForPush,
-    isStandalone,
-  } = input;
+  const pipeline = resolvePushPipelineState({
+    supported: input.supported,
+    adminEnabled: input.adminEnabled,
+    permission: input.permission,
+    subscribed: input.subscribed,
+    serverRegisteredHere: Boolean(input.serverRegisteredHere),
+    activeDeviceCount: input.activeDeviceCount,
+    needsHomeScreenForPush: input.needsHomeScreenForPush,
+    isStandalone: input.isStandalone,
+    serviceWorkerActive: Boolean(input.serviceWorkerActive),
+    error: input.error,
+  });
 
-  if (subscribed && activeDeviceCount > 0) return "enabled";
-  if (subscribed && activeDeviceCount === 0) return "no_active_device";
+  if (pipeline === "subscribed") return "enabled";
+  if (pipeline === "subscription_stale") return "subscription_stale";
+  if (pipeline === "permission_granted_not_subscribed") {
+    return "permission_granted_not_subscribed";
+  }
+  if (pipeline === "permission_denied") return "denied";
+  if (pipeline === "install_required") return "install_required";
+  if (pipeline === "unsupported" || pipeline === "error") return "unsupported";
+  if (pipeline === "admin_disabled") return "admin_disabled";
 
-  if (needsHomeScreenForPush && !isStandalone) return "install_required";
-  if (!supported) return "unsupported";
-  if (!adminEnabled) return "admin_disabled";
-  if (permission === "denied") return "denied";
-
-  if (activeDeviceCount === 0 && (permission === "granted" || deviceCount > 0)) {
+  if (
+    input.activeDeviceCount === 0 &&
+    (input.permission === "granted" || input.deviceCount > 0)
+  ) {
     return "no_active_device";
   }
   return "not_enabled";
+}
+
+export function buildPushDiagnosticLines(input: {
+  permission: string | null;
+  serviceWorkerActive: boolean;
+  subscribed: boolean;
+  serverRegisteredHere: boolean;
+}): PushDiagnosticLines {
+  const perm =
+    input.permission === "granted"
+      ? "Allowed"
+      : input.permission === "denied"
+        ? "Blocked"
+        : input.permission === "default"
+          ? "Not asked"
+          : "Unavailable";
+  return {
+    permission: perm,
+    serviceWorker: input.serviceWorkerActive ? "Active" : "Missing",
+    thisDevice: input.subscribed ? "Subscribed" : "Not subscribed",
+    serverRegistration: input.serverRegisteredHere ? "Active" : "Missing",
+  };
 }

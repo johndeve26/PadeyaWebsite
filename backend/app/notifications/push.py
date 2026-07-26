@@ -275,6 +275,7 @@ def upsert_subscription(
     row = db.scalar(
         select(PushSubscription).where(PushSubscription.endpoint == endpoint_norm)
     )
+    created = row is None
     if row is None:
         row = PushSubscription(
             user_id=user_id,
@@ -299,6 +300,20 @@ def upsert_subscription(
         row.revoked_at = None
         row.failure_count = 0
     db.flush()
+    if created:
+        logger.info(
+            "push_subscription_created id=%s user=%s platform=%s",
+            row.id,
+            user_id,
+            platform_norm,
+        )
+    else:
+        logger.info(
+            "push_subscription_saved id=%s user=%s platform=%s",
+            row.id,
+            user_id,
+            platform_norm,
+        )
     return row
 
 
