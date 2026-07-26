@@ -195,7 +195,11 @@ _GRANULAR_PERMISSIONS: list[tuple[str, str]] = [
     ("admin.users.view_audit", "View per-user admin audit history"),
     (
         "admin.users.impersonate",
-        "Start audited admin user impersonation sessions",
+        "Start audited admin user impersonation sessions (view pack)",
+    ),
+    (
+        "admin.users.impersonate.host_events",
+        "Include host event studio mutations in impersonation sessions",
     ),
     ("admin.events.view", "View admin event buyers / attendees lists"),
     (
@@ -641,6 +645,7 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         "admin.users.force_password_reset",
         "admin.users.view_audit",
         "admin.users.impersonate",
+        "admin.users.impersonate.host_events",
         "admin.appeals.review",
         "hosts.verify",
         "events.review",
@@ -757,6 +762,8 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
     "operations": [
         "admin.users.view",
         "admin.users.add_note",
+        "admin.users.impersonate",
+        "admin.users.impersonate.host_events",
         "hosts.verify",
         "events.review",
         "events.approve",
@@ -770,7 +777,7 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         "admin.ai.view",
         "admin.ai.manage_settings",
         "admin.ai.test_connection",
-        # No finance / impersonation by default
+        # No finance / credentials impersonation by default
     ],
     "marketing": [
         "announcements.create",
@@ -974,6 +981,7 @@ ADMIN_TEAM_PERMISSION_GROUPS: list[tuple[str, list[str]]] = [
             "admin.users.force_password_reset",
             "admin.users.view_audit",
             "admin.users.impersonate",
+            "admin.users.impersonate.host_events",
         ],
     ),
     (

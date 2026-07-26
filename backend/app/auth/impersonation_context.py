@@ -7,7 +7,7 @@ in a threadpool where ContextVar tokens cannot be reset across contexts.
 from __future__ import annotations
 
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID
 
@@ -27,6 +27,10 @@ class ImpersonationContext:
     support_ticket_id: str | None = None
     started_at: datetime | None = None
     expires_at: datetime | None = None
+    scopes: tuple[str, ...] = field(default_factory=tuple)
+
+    def has_scope(self, scope: str) -> bool:
+        return scope in self.scopes
 
     @property
     def is_impersonating(self) -> bool:

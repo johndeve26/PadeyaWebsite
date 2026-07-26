@@ -13,7 +13,6 @@ import { DashboardShell } from "@/components/layout/DashboardShell";
 import { SkeletonLoader } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import {
-  approveEvent,
   archiveEvent,
   discardEvent,
   fetchEventById,
@@ -52,12 +51,10 @@ export default function EditEventPage() {
 
   async function onPublish(eventId: string) {
     try {
-      // Approve publishes pending_review; for drafts submit then approve.
-      const current = await fetchEventById(eventId);
-      if (current.status === "draft" || current.status === "rejected") {
-        await submitEvent(eventId);
-      }
-      await approveEvent(eventId);
+      // Host publish path only — submit auto-publishes when platform allows.
+      // Do not call admin approveEvent here: impersonation tokens have host
+      // perms only, so approve 403s even after a successful submit.
+      await submitEvent(eventId);
       router.push(`/host/events/${eventId}`);
     } catch (err) {
       throw new Error(err instanceof ApiError ? err.detail : "Unable to publish event");

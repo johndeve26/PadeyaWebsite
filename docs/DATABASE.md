@@ -145,7 +145,7 @@ Details JSON (scrubbed): `admin_user_id`, `target_user_id`, optional `restrictio
 
 ## Admin user impersonation
 
-Migration `20260720_0089` — audited support/QA sessions (not a real login). See [AUTH.md](./AUTH.md) · [SECURITY.md](./SECURITY.md#admin-user-impersonation).
+Migration `20260720_0089` — audited support/QA sessions (not a real login). Scopes column: `20260726_0142`. See [AUTH.md](./AUTH.md) · [SECURITY.md](./SECURITY.md#admin-user-impersonation).
 
 ### `admin_impersonation_sessions`
 
@@ -159,6 +159,7 @@ Migration `20260720_0089` — audited support/QA sessions (not a real login). Se
 | `started_at` / `expires_at` / `ended_at` | Lifecycle timestamps (max duration 60 min) |
 | `ended_by_admin_id` | Who ended the session (when applicable) |
 | `status` | `active` · `ended` · `expired` · `revoked` |
+| `scopes` | JSON list: `view` / `host_events` / `credentials` (capability pack) |
 | `ip_address` / `user_agent` | Start request context |
 | `created_at` | Row create time |
 
@@ -170,7 +171,7 @@ Migration `20260720_0089` — audited support/QA sessions (not a real login). Se
 | `actor_admin_id` / `target_user_id` | Parties |
 | `action` | `admin_impersonation_started` · `_ended` · `_expired` · `_sensitive_action_blocked` · `_request_made` |
 | `method` / `path` / `status_code` | Request stamp when applicable |
-| `metadata_json` | Scrubbed extras (`reason`, `support_ticket_id`, `route`, timestamps, …) — never passwords, tokens, payment/QR payloads, request bodies, or message content |
+| `metadata_json` | Scrubbed extras (`reason`, `support_ticket_id`, `route`, `scopes`, `pack`, timestamps, …) — never passwords, tokens, payment/QR payloads, request bodies, or message content |
 | `ip_address` / `user_agent` | When known |
 | `created_at` | Event time |
 

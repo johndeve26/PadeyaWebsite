@@ -22,6 +22,8 @@ class ImpersonationPublic(BaseModel):
     support_ticket_id: str | None = None
     started_at: datetime | None = None
     expires_at: datetime | None = None
+    scopes: list[str] = Field(default_factory=list)
+    pack: str | None = None
 
 
 class UserPublic(BaseModel):

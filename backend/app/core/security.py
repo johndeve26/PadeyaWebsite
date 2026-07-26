@@ -61,6 +61,7 @@ def create_impersonation_access_token(
     expires_at: datetime,
     reason: str,
     support_ticket_id: str | None = None,
+    scopes: list[str] | None = None,
 ) -> str:
     """Short-lived impersonation session token (10D).
 
@@ -68,9 +69,12 @@ def create_impersonation_access_token(
     ``is_impersonating``, ``started_at``, ``expires_at``, ``reason``.
 
     Carries the *target* user's roles/permissions only — admin privileges must
-    never appear in this token. The admin's real session is preserved separately
-    client-side and is not replaced permanently.
+    never appear in this token. ``impersonation_scopes`` is the actor admin's
+    capability pack for this session (view / host_events / credentials).
     """
+    from app.admin.impersonation_scopes import normalize_scopes, pack_label
+
+    normalized = normalize_scopes(scopes) or ["view"]
     payload: dict[str, Any] = {
         # Standard subject = effective (impersonated) user for auth resolution.
         "sub": str(actual_user_id),
@@ -82,6 +86,8 @@ def create_impersonation_access_token(
         "expires_at": expires_at.isoformat(),
         "reason": reason[:500],
         "support_ticket_id": support_ticket_id,
+        "impersonation_scopes": normalized,
+        "impersonation_pack": pack_label(normalized),
         # Target-only RBAC — never include the admin's permissions here.
         "roles": roles,
         "permissions": permissions,

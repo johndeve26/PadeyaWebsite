@@ -28,6 +28,8 @@ def change_password(
     ip_address: str | None = None,
     user_agent: str | None = None,
 ) -> None:
+    from app.auth.impersonation_context import get_impersonation_context
+
     assert_no_restriction(db, user.id, "read_only_account")
     assert_verified_email(user)
     current = (current_password or "").strip()
@@ -37,11 +39,29 @@ def change_password(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password must be at least 8 characters",
         )
-    if not verify_password(current, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Current password is incorrect",
+    ctx = get_impersonation_context()
+    if ctx is None:
+        if not current:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is required",
+            )
+        if not verify_password(current, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Current password is incorrect",
+            )
+    else:
+        from app.admin.impersonation_guards import (
+            IMPERSONATION_SENSITIVE_ACTION_DETAIL,
         )
+        from app.admin.impersonation_scopes import SCOPE_CREDENTIALS
+
+        if not ctx.has_scope(SCOPE_CREDENTIALS):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=IMPERSONATION_SENSITIVE_ACTION_DETAIL,
+            )
     if verify_password(password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -60,12 +80,24 @@ def change_password(
     )
     write_audit_log(
         db,
-        action="auth.password_changed",
+        action=(
+            "auth.password_changed_via_impersonation"
+            if ctx is not None
+            else "auth.password_changed"
+        ),
         actor_user_id=user.id,
         resource_type="user",
         resource_id=str(user.id),
         ip_address=ip_address,
         user_agent=user_agent,
+        details=(
+            {
+                "impersonation_id": str(ctx.impersonation_id),
+                "actor_admin_id": str(ctx.actor_admin_id),
+            }
+            if ctx is not None
+            else None
+        ),
     )
     send_template(
         db,
@@ -90,6 +122,8 @@ def change_email(
     ip_address: str | None = None,
     user_agent: str | None = None,
 ) -> User:
+    from app.auth.impersonation_context import get_impersonation_context
+
     assert_no_restriction(db, user.id, "read_only_account")
     assert_verified_email(user)
     try:
@@ -101,11 +135,29 @@ def change_email(
         ) from exc
 
     current = (current_password or "").strip()
-    if not verify_password(current, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Current password is incorrect",
+    ctx = get_impersonation_context()
+    if ctx is None:
+        if not current:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is required",
+            )
+        if not verify_password(current, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Current password is incorrect",
+            )
+    else:
+        from app.admin.impersonation_guards import (
+            IMPERSONATION_SENSITIVE_ACTION_DETAIL,
         )
+        from app.admin.impersonation_scopes import SCOPE_CREDENTIALS
+
+        if not ctx.has_scope(SCOPE_CREDENTIALS):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=IMPERSONATION_SENSITIVE_ACTION_DETAIL,
+            )
 
     if normalized == user.email.lower():
         raise HTTPException(
@@ -134,11 +186,26 @@ def change_email(
     )
     write_audit_log(
         db,
-        action="auth.email_changed",
+        action=(
+            "auth.email_changed_via_impersonation"
+            if ctx is not None
+            else "auth.email_changed"
+        ),
         actor_user_id=user.id,
         resource_type="user",
         resource_id=str(user.id),
-        details={"previous_email": previous, "new_email": normalized},
+        details={
+            "previous_email": previous,
+            "new_email": normalized,
+            **(
+                {
+                    "impersonation_id": str(ctx.impersonation_id),
+                    "actor_admin_id": str(ctx.actor_admin_id),
+                }
+                if ctx is not None
+                else {}
+            ),
+        },
         ip_address=ip_address,
         user_agent=user_agent,
     )

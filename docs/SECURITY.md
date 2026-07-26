@@ -73,7 +73,7 @@ Platform user directory and safe lifecycle actions on `/admin/users` and `/admin
 | Session | Each request validates active + unexpired DB session; JWT role claims are informational — RBAC uses target DB perms only |
 | Expiry & safety | Auto-expire on timeout; end on Exit / logout; end if admin or target account is disabled mid-session; no nested impersonation; one active session per admin (must end first) |
 | Claims | `actual_user_id`, `actor_admin_id`, `impersonation_id`, `is_impersonating`, `started_at`, `expires_at`, `reason`, `support_ticket_id` (+ target-only `roles` / `permissions`) |
-| Allowed while impersonating | View dashboard/tickets/orders/merch/refunds/settings/Passport/Vault; reproduce navigation; exit via `POST /admin/impersonation/end` |
+| Allowed while impersonating | Per capability pack (`view` / `host_events` / `full`); exit via `POST /admin/impersonation/end` |
 | Start form | Required reason + confirmation; optional support ticket ID + duration |
 | Session lifecycle | Default **30** min / max **60**; auto-expire; end on Exit; end on logout; no nested impersonation; `/admin` blocked; admin perms never leak |
 | Blocked targets | Self; `super_admin`; `support_agent` / platform admins (`admin.full_access`); `finance_admin`; security-locked users; deleted / banned accounts; suspended/inactive unless **super_admin** with reason |
@@ -85,23 +85,38 @@ Platform user directory and safe lifecycle actions on `/admin/users` and `/admin
 
 ### Blocked / allowed during impersonation
 
-Enforced by `app.admin.impersonation_guards` + middleware. Exact 403 detail: `This action is disabled during admin impersonation.`
+Enforced by `app.admin.impersonation_guards` + middleware + capability packs (`app.admin.impersonation_scopes`). Exact 403 detail: `This action is disabled during admin impersonation.`
 
-**Blocked**
-- Changing password, email, phone; enabling/disabling 2FA; deleting account
+**Capability packs (role → scopes, not per-session checkboxes)**
+
+| Pack | Scopes | Who (defaults) | Can do |
+|---|---|---|---|
+| `view` | `view` | support / finance with explicit `admin.users.impersonate` | GET / navigate only |
+| `host_events` | `view` + `host_events` | `admin`, `operations` (+ `admin.users.impersonate.host_events`) | Host studio edit / media / tickets / submit |
+| `full` | + `credentials` | `super_admin` (`admin.full_access`) | Password / email / phone recovery (audited) |
+
+Scopes are stored on `admin_impersonation_sessions.scopes`, mirrored in JWT `impersonation_scopes` / `impersonation_pack`, returned on `/auth/me` and `/me/impersonation`, and logged on `admin_impersonation_started` (`scopes`, `pack`).
+
+**Always blocked (any pack)**
+- Enabling/disabling 2FA; deleting account
 - Changing payout / bank details; requesting payouts; all finance mutations
 - Buying tickets/merch with real payment; creating checkout payment attempts; cart checkout path
-- Transferring tickets; deleting user content
+- Transferring tickets; deleting messaging content
 - Changing Passport privacy settings
 - Connecting / disconnecting social accounts (incl. Fan Connect)
 - Changing API keys / provider keys
 - All admin routes; support-queue actions
 
-**Allowed**
-- Viewing dashboard, tickets, orders, merch, refunds
-- Viewing Passport / Vault pages and settings safely (read-only)
+**Pack-gated**
+- Host event studio mutations → require `host_events`
+- Credential updates (password / email / phone) → require `credentials` (no current password; audited as `*_via_impersonation`)
+
+**Always allowed**
+- Viewing dashboard, tickets, orders, merch, refunds, Passport / Vault (reads)
 - Reproducing UI / navigation issues
 - `POST /admin/impersonation/end` (exit)
+
+**Prefer admin-native tools** when staff only need to look: Admin → Orders, Support desk, Admin → Message reports — not impersonation.
 
 See [ADMIN.md](./ADMIN.md#user-impersonation) · [AUTH.md](./AUTH.md#admin-user-impersonation) · [PRIVACY.md](./PRIVACY.md#admin-user-impersonation).
 

@@ -23,6 +23,8 @@ export type ImpersonationInfo = {
   duration_minutes?: number | null;
   started_at?: string | null;
   expires_at?: string | null;
+  scopes?: string[];
+  pack?: string | null;
 };
 
 export type UserSuspensionPublic = {
@@ -69,6 +71,8 @@ export type ImpersonationStartResponse = {
   redirect_to: string;
   access_token: string;
   token_type: string;
+  scopes?: string[];
+  pack?: string | null;
 };
 
 export type ImpersonationEndResponse = {
@@ -90,6 +94,8 @@ export type ImpersonationStatusResponse = {
   impersonator_full_name?: string | null;
   target_email?: string | null;
   target_full_name?: string | null;
+  scopes?: string[];
+  pack?: string | null;
 };
 
 export type ImpersonationHistoryItem = {
@@ -104,6 +110,8 @@ export type ImpersonationHistoryItem = {
   ended_at?: string | null;
   expires_at: string;
   status: string;
+  scopes?: string[];
+  pack?: string | null;
 };
 
 export type ImpersonationTokenResponse = ImpersonationStartResponse;

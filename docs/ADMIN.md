@@ -51,12 +51,13 @@ Canonical detail: [SECURITY.md](./SECURITY.md#admin-user-impersonation) · [AUTH
 | **Target user is not notified** | No email · no in-app · no push. |
 | **No password access** | Passwords are never read, returned, or shared. |
 | **No session hijacking** | Target refresh tokens are untouched. A separate short-lived impersonation access token is issued (no refresh). |
-| **Sensitive actions blocked** | Password/email/phone/2FA, account delete, bank/payouts, checkout/payments, ticket transfer, content delete, Passport privacy, social/Fan Connect, API/provider keys, admin/support/finance mutations. Exact 403: `This action is disabled during admin impersonation.` |
-| **Allowed while impersonating** | View dashboard / tickets / orders / merch / refunds / Passport / Vault / settings (read); reproduce navigation; exit session. |
+| **Sensitive actions blocked** | Always: 2FA, account delete, bank/payouts, checkout/payments, ticket transfer, content delete, Passport privacy, social/Fan Connect, API/provider keys, admin/support/finance mutations. Pack-gated: host studio (`host_events`), credentials (`credentials` / full pack only). Exact 403: `This action is disabled during admin impersonation.` |
+| **Capability packs** | Role packs (not checkboxes): `view` (support/finance grant) · `host_events` (`admin` / `operations` + `admin.users.impersonate.host_events`) · `full` (`super_admin` / `admin.full_access` includes credentials). Prefer Admin Orders / Support desk / Message reports instead of impersonating to “just look”. |
+| **Allowed while impersonating** | Per pack: reads always; host studio with `host_events`; password/email/phone with `credentials`; exit session. Checkout/payouts stay blocked. |
 | **Max duration** | `15` / `30` / `60` minutes; **default 30**, **max 60**. Auto-expire; end on Exit / logout; end if admin or target disabled mid-session; no nested sessions; one active session per admin. |
-| **Permission required** | `admin.users.impersonate` — `super_admin` / `admin.full_access` get it; support/finance only with **explicit** grant. Buyers, host owners, and host team members **cannot** impersonate (even with a mistaken grant). |
-| **Admin / session separation** | Current user = target; `actor_admin_id` stays the admin. Claims: `actual_user_id`, `actor_admin_id`, `impersonation_id`, `is_impersonating`, `started_at`, `expires_at`, `reason`. Admin tokens stashed client-side and restored on Exit. Admin permissions never leak; `/admin` blocked while impersonating. |
-| **Audit logs retained** | Must include actor admin, target, reason, support ticket ID (if provided), start / end / expiry, visited routes/actions, blocked sensitive actions. Never silently bypassed in demo mode. Admin banner only. Field matrix: see [Impersonation audit events](#impersonation-audit-events). |
+| **Permission required** | `admin.users.impersonate` (view pack) · `admin.users.impersonate.host_events` (host pack) · credentials via `admin.full_access` only. Support/finance need **explicit** impersonate grant. Buyers / hosts / host staff never. |
+| **Admin / session separation** | Current user = target; `actor_admin_id` stays the admin. Claims include `impersonation_scopes` / `impersonation_pack`. Admin tokens stashed client-side and restored on Exit. Admin permissions never leak; `/admin` blocked while impersonating. |
+| **Audit logs retained** | Actor admin, target, reason, ticket, start / end / expiry, routes, blocked actions, plus `scopes` + `pack` on start. Never silently bypassed in demo mode. Admin banner only. Field matrix: see [Impersonation audit events](#impersonation-audit-events). |
 
 ### Impersonation audit events
 

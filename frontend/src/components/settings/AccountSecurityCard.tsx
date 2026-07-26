@@ -15,7 +15,10 @@ type Props = {
 
 export function AccountSecurityCard({ email, onEmailChanged }: Props) {
   const toast = useToast();
-  const { logout } = useAuth();
+  const { logout, isImpersonating, user } = useAuth();
+  const canChangeCredentials =
+    !isImpersonating ||
+    Boolean(user?.impersonation?.scopes?.includes("credentials"));
 
   const [currentPasswordForEmail, setCurrentPasswordForEmail] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -30,15 +33,24 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
 
   async function onChangeEmail(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!canChangeCredentials) return;
     setEmailError(null);
     setEmailBusy(true);
     try {
       await changeEmail({
         new_email: newEmail.trim().toLowerCase(),
-        current_password: currentPasswordForEmail,
+        current_password:
+          isImpersonating && canChangeCredentials
+            ? ""
+            : currentPasswordForEmail,
       });
       setNewEmail("");
       setCurrentPasswordForEmail("");
+      if (isImpersonating) {
+        toast.success("Email updated for this account (audited impersonation).");
+        await onEmailChanged();
+        return;
+      }
       markSessionExpired(
         "Your email was updated. Sign in again with your new email.",
       );
@@ -56,6 +68,7 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
 
   async function onChangePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!canChangeCredentials) return;
     setPasswordError(null);
     if (newPassword !== confirmPassword) {
       setPasswordError("New passwords do not match.");
@@ -64,12 +77,19 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
     setPasswordBusy(true);
     try {
       await changePassword({
-        current_password: currentPassword,
+        current_password:
+          isImpersonating && canChangeCredentials ? "" : currentPassword,
         new_password: newPassword,
       });
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      if (isImpersonating) {
+        toast.success(
+          "Password updated for this account. Their other sessions were signed out (audited).",
+        );
+        return;
+      }
       markSessionExpired(
         "Your password was updated. Sign in again with your new password.",
       );
@@ -90,9 +110,36 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
       <SectionHeader
         eyebrow="Security"
         title="Email & password"
-        description="Update sign-in credentials. We email you when something changes."
+        description={
+          isImpersonating && canChangeCredentials
+            ? "Full impersonation pack may update this account’s credentials without the current password. Changes are audited."
+            : isImpersonating
+              ? "Credential changes require the full (super admin) impersonation pack."
+              : "Update sign-in credentials. We email you when something changes."
+        }
       />
 
+      {isImpersonating && canChangeCredentials ? (
+        <Alert tone="warning" title="Impersonation credential change">
+          You are changing credentials for the impersonated user. Prefer a clear
+          support reason in the session audit trail.
+        </Alert>
+      ) : null}
+
+      {isImpersonating && !canChangeCredentials ? (
+        <Alert tone="warning" title="Credentials locked for this pack">
+          Your impersonation pack is view or host-events only. Ask a super admin
+          for credential recovery, or use Force password reset from Admin → Users.
+        </Alert>
+      ) : null}
+
+      <fieldset
+        disabled={!canChangeCredentials}
+        className="space-y-8 disabled:opacity-70"
+        data-impersonation-credentials-locked={
+          isImpersonating && !canChangeCredentials ? "true" : "false"
+        }
+      >
       <form className="space-y-4 border-b border-border pb-8" onSubmit={onChangeEmail}>
         <p className="text-sm text-muted-foreground">
           Current email:{" "}
@@ -112,15 +159,20 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
           value={newEmail}
           onChange={(e) => setNewEmail(e.target.value)}
         />
-        <AuthPasswordField
-          label="Current password"
-          name="current_password_email"
-          autoComplete="current-password"
-          required
-          value={currentPasswordForEmail}
-          onChange={setCurrentPasswordForEmail}
-        />
-        <Button type="submit" disabled={emailBusy || !newEmail.trim()}>
+        {!isImpersonating ? (
+          <AuthPasswordField
+            label="Current password"
+            name="current_password_email"
+            autoComplete="current-password"
+            required
+            value={currentPasswordForEmail}
+            onChange={setCurrentPasswordForEmail}
+          />
+        ) : null}
+        <Button
+          type="submit"
+          disabled={!canChangeCredentials || emailBusy || !newEmail.trim()}
+        >
           {emailBusy ? "Updating…" : "Update email"}
         </Button>
       </form>
@@ -131,14 +183,16 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
             {passwordError}
           </Alert>
         ) : null}
-        <AuthPasswordField
-          label="Current password"
-          name="current_password"
-          autoComplete="current-password"
-          required
-          value={currentPassword}
-          onChange={setCurrentPassword}
-        />
+        {!isImpersonating ? (
+          <AuthPasswordField
+            label="Current password"
+            name="current_password"
+            autoComplete="current-password"
+            required
+            value={currentPassword}
+            onChange={setCurrentPassword}
+          />
+        ) : null}
         <AuthPasswordField
           label="New password"
           name="new_password"
@@ -158,10 +212,11 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
           value={confirmPassword}
           onChange={setConfirmPassword}
         />
-        <Button type="submit" disabled={passwordBusy}>
+        <Button type="submit" disabled={!canChangeCredentials || passwordBusy}>
           {passwordBusy ? "Updating…" : "Update password"}
         </Button>
       </form>
+      </fieldset>
     </Card>
   );
 }

@@ -66,6 +66,10 @@ assert.match(startForm, /impersonation-confirm/);
 assert.match(startForm, /sensitive actions are\s+blocked/);
 assert.match(startForm, /Start impersonation|submitLabel/);
 assert.match(startForm, /router\.push\(redirectTo \|\| "\/dashboard"\)/);
+assert.match(startForm, /resolveActorImpersonationScopes/);
+assert.match(startForm, /\/admin\/orders/);
+assert.match(startForm, /\/support\/desk/);
+assert.match(startForm, /\/admin\/message-reports/);
 
 assert.ok(exists("src/components/admin/ImpersonationStartModal.tsx"));
 const startModal = read("src/components/admin/ImpersonationStartModal.tsx");
@@ -78,10 +82,38 @@ assert.match(banner, /if \(!isImpersonating \|\| !user\) return null/);
 assert.match(banner, /Exit impersonation/);
 assert.match(banner, /stopImpersonation\(\)/);
 assert.match(banner, /window\.location\.assign/);
-assert.match(banner, /Impersonating \{displayName\}\. Actions are audited\./);
+assert.match(banner, /packLabel/);
+assert.match(banner, /impersonation\?\.pack/);
+
+const scopesHelper = read("src/lib/auth/impersonation-scopes.ts");
+assert.match(scopesHelper, /IMPERSONATION_SCOPE_HOST_EVENTS/);
+assert.match(scopesHelper, /IMPERSONATION_SCOPE_CREDENTIALS/);
+assert.match(scopesHelper, /resolveActorImpersonationScopes/);
+assert.match(banner, /Impersonating \{displayName\}/);
+assert.match(banner, /Pack:/);
 assert.match(banner, /\/admin\/users\/\$\{targetId\}/);
 assert.match(banner, /Audited session/);
 assert.match(banner, /Demo seed account/);
+
+const editEventPage = read("src/app/host/events/[id]/edit/page.tsx");
+assert.match(editEventPage, /await submitEvent\(eventId\)/);
+assert.doesNotMatch(editEventPage, /import \{[^}]*approveEvent/);
+assert.match(
+  read("src/components/events/studio/TicketTypeBuilder.tsx"),
+  /allowStructuralEdits/,
+);
+assert.match(
+  read("src/components/events/studio/EventStudio.tsx"),
+  /hostEventsAllowed/,
+);
+assert.match(
+  read("src/components/settings/AccountSecurityCard.tsx"),
+  /isImpersonating/,
+);
+assert.match(
+  read("src/components/settings/AccountSecurityCard.tsx"),
+  /credentials/,
+);
 
 const rootLayout = read("src/app/layout.tsx");
 assert.match(rootLayout, /ImpersonationBanner/);
@@ -103,21 +135,32 @@ assert.doesNotMatch(
   /denyWhileImpersonating/,
   "Personal dashboard must remain available while impersonating",
 );
-assert.match(dashboardLayout, /buyerNav|buyerNavGroups|PERSONAL_WORKSPACE/);
+const dashboardLayoutClient = read("src/app/dashboard/DashboardLayoutClient.tsx");
+assert.match(
+  dashboardLayoutClient,
+  /buyerNav|buyerNavGroups|PERSONAL_WORKSPACE/,
+);
 
 // --- Host workspace only if target has host access ---
 const requireHost = read("src/components/hosts/RequireHost.tsx");
 assert.match(requireHost, /workspaces\.length === 0/);
 assert.match(requireHost, /Become a host|host\/onboarding/);
 const hostLayout = read("src/app/host/layout.tsx");
-assert.match(hostLayout, /HostWorkspaceProvider|RequireHost|HostAccessGuard/);
+assert.match(hostLayout, /HostLayoutClient/);
+const hostLayoutClient = read("src/app/host/HostLayoutClient.tsx");
+assert.match(
+  hostLayoutClient,
+  /HostWorkspaceProvider|RequireHost|HostAccessGuard/,
+);
 assert.ok(exists("src/components/hosts/HostWorkspaceProvider.tsx"));
 const hostProvider = read("src/components/hosts/HostWorkspaceProvider.tsx");
 assert.match(hostProvider, /fetchHostWorkspaces/);
 
 // --- /admin blocked while impersonating ---
 const adminLayout = read("src/app/admin/layout.tsx");
-assert.match(adminLayout, /denyWhileImpersonating/);
+assert.match(adminLayout, /AdminLayoutClient/);
+const adminLayoutClient = read("src/app/admin/AdminLayoutClient.tsx");
+assert.match(adminLayoutClient, /denyWhileImpersonating|isImpersonating/);
 const requireAuth = read("src/components/auth/RequireAuth.tsx");
 assert.match(requireAuth, /denyWhileImpersonating/);
 assert.match(requireAuth, /Admin unavailable while impersonating/);
@@ -125,10 +168,14 @@ assert.match(requireAuth, /href="\/dashboard"/);
 
 const siteHeader = read("src/components/layout/SiteHeader.tsx");
 assert.match(siteHeader, /isImpersonating/);
+const workspaceAccess = read("src/lib/auth/workspace-access.ts");
+assert.match(workspaceAccess, /canAccessAdminPanel/);
 assert.match(
-  siteHeader,
-  /!isImpersonating[\s\S]*?(admin|Admin)|isImpersonating[\s\S]*?(admin|Admin)/,
+  workspaceAccess,
+  /if \(!user \|\| isImpersonating\) return false/,
 );
+const headerWorkspace = read("src/components/layout/HeaderWorkspaceButton.tsx");
+assert.match(headerWorkspace, /canAccessAdminPanel\(user, isImpersonating\)/);
 
 // --- Sensitive settings actions disabled ---
 const passportSettings = read("src/app/dashboard/passport/settings/page.tsx");

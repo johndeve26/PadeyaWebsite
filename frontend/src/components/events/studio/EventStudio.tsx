@@ -130,7 +130,10 @@ function EventStudioInner({
   onArchiveDraft,
   onDeleteDraft,
 }: EventStudioProps) {
-  const { user } = useAuth();
+  const { user, isImpersonating } = useAuth();
+  const hostEventsAllowed =
+    !isImpersonating ||
+    Boolean(user?.impersonation?.scopes?.includes("host_events"));
   const toast = useToast();
   const router = useRouter();
   const pathname = usePathname();
@@ -315,7 +318,11 @@ function EventStudioInner({
         );
       }
       const sold = ticketHasSales(draft);
-      const body = ticketDraftToPayload(draft, { forSoldTier: sold });
+      // host_events pack may patch price/qty after sales for support.
+      const canStructural = isImpersonating && hostEventsAllowed;
+      const body = ticketDraftToPayload(draft, {
+        forSoldTier: sold && !canStructural,
+      });
       if (draft.id) {
         const updated = await updateTicketType(targetEventId, draft.id, body);
         next[index] = {
@@ -543,7 +550,11 @@ function EventStudioInner({
         Back
       </Button>
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" variant="secondary" disabled={saving}>
+        <Button
+          type="submit"
+          variant="secondary"
+          disabled={saving || !hostEventsAllowed}
+        >
           {saving ? "Saving…" : "Save draft"}
         </Button>
         {stepIndex < STUDIO_STEPS.length - 1 ? (
@@ -553,7 +564,9 @@ function EventStudioInner({
         ) : (
           <Button
             type="button"
-            disabled={saving || !localChecklist.ready_to_submit}
+            disabled={
+              saving || !hostEventsAllowed || !localChecklist.ready_to_submit
+            }
             onClick={() =>
               void handleSave({ submit: Boolean(onSubmitReview) }).catch(
                 () => undefined,
@@ -583,7 +596,7 @@ function EventStudioInner({
           type="button"
           variant="secondary"
           size="sm"
-          disabled={saving}
+          disabled={saving || !hostEventsAllowed}
           onClick={() => void handleSave().catch(() => undefined)}
         >
           {saving ? "Saving…" : "Save"}
@@ -596,7 +609,9 @@ function EventStudioInner({
           <Button
             type="button"
             size="sm"
-            disabled={saving || !localChecklist.ready_to_submit}
+            disabled={
+              saving || !hostEventsAllowed || !localChecklist.ready_to_submit
+            }
             onClick={() =>
               void handleSave({ submit: Boolean(onSubmitReview) }).catch(
                 () => undefined,
@@ -638,13 +653,19 @@ function EventStudioInner({
             >
               {previewing ? "Opening…" : "Preview"}
             </Button>
-            <Button type="submit" variant="secondary" disabled={saving}>
+            <Button
+              type="submit"
+              variant="secondary"
+              disabled={saving || !hostEventsAllowed}
+            >
               {saving ? "Saving…" : "Save draft"}
             </Button>
             {savedEventId || mode === "edit" ? (
               <Button
                 type="button"
-                disabled={saving || !localChecklist.ready_to_submit}
+                disabled={
+                  saving || !hostEventsAllowed || !localChecklist.ready_to_submit
+                }
                 onClick={() =>
                   void handleSave({ submit: true }).catch(() => undefined)
                 }
@@ -655,7 +676,9 @@ function EventStudioInner({
             {canPublish ? (
               <Button
                 type="button"
-                disabled={saving || !localChecklist.ready_to_submit}
+                disabled={
+                  saving || !hostEventsAllowed || !localChecklist.ready_to_submit
+                }
                 onClick={() =>
                   void handleSave({ publish: true }).catch(() => undefined)
                 }
@@ -666,6 +689,12 @@ function EventStudioInner({
           </div>
         }
       >
+        {isImpersonating && !hostEventsAllowed ? (
+          <Alert tone="warning" title="View-only impersonation pack">
+            Your session can browse host tools but cannot save or publish events.
+            Ask for the host_events pack (operations / admin) if you need to edit.
+          </Alert>
+        ) : null}
         {step === "publish" && missingPublish.length > 0 ? (
           <Alert tone="info" title="Validation summary">
             Still needed: {missingPublish.join(" · ")}
@@ -692,6 +721,9 @@ function EventStudioInner({
             values={values}
             eventId={savedEventId}
             onChange={setField}
+            allowStructuralEdits={Boolean(
+              isImpersonating && hostEventsAllowed,
+            )}
           />
         ) : null}
         {step === "media" ? (

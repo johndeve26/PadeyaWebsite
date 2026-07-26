@@ -1981,7 +1981,18 @@ def update_ticket_type(
 
     data = payload.model_dump(exclude_unset=True)
     # After sales, block structural changes that would corrupt existing orders.
-    if (ticket.quantity_sold or 0) > 0 or (ticket.quantity_reserved or 0) > 0:
+    # Impersonation with host_events scope may override (audited below).
+    from app.admin.impersonation_scopes import SCOPE_HOST_EVENTS
+    from app.auth.impersonation_context import get_impersonation_context
+
+    ctx = get_impersonation_context()
+    structural_override = bool(
+        ctx is not None and ctx.has_scope(SCOPE_HOST_EVENTS)
+    )
+    if (
+        not structural_override
+        and ((ticket.quantity_sold or 0) > 0 or (ticket.quantity_reserved or 0) > 0)
+    ):
         protected = {
             "price",
             "type",
@@ -2010,7 +2021,22 @@ def update_ticket_type(
         actor_user_id=user.id,
         resource_type="ticket_type",
         resource_id=str(ticket.id),
-        details={"fields": list(data.keys())},
+        details={
+            "fields": list(data.keys()),
+            **(
+                {
+                    "impersonation_id": str(ctx.impersonation_id),
+                    "actor_admin_id": str(ctx.actor_admin_id),
+                    "structural_override": True,
+                }
+                if structural_override
+                and (
+                    (ticket.quantity_sold or 0) > 0
+                    or (ticket.quantity_reserved or 0) > 0
+                )
+                else {}
+            ),
+        },
     )
     db.commit()
     db.refresh(ticket)

@@ -13,6 +13,10 @@ from app.admin.impersonation_audit import (
     ADMIN_IMPERSONATION_STARTED,
     record_impersonation_audit,
 )
+from app.admin.impersonation_scopes import (
+    pack_label,
+    resolve_impersonation_scopes,
+)
 from app.admin.impersonation_store import (
     create_impersonation_session,
     end_impersonation_session,
@@ -296,6 +300,14 @@ def start_impersonation(
 
     _assert_target_allowed(admin=admin, target=target, reason_clean=reason_clean)
 
+    scopes = resolve_impersonation_scopes(admin)
+    if not scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Impersonation is not allowed for this account",
+        )
+    pack = pack_label(scopes)
+
     expires_at = datetime.now(UTC) + timedelta(minutes=duration_minutes)
     started_at = datetime.now(UTC)
     impersonation_id = uuid4()
@@ -319,6 +331,7 @@ def start_impersonation(
         expires_at=expires_at,
         reason=reason_clean,
         support_ticket_id=ticket_clean,
+        scopes=scopes,
     )
 
     create_impersonation_session(
@@ -330,6 +343,7 @@ def start_impersonation(
         support_ticket_id=ticket_clean,
         started_at=started_at,
         expires_at=expires_at,
+        scopes=scopes,
         ip_address=ip_address,
         user_agent=user_agent,
     )
@@ -355,6 +369,8 @@ def start_impersonation(
             "started_at": started_at.isoformat(),
             # Informational only — auditing is never skipped for demo seeds.
             "demo_seed_target": demo_seed_target,
+            "scopes": scopes,
+            "pack": pack,
         },
         ip_address=ip_address,
         user_agent=user_agent,
@@ -368,6 +384,8 @@ def start_impersonation(
         "redirect_to": "/dashboard",
         "access_token": access_token,
         "token_type": "bearer",
+        "scopes": scopes,
+        "pack": pack,
         # Extra session metadata for clients that need it immediately.
         "impersonation": {
             "active": True,
@@ -386,6 +404,8 @@ def start_impersonation(
             "duration_minutes": duration_minutes,
             "started_at": started_at,
             "expires_at": expires_at,
+            "scopes": scopes,
+            "pack": pack,
         },
     }
 
@@ -518,6 +538,8 @@ def list_impersonation_history(
                 "ended_at": row.ended_at,
                 "expires_at": row.expires_at,
                 "status": _effective_session_status(row),
+                "scopes": list(getattr(row, "scopes", None) or []),
+                "pack": pack_label(getattr(row, "scopes", None)),
             }
         )
     return out
@@ -530,6 +552,7 @@ def build_impersonation_public(
     expires_at: datetime | None,
     target: User | None = None,
 ) -> dict:
+    scopes = list(ctx.scopes) if ctx.scopes else ["view"]
     return {
         "active": True,
         "is_impersonating": True,
@@ -546,4 +569,6 @@ def build_impersonation_public(
         "support_ticket_id": ctx.support_ticket_id,
         "started_at": ctx.started_at,
         "expires_at": expires_at or ctx.expires_at,
+        "scopes": scopes,
+        "pack": pack_label(scopes),
     }

@@ -29,6 +29,7 @@ def create_impersonation_session(
     support_ticket_id: str | None,
     started_at: datetime,
     expires_at: datetime,
+    scopes: list[str] | None = None,
     ip_address: str | None = None,
     user_agent: str | None = None,
 ) -> AdminImpersonationSession:
@@ -41,6 +42,7 @@ def create_impersonation_session(
         started_at=started_at,
         expires_at=expires_at,
         status=IMPERSONATION_STATUS_ACTIVE,
+        scopes=list(scopes or ["view"]),
         ip_address=ip_address,
         user_agent=user_agent,
     )

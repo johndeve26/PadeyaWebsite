@@ -43,6 +43,8 @@ class ImpersonationStartResponse(BaseModel):
     redirect_to: str = "/dashboard"
     access_token: str
     token_type: str = "bearer"
+    scopes: list[str] = Field(default_factory=lambda: ["view"])
+    pack: str = "view"
 
 
 class ImpersonationEndResponse(BaseModel):
@@ -67,6 +69,8 @@ class ImpersonationStatusResponse(BaseModel):
     impersonator_full_name: str | None = None
     target_email: str | None = None
     target_full_name: str | None = None
+    scopes: list[str] = Field(default_factory=list)
+    pack: str | None = None
 
 
 class SessionIdentityResponse(BaseModel):
@@ -92,3 +96,5 @@ class ImpersonationHistoryItem(BaseModel):
     ended_at: datetime | None = None
     expires_at: datetime
     status: str
+    scopes: list[str] = Field(default_factory=list)
+    pack: str | None = None

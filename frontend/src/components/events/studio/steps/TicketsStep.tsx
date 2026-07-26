@@ -15,6 +15,7 @@ export function TicketsStep({
   values,
   eventId,
   onChange,
+  allowStructuralEdits = false,
 }: {
   values: EventStudioValues;
   eventId?: string;
@@ -22,16 +23,23 @@ export function TicketsStep({
     key: K,
     value: EventStudioValues[K],
   ) => void;
+  /** Admin impersonation may edit price/qty after sales. */
+  allowStructuralEdits?: boolean;
 }) {
   return (
     <EventStudioSection
       title="Tickets & Access"
-      description="Configure ticket tiers guests can buy, then set how discoverable the event is. Sold tiers cannot be hard-deleted — deactivate them instead so orders stay intact."
+      description={
+        allowStructuralEdits
+          ? "Configure ticket tiers guests can buy. While impersonating, price and inventory fields stay editable even after sales (audited)."
+          : "Configure ticket tiers guests can buy, then set how discoverable the event is. Sold tiers cannot be hard-deleted — deactivate them instead so orders stay intact."
+      }
     >
       <TicketTypeBuilder
         drafts={values.ticket_drafts}
         onChange={(drafts) => onChange("ticket_drafts", drafts)}
         eventId={eventId}
+        allowStructuralEdits={allowStructuralEdits}
         onDeactivate={
           eventId
             ? async (ticketTypeId) => {

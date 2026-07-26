@@ -38,7 +38,8 @@ While impersonating: **current user = target**; **actor admin** is stored separa
 | **Target user is not notified** | No email · no in-app · no push when impersonation starts or ends. |
 | **No password access** | Admin never reads, returns, or shares the target’s password. |
 | **No session hijacking** | Target refresh tokens are not reused, revoked, or rotated. Impersonation issues a **separate** short-lived access token only (no refresh). |
-| **Sensitive actions blocked** | Password/email/phone/2FA, bank/payouts, checkout, ticket transfer, content delete, Passport privacy, social/Fan Connect, provider keys, admin/support/finance → `403` `This action is disabled during admin impersonation.` Allowlist: view dashboard/tickets/orders/Passport/Vault; reproduce navigation. |
+| **Sensitive actions blocked** | Always: 2FA, bank/payouts, checkout, ticket transfer, content delete, Passport privacy, social/Fan Connect, provider keys, admin/support/finance. Pack-gated: host studio (`host_events`), credentials (`credentials` / full pack). → `403` `This action is disabled during admin impersonation.` |
+| **Capability packs** | `view` · `host_events` · `full` (role grants; JWT `impersonation_scopes` + DB session). Prefer Admin Orders / Support desk / Message reports for look-only work. |
 | **Max duration** | Allowed `15` / `30` / `60` minutes; **default 30**, **max 60**. Auto-expires; one active session per admin. |
 | **Permission required** | `admin.users.impersonate` (`super_admin` via `admin.full_access`; support/finance only with explicit grant). Buyers, host owners, and host team members cannot impersonate. |
 | **Admin / session separation** | Admin tokens stay stashed in the browser; Exit restores them. JWT + DB session keep `actor_admin_id` distinct from `current_user` (target). Admin permissions never leak. `/admin` is blocked while impersonating. |
@@ -54,6 +55,8 @@ Required session claims:
 | `actor_admin_id` | Admin user |
 | `impersonation_id` | Session id |
 | `is_impersonating` | `true` |
+| `impersonation_scopes` | Capability pack scopes (`view`, `host_events`, `credentials`) |
+| `impersonation_pack` | Pack label (`view` / `host_events` / `full`) |
 | `started_at` | Session start (ISO) |
 | `expires_at` | Session expiry (ISO) |
 | `reason` | Required start reason |

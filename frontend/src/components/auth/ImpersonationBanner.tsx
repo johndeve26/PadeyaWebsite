@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui";
+import { packLabel } from "@/lib/auth/impersonation-scopes";
 import { cn } from "@/lib/cn";
 import { formatRemainingDuration } from "@/lib/format";
 
@@ -153,7 +154,9 @@ export function ImpersonationBanner() {
             ) : null}
           </div>
           <p className="text-sm font-extrabold leading-snug tracking-tight sm:text-[0.95rem]">
-            Impersonating {displayName}. Actions are audited.
+            Impersonating {displayName}. Pack:{" "}
+            {packLabel(impersonation?.pack)}. Checkout and payouts stay blocked.
+            Actions are audited.
           </p>
           <p className="flex flex-col gap-0.5 text-xs font-medium leading-snug opacity-90 sm:flex-row sm:flex-wrap sm:items-center sm:gap-0 sm:text-sm">
             <span className="min-w-0 truncate">

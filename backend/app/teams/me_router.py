@@ -100,4 +100,6 @@ def get_my_impersonation(
         impersonator_full_name=data.get("impersonator_full_name"),
         target_email=user.email,
         target_full_name=user.full_name,
+        scopes=list(data.get("scopes") or []),
+        pack=data.get("pack"),
     )

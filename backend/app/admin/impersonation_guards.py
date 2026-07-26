@@ -6,12 +6,27 @@ apply to any allowed mutations. There is no production override — a future
 admin-only test mode must be explicit, audited, and excluded from public
 metrics (see ``order_excluded_from_public_metrics``).
 
+Capability packs (scopes) further restrict what is allowed:
+
+- ``view`` — GET / navigation only (plus exit)
+- ``host_events`` — host studio mutations (events / media / ticket tiers)
+- ``credentials`` — password / email / phone recovery
+
 Exact 403 copy: ``IMPERSONATION_SENSITIVE_ACTION_DETAIL``.
 """
 
 from __future__ import annotations
 
 import re
+from typing import Collection
+
+from app.admin.impersonation_scopes import (
+    SCOPE_CREDENTIALS,
+    SCOPE_HOST_EVENTS,
+    SCOPE_VIEW,
+    has_scope,
+    normalize_scopes,
+)
 
 # Exact product copy for blocked sensitive actions (10C).
 IMPERSONATION_SENSITIVE_ACTION_DETAIL = (
@@ -20,13 +35,39 @@ IMPERSONATION_SENSITIVE_ACTION_DETAIL = (
 
 _MUTATING = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
-# Password / email / phone / 2FA / account delete (present + future-proof).
+# 2FA / account delete stay blocked. Password/email/phone are scope-gated.
 _ACCOUNT_SECURITY = re.compile(
     r"(?:"
-    r"/auth/(?:change-password|password|email|phone|2fa|mfa|totp|otp|delete|security)"
-    r"|/users/me/(?:password|email|phone|2fa|mfa|totp|delete|security|account)"
-    r"|/(?:change-password|enable-2fa|disable-2fa|delete-account)"
+    r"/auth/(?:2fa|mfa|totp|otp|delete|security)"
+    r"|/users/me/(?:2fa|mfa|totp|delete|security|account)"
+    r"|/(?:enable-2fa|disable-2fa|delete-account)"
     r")",
+    re.IGNORECASE,
+)
+
+# Credential recovery — allowed only with ``credentials`` scope.
+_CREDENTIALS = re.compile(
+    r"(?:"
+    r"/auth/change-password"
+    r"|/auth/change-email"
+    r"|/users/me/(?:email|phone|password)"
+    r"|/users/me/change-(?:email|password|phone)"
+    r")",
+    re.IGNORECASE,
+)
+
+# Host event studio mutations — allowed only with ``host_events`` scope.
+_HOST_EVENTS = re.compile(
+    r"(?:"
+    r"/events(?:/|$)"
+    r"|/host/events(?:/|$)"
+    r")",
+    re.IGNORECASE,
+)
+
+# Host studio may delete unused ticket tiers / event media while scoped.
+_HOST_EVENT_DELETE_ALLOWED = re.compile(
+    r"/events/by-id/[^/]+/(?:ticket-types|media)/[^/]+$",
     re.IGNORECASE,
 )
 
@@ -60,12 +101,11 @@ _PASSPORT_PRIVACY = re.compile(
     re.IGNORECASE,
 )
 
-# Soft-delete / destructive content actions (POST …/delete and similar).
+# Soft-delete of messaging content only — host event /media/ uploads must work.
 _CONTENT_DESTROY = re.compile(
     r"(?:"
     r"/messages/[^/]+/delete"
     r"|/host/messages/[^/]+/delete"
-    r"|/media/"
     r")",
     re.IGNORECASE,
 )
@@ -124,19 +164,33 @@ def is_admin_api_path(path: str) -> bool:
     return bool(_ADMIN_SEGMENT.search(_normalize_path(path)))
 
 
-def should_block_impersonation_action(method: str, path: str) -> bool:
+def is_credential_impersonation_path(path: str) -> bool:
+    return bool(_CREDENTIALS.search(_normalize_path(path)))
+
+
+def is_host_event_impersonation_path(path: str) -> bool:
+    path_n = _normalize_path(path)
+    if _HOST_EVENTS.search(path_n):
+        return True
+    if _HOST_EVENT_DELETE_ALLOWED.search(path_n):
+        return True
+    return False
+
+
+def should_block_impersonation_action(
+    method: str,
+    path: str,
+    scopes: Collection[str] | None = None,
+) -> bool:
     """Return True when this HTTP action must be refused during impersonation.
 
-    Blocked (10C): password/email/phone/2FA, account delete, bank/payouts,
-    checkout/paid purchase, ticket transfer, content delete, Passport privacy,
-    social/Fan Connect link changes, API/provider keys, all admin routes,
-    support-queue mutations, finance mutations.
-
-    Allowed: GET dashboard / tickets / orders / merch / refunds / Passport /
-    Vault / settings reads, UI navigation, and ``POST …/admin/impersonation/end``.
+    Global denylist always applies (money, 2FA, admin, …). Mutations outside
+    the actor's capability pack are also refused. ``scopes=None`` is treated
+    as view-only (safest default for legacy tokens).
     """
     method_u = method.upper()
     path_n = _normalize_path(path)
+    have = set(normalize_scopes(scopes) if scopes is not None else [SCOPE_VIEW])
 
     if is_impersonation_exit_path(method_u, path_n):
         return False
@@ -153,18 +207,14 @@ def should_block_impersonation_action(method: str, path: str) -> bool:
     if is_admin_api_path(path_n):
         return True
 
-    # Reads stay allowed for support navigation / reproduction.
+    # Reads stay allowed for support navigation / reproduction (view pack).
     if method_u == "GET":
         return False
 
     if method_u not in _MUTATING:
         return False
 
-    # Any DELETE of user/host content is sensitive.
-    if method_u == "DELETE":
-        return True
-
-    # POST/PUT/PATCH: category denylist.
+    # Hard denylist — never pack-overrideable.
     if _ACCOUNT_SECURITY.search(path_n):
         return True
     if _MONEY.search(path_n):
@@ -181,9 +231,6 @@ def should_block_impersonation_action(method: str, path: str) -> bool:
         return True
     if _SOCIAL.search(path_n):
         return True
-
-    # Refunds / reviews moderation / CRM destructive — covered by /finance/ and
-    # DELETE; also block review moderate + refund request posts by name.
     if "/refunds/" in lowered:
         return True
     if "/reviews/" in lowered and (
@@ -193,4 +240,18 @@ def should_block_impersonation_action(method: str, path: str) -> bool:
     if "reward-status" in lowered or lowered.endswith("/reverse"):
         return True
 
-    return False
+    # Credential recovery — credentials pack only.
+    if is_credential_impersonation_path(path_n):
+        return not has_scope(have, SCOPE_CREDENTIALS)
+
+    # Host event studio — host_events pack only.
+    if method_u == "DELETE":
+        if _HOST_EVENT_DELETE_ALLOWED.search(path_n):
+            return not has_scope(have, SCOPE_HOST_EVENTS)
+        return True
+
+    if is_host_event_impersonation_path(path_n):
+        return not has_scope(have, SCOPE_HOST_EVENTS)
+
+    # View pack: no other mutations.
+    return True

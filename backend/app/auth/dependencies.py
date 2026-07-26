@@ -102,6 +102,11 @@ def _parse_impersonation_payload(
     if ticket is not None and not isinstance(ticket, str):
         ticket = None
 
+    from app.admin.impersonation_scopes import normalize_scopes
+
+    raw_scopes = payload.get("impersonation_scopes") or payload.get("scopes")
+    scopes: tuple[str, ...] = tuple(normalize_scopes(raw_scopes) or ["view"])
+
     return ImpersonationContext(
         actor_admin_id=actor_admin_id,
         impersonation_id=impersonation_id,
@@ -111,6 +116,7 @@ def _parse_impersonation_payload(
         started_at=_parse_datetime(payload.get("started_at")),
         expires_at=_parse_datetime(payload.get("expires_at"))
         or _parse_datetime(payload.get("exp")),
+        scopes=scopes,
     )
 
 
@@ -119,9 +125,13 @@ def _validate_impersonation_session(
     *,
     impersonation: ImpersonationContext,
     target: User,
-) -> None:
-    """Ensure the DB session is active, not expired, and parties are still enabled."""
+) -> ImpersonationContext:
+    """Ensure the DB session is active, not expired, and parties are still enabled.
+
+    Returns the context with DB scopes applied (source of truth).
+    """
     from app.admin.impersonation_models import IMPERSONATION_STATUS_ACTIVE
+    from app.admin.impersonation_scopes import normalize_scopes
     from app.admin.impersonation_service import revoke_impersonation_for_safety
     from app.admin.impersonation_store import (
         get_impersonation_session,
@@ -145,6 +155,22 @@ def _validate_impersonation_session(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Impersonation session mismatch",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # DB scopes are source of truth (JWT claim is informational).
+    db_scopes = tuple(
+        normalize_scopes(getattr(session_row, "scopes", None)) or ["view"]
+    )
+    if db_scopes != impersonation.scopes:
+        impersonation = ImpersonationContext(
+            actor_admin_id=impersonation.actor_admin_id,
+            impersonation_id=impersonation.impersonation_id,
+            actual_user_id=impersonation.actual_user_id,
+            reason=impersonation.reason,
+            support_ticket_id=impersonation.support_ticket_id,
+            started_at=impersonation.started_at,
+            expires_at=impersonation.expires_at,
+            scopes=db_scopes,
         )
 
     now = datetime.now(UTC)
@@ -247,6 +273,8 @@ def _validate_impersonation_session(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    return impersonation
+
 
 def get_current_user(
     request: Request,
@@ -330,7 +358,7 @@ def get_current_user(
                 )
 
     if impersonation is not None:
-        _validate_impersonation_session(
+        impersonation = _validate_impersonation_session(
             db, impersonation=impersonation, target=user
         )
 

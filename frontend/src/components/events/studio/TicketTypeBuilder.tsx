@@ -76,6 +76,7 @@ export function TicketTypeBuilder({
   eventId,
   onDeactivate,
   onDeleteUnused,
+  allowStructuralEdits = false,
 }: {
   drafts: StudioTicketDraft[];
   onChange: (drafts: StudioTicketDraft[]) => void;
@@ -84,6 +85,8 @@ export function TicketTypeBuilder({
   onDeactivate?: (ticketTypeId: string) => Promise<void> | void;
   /** Hard-delete an unused saved tier. */
   onDeleteUnused?: (ticketTypeId: string) => Promise<void> | void;
+  /** When true (admin impersonation), unlock price/name/qty after sales. */
+  allowStructuralEdits?: boolean;
 }) {
   function update(localId: string, patch: Partial<StudioTicketDraft>) {
     onChange(
@@ -149,7 +152,7 @@ export function TicketTypeBuilder({
         );
         const isTable = draft.type === "table";
         const isGroup = draft.type === "group";
-        const locked = sold;
+        const locked = sold && !allowStructuralEdits;
         return (
           <StudioItemCard
             key={draft.localId}
@@ -163,9 +166,11 @@ export function TicketTypeBuilder({
               .filter(Boolean)
               .join(" · ")}
             subtitle={
-              sold
-                ? "Sold/reserved inventory locks price, name, type, quantity, and seats so existing orders stay intact."
-                : undefined
+              sold && allowStructuralEdits
+                ? "Has sales — structural fields unlocked with host_events impersonation pack (audited)."
+                : sold
+                  ? "Sold/reserved inventory locks price, name, type, quantity, and seats so existing orders stay intact."
+                  : undefined
             }
             actions={
               <>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -14,6 +15,10 @@ import {
   useToast,
 } from "@/components/ui";
 import { ApiError } from "@/lib/api";
+import {
+  packLabel,
+  resolveActorImpersonationScopes,
+} from "@/lib/auth/impersonation-scopes";
 import type { ImpersonationDurationMinutes } from "@/lib/auth/types";
 import type { UserPublic } from "@/lib/types/lifecycle";
 
@@ -37,13 +42,17 @@ export function ImpersonationStartForm({
 }: ImpersonationStartFormProps) {
   const router = useRouter();
   const toast = useToast();
-  const { startImpersonation } = useAuth();
+  const { startImpersonation, user: actor } = useAuth();
   const [reason, setReason] = useState("");
   const [ticketId, setTicketId] = useState("");
   const [duration, setDuration] = useState<ImpersonationDurationMinutes>(30);
   const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { pack: actorPack, scopes: actorScopes } =
+    resolveActorImpersonationScopes(actor?.permissions);
+  const packDescription = packLabel(actorPack);
 
   const reasonOk = reason.trim().length >= 3;
   const canSubmit = reasonOk && confirmed && Boolean(userId.trim()) && !busy;
@@ -124,7 +133,37 @@ export function ImpersonationStartForm({
           </>
         ) : null}
         This is not a real login — passwords are never exposed, sensitive actions are
-        blocked, and every request is audited.
+        blocked, and every request is audited. Your pack:{" "}
+        <strong>{packDescription}</strong>
+        {actorScopes.length ? ` (${actorScopes.join(", ")})` : ""}.
+      </Alert>
+
+      <Alert tone="info" title="Prefer admin tools when you only need to look">
+        <ul className="mt-1 list-disc space-y-1 pl-4 text-sm">
+          <li>
+            Order history / payouts:{" "}
+            <Link href="/admin/orders" className="underline underline-offset-2">
+              Admin → Orders
+            </Link>
+          </li>
+          <li>
+            Support cases:{" "}
+            <Link href="/support/desk" className="underline underline-offset-2">
+              Support desk
+            </Link>
+          </li>
+          <li>
+            Reported messages:{" "}
+            <Link
+              href="/admin/message-reports"
+              className="underline underline-offset-2"
+            >
+              Admin → Message reports
+            </Link>
+          </li>
+        </ul>
+        Impersonation is for reproducing the user&apos;s UI or host-event fixes
+        within your pack — not a substitute for finance or inbox staff tools.
       </Alert>
 
       <Textarea

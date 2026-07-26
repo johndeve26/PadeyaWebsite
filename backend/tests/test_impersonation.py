@@ -87,6 +87,8 @@ def test_impersonation_start_end_and_me(
     assert body["expires_at"]
     assert body["redirect_to"] == "/dashboard"
     assert "refresh_token" not in body
+    assert body["scopes"] == ["view", "host_events", "credentials"]
+    assert body["pack"] == "full"
 
     payload = decode_access_token(body["access_token"])
     assert payload["sub"] == target_id
@@ -97,6 +99,12 @@ def test_impersonation_start_end_and_me(
     assert payload["started_at"]
     assert payload["expires_at"]
     assert payload["reason"] == "QA ticket #42"
+    assert payload["impersonation_scopes"] == [
+        "view",
+        "host_events",
+        "credentials",
+    ]
+    assert payload["impersonation_pack"] == "full"
     assert "buyer" in payload["roles"]
     assert "admin.full_access" not in payload["permissions"]
     assert "admin.users.impersonate" not in payload["permissions"]
@@ -112,6 +120,12 @@ def test_impersonation_start_end_and_me(
     assert me_body["impersonation"]["is_impersonating"] is True
     assert me_body["impersonation"]["actual_user_id"] == target_id
     assert me_body["impersonation"]["impersonator_email"] == "admin-imp@example.com"
+    assert me_body["impersonation"]["scopes"] == [
+        "view",
+        "host_events",
+        "credentials",
+    ]
+    assert me_body["impersonation"]["pack"] == "full"
     assert "admin.full_access" not in me_body["permissions"]
 
     status = client.get(
@@ -123,6 +137,8 @@ def test_impersonation_start_end_and_me(
     assert status_body["is_impersonating"] is True
     assert status_body["target_user_id"] == target_id
     assert status_body["impersonation_id"] == body["impersonation_id"]
+    assert status_body["scopes"] == ["view", "host_events", "credentials"]
+    assert status_body["pack"] == "full"
 
     idle = client.get(
         "/api/v1/me/impersonation",
@@ -901,33 +917,73 @@ def test_impersonation_session_mismatch_rejected(
 def test_should_block_impersonation_action_matrix():
     from app.admin.impersonation_guards import should_block_impersonation_action
 
+    view = ["view"]
+    host = ["view", "host_events"]
+    full = ["view", "host_events", "credentials"]
+
     # Allowed: view dashboard / tickets / orders / merch / refunds / Passport / Vault / exit
-    assert not should_block_impersonation_action("GET", "/api/v1/auth/me")
-    assert not should_block_impersonation_action("GET", "/api/v1/tickets/mine")
-    assert not should_block_impersonation_action("GET", "/api/v1/orders/mine")
-    assert not should_block_impersonation_action("GET", "/api/v1/passport/me")
-    assert not should_block_impersonation_action("GET", "/api/v1/vault/items")
-    assert not should_block_impersonation_action("GET", "/api/v1/finance/host/balance")
-    assert not should_block_impersonation_action("GET", "/api/v1/finance/refunds/mine")
-    assert not should_block_impersonation_action("GET", "/api/v1/support/cases")
+    assert not should_block_impersonation_action("GET", "/api/v1/auth/me", view)
+    assert not should_block_impersonation_action("GET", "/api/v1/tickets/mine", view)
+    assert not should_block_impersonation_action("GET", "/api/v1/orders/mine", view)
+    assert not should_block_impersonation_action("GET", "/api/v1/passport/me", view)
+    assert not should_block_impersonation_action("GET", "/api/v1/vault/items", view)
     assert not should_block_impersonation_action(
-        "POST", "/api/v1/admin/impersonation/end"
+        "GET", "/api/v1/finance/host/balance", view
+    )
+    assert not should_block_impersonation_action(
+        "GET", "/api/v1/finance/refunds/mine", view
+    )
+    assert not should_block_impersonation_action("GET", "/api/v1/support/cases", view)
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/admin/impersonation/end", view
     )
 
     # Blocked: admin routes (any method)
     assert should_block_impersonation_action(
-        "POST", "/api/v1/admin/users/x/impersonation/start"
+        "POST", "/api/v1/admin/users/x/impersonation/start", full
     )
-    assert should_block_impersonation_action("GET", "/api/v1/admin/audit-logs")
-    assert should_block_impersonation_action("GET", "/api/v1/admin/users")
+    assert should_block_impersonation_action("GET", "/api/v1/admin/audit-logs", full)
+    assert should_block_impersonation_action("GET", "/api/v1/admin/users", full)
 
-    # Blocked: password / email / phone / 2FA / account delete
-    assert should_block_impersonation_action("POST", "/api/v1/auth/change-password")
+    # Credentials only with credentials scope
     assert should_block_impersonation_action(
-        "POST", "/api/v1/auth/password-reset/confirm"
+        "POST", "/api/v1/auth/change-password", view
     )
-    assert should_block_impersonation_action("PATCH", "/api/v1/users/me/email")
-    assert should_block_impersonation_action("PATCH", "/api/v1/users/me/phone")
+    assert should_block_impersonation_action(
+        "POST", "/api/v1/auth/change-password", host
+    )
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/auth/change-password", full
+    )
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/auth/change-email", full
+    )
+    assert not should_block_impersonation_action(
+        "PATCH", "/api/v1/users/me/email", full
+    )
+    assert not should_block_impersonation_action(
+        "PATCH", "/api/v1/users/me/phone", full
+    )
+    # Host event media + unused ticket-type delete — host_events pack
+    assert should_block_impersonation_action(
+        "POST", "/api/v1/events/media/upload", view
+    )
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/events/media/upload", host
+    )
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/events/by-id/abc/media/upload", host
+    )
+    assert not should_block_impersonation_action(
+        "DELETE", "/api/v1/events/by-id/abc/ticket-types/def", host
+    )
+    assert not should_block_impersonation_action(
+        "DELETE", "/api/v1/events/by-id/abc/media/def", host
+    )
+    assert should_block_impersonation_action(
+        "DELETE", "/api/v1/events/by-id/abc/ticket-types/def", view
+    )
+    # Blocked: 2FA / account delete
     assert should_block_impersonation_action("POST", "/api/v1/users/me/2fa/enable")
     assert should_block_impersonation_action("POST", "/api/v1/users/me/2fa/disable")
     assert should_block_impersonation_action("POST", "/api/v1/delete-account")
@@ -1488,6 +1544,68 @@ def test_can_start_impersonation_matrix():
     )
     assert not can_start_impersonation(
         _User([_Role("buyer", [])])  # type: ignore[arg-type]
+    )
+
+
+def test_resolve_impersonation_scopes_matrix():
+    from app.admin.impersonation_scopes import (
+        pack_label,
+        resolve_impersonation_scopes,
+    )
+
+    class _Perm:
+        def __init__(self, code: str) -> None:
+            self.code = code
+
+    class _Role:
+        def __init__(self, name: str, perms: list[str]) -> None:
+            self.name = name
+            self.permissions = [_Perm(c) for c in perms]
+
+    class _User:
+        def __init__(self, roles: list[_Role]) -> None:
+            self.roles = roles
+
+    full = resolve_impersonation_scopes(
+        _User([_Role("super_admin", ["admin.full_access"])])  # type: ignore[arg-type]
+    )
+    assert full == ["view", "host_events", "credentials"]
+    assert pack_label(full) == "full"
+
+    support = resolve_impersonation_scopes(
+        _User(
+            [
+                _Role(
+                    "support_agent",
+                    ["admin.users.impersonate"],
+                )
+            ]
+        )  # type: ignore[arg-type]
+    )
+    assert support == ["view"]
+    assert pack_label(support) == "view"
+
+    ops = resolve_impersonation_scopes(
+        _User(
+            [
+                _Role(
+                    "operations",
+                    [
+                        "admin.users.impersonate",
+                        "admin.users.impersonate.host_events",
+                    ],
+                )
+            ]
+        )  # type: ignore[arg-type]
+    )
+    assert ops == ["view", "host_events"]
+    assert pack_label(ops) == "host_events"
+
+    assert (
+        resolve_impersonation_scopes(
+            _User([_Role("buyer", [])])  # type: ignore[arg-type]
+        )
+        == []
     )
 
 
