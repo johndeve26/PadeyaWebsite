@@ -23,6 +23,21 @@ Canonical: [SEO_AUDIT.md](./SEO_AUDIT.md#production-indexability-regression-audi
 
 ---
 
+## Performance Phase 3.6 — /events mount RSC closure (2026-07-26)
+
+**Phase 3.6 = implemented in workspace** — stop bare `/events` from `router.replace` into `price_max=500` / `lat=0&lng=0` (Number(null) trap + default price sync). Event/merch CLS already **LIVE CLOSED** at 0. **Await /events n=3 + SEO to close Phase 3.**
+
+| Item | Status |
+|---|---|
+| price_max mount RSC | **CODE-LEVEL** fixed (`syncPriceToUrl`) |
+| lat=0/lng=0 mount RSC | **CODE-LEVEL** fixed (`parseLatLngSearchParams`) |
+| `/?_rsc` repeats | Secondary to soft-nav storm (Logo prefetch) |
+| Maintenance GET vs OPTIONS | Documented — target ≤1 GET |
+| Local tests / build / `test:seo` | **Passed** (LOCAL) |
+| Post-deploy `/events` LH n=3 | **NOT YET DEPLOYED** |
+
+---
+
 ## Performance Phase 3.5 — Targeted cleanup (2026-07-26)
 
 **Phase 3.5 = implemented in workspace** — `/events` Link `prefetch={false}` on dense cards; maintenance status single-flight; event/merch Suspense stable fallbacks (fixes footer.mt-auto CLS); `lighthouse-summary.mjs`. **Await deploy + n=3 Lighthouse before closing Phase 3.**

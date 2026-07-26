@@ -33,6 +33,10 @@ import {
 } from "@/lib/discovery/geo-location";
 import { citySlugFromName } from "@/lib/discovery/slugify";
 import {
+  buildEventsListingHref,
+  parseLatLngSearchParams,
+} from "@/lib/events/events-url-sync";
+import {
   DEFAULT_PRICE_BOUND_MAX,
   EVENTS_PAGE_SIZE,
   clampEventsViewForViewport,
@@ -112,6 +116,19 @@ function EventsMarketplaceInner({
   const hadUrlPriceMax = useRef(
     parsePriceParam(searchParams.get("price_max")) != null,
   );
+  /** Deep-link or user price edits — never mount-time default ceiling (500). */
+  const syncPriceToUrl = useRef(
+    hadUrlPriceMax.current ||
+      parsePriceParam(searchParams.get("price_min")) != null,
+  );
+  /**
+   * Deep-link / near=1 only. Silent autoLocate + stored geo may filter
+   * client-side but must not rewrite the canonical /events URL.
+   */
+  const syncLocationToUrl = useRef(
+    parseLatLngSearchParams(searchParams) != null ||
+      searchParams.get("near") === "1",
+  );
   const didExpandDefaultMax = useRef(false);
   const [sort, setSort] = useState<SortKey>(() =>
     parseSortKey(searchParams.get("sort")),
@@ -139,21 +156,23 @@ function EventsMarketplaceInner({
 
   // Seed location from URL, or quietly reuse stored / already-granted geo.
   // Never prompt after a declined session; near=1 exits gracefully.
+  // IMPORTANT: do not treat missing lat/lng as 0 (`Number(null) === 0`).
   useEffect(() => {
     if (!hydrated) return;
-    const lat = Number(searchParams.get("lat"));
-    const lng = Number(searchParams.get("lng"));
+    const coords = parseLatLngSearchParams(searchParams);
     const t = window.setTimeout(() => {
-      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      if (coords) {
+        syncLocationToUrl.current = true;
         setManual({
-          lat,
-          lng,
+          lat: coords.lat,
+          lng: coords.lng,
           label: searchParams.get("location_label") || "Selected location",
           radiusKm: parseRadius(searchParams.get("radius")),
         });
         return;
       }
       if (searchParams.get("near") === "1") {
+        syncLocationToUrl.current = true;
         if (declined) {
           clearLocation();
           return;
@@ -167,6 +186,7 @@ function EventsMarketplaceInner({
         })();
         return;
       }
+      // Client-side proximity only — must not pin lat/lng onto the URL.
       void autoLocateIfAllowed();
     }, 0);
     return () => window.clearTimeout(t);
@@ -269,28 +289,21 @@ function EventsMarketplaceInner({
   const rangeMin = Math.min(priceMin, priceMax);
   const rangeMax = Math.max(priceMin, priceMax);
 
+  // Single coherent URL sync — never inject default price_max / fake lat=0 on mount.
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (city !== "all" && !proximityActive) {
-      params.set("city", city);
-      params.set("location_kind", "city");
-      params.set("location_slug", city);
-    }
-    if (date !== "any") params.set("date", date);
-    if (date === "this-weekend") params.set("weekend", "1");
-    if (rangeMin > 0) params.set("price_min", String(rangeMin));
-    if (rangeMax < priceBoundMax) params.set("price_max", String(rangeMax));
-    if (sort !== "recommended") params.set("sort", sort);
-    if (view !== "grid") params.set("view", view);
-    if (proximityActive && location) {
-      params.set("lat", String(location.lat));
-      params.set("lng", String(location.lng));
-      params.set("radius", String(location.radiusKm));
-      if (location.label) params.set("location_label", location.label);
-    }
-
-    const qs = params.toString();
-    const next = qs ? `${pathname}?${qs}` : pathname;
+    const next = buildEventsListingHref(pathname, {
+      city,
+      date,
+      priceMin: rangeMin,
+      priceMax: rangeMax,
+      priceBoundMax,
+      syncPriceToUrl: syncPriceToUrl.current,
+      sort,
+      view,
+      proximityActive,
+      syncLocationToUrl: syncLocationToUrl.current,
+      location,
+    });
     const currentQs = searchParams.toString();
     const current = currentQs ? `${pathname}?${currentQs}` : pathname;
     if (next !== current) {
@@ -382,8 +395,14 @@ function EventsMarketplaceInner({
   function patchFilters(patch: Partial<EventsFilterValues>) {
     if (patch.city !== undefined) setCity(patch.city);
     if (patch.date !== undefined) setDate(patch.date);
-    if (patch.priceMin !== undefined) setPriceMin(patch.priceMin);
-    if (patch.priceMax !== undefined) setPriceMax(patch.priceMax);
+    if (patch.priceMin !== undefined) {
+      syncPriceToUrl.current = true;
+      setPriceMin(patch.priceMin);
+    }
+    if (patch.priceMax !== undefined) {
+      syncPriceToUrl.current = true;
+      setPriceMax(patch.priceMax);
+    }
   }
 
   function clearAllFilters() {
@@ -393,6 +412,9 @@ function EventsMarketplaceInner({
     setPriceMax(priceBoundMax);
     setSort("recommended");
     setVisibleCount(EVENTS_PAGE_SIZE);
+    syncPriceToUrl.current = false;
+    syncLocationToUrl.current = false;
+    clearLocation();
   }
 
   function onViewChange(next: EventsViewMode) {

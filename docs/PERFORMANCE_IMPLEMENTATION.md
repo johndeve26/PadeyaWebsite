@@ -521,3 +521,33 @@ Scope: post–Phase 3 deploy Lighthouse issues only — `/events` RSC prefetch s
 | Diagnostics | `frontend/scripts/lighthouse-summary.mjs` |
 
 Post-deploy n=3 Lighthouse for `/`, `/events`, event detail, merch: **NOT YET DEPLOYED**. Phase 3 remains open until event CLS is consistently < 0.1 and `/events` is not polluted by initial RSC prefetch storms.
+
+---
+
+## Phase 3.6 — /events mount URL / RSC closure (workspace)
+
+Event-detail CLS **0** (n=3) and merch CLS **0** (n=3) are **LIVE LAB CLOSED**. Homepage acceptable. Remaining blocker was `/events` mount-time `router.replace` RSC churn.
+
+### Root causes (CODE-LEVEL + LIVE LAB URL patterns)
+
+| RSC pattern | Initiator | Cause |
+| ----------- | --------- | ----- |
+| `/events?price_max=500&_rsc=` | `EventsMarketplaceClient` URL sync effect | Default `priceMax=500` then `rangeMax < dataPriceBoundMax` wrote `price_max` before expand |
+| `/events?lat=0&lng=0&…&_rsc=` | Same + location seed | `Number(searchParams.get("lat"))` when missing → `0`; `setManual` + URL sync |
+| Combined price+geo `_rsc=` | Sequential replaces from the above | Independent state updates each calling `router.replace` |
+| `/?_rsc=` | Header `Logo` → `/` (default Link prefetch) | Re-evaluated after each soft navigation — not a marketplace card storm |
+
+### Fixes
+
+- `lib/events/events-url-sync.ts` — safe lat/lng parse; intentional-only query builder
+- Gate `price_max` / lat-lng URL writes behind `syncPriceToUrl` / `syncLocationToUrl`
+- Silent `autoLocateIfAllowed` may still filter client-side; **does not** pin URL
+- Smoke: `node frontend/scripts/events-mount-navigation-smoke.mjs`
+
+### Maintenance count note
+
+Cross-origin `NEXT_PUBLIC_API_URL` yields **OPTIONS preflight + GET**. Target: **≤1 application GET** per bootstrap. OPTIONS is not a duplicate app fetch. Remount storms from URL replaces inflated counts.
+
+### Closure criteria (after deploy)
+
+`/events` mobile Lighthouse n=3 without mount facet navigations; SEO smoke + indexability green. Do not require Lighthouse 100 or home LCP < 2.5s.
