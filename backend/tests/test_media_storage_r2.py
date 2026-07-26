@@ -47,12 +47,26 @@ def _set_r2_env(monkeypatch, *, complete: bool = True) -> None:
         monkeypatch.setenv("R2_ACCESS_KEY_ID", "test-access-key")
         monkeypatch.setenv("R2_SECRET_ACCESS_KEY", "test-secret-key-value")
         monkeypatch.setenv("R2_PUBLIC_URL", "https://media.padeya.com")
+        monkeypatch.setenv("R2_PRIVATE_BUCKET_NAME", "padeya-private")
+        monkeypatch.setenv(
+            "R2_PRIVATE_ENDPOINT",
+            "https://example-account.r2.cloudflarestorage.com",
+        )
+        monkeypatch.setenv("R2_PRIVATE_ACCESS_KEY_ID", "test-private-access")
+        monkeypatch.setenv("R2_PRIVATE_SECRET_ACCESS_KEY", "test-private-secret")
     else:
-        monkeypatch.delenv("R2_BUCKET_NAME", raising=False)
-        monkeypatch.delenv("R2_ENDPOINT", raising=False)
-        monkeypatch.delenv("R2_ACCESS_KEY_ID", raising=False)
-        monkeypatch.delenv("R2_SECRET_ACCESS_KEY", raising=False)
-        monkeypatch.delenv("R2_PUBLIC_URL", raising=False)
+        for key in (
+            "R2_BUCKET_NAME",
+            "R2_ENDPOINT",
+            "R2_ACCESS_KEY_ID",
+            "R2_SECRET_ACCESS_KEY",
+            "R2_PUBLIC_URL",
+            "R2_PRIVATE_BUCKET_NAME",
+            "R2_PRIVATE_ENDPOINT",
+            "R2_PRIVATE_ACCESS_KEY_ID",
+            "R2_PRIVATE_SECRET_ACCESS_KEY",
+        ):
+            monkeypatch.delenv(key, raising=False)
     _clear_settings()
 
 
@@ -225,7 +239,9 @@ def test_permanent_delete_removes_display_and_thumb(monkeypatch):
         def delete(self, key: str) -> None:
             deleted.append(key)
 
-    monkeypatch.setattr("app.core.media.get_media_storage", lambda: FakeStorage())
+    monkeypatch.setattr(
+        "app.core.media.get_public_media_storage", lambda: FakeStorage()
+    )
     media = EventMemoryMedia(
         memory_id=uuid4(),
         media_type="image",
@@ -259,7 +275,9 @@ def test_db_failure_cleanup_deletes_uploaded_keys(monkeypatch):
         def delete(self, key: str) -> None:
             deleted.append(key)
 
-    monkeypatch.setattr("app.core.media.get_media_storage", lambda: FakeStorage())
+    monkeypatch.setattr(
+        "app.core.media.get_public_media_storage", lambda: FakeStorage()
+    )
     delete_media_keys("memories/events/a/one.webp", "memories/events/a/thumbs/two.webp")
     assert deleted == [
         "memories/events/a/one.webp",

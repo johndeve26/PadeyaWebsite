@@ -6,7 +6,8 @@ import io
 import uuid
 from dataclasses import dataclass
 
-from app.core.media import MediaStorageError, get_media_storage
+from app.core.media import MediaStorageError, get_public_media_storage
+from app.core.media_folders import memory_public_folder
 
 ALLOWED_MEMORY_MIME = frozenset({"image/jpeg", "image/jpg", "image/png", "image/webp"})
 MAX_RAW_UPLOAD_BYTES = 10 * 1024 * 1024
@@ -122,14 +123,13 @@ def process_memory_image(
         raise MemoryImageError("Failed to encode image")
 
     # Object keys are backend-generated UUIDs under memories/events/{event_id}/…
-    folder = f"memories/events/{event_id}"
-    storage = get_media_storage()
+    storage = get_public_media_storage()
     try:
         display_stored = storage.store_validated_bytes(
             data=display_bytes,
             filename="memory.webp",
             content_type="image/webp",
-            folder=folder,
+            folder=memory_public_folder(event_id, thumb=False),
             extension=".webp",
             max_bytes=MAX_RAW_UPLOAD_BYTES,
         )
@@ -143,7 +143,7 @@ def process_memory_image(
             data=thumb_bytes,
             filename="memory-thumb.webp",
             content_type="image/webp",
-            folder=f"{folder}/thumbs",
+            folder=memory_public_folder(event_id, thumb=True),
             extension=".webp",
             max_bytes=MAX_RAW_UPLOAD_BYTES,
         )

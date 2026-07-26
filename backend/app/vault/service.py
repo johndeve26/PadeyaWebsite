@@ -15,7 +15,9 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.audit import write_audit_log
 from app.core.config import get_settings
-from app.core.media import get_media_storage
+from app.core.media_folders import vault_private_folder
+from app.core.media_private import assert_not_public_media_url
+from app.core.r2_client import make_object_key
 from app.finance.ledger import append_ledger_entry
 from app.hosts.models import Host
 from app.hosts.service import require_user_host
@@ -108,16 +110,32 @@ def _require_host_item(db: Session, user: User, item_id: UUID) -> tuple[Host, Va
 
 
 def _attach_media(db: Session, item: VaultItem, media_inputs: list) -> None:
-    storage = get_media_storage()
+    """Attach vault media metadata.
+
+    Vault files are PRIVATE. Never write vault objects to public padeya-media.
+    Preview/cover may reference an external or already-public marketing URL;
+    non-preview media must not use media.padeya.com / /media/ URLs.
+    """
+    folder = vault_private_folder(item.host_id)
     for idx, m in enumerate(media_inputs):
+        url = (m.url or "").strip()
+        is_preview = bool(m.is_preview)
+        if url and not is_preview:
+            try:
+                assert_not_public_media_url(url, context="Vault private media")
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         if m.filename:
-            stored = storage.build_placeholder_url(filename=m.filename, folder="vault")
-            url = m.url.strip() or stored.url
-            key = stored.key
+            # Opaque private key only — no public CDN URL is generated.
+            key = make_object_key(folder=folder, extension=".bin")
+            if not url:
+                url = f"private://{key}"
         else:
-            stored = storage.store_remote_url(url=m.url, folder="vault")
-            url = stored.url
-            key = stored.key
+            if not url:
+                raise HTTPException(status_code=400, detail="Media URL is required")
+            # External URL kept as-is; storage_key is an opaque private handle.
+            key = make_object_key(folder=folder, extension=".bin")
         db.add(
             VaultMedia(
                 vault_item_id=item.id,
@@ -125,7 +143,7 @@ def _attach_media(db: Session, item: VaultItem, media_inputs: list) -> None:
                 url=url,
                 storage_key=key,
                 label=m.label,
-                is_preview=bool(m.is_preview),
+                is_preview=is_preview,
                 sort_order=m.sort_order if m.sort_order else idx,
             )
         )
@@ -573,6 +591,16 @@ def list_public_vault_for_memory(
     return _serialize_related_vault_cards(db, rows=list(rows), user=user, limit=limit)
 
 
+def _validate_vault_file_url(file_url: str | None) -> None:
+    """Vault file payloads must never use the public media CDN."""
+    if not file_url:
+        return
+    try:
+        assert_not_public_media_url(file_url, context="Vault file_url")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 def create_vault_item(db: Session, *, user: User, payload: VaultItemCreate) -> dict:
     host = require_user_host(db, user)
     _validate_related_links(
@@ -581,6 +609,7 @@ def create_vault_item(db: Session, *, user: User, payload: VaultItemCreate) -> d
         related_event_id=payload.related_event_id,
         related_memory_id=payload.related_memory_id,
     )
+    _validate_vault_file_url(payload.file_url)
     slug = _unique_slug(db, host.id, payload.slug or payload.title)
     now = datetime.now(UTC)
     status = normalize_item_status(payload.status)
@@ -678,6 +707,7 @@ def update_vault_item(
     if "cover_url" in data:
         item.cover_url = data["cover_url"]
     if "file_url" in data:
+        _validate_vault_file_url(data["file_url"])
         item.file_url = data["file_url"]
     if "external_url" in data:
         item.external_url = data["external_url"]

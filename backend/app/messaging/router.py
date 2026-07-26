@@ -6,7 +6,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile
-from fastapi.responses import Response as RawResponse
+from fastapi.responses import RedirectResponse, Response as RawResponse
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import (
@@ -98,13 +98,26 @@ def download_attachment(
         download_token=d,
     )
     from app.messaging.attachments import content_disposition_for
+    from app.messaging.attachment_storage import get_attachment_storage
 
-    data = svc.stream_attachment_bytes(row)
     # Best-effort audit (do not fail the download).
     try:
         svc.record_attachment_download(db, viewer, row.id)
     except Exception:
         pass
+
+    storage = get_attachment_storage()
+    # After authorization only: optional short-lived R2 redirect (never persisted).
+    if row.storage_key and storage.supports_presign():
+        signed = storage.presign_get(row.storage_key, expires_in=900)
+        if signed:
+            return RedirectResponse(
+                url=signed,
+                status_code=307,
+                headers={"Cache-Control": "private, no-store"},
+            )
+
+    data = svc.stream_attachment_bytes(row)
     filename = row.original_filename or row.safe_filename or "attachment"
     return RawResponse(
         content=data,
@@ -112,7 +125,7 @@ def download_attachment(
         headers={
             # Images: inline preview. PDF/docs: attachment (no unsafe inline render).
             "Content-Disposition": content_disposition_for(row.mime_type, filename),
-            "Cache-Control": "private, max-age=300",
+            "Cache-Control": "private, no-store",
             "X-Content-Type-Options": "nosniff",
             "Content-Security-Policy": "default-src 'none'; sandbox",
         },

@@ -4,6 +4,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile, status
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import CurrentUser, get_current_user_optional, require_permission
@@ -29,6 +30,8 @@ from app.support.schemas import (
 from app.support.service import (
     add_attachment,
     add_internal_note,
+    get_attachment_for_download,
+    open_support_attachment_bytes,
     add_message,
     add_public_message,
     archive_case,
@@ -236,6 +239,43 @@ async def post_attachment_legacy(
         await add_attachment(
             db, user=user, case_id=case_id, file=file, is_internal=is_internal
         )
+    )
+
+
+@router.get("/support/tickets/{ticket_id}/attachments/{attachment_id}")
+def download_attachment(
+    ticket_id: UUID,
+    attachment_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    user: CurrentUser,
+) -> Response:
+    """Authorized support attachment download — never a public media URL."""
+    att = get_attachment_for_download(
+        db, user=user, case_id=ticket_id, attachment_id=attachment_id
+    )
+    from app.core.media_private import get_private_media_storage
+
+    private = get_private_media_storage()
+    if private.supports_presign() and att.storage_key:
+        try:
+            if private.exists(att.storage_key):
+                signed = private.presign_get(att.storage_key, expires_in=900)
+                return RedirectResponse(
+                    url=signed,
+                    status_code=307,
+                    headers={"Cache-Control": "private, no-store"},
+                )
+        except Exception:
+            pass
+    data = open_support_attachment_bytes(att)
+    return Response(
+        content=data,
+        media_type=att.content_type or "application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="{att.filename}"',
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
     )
 
 

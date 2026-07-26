@@ -1096,12 +1096,59 @@ def archive_case(db: Session, *, user: User, case_id: UUID) -> dict:
     return serialize_case(db, _load_case(db, case.id), include_internal=True)  # type: ignore[arg-type]
 
 
-def _storage_root() -> Path:
-    root = Path(get_settings().media_root if hasattr(get_settings(), "media_root") else ".")
-    # Prefer project-relative storage
+def _legacy_support_storage_root() -> Path:
+    """Legacy local path for pre-R2 support attachments (read fallback only)."""
     path = Path("storage/support_attachments")
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def _store_support_attachment_bytes(
+    *,
+    case_id: UUID,
+    data: bytes,
+    content_type: str,
+    filename: str,
+) -> str:
+    """Store support file in private media (local or padeya-private). Returns object key."""
+    from app.core.media import MediaStorageError
+    from app.core.media_folders import support_private_folder
+    from app.core.media_private import get_private_media_storage
+
+    ext = Path(filename).suffix.lower() if filename else ".bin"
+    if not ext or len(ext) > 16:
+        ext = ".bin"
+    try:
+        stored = get_private_media_storage().store_validated_bytes(
+            data=data,
+            folder=support_private_folder(case_id),
+            extension=ext,
+            content_type=content_type,
+            max_bytes=MAX_ATTACHMENT_BYTES,
+            filename=filename,
+        )
+    except MediaStorageError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Media storage temporarily unavailable",
+        ) from exc
+    return stored.key
+
+
+def _read_support_attachment_bytes(storage_key: str) -> bytes:
+    from app.core.media_private import get_private_media_storage
+
+    # New private storage first; fall back to legacy local layout.
+    private = get_private_media_storage()
+    try:
+        if private.exists(storage_key):
+            return private.open_bytes(storage_key)
+    except FileNotFoundError:
+        pass
+    legacy = _legacy_support_storage_root() / storage_key
+    if legacy.is_file():
+        return legacy.read_bytes()
+    raise FileNotFoundError("Support attachment missing from storage")
 
 
 async def add_attachment(
@@ -1125,42 +1172,77 @@ async def add_attachment(
     if ".." in filename or "/" in filename or "\\" in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
     checksum = hashlib.sha256(data).hexdigest()
-    key = f"{case.id}/{uuid.uuid4().hex}_{filename}"
-    dest = _storage_root() / key
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_bytes(data)
-    db.add(
-        SupportTicketAttachment(
-            case_id=case.id,
-            uploaded_by_user_id=user.id,
-            filename=filename,
-            content_type=content_type,
-            size_bytes=len(data),
-            storage_key=key,
-            checksum_sha256=checksum,
-            is_internal=is_internal,
+    key = _store_support_attachment_bytes(
+        case_id=case.id,
+        data=data,
+        content_type=content_type,
+        filename=filename,
+    )
+    try:
+        db.add(
+            SupportTicketAttachment(
+                case_id=case.id,
+                uploaded_by_user_id=user.id,
+                filename=filename,
+                content_type=content_type,
+                size_bytes=len(data),
+                storage_key=key,
+                checksum_sha256=checksum,
+                is_internal=is_internal,
+            )
         )
-    )
-    _record_event(
-        db,
-        case=case,
-        actor_user_id=user.id,
-        event_type="attachment",
-        summary=f"Attachment uploaded: {filename}",
-        is_public=not is_internal,
-    )
-    write_audit_log(
-        db,
-        action="support.attachment",
-        actor_user_id=user.id,
-        resource_type="support_case",
-        resource_id=str(case.id),
-        details={"filename": filename, "size": len(data)},
-    )
-    db.commit()
+        _record_event(
+            db,
+            case=case,
+            actor_user_id=user.id,
+            event_type="attachment",
+            summary=f"Attachment uploaded: {filename}",
+            is_public=not is_internal,
+        )
+        write_audit_log(
+            db,
+            action="support.attachment",
+            actor_user_id=user.id,
+            resource_type="support_case",
+            resource_id=str(case.id),
+            details={"filename": filename, "size": len(data)},
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        try:
+            from app.core.media_private import get_private_media_storage
+
+            get_private_media_storage().delete(key)
+        except Exception:
+            pass
+        raise
     return serialize_case(
         db, _load_case(db, case.id), include_internal=is_support_staff(user)  # type: ignore[arg-type]
     )
+
+
+def get_attachment_for_download(
+    db: Session,
+    *,
+    user: User,
+    case_id: UUID,
+    attachment_id: UUID,
+) -> SupportTicketAttachment:
+    case = _require_case_access(db, user, case_id)
+    att = db.get(SupportTicketAttachment, attachment_id)
+    if att is None or att.case_id != case.id or att.deleted_at is not None:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+    if att.is_internal and not is_support_staff(user):
+        raise HTTPException(status_code=403, detail="Not allowed")
+    return att
+
+
+def open_support_attachment_bytes(att: SupportTicketAttachment) -> bytes:
+    try:
+        return _read_support_attachment_bytes(att.storage_key)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Attachment not found") from exc
 
 
 def soft_delete_attachment(

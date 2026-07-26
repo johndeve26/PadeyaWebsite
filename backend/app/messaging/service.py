@@ -288,6 +288,7 @@ def upload_message_attachment(
             extension=validated.extension,
             thread_id=thread.id,
             uploader_id=user.id,
+            content_type=validated.content_type,
         )
     except ValueError as exc:
         row.status = ATT_STATUS_FAILED

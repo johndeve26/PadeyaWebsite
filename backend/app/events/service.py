@@ -14,7 +14,8 @@ from sqlalchemy.orm import Session, object_session, selectinload
 
 from app.core.audit import write_audit_log
 from app.core.config import get_settings
-from app.core.media import get_media_storage
+from app.core.media import get_public_media_storage
+from app.core.media_folders import event_public_folder, host_public_folder
 from app.events.models import (
     Event,
     EventAgendaItem,
@@ -1861,13 +1862,13 @@ def upload_host_media_file(
         "other",
     }:
         raise HTTPException(status_code=400, detail="Invalid media_type")
-    storage = get_media_storage()
+    storage = get_public_media_storage()
     try:
         stored = storage.store_bytes(
             data=data,
             filename=filename,
             content_type=content_type,
-            folder=f"hosts/{host.id}",
+            folder=host_public_folder(host.id, media_type),
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -1907,13 +1908,13 @@ def upload_event_media_file(
     }:
         raise HTTPException(status_code=400, detail="Invalid media_type")
 
-    storage = get_media_storage()
+    storage = get_public_media_storage()
     try:
         stored = storage.store_bytes(
             data=data,
             filename=filename,
             content_type=content_type,
-            folder=f"events/{event.id}",
+            folder=event_public_folder(event.id, media_type),
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -1947,12 +1948,13 @@ def add_event_media(
         raise HTTPException(status_code=404, detail="Event not found")
     host = assert_can_manage_event(db, user, event)
 
-    storage = get_media_storage()
+    storage = get_public_media_storage()
+    folder = event_public_folder(event.id, payload.media_type)
     if payload.url:
-        stored = storage.store_remote_url(url=payload.url, folder=f"events/{event.id}")
+        stored = storage.store_remote_url(url=payload.url, folder=folder)
     elif payload.filename:
         stored = storage.build_placeholder_url(
-            filename=payload.filename, folder=f"events/{event.id}"
+            filename=payload.filename, folder=folder
         )
     else:
         raise HTTPException(status_code=400, detail="Provide url or filename")

@@ -199,15 +199,17 @@ async def lifespan(_: FastAPI):
     push_sweeper: asyncio.Task | None = None
     if settings.app_env != "test":
         from app.core.media import (
-            get_media_storage,
+            get_public_media_storage,
             log_media_storage_status,
             media_storage_provider,
             validate_media_storage_config,
         )
+        from app.core.media_private import get_private_media_storage
 
         validate_media_storage_config()
         if media_storage_provider() == "r2":
-            get_media_storage()
+            get_public_media_storage()
+            get_private_media_storage()
         log_media_storage_status()
         db = SessionLocal()
         try:

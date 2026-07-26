@@ -13,9 +13,10 @@ from app.core.audit import write_audit_log
 from app.core.media import (
     MediaStorageError,
     delete_media_keys,
-    get_media_storage,
+    get_public_media_storage,
     storage_key_from_url,
 )
+from app.core.media_folders import memory_public_folder
 from app.events.models import Event
 from app.memories.constants import (
     FAN_MEMORY_PHOTO_LIMIT,
@@ -625,8 +626,8 @@ def add_memory_media_url(
         )
 
     try:
-        stored = get_media_storage().store_remote_url(
-            url=payload.url, folder=f"memories/{event.id}"
+        stored = get_public_media_storage().store_remote_url(
+            url=payload.url, folder=memory_public_folder(event.id)
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

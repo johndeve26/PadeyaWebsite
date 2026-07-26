@@ -282,14 +282,16 @@ def media_storage_provider() -> str:
 
 
 def validate_media_storage_config() -> None:
-    """Fail clearly when provider=r2 and required env is missing."""
+    """Fail clearly when provider=r2 and required public+private env is missing."""
     provider = media_storage_provider()
     if provider in {"local", "filesystem", "disk", ""}:
         return
     if provider == "r2":
         from app.core.media_r2 import validate_r2_settings
+        from app.core.media_private import validate_private_media_config
 
         validate_r2_settings()
+        validate_private_media_config()
         return
     raise MediaStorageError(
         f"Unknown MEDIA_STORAGE_PROVIDER={provider!r}. Use local or r2."
@@ -307,16 +309,19 @@ def log_media_storage_status() -> None:
             parsed = urlparse(raw if "://" in raw else f"https://{raw}")
             domain = parsed.netloc or raw.rstrip("/")
         logger.info(
-            "Media storage: provider=r2 configured=yes bucket=%s public_domain=%s",
+            "Media storage: provider=r2 public_configured=yes bucket=%s "
+            "public_domain=%s private_bucket=%s",
             (settings.r2_bucket_name or "").strip() or "(missing)",
             domain or "(missing)",
+            (settings.r2_private_bucket_name or "").strip() or "(missing)",
         )
     else:
-        logger.info("Media storage: provider=local configured=yes")
+        logger.info("Media storage: provider=local public=yes private=yes")
 
 
 @lru_cache
-def get_media_storage() -> MediaStorage:
+def get_public_media_storage() -> MediaStorage:
+    """Public uploaded media (events, memories, host/merch images, etc.)."""
     provider = media_storage_provider()
     if provider in {"local", "filesystem", "disk", ""}:
         return LocalMediaStorage()
@@ -329,14 +334,28 @@ def get_media_storage() -> MediaStorage:
     )
 
 
+def get_media_storage() -> MediaStorage:
+    """Back-compat alias for public media storage.
+
+    Prefer get_public_media_storage() or get_private_media_storage() explicitly.
+    """
+    return get_public_media_storage()
+
+
 def reset_media_storage() -> None:
-    """Clear cached storage instance (tests / settings changes)."""
-    get_media_storage.cache_clear()
+    """Clear cached storage instances (tests / settings changes)."""
+    get_public_media_storage.cache_clear()
+    try:
+        from app.core.media_private import reset_private_media_storage
+
+        reset_private_media_storage()
+    except Exception:
+        pass
 
 
 def delete_media_keys(*keys: str | None) -> None:
-    """Best-effort delete of storage objects. Swallows operational errors after log."""
-    storage = get_media_storage()
+    """Best-effort delete of public storage objects."""
+    storage = get_public_media_storage()
     seen: set[str] = set()
     for key in keys:
         if not key or key in seen:
