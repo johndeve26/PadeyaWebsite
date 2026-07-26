@@ -47,7 +47,10 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
       setNewEmail("");
       setCurrentPasswordForEmail("");
       if (isImpersonating) {
-        toast.success("Email updated for this account (audited impersonation).");
+        toast.push({
+          tone: "success",
+          title: "Email updated for this account (audited impersonation).",
+        });
         await onEmailChanged();
         return;
       }
@@ -85,9 +88,11 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
       setNewPassword("");
       setConfirmPassword("");
       if (isImpersonating) {
-        toast.success(
-          "Password updated for this account. Their other sessions were signed out (audited).",
-        );
+        toast.push({
+          tone: "success",
+          title:
+            "Password updated for this account. Their other sessions were signed out (audited).",
+        });
         return;
       }
       markSessionExpired(
