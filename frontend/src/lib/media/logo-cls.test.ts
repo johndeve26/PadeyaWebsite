@@ -12,4 +12,12 @@ describe("Logo CLS hardening", () => {
     expect(src).not.toMatch(/width:\s*["']auto["']/);
     expect(src).not.toMatch(/h-auto w-auto/);
   });
+
+  it("uses next/image optimization (no unoptimized bypass)", () => {
+    const src = readFileSync(
+      path.join(process.cwd(), "src/components/ui/Logo.tsx"),
+      "utf8",
+    );
+    expect(src).not.toMatch(/\bunoptimized\b/);
+  });
 });

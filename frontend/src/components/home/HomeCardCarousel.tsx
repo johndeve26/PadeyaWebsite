@@ -154,15 +154,20 @@ export function HomeCardCarousel({
               aria-selected={i === active}
               aria-label={`Slide ${i + 1} of ${items.length}`}
               onClick={() => goTo(i)}
-              className={cn(
-                "h-1.5 rounded-full transition-all",
-                i === active
-                  ? "w-5 bg-primary"
-                  : dark
-                    ? "w-1.5 bg-paper/25 hover:bg-paper/45"
-                    : "w-1.5 bg-border hover:bg-muted-foreground/40",
-              )}
-            />
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full"
+            >
+              <span
+                aria-hidden
+                className={cn(
+                  "rounded-full transition-all",
+                  i === active
+                    ? "h-1.5 w-5 bg-primary"
+                    : dark
+                      ? "h-1.5 w-1.5 bg-paper/35 hover:bg-paper/55"
+                      : "h-1.5 w-1.5 bg-border hover:bg-muted-foreground/40",
+                )}
+              />
+            </button>
           ))}
         </div>
       </div>
@@ -223,7 +228,7 @@ function CarouselButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "inline-flex h-10 w-10 items-center justify-center rounded-full border text-base font-bold shadow-[var(--shadow-soft)] transition",
+        "inline-flex h-11 w-11 items-center justify-center rounded-full border text-base font-bold shadow-[var(--shadow-soft)] transition",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring",
         "disabled:pointer-events-none disabled:opacity-35",
         dark

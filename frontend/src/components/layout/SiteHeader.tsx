@@ -36,7 +36,7 @@ const HeaderUserMenu = dynamic(
 );
 
 const navLinkBase =
-  "rounded-[var(--radius-sm)] px-2.5 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 xl:px-3";
+  "inline-flex min-h-11 items-center rounded-[var(--radius-sm)] px-2.5 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 xl:px-3";
 
 export function SiteHeader() {
   const { user, authInitialized, isImpersonating } = useAuth();
@@ -54,8 +54,12 @@ export function SiteHeader() {
     pathname === "/reset-password";
 
   // Transparent + light nav only at scroll top over a dark hero; once scrolled, solid bar.
+  // Homepage always has a dark full-bleed hero — treat as onDark before the
+  // client surface probe runs so SSR/first paint does not fetch the light logo.
   const onDark =
-    marketing && !scrolled && (authMarketingPage || overDark);
+    marketing &&
+    !scrolled &&
+    (authMarketingPage || overDark || pathname === "/");
   const showScrolledBar = marketing && scrolled;
 
   useEffect(() => {
@@ -99,7 +103,6 @@ export function SiteHeader() {
         <div className="flex min-w-0 items-center gap-3 xl:gap-8">
           <Logo
             variant={onDark ? "dark" : "auto"}
-            priority
             height={32}
             className="shrink-0"
           />

@@ -47,7 +47,9 @@ export function HeroSection({
             src={backgroundSrc}
             alt={backgroundAlt}
             fill
-            priority
+            // Next.js 16: use `preload` + high fetch priority for LCP heroes.
+            preload
+            fetchPriority="high"
             sizes="100vw"
             className={cn(
               "object-cover object-center padeya-hero-media",

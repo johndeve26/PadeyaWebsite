@@ -14,10 +14,7 @@ import {
 import { useDiscoveryLocation } from "@/hooks/useDiscoveryLocation";
 import { DEFAULT_DISCOVERY_CITY } from "@/lib/discovery/default-market";
 import { GEO_DECLINED_COPY } from "@/lib/discovery/geo-session";
-import {
-  queryGeolocationPermission,
-  readStoredDiscoveryLocation,
-} from "@/lib/discovery/geo-location";
+import { readStoredDiscoveryLocation } from "@/lib/discovery/geo-location";
 import type { PlaceSelection } from "@/lib/google-maps";
 import { HOMEPAGE_EVENT_LIMIT } from "@/lib/home/diversify-events";
 import { fetchNearbyEvents } from "@/lib/events-api";
@@ -144,7 +141,8 @@ export function FeaturedEvents({
     await loadNearby(defaultCityLat, defaultCityLng, 50, `Around ${label}`);
   }, [defaultCityLabel, defaultCityLat, defaultCityLng, loadNearby]);
 
-  // Geo-first: stored coords → silent refresh if granted → browser prompt → default market anchor.
+  // Geo-first without unsolicited prompts: stored → silent if already granted → default market.
+  // Browser permission UI only via explicit "Show events near me".
   useEffect(() => {
     if (!hydrated || locateStarted.current) return;
     locateStarted.current = true;
@@ -173,24 +171,6 @@ export function FeaturedEvents({
           await loadNearby(found.lat, found.lng, found.radiusKm, found.label);
           return;
         }
-        const permission = await queryGeolocationPermission();
-        if (permission === "prompt") {
-          try {
-            await requestNearMe();
-            const after = readStoredDiscoveryLocation();
-            if (after) {
-              await loadNearby(
-                after.lat,
-                after.lng,
-                after.radiusKm,
-                after.label,
-              );
-              return;
-            }
-          } catch {
-            /* fall through to default market */
-          }
-        }
         await loadNearbyFromDefaultMarket();
       })();
     }, 0);
@@ -202,7 +182,6 @@ export function FeaturedEvents({
     loadNearby,
     loadNearbyFromDefaultMarket,
     applyProximitySortedFallback,
-    requestNearMe,
     defaultCityLat,
     defaultCityLng,
   ]);
@@ -261,7 +240,7 @@ export function FeaturedEvents({
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <Button
             type="button"
-            size="sm"
+            size="md"
             onClick={() => void handleUseLocation()}
             disabled={locBusy}
           >
@@ -269,7 +248,7 @@ export function FeaturedEvents({
           </Button>
           <Button
             type="button"
-            size="sm"
+            size="md"
             variant="secondary"
             onClick={() => setChooseCityOpen((v) => !v)}
           >

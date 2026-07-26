@@ -48,7 +48,6 @@ const resourcesLinks = [
   { href: "/support", label: "Support" },
   { href: "/safety", label: "Safety" },
   { href: "/merch-guide", label: "Merch Guide" },
-  { href: "/pricing", label: "Pricing" },
 ];
 
 const companyLinks = [
@@ -58,17 +57,14 @@ const companyLinks = [
   { href: "/report", label: "Report" },
 ];
 
+/** Legal strip only — avoid repeating Support/Safety/Report names from columns above. */
 const legalLinks = [
   { href: "/terms", label: "Terms" },
   { href: "/privacy", label: "Privacy" },
   { href: "/cookies", label: "Cookies" },
   { href: "/refund-policy", label: "Refund Policy" },
   { href: "/ticket-policy", label: "Ticket Policy" },
-  { href: "/community-guidelines", label: "Community Guidelines" },
-  { href: "/safety", label: "Safety" },
-  { href: "/report", label: "Report" },
   { href: "/accessibility", label: "Accessibility" },
-  { href: "/support", label: "Support" },
 ];
 
 const FOOTER_SECTIONS = [
@@ -81,7 +77,7 @@ const FOOTER_SECTIONS = [
 ] as const;
 
 const linkClass =
-  "text-[0.95rem] font-semibold text-paper/75 transition-colors hover:text-[#8EF012] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
+  "inline-flex min-h-11 items-center text-[0.95rem] font-semibold text-paper/80 transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 
 function FooterColumn({
   title,
@@ -92,10 +88,10 @@ function FooterColumn({
 }) {
   return (
     <div className="min-w-0">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-paper/45">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-paper/60">
         {title}
       </p>
-      <ul className="mt-4 space-y-2.5">
+      <ul className="mt-3 space-y-1">
         {links.map((link) => (
           <li key={`${link.href}:${link.label}`}>
             <Link href={link.href} className={linkClass}>
@@ -124,7 +120,7 @@ function FooterAccordionSection({
       open={open}
       onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
     >
-      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 py-3 text-sm font-bold uppercase tracking-[0.14em] text-paper/70 marker:content-none [&::-webkit-details-marker]:hidden">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 py-3 text-sm font-bold uppercase tracking-[0.14em] text-paper/80 marker:content-none [&::-webkit-details-marker]:hidden">
         {title}
         <span
           className={cn(
@@ -141,7 +137,7 @@ function FooterAccordionSection({
           <li key={`${link.href}:${link.label}`}>
             <Link
               href={link.href}
-              className="flex min-h-11 items-center py-1 text-base font-semibold text-paper/75 transition-colors hover:text-[#8EF012]"
+              className="flex min-h-11 items-center py-1 text-base font-semibold text-paper/80 transition-colors hover:text-primary"
             >
               {link.label}
             </Link>
@@ -225,7 +221,7 @@ export function SiteFooter() {
         <Container className="space-y-10 py-10 lg:space-y-12 lg:py-14">
           <div className="min-w-0 max-w-md space-y-4">
             <Logo variant="dark" height={28} />
-            <p className="text-pretty text-sm leading-relaxed text-paper/65 sm:text-[0.95rem]">
+            <p className="text-pretty text-sm leading-relaxed text-paper/75 sm:text-[0.95rem]">
               {brand.tagline}
             </p>
             <FooterRoleCta />
@@ -257,21 +253,21 @@ export function SiteFooter() {
           <Container className="flex flex-col gap-4 py-5 sm:gap-5 sm:py-6">
             <nav
               aria-label="Legal"
-              className="hidden flex-wrap gap-x-5 gap-y-2 text-sm text-paper/55 sm:flex"
+              className="hidden flex-wrap gap-x-4 gap-y-1 text-sm text-paper/70 sm:flex"
             >
               {legalLinks.map((link) => (
                 <Link
                   key={`${link.href}:${link.label}`}
                   href={link.href}
-                  className="font-medium transition-colors hover:text-[#8EF012]"
+                  className="inline-flex min-h-11 items-center font-medium transition-colors hover:text-primary"
                 >
                   {link.label}
                 </Link>
               ))}
             </nav>
-            <p className="text-sm text-paper/50">
+            <p className="text-sm text-paper/65">
               © {new Date().getFullYear()}{" "}
-              <span className="text-paper/85">{brand.name}</span>. All rights
+              <span className="text-paper/90">{brand.name}</span>. All rights
               reserved.
             </p>
           </Container>

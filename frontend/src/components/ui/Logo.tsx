@@ -11,6 +11,7 @@ export type LogoProps = {
    */
   variant?: LogoVariant | "auto";
   href?: string;
+  /** Above-fold only. Prefer false so logos do not compete with LCP heroes. */
   priority?: boolean;
   className?: string;
   height?: number;
@@ -23,7 +24,7 @@ export function Logo({
   className = "",
   height = 36,
 }: LogoProps) {
-  // Official lockups are ~1024×327
+  // Official lockups are ~1024×337
   const width = Math.round(height * (1024 / 337));
   // undefined → home link; "" / null-ish → bare image (parent may wrap its own Link)
   const resolvedHref = href === undefined ? "/" : href;
@@ -42,8 +43,8 @@ export function Logo({
       alt={brand.name}
       width={width}
       height={height}
+      // No `sizes` — fixed lockups get a density srcset (1x/2x), not 100vw widths.
       priority={imagePriority}
-      unoptimized
       className={[imageClass, extraClass].filter(Boolean).join(" ")}
       style={{ width, height }}
     />

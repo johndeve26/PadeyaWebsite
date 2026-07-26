@@ -75,7 +75,6 @@ export default async function HomePage() {
       >
         <Logo
           variant="dark"
-          priority
           height={44}
           href={undefined}
           className="padeya-hero-brand drop-shadow-[0_2px_24px_rgb(0_0_0_/0.55)]"
@@ -84,7 +83,7 @@ export default async function HomePage() {
           <h1 className="padeya-hero-brand text-balance text-[1.75rem] font-extrabold leading-tight tracking-tight [text-shadow:0_2px_28px_rgb(0_0_0_/_0.55)] sm:text-5xl sm:leading-[1.08] md:text-[3.25rem] md:leading-[1.05]">
             {brand.tagline}
           </h1>
-          <p className="max-w-2xl text-pretty text-base leading-relaxed text-paper/75 sm:text-lg">
+          <p className="max-w-2xl text-pretty text-base leading-relaxed text-paper/85 sm:text-lg">
             Everything events, all in one place. Discover experiences, sell
             verified tickets, retain loyal fans, and grow your event ecosystem.
           </p>

@@ -3,6 +3,18 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("LCP priority is scoped to heroes", () => {
+  it("homepage HeroSection preloads LCP with fetchPriority high", () => {
+    const src = readFileSync(
+      path.join(process.cwd(), "src/components/ui/HeroSection.tsx"),
+      "utf8",
+    );
+    expect(src).toMatch(/\bpreload\b/);
+    expect(src).toMatch(/fetchPriority=["']high["']/);
+    expect(src).toMatch(/sizes="100vw"/);
+    // Deprecated Next Image prop — must not appear as a JSX prop.
+    expect(src).not.toMatch(/^\s*priority(?:=\{|=)/m);
+  });
+
   it("event detail cover uses priority", () => {
     const src = readFileSync(
       path.join(process.cwd(), "src/components/events/EventPublicView.tsx"),

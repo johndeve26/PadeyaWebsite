@@ -14,11 +14,27 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ThemeScript } from "@/components/theme/ThemeScript";
 import { NotificationToastProvider } from "@/components/notifications/NotificationToastProvider";
 import { brand } from "@/lib/brand";
+import { getApiBaseUrl } from "@/lib/api-base";
 import { JsonLdScript } from "@/lib/seo/jsonld";
 import { siteGraphJsonLd } from "@/lib/seo/site-graph";
 import { rootSeoMetadataFields } from "@/lib/seo/site";
 import { THEME_COLOR } from "@/lib/theme";
 import "@/styles/globals.css";
+
+/** Remote cross-origin API only — early TLS for maintenance/status + public GETs. */
+function apiPreconnectHref(): string | null {
+  const base = getApiBaseUrl();
+  if (!base) return null;
+  try {
+    const url = new URL(base);
+    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
+      return null;
+    }
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Variable Manrope (single WOFF2) covers used weights:
@@ -78,6 +94,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const apiOrigin = apiPreconnectHref();
+
   return (
     <html
       lang="en"
@@ -85,6 +103,9 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {apiOrigin ? (
+          <link rel="preconnect" href={apiOrigin} crossOrigin="anonymous" />
+        ) : null}
         <ThemeScript />
         <JsonLdScript data={siteGraphJsonLd()} />
       </head>
