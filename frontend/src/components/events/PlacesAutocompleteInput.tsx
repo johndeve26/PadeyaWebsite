@@ -18,6 +18,9 @@ import {
 /**
  * Google Places Autocomplete for venue search.
  * Requires NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (Maps JavaScript API + Places).
+ *
+ * Important: the text field stays uncontrolled while Autocomplete is attached.
+ * Binding React `value` fights the Maps widget and can freeze typing after ~2 chars.
  */
 export function PlacesAutocompleteInput({
   label = "Search venue with Google Places",
@@ -39,26 +42,45 @@ export function PlacesAutocompleteInput({
   countryBias?: string | null;
   /** Google Places Autocomplete types, e.g. ["(cities)"]. */
   types?: string[];
-  /** Controlled value for paste / Maps link detection alongside Places. */
+  /** External clear/reset signal (e.g. "" after a place is applied). */
   value?: string;
   onValueChange?: (value: string) => void;
 }) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const onPlaceSelectedRef = useRef(onPlaceSelected);
+  const onValueChangeRef = useRef(onValueChange);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const enabled = hasGoogleMapsApiKey();
+  // Stable dep — inline `types={["(cities)"]}` must not remount Autocomplete every render.
+  const typesKey = types?.join(",") ?? "";
 
   useEffect(() => {
     onPlaceSelectedRef.current = onPlaceSelected;
   }, [onPlaceSelected]);
 
   useEffect(() => {
+    onValueChangeRef.current = onValueChange;
+  }, [onValueChange]);
+
+  // Only honor external clears (after place apply). Never rewrite while typing —
+  // React `value=` + Google Autocomplete freezes input after ~2 characters.
+  useEffect(() => {
+    if (value !== "" || !inputRef.current) return;
+    if (inputRef.current.value !== "") {
+      inputRef.current.value = "";
+    }
+  }, [value]);
+
+  useEffect(() => {
     if (!enabled || disabled) return;
     let cancelled = false;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let autocomplete: any = null;
+    const typesList = typesKey
+      ? typesKey.split(",").filter(Boolean)
+      : undefined;
 
     void loadGoogleMapsPlaces()
       .then(() => {
@@ -76,7 +98,7 @@ export function PlacesAutocompleteInput({
               "place_id",
               "address_components",
             ],
-            ...(types?.length ? { types } : {}),
+            ...(typesList?.length ? { types: typesList } : {}),
             ...(countryBias
               ? { componentRestrictions: { country: countryBias.toLowerCase() } }
               : {}),
@@ -94,6 +116,7 @@ export function PlacesAutocompleteInput({
       })
       .catch(() => {
         if (!cancelled) {
+          setReady(false);
           setError(
             "Could not load Google Places. Check NEXT_PUBLIC_GOOGLE_MAPS_API_KEY and API restrictions.",
           );
@@ -106,7 +129,7 @@ export function PlacesAutocompleteInput({
         window.google?.maps?.event?.clearInstanceListeners?.(autocomplete);
       }
     };
-  }, [enabled, disabled, countryBias, types]);
+  }, [enabled, disabled, countryBias, typesKey]);
 
   if (!enabled) {
     return (
@@ -134,13 +157,12 @@ export function PlacesAutocompleteInput({
         id={inputId}
         ref={inputRef}
         type="text"
-        disabled={disabled || !ready}
-        value={onValueChange ? (value ?? "") : undefined}
-        onChange={
-          onValueChange
-            ? (e) => onValueChange(e.target.value)
-            : undefined
-        }
+        // Keep enabled for paste/typing even while Places finishes loading.
+        disabled={disabled}
+        defaultValue={value ?? ""}
+        onChange={(e) => {
+          onValueChangeRef.current?.(e.target.value);
+        }}
         placeholder={ready ? placeholder : "Loading Google Places…"}
         className={fieldControlClass({
           error: Boolean(error),
