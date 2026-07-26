@@ -493,3 +493,31 @@ Public initial JS < 200 KB compressed · lazy chunk < 100 KB gzip unless justifi
 5. Geography / DB indexes only with new evidence
 
 Do **not** weaken authorization, payment verification, Fan Passport privacy, or SEO for Lighthouse score chasing.
+
+---
+
+## Phase 3.5 — Targeted cleanup (workspace)
+
+Scope: post–Phase 3 deploy Lighthouse issues only — `/events` RSC prefetch storm, duplicate `/maintenance/status`, intermittent event/merch CLS from empty Suspense fallbacks. Sponsor left alone.
+
+### Evidence (LIVE LAB MEASURED — Phase 3 deploy medians)
+
+| Route | Finding |
+| ----- | ------- |
+| `/events` | Lighthouse load timeouts; many `?_rsc=` prefetches (city/event/host/category Links) |
+| Anonymous shell | Two concurrent `GET /api/v1/maintenance/status` (Gate + Banner) |
+| Event detail | CLS 0 / 0.921 / 0.526 — culprit `footer.mt-auto` when main was empty |
+| Merch product | Cold CLS 1.842 (same footer); warm runs 0 |
+| Home | LCP ~3.8s; phases dominated by TTFB + hero image load (already `priority`) |
+| Sponsor | Done — no further work |
+
+### Fixes (CODE-LEVEL)
+
+| Issue | Fix |
+| ----- | --- |
+| RSC prefetch | `prefetch={false}` on dense marketplace Links (`TaxonomyEventCard`, rows, city/category/host cards) — nav Links unchanged |
+| Maintenance dup | `lib/maintenance-public.ts` single-flight + 15s TTL cache |
+| Event/merch CLS | Replace `Suspense fallback={null}` with stable-height skeletons |
+| Diagnostics | `frontend/scripts/lighthouse-summary.mjs` |
+
+Post-deploy n=3 Lighthouse for `/`, `/events`, event detail, merch: **NOT YET DEPLOYED**. Phase 3 remains open until event CLS is consistently < 0.1 and `/events` is not polluted by initial RSC prefetch storms.

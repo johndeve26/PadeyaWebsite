@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { MerchDetailSuspenseFallback } from "@/components/merch/marketplace/MerchDetailSuspenseFallback";
 import { MerchProductDetailView } from "@/components/merch/marketplace/MerchProductDetailView";
 import { brand } from "@/lib/brand";
 import { getPublicMerchBySlug } from "@/lib/public-loaders/entities";
@@ -77,7 +78,7 @@ export default async function MerchProductPage({ params }: PageProps) {
       {showBreadcrumbLd ? (
         <JsonLdScript data={breadcrumbJsonLd(crumbs, siteOrigin())} />
       ) : null}
-      <Suspense fallback={null}>
+      <Suspense fallback={<MerchDetailSuspenseFallback />}>
         <MerchProductDetailView slug={slug} initialProduct={product} />
       </Suspense>
     </>

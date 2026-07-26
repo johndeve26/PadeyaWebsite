@@ -16,6 +16,7 @@ export function CategoryCard({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={cn(
         "group block rounded-[var(--radius-lg)] border border-border bg-card p-5 text-card-foreground shadow-[var(--shadow-soft)]",
         "dark:bg-surface-elevated dark:shadow-[var(--shadow)]",

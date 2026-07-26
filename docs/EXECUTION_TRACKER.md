@@ -23,6 +23,21 @@ Canonical: [SEO_AUDIT.md](./SEO_AUDIT.md#production-indexability-regression-audi
 
 ---
 
+## Performance Phase 3.5 — Targeted cleanup (2026-07-26)
+
+**Phase 3.5 = implemented in workspace** — `/events` Link `prefetch={false}` on dense cards; maintenance status single-flight; event/merch Suspense stable fallbacks (fixes footer.mt-auto CLS); `lighthouse-summary.mjs`. **Await deploy + n=3 Lighthouse before closing Phase 3.**
+
+| Item | Status |
+|---|---|
+| Events RSC prefetch root cause (viewport Link prefetch) | **CODE-LEVEL** identified + fixed |
+| Maintenance duplicate Gate+Banner | **CODE-LEVEL** single-flight |
+| Event/merch CLS = footer after `fallback={null}` | **LIVE LAB** + **CODE-LEVEL** fix |
+| Home LCP | Hero already priority; remaining = TTFB/image load (**LIVE LAB**) |
+| vitest + `npm run build` + `test:seo` | **Passed** (LOCAL) |
+| Post-deploy LH n=3 | **NOT YET DEPLOYED** |
+
+---
+
 ## Performance Phase 3 — Browser / Core Web Vitals (2026-07-26)
 
 **Phase 3 = implemented in workspace** — next/image Media + trusted `remotePatterns`, LCP `priority` on heroes only, Logo CLS fix, variable Manrope, dynamic map/gallery/QR/auth chrome, YouTube click-to-play, idle PWA register. **Post-deploy Lighthouse/CWV not claimed until remeasure.** Fan Passport HTML remains **force-dynamic/no-store**.

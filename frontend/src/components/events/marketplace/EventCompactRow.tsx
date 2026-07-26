@@ -40,6 +40,7 @@ export function EventCompactRow({
       </p>
       <Link
         href={`/events/${event.slug}`}
+        prefetch={false}
         className="min-w-0 truncate text-sm font-bold text-foreground hover:underline sm:text-base"
       >
         {event.title}
@@ -54,7 +55,7 @@ export function EventCompactRow({
         <span className="text-xs text-muted-foreground sm:hidden">
           {place || stock || ""}
         </span>
-        <Link href={`/events/${event.slug}`}>
+        <Link href={`/events/${event.slug}`} prefetch={false}>
           <Button size="sm" variant="secondary">
             View
           </Button>

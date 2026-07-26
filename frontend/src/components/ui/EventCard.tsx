@@ -70,6 +70,7 @@ export function EventCard({
     >
       <Link
         href={`/events/${event.slug}`}
+        prefetch={false}
         className="group block h-full"
         onClick={() => {
           trackEventCardClick({

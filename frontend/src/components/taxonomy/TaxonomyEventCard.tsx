@@ -119,6 +119,7 @@ export function TaxonomyEventCard({
       ) : null}
       <Link
         href={`/events/${resolvedSlug}`}
+        prefetch={false}
         className={cn(
           "relative block overflow-hidden bg-ink",
           compact
@@ -188,7 +189,11 @@ export function TaxonomyEventCard({
           compact ? "p-3.5 sm:p-4" : "p-4 sm:p-5",
         )}
       >
-        <Link href={`/events/${resolvedSlug}`} className="block min-w-0 flex-1 space-y-1.5">
+        <Link
+          href={`/events/${resolvedSlug}`}
+          prefetch={false}
+          className="block min-w-0 flex-1 space-y-1.5"
+        >
           <h3
             className={cn(
               "line-clamp-2 text-balance font-extrabold tracking-tight text-foreground",
@@ -240,6 +245,7 @@ export function TaxonomyEventCard({
             {hostSlug ? (
               <Link
                 href={`/@${hostSlug}`}
+                prefetch={false}
                 onClick={(e) => e.stopPropagation()}
                 className="truncate text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
               >
@@ -262,6 +268,7 @@ export function TaxonomyEventCard({
           {resolvedCity && citySlug ? (
             <Link
               href={`/events/city/${citySlug}`}
+              prefetch={false}
               onClick={(e) => e.stopPropagation()}
               className="font-semibold text-foreground underline-offset-2 hover:underline"
             >
@@ -275,6 +282,7 @@ export function TaxonomyEventCard({
                   ? `/events/city/${citySlug}/${categorySlug}`
                   : `/events/c/${categorySlug}`
               }
+              prefetch={false}
               onClick={(e) => e.stopPropagation()}
               className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             >

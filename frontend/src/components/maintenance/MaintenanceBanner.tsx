@@ -3,10 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-import {
-  fetchPublicMaintenanceStatus,
-  type PublicMaintenanceStatus,
-} from "@/lib/maintenance-api";
+import type { PublicMaintenanceStatus } from "@/lib/maintenance-api";
+import { fetchPublicMaintenanceStatus } from "@/lib/maintenance-public";
 
 /** Global scheduled / active maintenance banner for app shells. */
 export function MaintenanceBanner() {

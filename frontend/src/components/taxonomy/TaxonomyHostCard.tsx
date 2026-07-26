@@ -19,6 +19,7 @@ export function TaxonomyHostCard({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={cn(
         "group block rounded-[var(--radius-lg)] border border-border bg-card p-4 shadow-[var(--shadow-soft)] sm:p-5",
         "padeya-card-hover",

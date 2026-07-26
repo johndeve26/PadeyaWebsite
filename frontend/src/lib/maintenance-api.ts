@@ -149,6 +149,5 @@ export function createMaintenanceBypass(hours = 8) {
   }>(`/admin/platform/maintenance/bypass?hours=${hours}`, { method: "POST" });
 }
 
-export function fetchPublicMaintenanceStatus() {
-  return apiRequest<PublicMaintenanceStatus>("/maintenance/status");
-}
+/** @deprecated Prefer `@/lib/maintenance-public` — kept as re-export for call sites. */
+export { fetchPublicMaintenanceStatus } from "@/lib/maintenance-public";

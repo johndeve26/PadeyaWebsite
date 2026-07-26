@@ -5,10 +5,8 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { userHasPermission } from "@/lib/auth/permissions";
-import {
-  fetchPublicMaintenanceStatus,
-  type PublicMaintenanceStatus,
-} from "@/lib/maintenance-api";
+import type { PublicMaintenanceStatus } from "@/lib/maintenance-api";
+import { fetchPublicMaintenanceStatus } from "@/lib/maintenance-public";
 
 const ALLOW_PREFIXES = [
   "/maintenance",

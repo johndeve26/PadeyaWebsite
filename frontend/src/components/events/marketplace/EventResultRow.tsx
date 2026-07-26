@@ -79,6 +79,7 @@ export function EventResultRow({
       <div className="flex min-w-0 flex-col gap-0 sm:flex-row">
         <Link
           href={`/events/${event.slug}`}
+          prefetch={false}
           className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-ink sm:aspect-auto sm:h-auto sm:w-[11.5rem] md:w-[13.5rem] lg:w-[15rem]"
         >
           {cover ? (
@@ -139,7 +140,11 @@ export function EventResultRow({
                 {formatDate(event.start_datetime)}
                 {time ? ` · ${time}` : ""}
               </p>
-              <Link href={`/events/${event.slug}`} className="block min-w-0">
+              <Link
+                href={`/events/${event.slug}`}
+                prefetch={false}
+                className="block min-w-0"
+              >
                 <h3 className="text-balance text-lg font-extrabold tracking-tight text-foreground transition-colors group-hover:text-heading sm:text-xl md:text-[1.35rem] md:leading-snug">
                   {event.title}
                 </h3>
@@ -159,6 +164,7 @@ export function EventResultRow({
                 {hostHref ? (
                   <Link
                     href={hostHref}
+                    prefetch={false}
                     className="truncate text-sm font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
                   >
                     {hostName}
@@ -188,7 +194,11 @@ export function EventResultRow({
                 {free ? "Free" : priceLabel(event).replace(/^From\s+/, "")}
               </p>
             </div>
-            <Link href={`/events/${event.slug}`} className="shrink-0">
+            <Link
+              href={`/events/${event.slug}`}
+              prefetch={false}
+              className="shrink-0"
+            >
               <Button
                 size="sm"
                 variant={soldOut ? "secondary" : "primary"}

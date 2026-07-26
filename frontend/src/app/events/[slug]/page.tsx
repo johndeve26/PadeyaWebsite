@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { EventDetailClient } from "./EventDetailClient";
+import { EventDetailSuspenseFallback } from "@/components/events/EventDetailSuspenseFallback";
 import { formatPublicPlaceLabel } from "@/lib/event-privacy";
 import { getPublicEventBySlug } from "@/lib/public-loaders/entities";
+import { EventDetailClient } from "./EventDetailClient";
 import {
   buildEventMetadata,
   eventJsonLd,
@@ -76,7 +77,7 @@ export default async function EventDetailPage({
       {showBreadcrumbLd ? (
         <JsonLdScript data={breadcrumbJsonLd(crumbs, siteOrigin())} />
       ) : null}
-      <Suspense fallback={null}>
+      <Suspense fallback={<EventDetailSuspenseFallback />}>
         <EventDetailClient initialEvent={event} />
       </Suspense>
     </>

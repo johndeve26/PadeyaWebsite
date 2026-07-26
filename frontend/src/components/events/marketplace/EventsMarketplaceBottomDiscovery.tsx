@@ -253,6 +253,7 @@ export function EventsMarketplaceBottomDiscovery({
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  prefetch={false}
                   className="inline-flex min-h-10 items-center rounded-full border border-border bg-muted/50 px-4 text-sm font-semibold text-foreground transition hover:border-accent hover:bg-accent/10"
                   title={item.hint}
                 >
@@ -263,6 +264,7 @@ export function EventsMarketplaceBottomDiscovery({
             <li>
               <Link
                 href="/events/location"
+                prefetch={false}
                 className="inline-flex min-h-10 items-center rounded-full border border-border bg-muted/50 px-4 text-sm font-semibold text-foreground transition hover:border-accent hover:bg-accent/10"
               >
                 By location
