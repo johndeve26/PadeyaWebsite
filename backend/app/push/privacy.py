@@ -95,7 +95,13 @@ def sanitize_delivery_error(message: str | None, *, limit: int = 200) -> str | N
     """Store provider errors without endpoints, emails, or secret-looking blobs."""
     if not message:
         return None
-    text = scrub_push_copy(str(message), limit=limit * 2, strip_codes=True)
+    raw = str(message)
+    # Map common cryptography/py_vapid failures to stable short codes.
+    if "could not deserialize key data" in raw.lower():
+        return "vapid_key_invalid"
+    if "invalid ec key" in raw.lower():
+        return "subscription_key_invalid"
+    text = scrub_push_copy(raw, limit=limit * 2, strip_codes=True)
     # Drop absolute URLs / FCM-style paths that scrub may leave partially.
     text = re.sub(r"https?://\S+", "[endpoint]", text, flags=re.I)
     text = re.sub(r"/fcm/send/\S+", "[endpoint]", text, flags=re.I)

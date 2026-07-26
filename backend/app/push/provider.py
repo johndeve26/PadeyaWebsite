@@ -181,7 +181,7 @@ class WebPushProvider(BasePushProvider):
             )
 
         try:
-            private_key = decrypt_secret(settings.vapid_private_key_encrypted)
+            private_key_plain = decrypt_secret(settings.vapid_private_key_encrypted)
         except Exception:  # noqa: BLE001
             logger.error("Cannot decrypt VAPID private key")
             return ProviderSendResult(
@@ -190,9 +190,19 @@ class WebPushProvider(BasePushProvider):
 
         try:
             from pywebpush import WebPushException, webpush
+
+            from app.push.vapid import load_vapid_private
+
+            # PEM must use Vapid.from_pem — from_string only accepts raw/DER b64.
+            vapid_key = load_vapid_private(private_key_plain)
         except ImportError:
             return ProviderSendResult(
                 ok=False, status="failed", error="pywebpush_missing"
+            )
+        except Exception:  # noqa: BLE001
+            logger.error("Cannot load VAPID private key for web_push")
+            return ProviderSendResult(
+                ok=False, status="failed", error="vapid_key_invalid"
             )
 
         subject = (settings.vapid_subject or "mailto:support@padeya.com").strip()
@@ -229,7 +239,7 @@ class WebPushProvider(BasePushProvider):
                         "keys": {"p256dh": p256dh, "auth": auth},
                     },
                     data=data,
-                    vapid_private_key=private_key,
+                    vapid_private_key=vapid_key,
                     vapid_claims={"sub": subject},
                 )
                 delivery.status = "sent"

@@ -184,7 +184,7 @@ def deliver_push_for_notification(
         return 0
 
     try:
-        private_key = decrypt_secret(settings.vapid_private_key_encrypted)
+        private_key_plain = decrypt_secret(settings.vapid_private_key_encrypted)
     except Exception:  # noqa: BLE001
         logger.error("Cannot decrypt VAPID private key — push skipped for this send")
         return 0
@@ -193,8 +193,15 @@ def deliver_push_for_notification(
 
     try:
         from pywebpush import WebPushException, webpush
+
+        from app.push.vapid import load_vapid_private
+
+        vapid_key = load_vapid_private(private_key_plain)
     except ImportError:
         logger.error("pywebpush not installed")
+        return 0
+    except Exception:  # noqa: BLE001
+        logger.error("Cannot load VAPID private key — push skipped for this send")
         return 0
 
     payload = json.dumps(payload_dict)
@@ -218,7 +225,7 @@ def deliver_push_for_notification(
                     "keys": {"p256dh": p256dh, "auth": auth},
                 },
                 data=payload,
-                vapid_private_key=private_key,
+                vapid_private_key=vapid_key,
                 vapid_claims={"sub": subject},
             )
             event.status = "sent"

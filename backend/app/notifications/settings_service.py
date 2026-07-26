@@ -11,8 +11,12 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.core.audit import write_audit_log
-from app.core.encryption import decrypt_secret, encrypt_secret, secret_last4, secret_first4, format_secret_fingerprint
+from app.core.encryption import decrypt_secret, encrypt_secret, format_secret_fingerprint
 from app.notifications.models import PushProviderSettings
+from app.push.vapid import (
+    fingerprint_vapid_private,
+    generate_vapid_keypair,
+)
 
 logger = logging.getLogger("padeya.notifications.settings")
 
@@ -80,26 +84,6 @@ def serialize_push_settings(row: PushProviderSettings) -> dict[str, Any]:
     }
 
 
-def generate_vapid_keypair() -> tuple[str, str]:
-    """Return (public_key_urlsafe, private_key_pem) for admin setup."""
-    import base64
-
-    from cryptography.hazmat.primitives import serialization
-    from py_vapid import Vapid
-
-    vapid = Vapid()
-    vapid.generate_keys()
-    public = vapid.public_key.public_bytes(
-        encoding=serialization.Encoding.X962,
-        format=serialization.PublicFormat.UncompressedPoint,
-    )
-    public_b64 = base64.urlsafe_b64encode(public).decode("ascii").rstrip("=")
-    private_pem = vapid.private_pem()
-    if isinstance(private_pem, bytes):
-        private_pem = private_pem.decode("utf-8")
-    return public_b64, private_pem
-
-
 def update_push_settings(
     db: Session,
     *,
@@ -116,8 +100,9 @@ def update_push_settings(
         public, private = generate_vapid_keypair()
         row.vapid_public_key = public
         row.vapid_private_key_encrypted = encrypt_secret(private)
-        row.vapid_private_first4 = secret_first4(private)
-        row.vapid_private_last4 = secret_last4(private)
+        first4, last4 = fingerprint_vapid_private(private)
+        row.vapid_private_first4 = first4
+        row.vapid_private_last4 = last4
         private_rotated = True
 
     if "push_enabled" in updates and updates["push_enabled"] is not None:
@@ -139,9 +124,20 @@ def update_push_settings(
 
     if private_in is not None and str(private_in).strip():
         plain = str(private_in).strip()
+        # Validate loadable format before persisting (PEM or raw/DER b64).
+        from app.push.vapid import load_vapid_private
+
+        try:
+            load_vapid_private(plain)
+        except Exception as exc:  # noqa: BLE001
+            raise ValueError(
+                "VAPID private key could not be loaded. Paste a URL-safe "
+                "base64 private key or a PEM private key."
+            ) from exc
         row.vapid_private_key_encrypted = encrypt_secret(plain)
-        row.vapid_private_first4 = secret_first4(plain)
-        row.vapid_private_last4 = secret_last4(plain)
+        first4, last4 = fingerprint_vapid_private(plain)
+        row.vapid_private_first4 = first4
+        row.vapid_private_last4 = last4
         private_rotated = True
 
     row.is_active = True
@@ -232,3 +228,19 @@ def decrypt_vapid_private(row: PushProviderSettings) -> str:
     except Exception:  # noqa: BLE001
         logger.error("Failed to decrypt VAPID private key")
         return ""
+
+
+# Re-export for callers/tests that imported generate from this module.
+__all__ = [
+    "PROVIDER_WEB_PUSH",
+    "PROVIDER_LOG",
+    "VALID_PROVIDERS",
+    "get_active_push_settings",
+    "get_or_create_active_push_settings",
+    "serialize_push_settings",
+    "generate_vapid_keypair",
+    "update_push_settings",
+    "disable_push",
+    "record_push_test",
+    "decrypt_vapid_private",
+]

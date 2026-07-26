@@ -114,6 +114,7 @@ Security:
 - API never returns the private key or ciphertext — only `vapid_private_configured` / public key hints.
 - Clients receive the public key via `GET /api/v1/push/vapid-public-key` → `{ enabled, public_key }` (empty when push off).
 - Never log VAPID private material, endpoints, or payload bodies.
+- **Key format:** new admin-generated private keys are URL-safe raw base64 (pywebpush-compatible). Legacy PEM keys still load via `Vapid.from_pem` — do **not** regenerate solely to fix `Could not deserialize key data` (that was a loader bug; regenerating would invalidate existing browser subscriptions).
 
 ## Push subscriptions
 

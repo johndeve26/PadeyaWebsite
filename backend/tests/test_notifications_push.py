@@ -190,9 +190,14 @@ def test_push_subscribe_requires_enabled_settings(
 
 
 def test_generate_vapid_keypair_roundtrip():
+    from app.push.vapid import load_vapid_private
+
     public, private = generate_vapid_keypair()
     assert public
-    assert "PRIVATE" in private
+    assert "BEGIN" not in private  # raw URL-safe b64 for pywebpush.from_string
+    assert load_vapid_private(private) is not None
+    # Public is uncompressed EC point (0x04…) as URL-safe b64
+    assert public.startswith("B")
 
 
 def test_admin_provider_log_and_deliveries(
