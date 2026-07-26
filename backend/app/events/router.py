@@ -47,6 +47,7 @@ from app.events.schemas import (
 from app.events.service import (
     add_event_media,
     approve_event,
+    auto_complete_due_events,
     cancel_event,
     clear_event_flag,
     create_category,
@@ -825,6 +826,7 @@ def get_by_id(
     db: Annotated[Session, Depends(get_db)],
     user: CurrentUser,
 ) -> EventPublic:
+    auto_complete_due_events(db, event_id=event_id)
     event = get_event_by_id(db, event_id)
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")

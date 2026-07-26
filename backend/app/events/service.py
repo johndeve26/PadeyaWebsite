@@ -783,7 +783,61 @@ def serialize_event_list_item(event: Event) -> dict[str, Any]:
     return data
 
 
+def auto_complete_due_events(
+    db: Session,
+    *,
+    host_id: uuid.UUID | None = None,
+    event_id: uuid.UUID | None = None,
+) -> int:
+    """Mark published/paused events past end_datetime as completed.
+
+    Lazy lifecycle so hosts see status ``completed`` (not lingering published
+    under a date-based Past bucket) without a manual Mark completed click.
+    """
+    now = datetime.now(UTC)
+    stmt = select(Event).where(
+        Event.status.in_(("published", "paused")),
+        Event.end_datetime.is_not(None),
+        Event.end_datetime < now,
+    )
+    if host_id is not None:
+        stmt = stmt.where(Event.host_id == host_id)
+    if event_id is not None:
+        stmt = stmt.where(Event.id == event_id)
+
+    events = list(db.scalars(stmt).all())
+    if not events:
+        return 0
+
+    from app.legacy.service import refresh_host_legacy_score
+    from app.memories.service import ensure_event_memory
+
+    host_ids: set[uuid.UUID] = set()
+    for event in events:
+        event.status = "completed"
+        write_audit_log(
+            db,
+            action="events.auto_complete",
+            actor_user_id=None,
+            resource_type="event",
+            resource_id=str(event.id),
+            details={"reason": "end_datetime_passed"},
+        )
+        ensure_event_memory(db, event)
+        host_ids.add(event.host_id)
+        _invalidate_public_event_cache(event)
+
+    for hid in host_ids:
+        refresh_host_legacy_score(
+            db, hid, reason="event_completed", force_history=True
+        )
+
+    db.commit()
+    return len(events)
+
+
 def list_host_events(db: Session, host: Host) -> list[Event]:
+    auto_complete_due_events(db, host_id=host.id)
     return list(
         db.scalars(
             _event_query()
@@ -810,6 +864,7 @@ def list_pending_events(db: Session) -> list[Event]:
 
 
 def list_admin_events(db: Session) -> list[Event]:
+    auto_complete_due_events(db)
     return list(db.scalars(_event_query().order_by(Event.created_at.desc())))
 
 

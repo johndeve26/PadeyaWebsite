@@ -8,7 +8,7 @@ import type { EventItem, EventStatus } from "@/lib/types/events";
  * | Upcoming   | end_datetime >= now AND status ∈ published, paused, draft, pending_review |
  * | Drafts     | status ∈ draft, rejected |
  * | Published  | status === published |
- * | Past       | end_datetime < now AND status ∈ published, completed, paused |
+ * | Completed  | status === completed (auto when end_datetime passes; also manual Mark completed) |
  * | Cancelled  | status === cancelled |
  * | All        | no tab filter |
  */
@@ -17,7 +17,7 @@ export type EventListTab =
   | "upcoming"
   | "drafts"
   | "published"
-  | "past"
+  | "completed"
   | "cancelled"
   | "all";
 
@@ -51,7 +51,7 @@ export const EVENT_LIST_TABS: { value: EventListTab; label: string }[] = [
   { value: "upcoming", label: "Upcoming" },
   { value: "drafts", label: "Drafts" },
   { value: "published", label: "Published" },
-  { value: "past", label: "Past" },
+  { value: "completed", label: "Completed" },
   { value: "cancelled", label: "Cancelled" },
   { value: "all", label: "All" },
 ];
@@ -63,14 +63,14 @@ const UPCOMING_STATUSES = new Set<EventStatus>([
   "pending_review",
 ]);
 
-const PAST_STATUSES = new Set<EventStatus>(["published", "completed", "paused"]);
-
 export function parseEventListTab(value: string | null): EventListTab {
+  // Legacy URL alias: ?tab=past → Completed
+  if (value === "past") return "completed";
   if (
     value === "upcoming" ||
     value === "drafts" ||
     value === "published" ||
-    value === "past" ||
+    value === "completed" ||
     value === "cancelled" ||
     value === "all"
   ) {
@@ -92,8 +92,8 @@ export function eventMatchesTab(event: EventItem, tab: EventListTab, nowMs: numb
       return event.status === "draft" || event.status === "rejected";
     case "published":
       return event.status === "published";
-    case "past":
-      return endMs < nowMs && PAST_STATUSES.has(event.status);
+    case "completed":
+      return event.status === "completed";
     case "cancelled":
       return event.status === "cancelled";
     case "all":
@@ -244,7 +244,8 @@ export function sortEventsForList(
         );
       case "created_desc":
         return (
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          new Date(b.created_at).getTime() -
+          new Date(a.created_at).getTime()
         );
       case "sales_desc":
         return (
@@ -331,10 +332,10 @@ export function emptyStateForTab(tab: EventListTab): {
         title: "Nothing live",
         description: "Publish an event to go live on Pàdéyá.",
       };
-    case "past":
+    case "completed":
       return {
-        title: "No past events yet",
-        description: "Completed nights will show here.",
+        title: "No completed events yet",
+        description: "Events move here when their end time passes.",
       };
     case "cancelled":
       return {

@@ -8,7 +8,7 @@ const toneMap: Record<string, BadgeProps["tone"]> = {
   successful: "accent",
   issued: "accent",
   paid: "success",
-  completed: "success",
+  completed: "info",
   verified: "success",
   accepted: "success",
   checked_in: "success",

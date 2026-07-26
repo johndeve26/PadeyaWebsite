@@ -16,8 +16,10 @@ export function StatusBadge({ status }: { status: EventStatus | string }) {
   const tone =
     status === "published"
       ? "accent"
-      : status === "rejected" || status === "cancelled"
-        ? "dark"
-        : "neutral";
+      : status === "completed"
+        ? "info"
+        : status === "rejected" || status === "cancelled"
+          ? "dark"
+          : "neutral";
   return <Badge tone={tone}>{labels[status as EventStatus] ?? status}</Badge>;
 }

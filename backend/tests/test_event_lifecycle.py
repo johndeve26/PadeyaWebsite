@@ -200,3 +200,29 @@ def test_ticket_type_deactivate_and_delete_unused(client: TestClient):
     )
     assert listing.status_code == 200
     assert all(t["id"] != tt_id for t in listing.json())
+
+
+def test_auto_complete_past_published_on_mine(client: TestClient, assign_role, db_session):
+    """Published events whose end_datetime has passed become completed on /mine."""
+    from uuid import UUID
+
+    from app.events.models import Event
+
+    headers = _auth_headers(client, "life-autocomple@example.com")
+    _onboard(client, headers, "Auto Complete Host")
+    event = _create_and_publish(client, headers, assign_role, "Already Over")
+
+    row = db_session.get(Event, UUID(event["id"]))
+    assert row is not None
+    row.start_datetime = datetime.now(UTC) - timedelta(days=2)
+    row.end_datetime = datetime.now(UTC) - timedelta(hours=1)
+    db_session.commit()
+
+    mine = client.get("/api/v1/events/mine", headers=headers)
+    assert mine.status_code == 200, mine.text
+    matched = next(e for e in mine.json() if e["id"] == event["id"])
+    assert matched["status"] == "completed"
+
+    detail = client.get(f"/api/v1/events/by-id/{event['id']}", headers=headers)
+    assert detail.status_code == 200
+    assert detail.json()["status"] == "completed"

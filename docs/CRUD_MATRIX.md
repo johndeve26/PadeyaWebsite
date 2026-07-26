@@ -13,7 +13,7 @@ Pattern guide: [`CRUD_PATTERN.md`](./CRUD_PATTERN.md).
 
 ## Canonical lifecycle rules (product)
 
-1. **Events** — Hosts create/edit (draft/pending/published with restrictions); postpone dates on published/paused without re-review; delete draft only; archive completed/cancelled; never hard-delete with orders/tickets/payments; sales → cancel not delete. Admin approve/reject/pause/restore; admin may archive, not hard-delete paid events.
+1. **Events** — Hosts create/edit (draft/pending/published with restrictions); postpone dates on published/paused without re-review; delete draft only; archive completed/cancelled; never hard-delete with orders/tickets/payments; sales → cancel not delete. Published/paused events auto-complete when `end_datetime` passes (lazy on host/admin list + get-by-id); hosts may also mark completed early. Admin approve/reject/pause/restore; admin may archive, not hard-delete paid events.
 2. **Ticket types** — Create/update before sales; deactivate after sales; hard delete only with no order/ticket refs; never corrupt existing orders.
 3. **Tickets** — No hard delete after issuance; statuses active/transferred/cancelled/refunded/expired/checked_in; cancel by permission; QR revoke/regenerate; transfer history retained.
 4. **Orders/payments** — No hard delete; archive failed/abandoned in UI only; webhook events immutable; status changes audited (gateway/webhook or admin correction).
@@ -84,7 +84,7 @@ Do **not** use status to skip planning. Append-only modules (ledger, audit logs,
 
 | Resource | Model | Create | Read | Update | Delete / lifecycle | Hard delete? | Frontend | Backend (key) | Status | Primary gap |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Events | `events` | Host draft | Public/host/admin | PATCH (+ re-review, optional `slug`); postpone dates (no re-review) | pause/resume/postpone/cancel/complete; discard draft; admin **flag/clear-flag** (soft ops marker) | Draft/rejected only, no sales | **10-step Event Studio** (`/host/events/new`, `/edit?step=`), `/host/events`, admin review + `/admin/events/[id]/review` | `/events/*` lifecycle; `POST .../flag`, `.../clear-flag` | **complete** | Flag does not unpublish |
+| Events | `events` | Host draft | Public/host/admin | PATCH (+ re-review, optional `slug`); postpone dates (no re-review) | pause/resume/postpone/cancel/complete; **auto-complete** when end passes; discard draft; admin **flag/clear-flag** (soft ops marker) | Draft/rejected only, no sales | **10-step Event Studio** (`/host/events/new`, `/edit?step=`), `/host/events` (Completed tab), admin review + `/admin/events/[id]/review` | `/events/*` lifecycle; `auto_complete_due_events`; `POST .../flag`, `.../clear-flag` | **complete** | Flag does not unpublish |
 | Event categories | `event_categories` | Seed + admin | `GET /events/categories` | Admin PATCH | Deactivate/restore | Soft `is_active` | Studio select | `/events/admin/categories*` | **complete** (API) | No admin FE |
 | Event venues | `event_venues` | Nested event write | Nested event | Nested upsert | Cascade w/ discard | Cascade | Studio privacy/location | Nested in EventCreate/Update | partial | No standalone venue API; flat fields duplicate |
 | Event media | `event_media` | Upload/URL | Nested + list | Gallery URL upsert; banner fields | `DELETE .../media/{id}` | Hard delete row | Studio media + ConfirmAction remove | `/events/.../media*` | **complete** | Gallery sync preserves matching URLs |

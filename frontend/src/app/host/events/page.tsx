@@ -163,7 +163,7 @@ export default function HostEventsPage() {
       upcoming: 0,
       drafts: 0,
       published: 0,
-      past: 0,
+      completed: 0,
       cancelled: 0,
       all: loaded.length,
     };

@@ -7,6 +7,7 @@ type Tone =
   | "accent"
   | "dark"
   | "success"
+  | "info"
   | "warning"
   | "danger"
   | "outline";
@@ -26,6 +27,8 @@ const toneClasses: Record<Tone, string> = {
   dark: "bg-ink text-paper",
   success:
     "bg-success-surface text-success-foreground ring-1 ring-inset ring-success/45",
+  info:
+    "bg-info-surface text-info-foreground ring-1 ring-inset ring-info/45",
   warning:
     "bg-warning-surface text-warning-foreground ring-1 ring-inset ring-warning/45",
   danger:
