@@ -1,5 +1,7 @@
 /** Knowledge Base / Help Center API types + client helpers. */
 
+import { cache } from "react";
+
 import { apiRequest } from "@/lib/api";
 import { getApiBaseUrl, getApiPrefix } from "@/lib/api-base";
 
@@ -264,9 +266,9 @@ export async function fetchHelpArticlesServer(params?: {
   }
 }
 
-export async function fetchHelpArticleServer(
+export const fetchHelpArticleServer = cache(async (
   slug: string,
-): Promise<HelpArticle | null> {
+): Promise<HelpArticle | null> => {
   try {
     const res = await fetch(
       `${apiRoot()}/help/articles/${encodeURIComponent(slug)}`,
@@ -278,7 +280,7 @@ export async function fetchHelpArticleServer(
   } catch {
     return null;
   }
-}
+});
 
 export async function fetchHelpCategoriesServer(): Promise<HelpCategory[]> {
   try {

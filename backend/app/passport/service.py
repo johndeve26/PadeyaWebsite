@@ -118,6 +118,7 @@ def update_passport_settings(db: Session, user: User, payload) -> FanPassport:
     assert_can_edit_passport(db, user)
 
     passport = ensure_passport(db, user)
+    previous_username = passport.username
     data = payload.model_dump(exclude_unset=True)
     if "username" in data and data["username"] is not None:
         username = normalize_username(data["username"])
@@ -163,7 +164,14 @@ def update_passport_settings(db: Session, user: User, payload) -> FanPassport:
     try:
         from app.core.cache_invalidation import invalidate_fan_public_caches
 
-        invalidate_fan_public_caches(username=passport.username)
+        invalidate_fan_public_caches(
+            username=passport.username,
+            previous_username=(
+                previous_username
+                if previous_username and previous_username != passport.username
+                else None
+            ),
+        )
     except Exception:
         pass
     return passport

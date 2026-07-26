@@ -228,6 +228,61 @@ def test_unlisted_passport_loads_by_direct_link(
     assert page.json()["visibility"] == VISIBILITY_UNLISTED
 
 
+def test_visibility_transitions_public_api_and_directory(
+    client: TestClient, db_session: Session
+) -> None:
+    """PUBLIC/UNLISTED → PRIVATE must 404 immediately at the API (no TTL grace)."""
+    headers = _auth(client, "vis-trans@example.com", "Vis Trans")
+    client.get("/api/v1/passport/me", headers=headers)
+
+    assert (
+        client.patch(
+            "/api/v1/dashboard/passport/settings",
+            headers=headers,
+            json={"username": "vis_trans_fan", "visibility": VISIBILITY_PUBLIC},
+        ).status_code
+        == 200
+    )
+    assert client.get("/api/v1/f/vis_trans_fan").status_code == 200
+    directory = client.get("/api/v1/fans").json()
+    assert any(row.get("username") == "vis_trans_fan" for row in directory.get("items", []))
+
+    assert (
+        client.patch(
+            "/api/v1/dashboard/passport/settings",
+            headers=headers,
+            json={"visibility": VISIBILITY_UNLISTED},
+        ).status_code
+        == 200
+    )
+    assert client.get("/api/v1/f/vis_trans_fan").status_code == 200
+    directory = client.get("/api/v1/fans").json()
+    assert not any(
+        row.get("username") == "vis_trans_fan" for row in directory.get("items", [])
+    )
+
+    assert (
+        client.patch(
+            "/api/v1/dashboard/passport/settings",
+            headers=headers,
+            json={"visibility": VISIBILITY_PRIVATE},
+        ).status_code
+        == 200
+    )
+    assert client.get("/api/v1/f/vis_trans_fan").status_code == 404
+
+    assert (
+        client.patch(
+            "/api/v1/dashboard/passport/settings",
+            headers=headers,
+            json={"visibility": VISIBILITY_PUBLIC},
+        ).status_code
+        == 200
+    )
+    assert client.get("/api/v1/f/vis_trans_fan").status_code == 200
+
+
+
 def test_settings_update_and_cannot_take_other_username(
     client: TestClient, db_session: Session
 ) -> None:

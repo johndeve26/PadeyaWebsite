@@ -40,7 +40,14 @@ const PROOF = [
   "Public Passports only",
 ];
 
-export function FansDirectory() {
+export function FansDirectory({
+  initialItems = null,
+  initialTotal = 0,
+}: {
+  /** SSR default directory page (no filters). */
+  initialItems?: FanDirectoryCard[] | null;
+  initialTotal?: number;
+}) {
   const { user } = useAuth();
   const [q, setQ] = useState("");
   const [city, setCity] = useState("");
@@ -48,16 +55,26 @@ export function FansDirectory() {
   const [sort, setSort] = useState("recently_active");
   const [hasReviews, setHasReviews] = useState<"any" | "yes">("any");
   const [refreshKey, setRefreshKey] = useState(0);
-  const [items, setItems] = useState<FanDirectoryCard[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<FanDirectoryCard[]>(initialItems ?? []);
+  const [total, setTotal] = useState(initialTotal);
+  const [loading, setLoading] = useState(initialItems == null);
   const [error, setError] = useState<string | null>(null);
+  const hasFilters =
+    Boolean(q.trim() || city.trim() || category.trim()) ||
+    sort !== "recently_active" ||
+    hasReviews === "yes" ||
+    refreshKey > 0;
 
   useEffect(() => {
     trackFanDirectoryView();
   }, []);
 
   useEffect(() => {
+    // Skip first client fetch when SSR already seeded the default directory.
+    if (!hasFilters && initialItems != null) {
+      setLoading(false);
+      return;
+    }
     let active = true;
     setLoading(true);
     const timer = window.setTimeout(() => {
@@ -94,7 +111,7 @@ export function FansDirectory() {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [q, city, category, sort, hasReviews, refreshKey]);
+  }, [q, city, category, sort, hasReviews, refreshKey, hasFilters, initialItems]);
 
   const cities = useMemo(() => {
     const set = new Set<string>();

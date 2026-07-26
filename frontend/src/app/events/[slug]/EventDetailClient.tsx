@@ -73,6 +73,7 @@ export function EventDetailClient({
         setEvent(current);
         setMissing(false);
         applyReferral(current, slug, referralCode);
+        // Related rail is secondary — never block SEO/primary HTML (SSR already painted).
         if (!user) {
           const related = await loadRelated(current);
           if (!cancelled) setAllEvents(related);

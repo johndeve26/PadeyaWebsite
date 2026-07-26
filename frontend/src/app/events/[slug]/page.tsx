@@ -4,27 +4,17 @@ import { Suspense } from "react";
 
 import { EventDetailClient } from "./EventDetailClient";
 import { formatPublicPlaceLabel } from "@/lib/event-privacy";
+import { getPublicEventBySlug } from "@/lib/public-loaders/entities";
 import {
   buildEventMetadata,
   eventJsonLd,
   isEventSeoIndexable,
 } from "@/lib/seo/event-metadata";
 import { JsonLdScript, breadcrumbJsonLd } from "@/lib/seo/jsonld";
-import { fetchPublicJson } from "@/lib/seo/public-fetch";
 import { NOINDEX_ROBOTS } from "@/lib/seo/noindex";
 import { siteOrigin } from "@/lib/seo/site";
-import type { EventItem } from "@/lib/types/events";
 
 export const revalidate = 120;
-
-async function loadEvent(slug: string): Promise<EventItem | null> {
-  const { data, status } = await fetchPublicJson<EventItem>(
-    `/events/${encodeURIComponent(slug)}`,
-    { revalidate: 120 },
-  );
-  if (status === 404 || !data) return null;
-  return data;
-}
 
 export async function generateMetadata({
   params,
@@ -32,7 +22,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const event = await loadEvent(slug);
+  const event = await getPublicEventBySlug(slug);
   if (!event) {
     return { title: "Event", robots: NOINDEX_ROBOTS };
   }
@@ -45,7 +35,7 @@ export default async function EventDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const event = await loadEvent(slug);
+  const event = await getPublicEventBySlug(slug);
   if (!event) notFound();
 
   const crumbs: { label: string; href?: string }[] = [

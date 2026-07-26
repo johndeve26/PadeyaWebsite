@@ -135,3 +135,29 @@ export function mapAbortToTimeoutError(err: unknown): never {
   }
   throw err;
 }
+
+/**
+ * Race a promise against a wall-clock timeout **without** attaching AbortSignal
+ * to Next.js `fetch`.
+ *
+ * Custom AbortSignal opts server fetches out of the Next Data Cache and forces
+ * the route into `private, no-store` (always Vercel MISS). Use this for RSC/ISR
+ * public fetches; keep `createTimeoutSignal` for browser/authenticated clients.
+ */
+export async function withTimeoutRace<T>(
+  promise: Promise<T>,
+  ms: number,
+  onTimeout: () => T,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(onTimeout()), ms);
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}

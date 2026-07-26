@@ -1,0 +1,710 @@
+{
+  "label": "PHASE2_BASELINE_PRE_CHANGE",
+  "note": "Low-volume FE diagnostics. Distinguish HIT/MISS/STALE/BYPASS/DYNAMIC from X-Vercel-Cache.",
+  "base": "https://padeya.com",
+  "captured_at": "2026-07-26T00:10:59.330604Z",
+  "routes": [
+    {
+      "path": "/",
+      "status": 200,
+      "total_response_ms_median": 536.7,
+      "ttfb_ms_median": 431.8,
+      "x_vercel_cache_samples": [
+        "HIT",
+        "HIT",
+        "HIT"
+      ],
+      "cache_control": "public, max-age=0, must-revalidate",
+      "bytes_median": 335808,
+      "samples": [
+        {
+          "status": 200,
+          "total_response_ms": 1246.3,
+          "ttfb_ms": 1058.6,
+          "bytes": 335808,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "70",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 536.7,
+          "ttfb_ms": 431.8,
+          "bytes": 335808,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "71",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 524.1,
+          "ttfb_ms": 429.4,
+          "bytes": 335808,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "73",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/events",
+      "status": 200,
+      "total_response_ms_median": 1077.3,
+      "ttfb_ms_median": 798.8,
+      "x_vercel_cache_samples": [
+        "MISS",
+        "MISS",
+        "MISS"
+      ],
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "bytes_median": 186068,
+      "samples": [
+        {
+          "status": 200,
+          "total_response_ms": 876.4,
+          "ttfb_ms": 798.8,
+          "bytes": 186068,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 1077.3,
+          "ttfb_ms": 703.6,
+          "bytes": 186068,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 1252.4,
+          "ttfb_ms": 853.1,
+          "bytes": 186068,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/events/demo-afrobeats-night-live",
+      "status": 200,
+      "total_response_ms_median": 1064.4,
+      "ttfb_ms_median": 768.6,
+      "x_vercel_cache_samples": [
+        "MISS",
+        "MISS",
+        "MISS"
+      ],
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "bytes_median": 126441,
+      "samples": [
+        {
+          "status": 200,
+          "total_response_ms": 1060.7,
+          "ttfb_ms": 768.6,
+          "bytes": 126441,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 1064.4,
+          "ttfb_ms": 760.5,
+          "bytes": 126441,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 1146.9,
+          "ttfb_ms": 785.2,
+          "bytes": 126441,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/hosts",
+      "status": 200,
+      "total_response_ms_median": 507.6,
+      "ttfb_ms_median": 474.3,
+      "x_vercel_cache_samples": [
+        "HIT",
+        "HIT",
+        "HIT"
+      ],
+      "cache_control": "public, max-age=0, must-revalidate",
+      "bytes_median": 50809,
+      "samples": [
+        {
+          "status": 200,
+          "total_response_ms": 764.7,
+          "ttfb_ms": 714.8,
+          "bytes": 50809,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "80",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 507.6,
+          "ttfb_ms": 474.3,
+          "bytes": 50809,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "82",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 480.0,
+          "ttfb_ms": 444.7,
+          "bytes": 50809,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "83",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/u/mainlandvibes",
+      "status": 200,
+      "total_response_ms_median": 905.5,
+      "ttfb_ms_median": 717.2,
+      "x_vercel_cache_samples": [
+        "MISS",
+        "MISS",
+        "MISS"
+      ],
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "bytes_median": 100133,
+      "samples": [
+        {
+          "status": 200,
+          "total_response_ms": 778.6,
+          "ttfb_ms": 717.2,
+          "bytes": 100133,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 905.5,
+          "ttfb_ms": 844.9,
+          "bytes": 100133,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 1048.6,
+          "ttfb_ms": 697.6,
+          "bytes": 100133,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/fans",
+      "status": 200,
+      "total_response_ms_median": 463.3,
+      "ttfb_ms_median": 432.7,
+      "x_vercel_cache_samples": [
+        "HIT",
+        "HIT",
+        "HIT"
+      ],
+      "cache_control": "public, max-age=0, must-revalidate",
+      "bytes_median": 55543,
+      "samples": [
+        {
+          "status": 200,
+          "total_response_ms": 788.6,
+          "ttfb_ms": 759.1,
+          "bytes": 55543,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "90",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 463.3,
+          "ttfb_ms": 432.7,
+          "bytes": 55543,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "91",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 463.1,
+          "ttfb_ms": 420.4,
+          "bytes": 55543,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "93",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/f/pizzlecole",
+      "status": 200,
+      "total_response_ms_median": 1038.2,
+      "ttfb_ms_median": 782.0,
+      "x_vercel_cache_samples": [
+        "MISS",
+        "MISS",
+        "MISS"
+      ],
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "bytes_median": 57750,
+      "samples": [
+        {
+          "status": 200,
+          "total_response_ms": 1255.0,
+          "ttfb_ms": 1234.1,
+          "bytes": 58982,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 1038.2,
+          "ttfb_ms": 782.0,
+          "bytes": 57750,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 762.7,
+          "ttfb_ms": 728.6,
+          "bytes": 57750,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/sponsorships",
+      "status": 200,
+      "total_response_ms_median": 988.5,
+      "ttfb_ms_median": 687.5,
+      "x_vercel_cache_samples": [
+        "MISS",
+        "MISS",
+        "MISS"
+      ],
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "bytes_median": 77513,
+      "samples": [
+        {
+          "status": 200,
+          "total_response_ms": 733.1,
+          "ttfb_ms": 687.5,
+          "bytes": 77513,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 988.5,
+          "ttfb_ms": 682.9,
+          "bytes": 77513,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 989.8,
+          "ttfb_ms": 720.7,
+          "bytes": 77513,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/sponsors/korawave-pay",
+      "status": 200,
+      "total_response_ms_median": 1039.7,
+      "ttfb_ms_median": 720.6,
+      "x_vercel_cache_samples": [
+        "MISS",
+        "MISS",
+        "MISS"
+      ],
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "bytes_median": 89870,
+      "samples": [
+        {
+          "status": 200,
+          "total_response_ms": 1039.7,
+          "ttfb_ms": 706.4,
+          "bytes": 89870,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 974.2,
+          "ttfb_ms": 720.6,
+          "bytes": 89870,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 1059.1,
+          "ttfb_ms": 725.0,
+          "bytes": 89870,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/merch",
+      "status": 200,
+      "total_response_ms_median": 487.3,
+      "ttfb_ms_median": 461.5,
+      "x_vercel_cache_samples": [
+        "HIT",
+        "HIT",
+        "HIT"
+      ],
+      "cache_control": "public, max-age=0, must-revalidate",
+      "bytes_median": 52897,
+      "samples": [
+        {
+          "status": 200,
+          "total_response_ms": 487.3,
+          "ttfb_ms": 461.5,
+          "bytes": 52897,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "580",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 464.7,
+          "ttfb_ms": 440.5,
+          "bytes": 52897,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "581",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 497.6,
+          "ttfb_ms": 476.2,
+          "bytes": 52897,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "582",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/merch/mainland-vibes-logo-tee",
+      "status": 200,
+      "total_response_ms_median": 963.8,
+      "ttfb_ms_median": 713.3,
+      "x_vercel_cache_samples": [
+        "MISS",
+        "MISS",
+        "MISS"
+      ],
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "bytes_median": 69775,
+      "samples": [
+        {
+          "status": 200,
+          "total_response_ms": 1002.4,
+          "ttfb_ms": 712.2,
+          "bytes": 69775,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 752.0,
+          "ttfb_ms": 721.4,
+          "bytes": 69775,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 963.8,
+          "ttfb_ms": 713.3,
+          "bytes": 69775,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/blog",
+      "status": 200,
+      "total_response_ms_median": 518.7,
+      "ttfb_ms_median": 484.0,
+      "x_vercel_cache_samples": [
+        "HIT",
+        "HIT",
+        "HIT"
+      ],
+      "cache_control": "public, max-age=0, must-revalidate",
+      "bytes_median": 79975,
+      "samples": [
+        {
+          "status": 200,
+          "total_response_ms": 763.5,
+          "ttfb_ms": 738.6,
+          "bytes": 79975,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "104",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 518.7,
+          "ttfb_ms": 484.0,
+          "bytes": 79975,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "105",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 484.3,
+          "ttfb_ms": 456.6,
+          "bytes": 79975,
+          "redirects": 0,
+          "x_vercel_cache": "HIT",
+          "age": "106",
+          "cache_control": "public, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        }
+      ]
+    },
+    {
+      "path": "/help",
+      "status": 200,
+      "total_response_ms_median": 827.2,
+      "ttfb_ms_median": 728.5,
+      "x_vercel_cache_samples": [
+        "MISS",
+        "MISS",
+        "MISS"
+      ],
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "bytes_median": 171897,
+      "samples": [
+        {
+          "status": 200,
+          "total_response_ms": 827.2,
+          "ttfb_ms": 758.7,
+          "bytes": 171897,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 799.8,
+          "ttfb_ms": 728.5,
+          "bytes": 171897,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        },
+        {
+          "status": 200,
+          "total_response_ms": 1062.5,
+          "ttfb_ms": 701.9,
+          "bytes": 171897,
+          "redirects": 0,
+          "x_vercel_cache": "MISS",
+          "age": "0",
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "server_timing": null,
+          "content_encoding": null
+        }
+      ]
+    }
+  ]
+}

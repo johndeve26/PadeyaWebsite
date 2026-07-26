@@ -24,8 +24,14 @@ assert.match(searchPage, /canonicalPath/);
 assert.match(searchPage, /EVENTS_FACET_CANONICAL_PATH|canonicalPath:\s*searchPolicy/);
 
 const eventsPage = read("src/app/events/page.tsx");
-assert.match(eventsPage, /generateMetadata/);
-assert.match(eventsPage, /hasEventsFacetQuery/);
+// Static metadata + ISR shell — facet noindex moved to middleware (Phase 2 CDN).
+assert.match(eventsPage, /export const metadata/);
+assert.match(eventsPage, /EVENTS_FACET_CANONICAL_PATH/);
+assert.match(eventsPage, /revalidate\s*=\s*90/);
+
+const middleware = read("src/middleware.ts");
+assert.match(middleware, /hasEventsFacetQuery/);
+assert.match(middleware, /noindex,\s*follow/);
 
 const facet = read("src/lib/seo/facet-policy.ts");
 assert.match(facet, /EVENTS_FACET_QUERY_KEYS/);

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -61,9 +61,11 @@ function dropAudienceLabel(audience?: string | null): string | null {
 
 export function MerchProductDetailView({
   slug,
-  hostSlug,
+  hostSlug: hostSlugProp,
   initialProduct,
 }: Props) {
+  const searchParams = useSearchParams();
+  const hostSlug = hostSlugProp ?? searchParams.get("h");
   const { user } = useAuth();
   const toast = useToast();
   const [product, setProduct] = useState<MarketplaceProduct>(initialProduct);

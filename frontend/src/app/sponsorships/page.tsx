@@ -12,22 +12,12 @@ const INTRO =
   "Discover open sponsorship slots and partner with verified Pàdéyá hosts — brand placements, event activations, and measurable nightlife audiences.";
 
 /**
- * Query filters (?host=, ?sponsor=) stay usable but must not create indexable URLs.
+ * Static metadata — facet noindex for ?host=&sponsor=&q=&sort= is applied in
+ * middleware so this route stays ISR-cacheable.
  */
-export async function generateMetadata({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}): Promise<Metadata> {
-  const sp = await searchParams;
-  const hasFacet = Boolean(sp.host || sp.sponsor || sp.q || sp.sort);
-  const base = sponsorshipsIndexMetadata();
-  if (!hasFacet) return base;
-  return {
-    ...base,
-    robots: { index: false, follow: true },
-  };
-}
+export const metadata: Metadata = sponsorshipsIndexMetadata();
+
+export const revalidate = 120;
 
 /**
  * Sponsorship marketplace — server metadata + crawlable intro;

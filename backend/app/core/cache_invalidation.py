@@ -90,11 +90,32 @@ def invalidate_host_public_caches(
         cache_delete(cache_key("hosts", "username", username))
 
 
-def invalidate_fan_public_caches(*, username: str | None = None) -> None:
+def invalidate_fan_public_caches(
+    *,
+    username: str | None = None,
+    previous_username: str | None = None,
+) -> None:
+    """Drop Redis public fan keys + notify Next.js to purge directory/sitemap ISR.
+
+    Fan Passport HTML (`/f/{username}`) is force-dynamic/no-store — Redis + FE
+    purge do not rely on TTL for PUBLIC→PRIVATE privacy. FE notify is best-effort
+    for `/fans` ISR; missing secret is logged, not a privacy leak on the profile.
+    """
     cache_delete_pattern(f"{CACHE_PREFIX}fans:directory*")
-    if username:
-        cache_delete(cache_key("passport", "public", username))
-        cache_delete(cache_key("fans", "public", username))
+    for name in {username, previous_username}:
+        if not name:
+            continue
+        cache_delete(cache_key("passport", "public", name))
+        cache_delete(cache_key("fans", "public", name))
+    try:
+        from app.core.frontend_revalidate import notify_fan_frontend_revalidate
+
+        notify_fan_frontend_revalidate(
+            username=username,
+            previous_username=previous_username,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception("frontend fan revalidate notify failed")
 
 
 def invalidate_pricing_public_caches() -> None:

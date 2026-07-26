@@ -1,11 +1,19 @@
 import { getApiBaseUrl, getApiPrefix } from "@/lib/api-base";
 import {
   API_TIMEOUT_MS,
-  createTimeoutSignal,
   isTimeoutError,
+  withTimeoutRace,
 } from "@/lib/api-timeouts";
 
-/** Server-side public JSON fetch (RSC / generateMetadata). */
+/**
+ * Server-side public JSON fetch (RSC / generateMetadata).
+ *
+ * Do **not** pass AbortSignal into Next `fetch` here — that opts out of the
+ * Data Cache and forces `Cache-Control: private, no-store` on the HTML route.
+ * Timeouts use Promise.race instead.
+ *
+ * Never use for authenticated / private payloads.
+ */
 export async function fetchPublicJson<T>(
   path: string,
   init?: RequestInit & { revalidate?: number | false; timeoutMs?: number },
@@ -15,20 +23,26 @@ export async function fetchPublicJson<T>(
   const suffix = path.startsWith("/") ? path : `/${path}`;
   const revalidate = init?.revalidate;
   const timeoutMs = init?.timeoutMs ?? API_TIMEOUT_MS.public;
-  const { timeoutMs: _omit, revalidate: _r, ...rest } = init ?? {};
+  const { timeoutMs: _omit, revalidate: _r, signal: _signal, ...rest } =
+    init ?? {};
   void _omit;
   void _r;
+  void _signal;
   try {
-    const signal = createTimeoutSignal(timeoutMs, rest.signal);
-    const res = await fetch(`${apiUrl}${apiPrefix}${suffix}`, {
-      ...rest,
-      signal,
-      cache: revalidate === false ? "no-store" : rest.cache,
-      next:
-        revalidate === false
-          ? undefined
-          : { revalidate: typeof revalidate === "number" ? revalidate : 120 },
-    });
+    const res = await withTimeoutRace(
+      fetch(`${apiUrl}${apiPrefix}${suffix}`, {
+        ...rest,
+        // Never forward caller AbortSignal — keeps Next fetch cacheable.
+        cache: revalidate === false ? "no-store" : rest.cache,
+        next:
+          revalidate === false
+            ? undefined
+            : { revalidate: typeof revalidate === "number" ? revalidate : 120 },
+      }),
+      timeoutMs,
+      () => null,
+    );
+    if (!res) return { data: null, status: 408 };
     if (!res.ok) return { data: null, status: res.status };
     return { data: (await res.json()) as T, status: res.status };
   } catch (err) {

@@ -23,6 +23,26 @@ Canonical: [SEO_AUDIT.md](./SEO_AUDIT.md#production-indexability-regression-audi
 
 ---
 
+## Performance Phase 2 — Next.js SSR / CDN (2026-07-26)
+
+**Phase 2 = implemented in workspace** — RSC AbortSignal removed (restores Next Data Cache), React `cache()` entity loaders, `/events`/`/help`/`/sponsorships` no longer dynamized by searchParams, Fan Passport **force-dynamic/no-store** (privacy), authenticated `/api/revalidate/fan` for directory/sitemap, fans SSR seed, middleware facet `noindex,follow`. **Production FE improvement not claimed until post-deploy measurement.**
+
+Canonical: [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md) · baseline [`performance-phase2-baseline.json`](./performance-phase2-baseline.json).
+
+| Item | Status |
+|---|---|
+| Phase 2 baseline (MISS + private no-store on hubs/entities) | **LIVE VERIFIED** |
+| AbortSignal / Data Cache root cause | **Fixed** (CODE-LEVEL) |
+| React cache entity loaders | **Done** |
+| Fan Passport HTML no-store (PUBLIC→PRIVATE safe) | **Done** (hardened) |
+| Fan directory purge via `REVALIDATE_SECRET` | **Done** |
+| Hub searchParams → middleware facet noindex | **Done** |
+| Local build (`/events` ○ ISR) | **Passed** |
+| Deployed FE before/after + X-Vercel-Cache | **Pending deploy** |
+| Phase 3 images/fonts/CWV | **Out of scope** (next) |
+
+---
+
 ## Performance Phase 1 — API/query latency (2026-07-26)
 
 **Phase 1 = implemented in workspace** — events list SQL filters/order/limit + lean list DTO (`listv2` cache key), sponsor public batched loads, Legacy public no-rescore path, maintenance 15s off-allow cache, request-scoped RBAC memo, host workspaces single-flight. **No speculative DB indexes. Production improvement not claimed until post-deploy measurement.**

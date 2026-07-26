@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { hasEventsFacetQuery } from "@/lib/seo/facet-policy";
 import {
   shouldIndexEnvironment,
   X_ROBOTS_NOINDEX,
@@ -51,9 +52,35 @@ function isNoIndexPath(pathname: string): boolean {
   return false;
 }
 
-function withSeoHeaders(response: NextResponse, pathname: string): NextResponse {
+/** Faceted marketplace query strings — noindex without dynamizing the page. */
+function isFacetNoIndexPath(request: NextRequest): boolean {
+  const { pathname, searchParams } = request.nextUrl;
+  if (pathname === "/events" || pathname === "/events/search") {
+    return hasEventsFacetQuery(searchParams);
+  }
+  if (pathname === "/sponsorships") {
+    return Boolean(
+      searchParams.get("host") ||
+        searchParams.get("sponsor") ||
+        searchParams.get("q") ||
+        searchParams.get("sort"),
+    );
+  }
+  if (pathname === "/help") {
+    return Boolean(searchParams.get("q") || searchParams.get("audience"));
+  }
+  return false;
+}
+
+const X_ROBOTS_NOINDEX_FOLLOW = "noindex, follow";
+
+function withSeoHeaders(response: NextResponse, request: NextRequest): NextResponse {
+  const pathname = request.nextUrl.pathname;
   if (!shouldIndexEnvironment() || isNoIndexPath(pathname)) {
     response.headers.set("X-Robots-Tag", X_ROBOTS_NOINDEX);
+  } else if (isFacetNoIndexPath(request)) {
+    // Facets: noindex but keep follow (SEO Phase 1B) — without dynamizing RSC.
+    response.headers.set("X-Robots-Tag", X_ROBOTS_NOINDEX_FOLLOW);
   }
   return response;
 }
@@ -61,7 +88,7 @@ function withSeoHeaders(response: NextResponse, pathname: string): NextResponse 
 /**
  * Public host surfaces live at /@username[…].
  * App Router cannot use @ as a URL segment, so rewrite to /u/[username][…].
- * Also applies X-Robots-Tag for non-production + private paths (Phase 0A).
+ * Also applies X-Robots-Tag for non-production + private/facet paths (Phase 0A + 2).
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -72,15 +99,15 @@ export function middleware(request: NextRequest) {
     const username = slash === -1 ? remainder : remainder.slice(0, slash);
     const rest = slash === -1 ? "" : remainder.slice(slash); // /vault|/merch|…
     if (!username) {
-      return withSeoHeaders(NextResponse.next(), pathname);
+      return withSeoHeaders(NextResponse.next(), request);
     }
 
     const url = request.nextUrl.clone();
     url.pathname = `/u/${username}${rest}`;
-    return withSeoHeaders(NextResponse.rewrite(url), pathname);
+    return withSeoHeaders(NextResponse.rewrite(url), request);
   }
 
-  return withSeoHeaders(NextResponse.next(), pathname);
+  return withSeoHeaders(NextResponse.next(), request);
 }
 
 export const config = {

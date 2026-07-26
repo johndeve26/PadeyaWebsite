@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { HelpArticleCard } from "@/components/help/HelpArticleCard";
 import { HelpCategoryGrid } from "@/components/help/HelpCategoryGrid";
+import { HelpQueryResults } from "@/components/help/HelpQueryResults";
 import { HelpQuickCards } from "@/components/help/HelpQuickCards";
 import { HelpRoleCards } from "@/components/help/HelpRoleCards";
 import { HelpSearch } from "@/components/help/HelpSearch";
 import { HelpStillNeedHelp } from "@/components/help/HelpStillNeedHelp";
-import { Button, Container, EmptyState } from "@/components/ui";
+import { Button, Container } from "@/components/ui";
 import {
   fetchHelpArticlesServer,
   fetchHelpCategoriesServer,
@@ -19,42 +21,18 @@ import { helpIndexMetadata } from "@/lib/seo/help-metadata";
 export const metadata: Metadata = helpIndexMetadata();
 export const revalidate = 300;
 
-type Props = { searchParams: Promise<{ q?: string; audience?: string }> };
-
-function groupSearchHits(
-  hits: Awaited<ReturnType<typeof fetchHelpArticlesServer>>,
-) {
-  const map = new Map<string, typeof hits>();
-  for (const article of hits) {
-    const key = article.category?.group_key || article.category?.name || "general";
-    const list = map.get(key) || [];
-    list.push(article);
-    map.set(key, list);
-  }
-  return map;
-}
-
-export default async function HelpCenterPage({ searchParams }: Props) {
-  const { q, audience: audienceParam } = await searchParams;
-  const query = (q || "").trim();
-  const audience = (audienceParam || "").trim() || undefined;
-
-  const [categories, featured, popular, searchHits, fan, host, audienceHits] =
-    await Promise.all([
-      fetchHelpCategoriesServer(),
-      fetchHelpArticlesServer({ featured: true, limit: 4 }),
-      fetchHelpArticlesServer({ popular: true, limit: 8 }),
-      query
-        ? fetchHelpArticlesServer({ q: query, limit: 30 })
-        : Promise.resolve([]),
-      fetchHelpArticlesServer({ audience: "fan", limit: 4 }),
-      fetchHelpArticlesServer({ audience: "host", limit: 4 }),
-      audience && !query
-        ? fetchHelpArticlesServer({ audience, limit: 20 })
-        : Promise.resolve([]),
-    ]);
-
-  const groupedHits = query ? groupSearchHits(searchHits) : null;
+/**
+ * Default Help Center is ISR-cacheable. Search/audience facets render in a
+ * client island so `searchParams` never dynamizes this route.
+ */
+export default async function HelpCenterPage() {
+  const [categories, featured, popular, fan, host] = await Promise.all([
+    fetchHelpCategoriesServer(),
+    fetchHelpArticlesServer({ featured: true, limit: 4 }),
+    fetchHelpArticlesServer({ popular: true, limit: 8 }),
+    fetchHelpArticlesServer({ audience: "fan", limit: 4 }),
+    fetchHelpArticlesServer({ audience: "host", limit: 4 }),
+  ]);
 
   return (
     <main className="relative overflow-hidden bg-background pb-20 pt-10 text-foreground sm:pt-14">
@@ -79,7 +57,7 @@ export default async function HelpCenterPage({ searchParams }: Props) {
             tickets, hosting, Fan Passport, safety, and more.
           </p>
           <div className="mx-auto mt-8 max-w-2xl text-left">
-            <HelpSearch initialQuery={query} />
+            <HelpSearch />
           </div>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
             <Link href="/support">
@@ -94,134 +72,85 @@ export default async function HelpCenterPage({ searchParams }: Props) {
           </div>
         </header>
 
-        {query ? (
-          <section className="mt-14">
+        <Suspense fallback={null}>
+          <HelpQueryResults />
+        </Suspense>
+
+        <section className="mt-16">
+          <h2 className="font-display text-2xl font-extrabold tracking-tight text-heading">
+            Quick help
+          </h2>
+          <div className="mt-6">
+            <HelpQuickCards />
+          </div>
+        </section>
+
+        {featured.length ? (
+          <section className="mt-16">
             <h2 className="font-display text-2xl font-extrabold tracking-tight text-heading">
-              Results for &ldquo;{query}&rdquo;
+              Featured
             </h2>
-            {searchHits.length && groupedHits ? (
-              <div className="mt-8 space-y-12">
-                {[...groupedHits.entries()].map(([group, articles]) => (
-                  <div key={group}>
-                    <h3 className="font-display text-lg font-extrabold text-heading">
-                      {HELP_GROUP_LABELS[group] || group}
-                    </h3>
-                    <div className="mt-5 grid gap-8 sm:grid-cols-2">
-                      {articles.map((a) => (
-                        <HelpArticleCard key={a.id} article={a} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-8">
-                <EmptyState
-                  title="No answer found. Open a support ticket."
-                  description="Try a shorter query, browse categories below, or open Support with your topic."
-                  action={
-                    <Link href="/support" className="text-sm font-semibold text-primary-text">
-                      Open support ticket
-                    </Link>
-                  }
-                />
-              </div>
-            )}
+            <div className="mt-8 grid gap-8 sm:grid-cols-2">
+              {featured.map((a) => (
+                <HelpArticleCard key={a.id} article={a} featured />
+              ))}
+            </div>
           </section>
         ) : null}
 
-        {!query && audience && audienceHits.length ? (
-          <section className="mt-14">
-            <h2 className="font-display text-2xl font-extrabold tracking-tight text-heading capitalize">
-              {HELP_GROUP_LABELS[audience] || `${audience} guides`}
+        <section className="mt-16">
+          <h2 className="font-display text-2xl font-extrabold tracking-tight text-heading">
+            Browse by topic
+          </h2>
+          <div className="mt-8">
+            <HelpCategoryGrid categories={categories} />
+          </div>
+        </section>
+
+        {popular.length ? (
+          <section className="mt-16">
+            <h2 className="font-display text-2xl font-extrabold tracking-tight text-heading">
+              Popular articles
             </h2>
-            <div className="mt-8 grid gap-8 sm:grid-cols-2">
-              {audienceHits.map((a) => (
+            <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {popular.map((a) => (
                 <HelpArticleCard key={a.id} article={a} />
               ))}
             </div>
           </section>
         ) : null}
 
-        {!query && !audience ? (
-          <>
-            <section className="mt-16">
-              <h2 className="font-display text-2xl font-extrabold tracking-tight text-heading">
-                Quick help
-              </h2>
-              <div className="mt-6">
-                <HelpQuickCards />
-              </div>
-            </section>
+        <section className="mt-16">
+          <h2 className="font-display text-2xl font-extrabold tracking-tight text-heading">
+            Help by role
+          </h2>
+          <div className="mt-6">
+            <HelpRoleCards />
+          </div>
+        </section>
 
-            {featured.length ? (
-              <section className="mt-16">
-                <h2 className="font-display text-2xl font-extrabold tracking-tight text-heading">
-                  Featured
-                </h2>
-                <div className="mt-8 grid gap-8 sm:grid-cols-2">
-                  {featured.map((a) => (
-                    <HelpArticleCard key={a.id} article={a} featured />
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
-            <section className="mt-16">
-              <h2 className="font-display text-2xl font-extrabold tracking-tight text-heading">
-                Browse by topic
-              </h2>
-              <div className="mt-8">
-                <HelpCategoryGrid categories={categories} />
-              </div>
-            </section>
-
-            {popular.length ? (
-              <section className="mt-16">
-                <h2 className="font-display text-2xl font-extrabold tracking-tight text-heading">
-                  Popular articles
-                </h2>
-                <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                  {popular.map((a) => (
-                    <HelpArticleCard key={a.id} article={a} />
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
-            <section className="mt-16">
-              <h2 className="font-display text-2xl font-extrabold tracking-tight text-heading">
-                Help by role
-              </h2>
-              <div className="mt-6">
-                <HelpRoleCards />
-              </div>
-            </section>
-
-            <section className="mt-16 grid gap-12 lg:grid-cols-2">
-              <div>
-                <h2 className="font-display text-xl font-extrabold tracking-tight text-heading">
-                  {HELP_GROUP_LABELS.fan}
-                </h2>
-                <div className="mt-6 space-y-6">
-                  {fan.map((a) => (
-                    <HelpArticleCard key={a.id} article={a} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h2 className="font-display text-xl font-extrabold tracking-tight text-heading">
-                  {HELP_GROUP_LABELS.host}
-                </h2>
-                <div className="mt-6 space-y-6">
-                  {host.map((a) => (
-                    <HelpArticleCard key={a.id} article={a} />
-                  ))}
-                </div>
-              </div>
-            </section>
-          </>
-        ) : null}
+        <section className="mt-16 grid gap-12 lg:grid-cols-2">
+          <div>
+            <h2 className="font-display text-xl font-extrabold tracking-tight text-heading">
+              {HELP_GROUP_LABELS.fan}
+            </h2>
+            <div className="mt-6 space-y-6">
+              {fan.map((a) => (
+                <HelpArticleCard key={a.id} article={a} />
+              ))}
+            </div>
+          </div>
+          <div>
+            <h2 className="font-display text-xl font-extrabold tracking-tight text-heading">
+              {HELP_GROUP_LABELS.host}
+            </h2>
+            <div className="mt-6 space-y-6">
+              {host.map((a) => (
+                <HelpArticleCard key={a.id} article={a} />
+              ))}
+            </div>
+          </div>
+        </section>
 
         <div className="mt-16">
           <HelpStillNeedHelp />

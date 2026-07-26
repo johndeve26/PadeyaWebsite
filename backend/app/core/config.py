@@ -62,6 +62,9 @@ class Settings(BaseSettings):
 
     # Frontend / callbacks
     frontend_url: str = "http://localhost:3000"
+    # Shared secret for POST /api/revalidate/* on the Next.js app (server-to-server).
+    # Required for fan directory/sitemap purge after visibility changes.
+    revalidate_secret: str = ""
 
     # Local media uploads (swap storage backend later without changing routes)
     media_root: str = "media_uploads"

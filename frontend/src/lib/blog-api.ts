@@ -1,5 +1,7 @@
 /** Blog API types + client helpers. */
 
+import { cache } from "react";
+
 import { apiRequest } from "@/lib/api";
 import { getApiBaseUrl, getApiPrefix } from "@/lib/api-base";
 
@@ -346,9 +348,9 @@ export async function fetchBlogPostsServer(params?: {
   }
 }
 
-export async function fetchBlogPostServer(
+export const fetchBlogPostServer = cache(async (
   slug: string,
-): Promise<BlogPost | null> {
+): Promise<BlogPost | null> => {
   try {
     const res = await fetch(
       `${apiRoot()}/blog/posts/${encodeURIComponent(slug)}`,
@@ -360,7 +362,7 @@ export async function fetchBlogPostServer(
   } catch {
     return null;
   }
-}
+});
 
 export async function fetchBlogCategoriesServer(): Promise<BlogCategory[]> {
   try {

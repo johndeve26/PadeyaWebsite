@@ -14,12 +14,13 @@
 
 | Phase | Status | Doc |
 |-------|--------|-----|
-| **Phase 0** — reliability & observability | **Implemented** (workspace; deploy separately) | [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md) |
-| **Phase 1** — API/query latency | **Implemented in workspace** — **DEPLOYED MEASUREMENT pending** | [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md#phase-1--apiquery-latency-implemented-in-workspace) |
+| **Phase 0** — reliability & observability | **Implemented** | [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md) |
+| **Phase 1** — API/query latency | **Deployed** (API app medians hit targets) | [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md#phase-1--apiquery-latency-implemented-in-workspace) |
+| **Phase 2** — Next.js SSR / CDN | **Implemented in workspace** — **DEPLOYED MEASUREMENT pending** | [PERFORMANCE_IMPLEMENTATION.md](./PERFORMANCE_IMPLEMENTATION.md#phase-2--nextjs-ssr--cdn-implemented-in-workspace) |
 
-Phase 0 delivered: request timing + IDs + Server-Timing, `/ready`, frontend/Redis timeouts, maintenance/RBAC instrumentation, safe 500 handler, regression tests.
+Phase 1 LIVE: `/api/v1/events` app ~132 ms · sponsor ~237 ms · Legacy ~554 ms.
 
-Phase 1 delivered (code): SQL marketplace events list + lean list DTO, sponsor/Legacy public query reductions, maintenance decision cache, request-scoped RBAC memo, host-workspaces single-flight. **No speculative indexes. Production before/after not claimed until post-deploy audit.** Baseline: [`performance-phase1-baseline.json`](./performance-phase1-baseline.json).
+Phase 2 baseline (FE): [`performance-phase2-baseline.json`](./performance-phase2-baseline.json) — `/events` and entity pages were **MISS + private no-store** despite `revalidate` exports (AbortSignal + searchParams). Workspace fix restores ISR-capable public fetch/caching for hubs/entities **except Fan Passport HTML**, which stays **force-dynamic/no-store** so PUBLIC→PRIVATE cannot leave stale CDN HTML (TTL alone is insufficient). Post-deploy remeasure required before claiming CDN HIT.
 
 **Evidence labels used throughout:**
 - **MEASURED** — observed with low-volume production requests in this audit
@@ -729,10 +730,12 @@ Targets for Pàdéyá’s current architecture (Africa users + US origin):
 - Maintenance short-circuit cache  
 - Host workspaces single-flight (moved up — API amplification)  
 
-### Phase 2 — Frontend SSR/CDN (3–5 days)
+### Phase 2 — Frontend SSR/CDN (3–5 days) — **workspace complete; await deploy + remeasure**
 - `react.cache` loaders  
 - Revisit fan cache policy (privacy-safe short TTL)  
-- Fetch timeouts (partially in Phase 0)  
+- Remove AbortSignal from RSC fetch (restore Data Cache / CDN)  
+- Remove unnecessary `searchParams` dynamism on hubs  
+- Fetch timeouts (Phase 0 client; Phase 2 SSR-safe race)  
 
 ### Phase 3 — Assets & CWV (3–5 days)
 - next/image + dimensions for heroes/avatars  

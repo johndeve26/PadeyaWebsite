@@ -252,14 +252,117 @@ Compare `Server-Timing` `app;dur=` and uncompressed JSON sizes. Do not claim pro
 
 ---
 
-## Remaining Phase 2 (frontend / SSR)
+## Phase 2 — Next.js SSR / CDN (implemented in workspace)
 
-Not done in Phase 1:
+Scope: reduce frontend/SSR/CDN latency after Phase 1 APIs are fast. **No** image/font work, region moves, auth/payment weakening, or private data CDN caching.
 
-1. SSR `react.cache` for duplicate metadata/page loaders
-2. Safe revisit of fan passport `no-store` / CDN policy
-3. Image / font optimization
-4. Geography / region moves only if app fixes leave unacceptable Africa TTFB floor
-5. Index additions only with query-plan evidence
+Evidence labels: **LOCAL TEST RESULT** · **CODE-LEVEL IMPROVEMENT** · **LIVE VERIFIED** · **NOT YET DEPLOYED**
+
+### Phase 2 baseline (pre-change production) — LIVE VERIFIED
+
+Artifact: [`performance-phase2-baseline.json`](./performance-phase2-baseline.json)
+
+| Route | total_ms median | ttfb_ms median | X-Vercel-Cache | Cache-Control |
+|-------|----------------:|---------------:|----------------|---------------|
+| `/` | ~537 | ~432 | HIT | public |
+| `/events` | ~1077 | ~799 | **MISS×3** | **private, no-store** |
+| `/events/demo-…` | ~1064 | ~769 | MISS | private, no-store |
+| `/hosts` | ~508 | ~474 | HIT | public |
+| `/u/mainlandvibes` | ~906 | ~717 | MISS | private, no-store |
+| `/fans` | ~463 | ~433 | HIT | public |
+| `/f/pizzlecole` | ~1038 | ~782 | MISS | private, no-store |
+| `/sponsorships` | ~989 | ~688 | MISS | private, no-store |
+| `/sponsors/korawave-pay` | ~1040 | ~721 | MISS | private, no-store |
+| `/merch` | ~487 | ~462 | HIT | public |
+| `/merch/…tee` | ~964 | ~713 | MISS | private, no-store |
+| `/blog` | ~519 | ~484 | HIT | public |
+| `/help` | ~827 | ~729 | MISS | private, no-store |
+
+Backend app medians (Phase 1 deployed): events ~132 ms · sponsor ~237 ms · Legacy ~554 ms.
+
+### Root cause — `/events` frontend gap — LIVE VERIFIED + CODE-LEVEL
+
+**Attribution (before):**
+
+```
+Browser → Vercel MISS (private, no-store)
+  → Next dynamic SSR (searchParams + AbortSignal on fetch)
+    → API /events (~132 ms app)
+    → RSC HTML
+→ total ~1.0–1.1 s
+```
+
+Two independent forced-dynamic causes:
+
+1. **AbortSignal on RSC `fetch`** (Phase 0 timeout helper) — Next opts the fetch out of the Data Cache → route becomes `private, no-store` → permanent MISS. Confirmed by contrast: `/hosts` uses `Promise.race` without AbortSignal and HITs.
+2. **`searchParams` in page / `generateMetadata`** — dynamizes `/events`, `/help`, `/sponsorships` even for the bare path.
+
+### Fixes (CODE-LEVEL IMPROVEMENT)
+
+| Change | Detail |
+|--------|--------|
+| Public fetch timeouts | `withTimeoutRace` — no AbortSignal on Next fetch (`seo/public-fetch.ts`, `cache/public-api.ts`) |
+| React `cache()` loaders | `lib/public-loaders/entities.ts` for event, Legacy, sponsor, fan, merch |
+| Blog/help articles | `cache()` around `fetchBlogPostServer` / `fetchHelpArticleServer` |
+| `/events` | No `searchParams` on RSC; ISR shell; facets client-side; middleware `noindex, follow` |
+| `/help` | ISR default; `HelpQueryResults` client island for `?q=` / audience |
+| `/sponsorships` | Static metadata + `revalidate`; facet noindex in middleware |
+| `/f/[username]` | **force-dynamic / no-store** (privacy-first; see below) |
+| Merch detail | No server `searchParams`; `?h=` via client; Suspense |
+| `/fans` | SSR seed directory; skip duplicate client fetch when unfiltered |
+
+### Fan Passport cache/privacy policy (hardened)
+
+**Correction:** `API 404 + 180s ISR TTL` is **not** sufficient for PUBLIC→PRIVATE. A Vercel CDN HIT of `/f/{username}` HTML can outlive the API change until ISR expiry. That leak window is unacceptable for privacy.
+
+| Visibility | `/f/{username}` HTML | Index | Directory / sitemap |
+| ---------- | -------------------- | ----- | ------------------- |
+| PUBLIC | **force-dynamic / no-store** (React `cache()` request dedupe only) | indexable | eligible per product rules |
+| UNLISTED | **force-dynamic / no-store** | noindex | not discoverable |
+| PRIVATE | API 404 → `notFound()`; no CDN HTML to go stale | never | never |
+
+**Invalidation (directory / sitemap defense-in-depth):**
+
+- Redis: `invalidate_fan_public_caches(username=, previous_username=)`
+- Next.js: authenticated `POST /api/revalidate/fan` with `Authorization: Bearer $REVALIDATE_SECRET`
+- Purges `/f/{username}` path residue, `/fans`, tags `fans` / `fan-directory`, `/sitemap.xml`
+- Backend notifies via `notify_fan_frontend_revalidate` on settings / admin-hide
+- Endpoint: **401** without secret; **503** if secret unset — never an open purge
+
+**On invalidation failure:** Fan HTML remains safe (not CDN-cached). Directory ISR may lag until TTL (~180s) or a successful purge — profile HTML cannot leak via CDN.
+
+### Cache invalidation (general)
+
+- TTL via `PUBLIC_REVALIDATE` + route `export const revalidate` for non-sensitive hubs
+- Fan profile HTML: **no TTL privacy dependence**
+- Existing `/api/revalidate/blog` and `/api/revalidate/help` unchanged (admin same-origin; separate hardening backlog)
+- Events/sponsors/merch: Redis invalidation + short TTL (not fan-grade privacy)
+
+### Local proof
+
+| Check | Result |
+|-------|--------|
+| vitest loaders + cache policy + timeout race | **passed** (LOCAL) |
+| `npm run build` | **passed** — `/events`, `/help`, `/fans`, `/sponsorships` now ○ ISR (LOCAL) |
+| Production after/before table | **NOT YET DEPLOYED** |
+
+### Expected `/events` flow after deploy (hypothesis until LIVE)
+
+```
+Browser → Vercel HIT/STALE (public ISR)
+  → cached RSC / short regen
+    → deduped Data Cache fetch to API
+→ HTML
+```
+
+Do **not** claim HIT or latency wins until post-deploy headers/timings.
+
+### Remaining Phase 3
+
+1. `next/image` + dimensions / LCP heroes  
+2. Manrope weight trim  
+3. JS bundle / CWV field work  
+4. Geography only if still needed after SSR/CDN wins  
+5. Speculative indexes only with EXPLAIN  
 
 Do **not** weaken authorization or payment verification for speed.

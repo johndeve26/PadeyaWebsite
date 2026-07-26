@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { MerchProductDetailView } from "@/components/merch/marketplace/MerchProductDetailView";
-import { getApiBaseUrl, getApiPrefix } from "@/lib/api-base";
 import { brand } from "@/lib/brand";
+import { getPublicMerchBySlug } from "@/lib/public-loaders/entities";
 import { NOINDEX_ROBOTS } from "@/lib/seo/noindex";
 import {
   isMerchProductSchemaEligible,
@@ -12,39 +13,22 @@ import {
 import { breadcrumbJsonLd, JsonLdScript } from "@/lib/seo/jsonld";
 import { buildPageMetadata, siteOrigin } from "@/lib/seo/site";
 import { resolveOgImageUrl } from "@/lib/seo/public-asset";
-import type { MarketplaceProduct } from "@/lib/types/merch";
+
+/**
+ * ISR for canonical product URLs. Host filter `?h=` is applied client-side so
+ * this route stays cacheable (searchParams would force private no-store).
+ */
+export const revalidate = 60;
 
 type PageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ h?: string }>;
 };
-
-async function loadProduct(
-  slug: string,
-  hostSlug?: string,
-): Promise<MarketplaceProduct | null> {
-  try {
-    const params = new URLSearchParams();
-    if (hostSlug) params.set("h", hostSlug);
-    const suffix = params.size ? `?${params.toString()}` : "";
-    const res = await fetch(
-      `${getApiBaseUrl()}${getApiPrefix()}/merch/${encodeURIComponent(slug)}${suffix}`,
-      { next: { revalidate: 60 } },
-    );
-    if (!res.ok) return null;
-    return (await res.json()) as MarketplaceProduct;
-  } catch {
-    return null;
-  }
-}
 
 export async function generateMetadata({
   params,
-  searchParams,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const { h } = await searchParams;
-  const product = await loadProduct(slug, h);
+  const product = await getPublicMerchBySlug(slug);
   if (!product) {
     return {
       title: `Merch · ${brand.name}`,
@@ -74,13 +58,9 @@ export async function generateMetadata({
   };
 }
 
-export default async function MerchProductPage({
-  params,
-  searchParams,
-}: PageProps) {
+export default async function MerchProductPage({ params }: PageProps) {
   const { slug } = await params;
-  const { h } = await searchParams;
-  const product = await loadProduct(slug, h);
+  const product = await getPublicMerchBySlug(slug);
   if (!product) notFound();
 
   const productSchema = merchProductJsonLd(product);
@@ -97,11 +77,9 @@ export default async function MerchProductPage({
       {showBreadcrumbLd ? (
         <JsonLdScript data={breadcrumbJsonLd(crumbs, siteOrigin())} />
       ) : null}
-      <MerchProductDetailView
-        slug={slug}
-        hostSlug={h}
-        initialProduct={product}
-      />
+      <Suspense fallback={null}>
+        <MerchProductDetailView slug={slug} initialProduct={product} />
+      </Suspense>
     </>
   );
 }

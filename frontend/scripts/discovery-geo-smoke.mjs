@@ -62,8 +62,8 @@ assert.match(hook, /noteDeclined/);
 const eventsPage = read("src/app/events/page.tsx");
 assert.match(eventsPage, /fetchPublicEventsServer/);
 assert.match(eventsPage, /initialEvents=\{events\}/);
-assert.match(eventsPage, /hasGeoParams/);
-assert.match(eventsPage, /does NOT SSR nearby|do NOT SSR nearby|not SSR nearby|Near-me/i);
+// Geo/facet filters stay client-side so the RSC route remains ISR-cacheable.
+assert.match(eventsPage, /Near-me|never SSR exact GPS|client-side/i);
 
 const marketplace = read(
   "src/components/events/marketplace/EventsMarketplaceClient.tsx",

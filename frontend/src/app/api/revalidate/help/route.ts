@@ -1,8 +1,9 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
-/** Called after help/KB publish from admin tooling (same-origin). */
+/** Bust public help ISR after admin publish / unpublish / seed. */
 export async function POST() {
+  // Next 16 requires a cacheLife profile as the second argument.
   revalidateTag("help", "max");
   revalidatePath("/help");
   revalidatePath("/");
