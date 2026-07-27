@@ -65,6 +65,7 @@ def queue_email_verification_email(
     ip_address: str | None = None,
     user_agent: str | None = None,
     audit_action: str = "auth.email_verification_sent",
+    deliver_now: bool = True,
 ) -> None:
     """Invalidate unused tokens, create link + code, enqueue verify_email."""
     if user.is_verified:
@@ -107,7 +108,7 @@ def queue_email_verification_email(
         },
         dedupe_key=f"user:{user.id}:verify_email:{hash_token(raw_token)[:16]}",
         force=True,
-        deliver_now=True,
+        deliver_now=deliver_now,
     )
     write_audit_log(
         db,

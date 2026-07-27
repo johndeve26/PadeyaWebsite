@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+from collections.abc import Iterable
 from typing import Any
 
 from app.email.config import BRAND_NAME, email_runtime
@@ -14,6 +15,15 @@ EMAIL_ACCENT = "#0B6E4F"
 
 def _escape(value: str) -> str:
     return html.escape(value, quote=True)
+
+
+def _context_scrub_fragments(context: dict[str, Any]) -> list[str]:
+    """String context values are user/product data — not brand copy to police."""
+    fragments: list[str] = []
+    for value in context.values():
+        if isinstance(value, str) and value.strip():
+            fragments.append(value)
+    return fragments
 
 
 def _brand_logo_url(base_url: str) -> str:
@@ -41,8 +51,14 @@ def _email_footer_html(*, base_url: str, support_email: str) -> str:
         </td></tr>"""
 
 
-def _validate_branded_html(doc: str) -> str:
-    scrubbed = doc.replace("padeya.com", "")
+def _validate_branded_html(doc: str, *, scrub: Iterable[str] = ()) -> str:
+    scrubbed = doc
+    for fragment in scrub:
+        if not fragment:
+            continue
+        scrubbed = scrubbed.replace(_escape(fragment), "")
+        scrubbed = scrubbed.replace(fragment, "")
+    scrubbed = scrubbed.replace("padeya.com", "")
     for bad in ("Padeya", "Padéyá", "Pàdéyé"):
         if bad in scrubbed:
             raise ValueError(f"Forbidden brand spelling {bad!r} in email HTML")
@@ -59,6 +75,7 @@ def _branded_email_document(
     support_email: str,
     eyebrow: str | None = None,
     validate: bool = True,
+    scrub: Iterable[str] = (),
 ) -> str:
     eyebrow_html = ""
     if eyebrow:
@@ -89,7 +106,7 @@ def _branded_email_document(
 </body>
 </html>"""
     if validate:
-        return _validate_branded_html(doc)
+        return _validate_branded_html(doc, scrub=scrub)
     return doc
 
 
@@ -140,7 +157,7 @@ def render_plain(
         ]
     )
     text = "\n".join(lines)
-    assert_brand_safe(text)
+    assert_brand_safe(text, scrub=_context_scrub_fragments(context))
     return text
 
 
@@ -170,6 +187,7 @@ def render_html(
         cta_block=cta_block,
         base_url=base_url,
         support_email=support_email,
+        scrub=_context_scrub_fragments(context),
     )
 
 

@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections.abc import Iterable
 from typing import Any, Callable
 
 from app.email.config import BRAND_NAME, FORBIDDEN_BRAND_SPELLINGS
+
+# Domain is allowed in footers / links; never treat it as a brand misspelling.
+_ALLOWED_DOMAIN_FRAGMENTS = ("padeya.com", "Padeya.com", "PADEYA.COM")
 
 
 @dataclass(frozen=True)
@@ -30,9 +34,21 @@ def _ctx(context: dict[str, Any], key: str, default: str = "") -> str:
     return str(val)
 
 
-def assert_brand_safe(text: str) -> None:
+def assert_brand_safe(text: str, *, scrub: Iterable[str] = ()) -> None:
+    """Reject ASCII/wrong brand spellings in *our* copy.
+
+    User-controlled fragments (names, titles, host blast body, etc.) must be
+    passed via ``scrub`` so a person named \"Admin Padeya\" does not block
+    transactional email.
+    """
+    scrubbed = text
+    for fragment in scrub:
+        if fragment:
+            scrubbed = scrubbed.replace(str(fragment), "")
+    for domain in _ALLOWED_DOMAIN_FRAGMENTS:
+        scrubbed = scrubbed.replace(domain, "")
     for bad in FORBIDDEN_BRAND_SPELLINGS:
-        if bad in text:
+        if bad in scrubbed:
             raise ValueError(f"Forbidden brand spelling {bad!r} in email copy")
 
 

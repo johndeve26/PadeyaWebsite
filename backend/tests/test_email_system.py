@@ -103,6 +103,24 @@ def test_forbidden_brand_spellings():
         assert_brand_safe("Welcome to Padeya")
 
 
+def test_verify_email_allows_forbidden_spelling_in_full_name():
+    """User display names must not trip brand policing (blocks change-email)."""
+    subject, text, html = render_template(
+        "verify_email",
+        {
+            "full_name": "Admin Padeya",
+            "verification_code": "123456",
+            "expiry_hours": "24",
+            "cta_path": "/verify?token=abc",
+        },
+    )
+    assert subject
+    assert "Admin Padeya" in text
+    assert "Pàdéyá" in text
+    assert "Admin Padeya" in html
+    assert_brand_safe(text, scrub=["Admin Padeya"])
+
+
 def test_enqueue_and_dev_deliver(db_session: Session):
     seed_roles_and_permissions(db_session)
     role = get_role_by_name(db_session, "attendee")

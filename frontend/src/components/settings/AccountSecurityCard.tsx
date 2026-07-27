@@ -5,7 +5,8 @@ import { useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { AuthPasswordField } from "@/components/auth/AuthPasswordField";
 import { Alert, Button, Card, Input, SectionHeader, useToast } from "@/components/ui";
-import { ApiError, changeEmail, changePassword } from "@/lib/api";
+import { changeEmail, changePassword } from "@/lib/api";
+import { errorDetail } from "@/lib/api-timeouts";
 import { markSessionExpired } from "@/lib/auth/session-expired";
 
 type Props = {
@@ -61,9 +62,7 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
       window.location.href = "/login";
       return;
     } catch (err) {
-      setEmailError(
-        err instanceof ApiError ? err.detail : "Could not update email",
-      );
+      setEmailError(errorDetail(err, "Could not update email"));
     } finally {
       setEmailBusy(false);
     }
@@ -102,9 +101,7 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
       window.location.href = "/login";
       return;
     } catch (err) {
-      setPasswordError(
-        err instanceof ApiError ? err.detail : "Could not update password",
-      );
+      setPasswordError(errorDetail(err, "Could not update password"));
     } finally {
       setPasswordBusy(false);
     }

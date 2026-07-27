@@ -108,7 +108,8 @@ def change_password(
             "detail": "Your Pàdéyá password was changed. If this was not you, contact support immediately.",
         },
         force=True,
-        deliver_now=True,
+        # Enqueue only — sync SMTP can exceed the FE request timeout.
+        deliver_now=False,
     )
     db.commit()
 
@@ -218,7 +219,8 @@ def change_email(
             "detail": f"Your Pàdéyá sign-in email was changed to {normalized}. If this was not you, contact support immediately.",
         },
         force=True,
-        deliver_now=True,
+        # Enqueue only — sync SMTP (up to 30s×N) exceeds the FE request timeout.
+        deliver_now=False,
     )
     send_template(
         db,
@@ -229,11 +231,17 @@ def change_email(
             "detail": "This address is now the email for your Pàdéyá account.",
         },
         force=True,
-        deliver_now=True,
+        deliver_now=False,
     )
     from app.auth.email_verification import queue_email_verification_email
 
-    queue_email_verification_email(db, user, ip_address=ip_address, user_agent=user_agent)
+    queue_email_verification_email(
+        db,
+        user,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        deliver_now=False,
+    )
     db.commit()
     db.refresh(user)
     return user

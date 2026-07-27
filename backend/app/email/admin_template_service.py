@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import re
+from collections.abc import Iterable
 from typing import Any
 from uuid import UUID
 
@@ -205,13 +206,15 @@ def list_admin_templates(
     return items
 
 
-def _substitute(template: str, context: dict[str, str]) -> str:
+def _substitute(
+    template: str, context: dict[str, str], *, scrub: Iterable[str] = ()
+) -> str:
     def repl(match: re.Match[str]) -> str:
         name = match.group(1)
         return context.get(name, "")
 
     out = _VAR_PATTERN.sub(repl, template)
-    assert_brand_safe(out)
+    assert_brand_safe(out, scrub=scrub)
     return out
 
 
@@ -231,6 +234,8 @@ def _render_with_overrides(
         safe["admin_lines"] = build_admin_lines(cat, safe)
         ctx = {**ctx, **safe, "admin_lines": safe["admin_lines"]}
 
+    scrub = [str(v) for v in ctx.values() if isinstance(v, str) and v.strip()]
+
     row = None
     if db is not None:
         row = db.scalar(select(EmailAdminTemplate).where(EmailAdminTemplate.key == key))
@@ -238,23 +243,31 @@ def _render_with_overrides(
     subject_base = (row.subject if row and row.subject else None) or (
         cat.subject if cat else tmpl.subject
     )
-    subject = _substitute(subject_base, {k: str(v) for k, v in ctx.items()})
+    subject = _substitute(
+        subject_base, {k: str(v) for k, v in ctx.items()}, scrub=scrub
+    )
     if not subject:
         subject = render_subject(tmpl, ctx)
 
     if row and row.text_body:
-        text = _substitute(row.text_body, {k: str(v) for k, v in ctx.items()})
+        text = _substitute(
+            row.text_body, {k: str(v) for k, v in ctx.items()}, scrub=scrub
+        )
     else:
         cfg = email_runtime(db=db)
         text = render_plain(tmpl, ctx, base_url=cfg.app_base_url, support_email=cfg.support_email)
 
     if row and row.html_body:
-        html_out = _substitute(row.html_body, {k: html.escape(str(v)) for k, v in ctx.items()})
+        html_out = _substitute(
+            row.html_body,
+            {k: html.escape(str(v)) for k, v in ctx.items()},
+            scrub=scrub,
+        )
     else:
         cfg = email_runtime(db=db)
         html_out = render_html(tmpl, ctx, base_url=cfg.app_base_url, support_email=cfg.support_email)
 
-    assert_brand_safe(text)
+    assert_brand_safe(text, scrub=scrub)
     return subject, text, html_out
 
 
