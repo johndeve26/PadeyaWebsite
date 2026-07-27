@@ -3,6 +3,8 @@
  * No API contract changes.
  */
 
+import { resolveMediaUrl } from "@/lib/media";
+
 const EVENT_COVERS = [
   "/demo/events/detty-friday-live.svg",
   "/demo/events/afrobeats-night-live.svg",
@@ -106,15 +108,18 @@ export function resolveEventImage(
   bannerUrl?: string | null,
   categoryHint?: string | null,
 ): string {
-  if (bannerUrl) return bannerUrl;
+  if (bannerUrl) {
+    // Enforce padeya.com for demo assets (never smartlancedesigns.com).
+    return resolveMediaUrl(bannerUrl) || bannerUrl;
+  }
   const normalized = slug.replace(/^demo-/, "").replace(/-gallery$/, "");
   const bySlug = EVENT_COVERS.find(
     (p) => p.endsWith(`/${normalized}.svg`) || p.includes(`/${normalized}`),
   );
-  if (bySlug) return bySlug;
+  if (bySlug) return resolveMediaUrl(bySlug);
   const category = mapCategoryHint(categoryHint) || inferEventCategory(title, slug);
   const pool = EVENT_COVERS_BY_CATEGORY[category] ?? EVENT_COVERS;
-  return pool[hash(`${slug}:${title}:${category}`) % pool.length];
+  return resolveMediaUrl(pool[hash(`${slug}:${title}:${category}`) % pool.length]);
 }
 
 function mapCategoryHint(hint?: string | null): string | null {

@@ -66,8 +66,16 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: brand.name,
   },
+  /**
+   * Authoritative favicon set for browsers + Google Search.
+   * - `/icons/icon-48.png` meets Google’s ≥48×48 square requirement (stable public URL).
+   * - `app/favicon.ico` still serves `/favicon.ico` via the App Router file convention
+   *   (multi-size brand ICO); do not also declare `/favicon.ico` here (avoids duplicates).
+   * - PWA install icons remain `/icons/icon-192.png` + `/icons/icon-512.png` in the manifest.
+   */
   icons: {
     icon: [
+      { url: "/icons/icon-48.png", sizes: "48x48", type: "image/png" },
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],

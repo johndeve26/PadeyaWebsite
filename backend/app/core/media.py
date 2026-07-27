@@ -55,12 +55,23 @@ class StoredMedia:
 
 
 def normalize_public_media_url(url: str | None) -> str | None:
-    """Rewrite legacy localhost /media URLs and apply MEDIA_PUBLIC_BASE_URL when set."""
+    """Rewrite legacy localhost /media URLs and apply MEDIA_PUBLIC_BASE_URL when set.
+
+    Also collapses retired Smartlance (and any-host) `/demo/...` static assets to
+    site-relative `/demo/...` so APIs never emit padeya.smartlancedesigns.com.
+    """
     if not url:
         return url
     cleaned = url.strip()
     if not cleaned:
         return url
+
+    # Lazy import avoids circular imports at module load.
+    from app.demo.assets import normalize_demo_asset_url
+
+    demo_normalized = normalize_demo_asset_url(cleaned)
+    if demo_normalized and demo_normalized.startswith("/demo/"):
+        return demo_normalized
 
     settings = get_settings()
     base = (settings.media_public_base_url or "").strip().rstrip("/")

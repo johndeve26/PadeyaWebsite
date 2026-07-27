@@ -41,6 +41,18 @@ assert.match(site, /metadataBase/);
 const layout = read("src/app/layout.tsx");
 assert.match(layout, /metadataBase/);
 assert.match(layout, /rootSeoMetadataFields/);
+assert.match(layout, /\/icons\/icon-48\.png/);
+assert.match(layout, /sizes:\s*"48x48"/);
+
+const legacyRedirects = read("src/lib/seo/legacy-redirects.ts");
+assert.match(legacyRedirects, /buildAppRedirects/);
+assert.match(legacyRedirects, /member-register/);
+assert.match(legacyRedirects, /WWW_HOST/);
+assert.ok(exists("src/lib/seo/legacy-redirects.ts"));
+
+const nextConfig = read("next.config.ts");
+assert.match(nextConfig, /buildAppRedirects/);
+assert.doesNotMatch(nextConfig, /destination:\s*["']\/["']\s*,\s*permanent:\s*true,\s*\/\/\s*404/);
 
 const robots = read("src/app/robots.ts");
 assert.match(robots, /shouldIndexEnvironment/);
