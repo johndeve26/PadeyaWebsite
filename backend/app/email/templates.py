@@ -84,6 +84,28 @@ def _verify_email(c: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _confirm_email_change(c: dict[str, Any]) -> list[str]:
+    name = _ctx(c, "full_name", "there")
+    code = _ctx(c, "verification_code")
+    pending = _ctx(c, "pending_email", "your new address")
+    hours = _ctx(c, "expiry_hours", "1")
+    lines = [
+        f"Hi {name},",
+        f"Confirm {pending} as your new {BRAND_NAME} sign-in email.",
+    ]
+    if code:
+        lines.append(
+            f"Your confirmation code is {code}. It expires in {hours} hour{'s' if hours != '1' else ''}."
+        )
+        lines.append(
+            "Enter this code in Profile & security while signed in with your current email."
+        )
+    lines.append(
+        "If you did not request this change, ignore this message — your sign-in email will stay the same."
+    )
+    return lines
+
+
 def _password_reset(c: dict[str, Any]) -> list[str]:
     code = _ctx(c, "reset_code")
     lines = [
@@ -661,6 +683,16 @@ TEMPLATES: dict[str, TemplateDef] = {
     ),
     "verify_email": TemplateDef(
         "verify_email", f"Verify your {BRAND_NAME} email", "email_security", True, "Verify your email", _verify_email, "Verify email", "/verify"
+    ),
+    "confirm_email_change": TemplateDef(
+        "confirm_email_change",
+        f"Confirm your new {BRAND_NAME} email",
+        "email_security",
+        True,
+        "Confirm your new email",
+        _confirm_email_change,
+        "Open settings",
+        "/dashboard/settings",
     ),
     "password_reset": TemplateDef(
         "password_reset", f"Reset your {BRAND_NAME} password", "email_security", True, "Reset your password", _password_reset, "Reset password", "/reset-password"

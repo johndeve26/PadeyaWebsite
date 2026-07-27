@@ -48,12 +48,12 @@ type AuthContextValue = {
   authInitialized: boolean;
   impersonation: ImpersonationInfo | null;
   isImpersonating: boolean;
-  login: (login: string, password: string) => Promise<void>;
+  login: (login: string, password: string) => Promise<User>;
   register: (input: {
     email: string;
     password: string;
     username: string;
-  }) => Promise<void>;
+  }) => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   startImpersonation: (input: ImpersonationStartInput) => Promise<string>;
@@ -159,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getOrCreateDeviceId();
     const me = await fetchMe();
     setUser(me);
+    return me;
   }, []);
 
   const register = useCallback(
@@ -170,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       getOrCreateDeviceId();
       const me = await fetchMe();
       setUser(me);
+      return me;
     },
     [],
   );

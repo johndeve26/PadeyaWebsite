@@ -6,7 +6,7 @@ import { RequireAuth } from "@/components/auth/RequireAuth";
 /** Dedicated suspended account surface (also shown via RequireAuth gate). */
 export default function AccountSuspendedRoute() {
   return (
-    <RequireAuth>
+    <RequireAuth requireVerifiedEmail={false}>
       <SuspendedAccountPage />
     </RequireAuth>
   );

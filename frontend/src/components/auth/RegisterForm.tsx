@@ -13,6 +13,7 @@ import {
 } from "@/components/discovery/ProfileLocationTaxonomyFields";
 import { Alert, Button, Input } from "@/components/ui";
 import { ApiError } from "@/lib/api";
+import { emailVerifyPath } from "@/lib/auth/email-verify-path";
 import { writeRegisterLocationSeed } from "@/lib/auth/register-location";
 import { safeNextPath } from "@/lib/auth/safe-next";
 import {
@@ -112,7 +113,7 @@ export function RegisterForm() {
       });
       writeRegisterLocationSeed(location);
       const next = searchParams.get("next");
-      router.push(next ? safeNextPath(next) : "/dashboard");
+      router.push(emailVerifyPath(next ? safeNextPath(next) : "/dashboard"));
     } catch (err) {
       if (err instanceof ApiError) {
         setError(registerErrorMessage(err));

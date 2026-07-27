@@ -7,6 +7,7 @@ import { useEffect, type ReactNode } from "react";
 import { SuspendedAccountPage } from "@/components/account/SuspendedAccountPage";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Button, Container, SkeletonLoader } from "@/components/ui";
+import { emailVerifyPath } from "@/lib/auth/email-verify-path";
 import { userHasRole } from "@/lib/auth/permissions";
 
 type RequireAuthProps = {
@@ -14,22 +15,40 @@ type RequireAuthProps = {
   roles?: string[];
   /** When true, deny access while an impersonation session is active. */
   denyWhileImpersonating?: boolean;
+  /**
+   * When true (default), signed-in users must verify email before using
+   * dashboard / host / admin workspaces. Impersonation bypasses this gate.
+   */
+  requireVerifiedEmail?: boolean;
 };
 
 export function RequireAuth({
   children,
   roles,
   denyWhileImpersonating = false,
+  requireVerifiedEmail = true,
 }: RequireAuthProps) {
   const { user, loading, authInitialized, isImpersonating } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+
+  const needsEmailVerification =
+    requireVerifiedEmail &&
+    Boolean(user) &&
+    !user!.is_verified &&
+    !isImpersonating;
 
   useEffect(() => {
     if (authInitialized && !user) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
   }, [authInitialized, user, router, pathname]);
+
+  useEffect(() => {
+    if (needsEmailVerification) {
+      router.replace(emailVerifyPath(pathname));
+    }
+  }, [needsEmailVerification, router, pathname]);
 
   if (!authInitialized || loading) {
     return (
@@ -96,6 +115,16 @@ export function RequireAuth({
       return <>{children}</>;
     }
     return <SuspendedAccountPage />;
+  }
+
+  if (needsEmailVerification) {
+    return (
+      <main className="bg-background py-16 sm:py-20">
+        <Container width="narrow" className="space-y-4">
+          <SkeletonLoader lines={5} />
+        </Container>
+      </main>
+    );
   }
 
   if (roles && !userHasRole(user, ...roles)) {

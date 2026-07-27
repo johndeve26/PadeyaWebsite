@@ -149,6 +149,18 @@ def production_email_ready(
             "(turn off Dev / log mode in Admin → Email settings)",
         )
     if cfg.provider == "smtp":
+        if db is not None:
+            try:
+                from app.email.settings_service import (
+                    get_active_provider_settings,
+                    smtp_secret_decrypt_error,
+                )
+
+                decrypt_err = smtp_secret_decrypt_error(get_active_provider_settings(db))
+                if decrypt_err:
+                    return False, decrypt_err
+            except Exception:  # noqa: BLE001
+                pass
         if not cfg.smtp_host:
             return False, "SMTP host is required when provider=smtp in production"
         if not cfg.from_email:

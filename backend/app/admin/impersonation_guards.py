@@ -50,6 +50,7 @@ _CREDENTIALS = re.compile(
     r"(?:"
     r"/auth/change-password"
     r"|/auth/change-email"
+    r"|/auth/change-email/confirm"
     r"|/users/me/(?:email|phone|password)"
     r"|/users/me/change-(?:email|password|phone)"
     r")",

@@ -18,8 +18,10 @@ from app.auth.rate_limit import (
     rate_limit_register,
 )
 from app.auth.schemas import (
+    ChangeEmailPendingResponse,
     ChangeEmailRequest,
     ChangePasswordRequest,
+    ConfirmEmailChangeRequest,
     EmailVerifyConfirmRequest,
     LoginRequest,
     LogoutRequest,
@@ -275,21 +277,48 @@ def change_password_route(
     return MessageResponse(message="Password updated")
 
 
-@router.post("/change-email", response_model=UserPublic)
+@router.post(
+    "/change-email",
+    response_model=ChangeEmailPendingResponse | UserPublic,
+)
 def change_email_route(
     payload: ChangeEmailRequest,
     request: Request,
     db: Annotated[Session, Depends(get_db)],
     user: CurrentUser,
-) -> UserPublic:
-    from app.auth.account_credentials import change_email
+) -> ChangeEmailPendingResponse | UserPublic:
+    from app.auth.account_credentials import request_email_change
+    from app.users.models import User as UserModel
 
     ip, ua = _client_meta(request)
-    updated = change_email(
+    result = request_email_change(
         db,
         user=user,
         new_email=payload.new_email,
         current_password=payload.current_password,
+        ip_address=ip,
+        user_agent=ua,
+    )
+    if isinstance(result, UserModel):
+        return UserPublic.model_validate(build_user_public(result, db=db))
+    message, pending_email = result
+    return ChangeEmailPendingResponse(message=message, pending_email=pending_email)
+
+
+@router.post("/change-email/confirm", response_model=UserPublic)
+def confirm_email_change_route(
+    payload: ConfirmEmailChangeRequest,
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    user: CurrentUser,
+) -> UserPublic:
+    from app.auth.account_credentials import confirm_email_change
+
+    ip, ua = _client_meta(request)
+    updated = confirm_email_change(
+        db,
+        user=user,
+        code=payload.code,
         ip_address=ip,
         user_agent=ua,
     )

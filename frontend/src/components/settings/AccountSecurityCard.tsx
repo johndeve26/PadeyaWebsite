@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { AuthPasswordField } from "@/components/auth/AuthPasswordField";
 import { Alert, Button, Card, Input, SectionHeader, useToast } from "@/components/ui";
-import { changeEmail, changePassword } from "@/lib/api";
+import {
+  changeEmail,
+  changePassword,
+  confirmEmailChange,
+} from "@/lib/api";
 import { errorDetail } from "@/lib/api-timeouts";
 import { markSessionExpired } from "@/lib/auth/session-expired";
 
@@ -23,6 +27,9 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
 
   const [currentPasswordForEmail, setCurrentPasswordForEmail] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const [emailCode, setEmailCode] = useState("");
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [emailNotice, setEmailNotice] = useState<string | null>(null);
   const [emailBusy, setEmailBusy] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
 
@@ -32,37 +39,78 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  async function onChangeEmail(event: FormEvent<HTMLFormElement>) {
+  const normalizedEmailCode = useMemo(
+    () => emailCode.trim().toUpperCase().replace(/[\s-]/g, "").slice(0, 6),
+    [emailCode],
+  );
+
+  async function onRequestEmailChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canChangeCredentials) return;
     setEmailError(null);
+    setEmailNotice(null);
     setEmailBusy(true);
     try {
-      await changeEmail({
+      const result = await changeEmail({
         new_email: newEmail.trim().toLowerCase(),
         current_password:
           isImpersonating && canChangeCredentials
             ? ""
             : currentPasswordForEmail,
       });
-      setNewEmail("");
-      setCurrentPasswordForEmail("");
-      if (isImpersonating) {
-        toast.push({
-          tone: "success",
-          title: "Email updated for this account (audited impersonation).",
-        });
-        await onEmailChanged();
+      if (result.status === "updated") {
+        setNewEmail("");
+        setCurrentPasswordForEmail("");
+        setPendingEmail(null);
+        setEmailCode("");
+        if (isImpersonating) {
+          toast.push({
+            tone: "success",
+            title: "Email updated for this account (audited impersonation).",
+          });
+          await onEmailChanged();
+          return;
+        }
+        markSessionExpired(
+          "Your email was updated. Sign in again with your new email.",
+        );
+        await logout();
+        window.location.href = "/login";
         return;
       }
+      setPendingEmail(result.pending_email);
+      setEmailNotice(result.message);
+      setEmailCode("");
+    } catch (err) {
+      setEmailError(errorDetail(err, "Could not update email"));
+    } finally {
+      setEmailBusy(false);
+    }
+  }
+
+  async function onConfirmEmailChange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!canChangeCredentials || !pendingEmail) return;
+    if (normalizedEmailCode.length !== 6) {
+      setEmailError("Enter the 6-character code from your new email.");
+      return;
+    }
+    setEmailError(null);
+    setEmailNotice(null);
+    setEmailBusy(true);
+    try {
+      await confirmEmailChange({ code: normalizedEmailCode });
+      setNewEmail("");
+      setCurrentPasswordForEmail("");
+      setPendingEmail(null);
+      setEmailCode("");
       markSessionExpired(
         "Your email was updated. Sign in again with your new email.",
       );
       await logout();
       window.location.href = "/login";
-      return;
     } catch (err) {
-      setEmailError(errorDetail(err, "Could not update email"));
+      setEmailError(errorDetail(err, "Could not confirm email change"));
     } finally {
       setEmailBusy(false);
     }
@@ -117,7 +165,7 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
             ? "Full impersonation pack may update this account’s credentials without the current password. Changes are audited."
             : isImpersonating
               ? "Credential changes require the full (super admin) impersonation pack."
-              : "Update sign-in credentials. We email you when something changes."
+              : "Update sign-in credentials. Email changes require a code sent to the new address."
         }
       />
 
@@ -142,7 +190,7 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
           isImpersonating && !canChangeCredentials ? "true" : "false"
         }
       >
-      <form className="space-y-4 border-b border-border pb-8" onSubmit={onChangeEmail}>
+      <div className="space-y-4 border-b border-border pb-8">
         <p className="text-sm text-muted-foreground">
           Current email:{" "}
           <span className="font-semibold text-foreground break-all">{email}</span>
@@ -152,32 +200,97 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
             {emailError}
           </Alert>
         ) : null}
-        <Input
-          label="New email"
-          name="new_email"
-          type="email"
-          autoComplete="email"
-          required
-          value={newEmail}
-          onChange={(e) => setNewEmail(e.target.value)}
-        />
-        {!isImpersonating ? (
-          <AuthPasswordField
-            label="Current password"
-            name="current_password_email"
-            autoComplete="current-password"
-            required
-            value={currentPasswordForEmail}
-            onChange={setCurrentPasswordForEmail}
-          />
+        {emailNotice ? (
+          <Alert tone="success" title="Confirmation required">
+            {emailNotice}
+          </Alert>
         ) : null}
-        <Button
-          type="submit"
-          disabled={!canChangeCredentials || emailBusy || !newEmail.trim()}
-        >
-          {emailBusy ? "Updating…" : "Update email"}
-        </Button>
-      </form>
+
+        {!pendingEmail || isImpersonating ? (
+          <form className="space-y-4" onSubmit={(e) => void onRequestEmailChange(e)}>
+            <Input
+              label="New email"
+              name="new_email"
+              type="email"
+              autoComplete="email"
+              required
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+            />
+            {!isImpersonating ? (
+              <AuthPasswordField
+                label="Current password"
+                name="current_password_email"
+                autoComplete="current-password"
+                required
+                value={currentPasswordForEmail}
+                onChange={setCurrentPasswordForEmail}
+              />
+            ) : null}
+            <Button
+              type="submit"
+              disabled={!canChangeCredentials || emailBusy || !newEmail.trim()}
+            >
+              {emailBusy
+                ? isImpersonating
+                  ? "Updating…"
+                  : "Sending code…"
+                : isImpersonating
+                  ? "Update email"
+                  : "Send confirmation code"}
+            </Button>
+          </form>
+        ) : (
+          <form className="space-y-4" onSubmit={(e) => void onConfirmEmailChange(e)}>
+            <p className="text-sm text-muted-foreground">
+              Enter the 6-character code we sent to{" "}
+              <span className="font-semibold text-foreground break-all">
+                {pendingEmail}
+              </span>
+              . Your sign-in email stays{" "}
+              <span className="font-semibold text-foreground break-all">{email}</span>{" "}
+              until you confirm.
+            </p>
+            <Input
+              label="Confirmation code"
+              name="email_change_code"
+              value={emailCode}
+              onChange={(e) => setEmailCode(e.target.value)}
+              autoComplete="one-time-code"
+              inputMode="text"
+              maxLength={8}
+              spellCheck={false}
+              required
+              placeholder="e.g. AU33XW"
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="submit"
+                disabled={
+                  !canChangeCredentials ||
+                  emailBusy ||
+                  normalizedEmailCode.length !== 6
+                }
+              >
+                {emailBusy ? "Confirming…" : "Confirm email change"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={emailBusy}
+                onClick={() => {
+                  setPendingEmail(null);
+                  setEmailCode("");
+                  setEmailNotice(null);
+                  setEmailError(null);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        )}
+      </div>
 
       <form className="space-y-4" onSubmit={onChangePassword}>
         {passwordError ? (

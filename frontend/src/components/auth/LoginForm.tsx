@@ -9,6 +9,7 @@ import { AuthPasswordField } from "@/components/auth/AuthPasswordField";
 import { LoginPageLayout } from "@/components/auth/LoginPageLayout";
 import { Alert, Button, Input } from "@/components/ui";
 import { ApiError } from "@/lib/api";
+import { postAuthPath } from "@/lib/auth/email-verify-path";
 import { safeNextPath } from "@/lib/auth/safe-next";
 import { consumeSessionExpiredMessage } from "@/lib/auth/session-expired";
 import { fetchHostWorkspaces } from "@/lib/hosts-api";
@@ -42,8 +43,12 @@ export function LoginForm() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(loginId, password);
+      const me = await login(loginId, password);
       const next = searchParams.get("next");
+      if (!me.is_verified) {
+        router.push(postAuthPath(me, next));
+        return;
+      }
       if (next) {
         router.push(safeNextPath(next));
         return;

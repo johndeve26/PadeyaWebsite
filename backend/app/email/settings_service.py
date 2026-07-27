@@ -95,12 +95,38 @@ def _decrypt_field(token: str | None) -> str:
         return ""
 
 
+def decrypt_failed(token: str | None) -> bool:
+    """True when ciphertext is present but cannot be decrypted with the host key."""
+    if not (token or "").strip():
+        return False
+    try:
+        decrypt_secret(token)
+        return False
+    except Exception:  # noqa: BLE001
+        return True
+
+
 def decrypt_smtp_username(row: EmailProviderSettings) -> str:
     return _decrypt_field(row.smtp_username_encrypted)
 
 
 def decrypt_smtp_password(row: EmailProviderSettings) -> str:
     return _decrypt_field(row.smtp_password_encrypted)
+
+
+def smtp_secret_decrypt_error(row: EmailProviderSettings | None) -> str | None:
+    """Human error when production SMTP ciphertext cannot be opened."""
+    if row is None:
+        return None
+    user_bad = decrypt_failed(row.smtp_username_encrypted)
+    pass_bad = decrypt_failed(row.smtp_password_encrypted)
+    if not user_bad and not pass_bad:
+        return None
+    return (
+        "SMTP credentials could not be decrypted with this host's "
+        "EMAIL_SETTINGS_ENCRYPTION_KEY. Re-enter username and password in "
+        "Admin → Email settings (or align the encryption key across environments)."
+    )
 
 
 def apply_admin_override(

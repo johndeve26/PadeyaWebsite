@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function AccountAppealPage() {
   return (
-    <RequireAuth>
+    <RequireAuth requireVerifiedEmail={false}>
       <SuspendedAccountPage />
     </RequireAuth>
   );

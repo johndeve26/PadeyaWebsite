@@ -513,12 +513,44 @@ export async function changePassword(input: {
 export async function changeEmail(input: {
   new_email: string;
   current_password: string;
-}): Promise<User> {
-  return apiRequest<User>("/auth/change-email", {
+}): Promise<
+  | { status: "pending"; message: string; pending_email: string }
+  | { status: "updated"; user: User }
+> {
+  const data = await apiRequest<
+    | { message?: string; pending_email?: string }
+    | User
+  >("/auth/change-email", {
     method: "POST",
     body: {
       new_email: input.new_email.trim().toLowerCase(),
       current_password: input.current_password,
+    },
+  });
+  if (
+    data &&
+    typeof data === "object" &&
+    "pending_email" in data &&
+    typeof data.pending_email === "string"
+  ) {
+    return {
+      status: "pending",
+      message:
+        (typeof data.message === "string" && data.message) ||
+        "Enter the confirmation code sent to your new email.",
+      pending_email: data.pending_email,
+    };
+  }
+  return { status: "updated", user: data as User };
+}
+
+export async function confirmEmailChange(input: {
+  code: string;
+}): Promise<User> {
+  return apiRequest<User>("/auth/change-email/confirm", {
+    method: "POST",
+    body: {
+      code: input.code.trim().toUpperCase().replace(/[\s-]/g, ""),
     },
   });
 }

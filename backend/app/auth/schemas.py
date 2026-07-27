@@ -169,6 +169,25 @@ class ChangeEmailRequest(BaseModel):
         return _normalize_auth_email(value)
 
 
+class ConfirmEmailChangeRequest(BaseModel):
+    code: str = Field(min_length=6, max_length=16)
+
+    @field_validator("code")
+    @classmethod
+    def normalize_code(cls, value: str) -> str:
+        from app.core.security import normalize_password_reset_code
+
+        code = normalize_password_reset_code(value)
+        if len(code) != 6:
+            raise ValueError("Confirmation code must be 6 characters.")
+        return code
+
+
+class ChangeEmailPendingResponse(BaseModel):
+    message: str
+    pending_email: str
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
