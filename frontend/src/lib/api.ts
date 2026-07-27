@@ -504,9 +504,13 @@ export async function changePassword(input: {
   current_password: string;
   new_password: string;
 }): Promise<void> {
+  const refresh = getRefreshToken();
   await apiRequest<{ message?: string }>("/auth/change-password", {
     method: "POST",
-    body: input,
+    body: {
+      ...input,
+      ...(refresh ? { refresh_token: refresh } : {}),
+    },
   });
 }
 
@@ -547,10 +551,12 @@ export async function changeEmail(input: {
 export async function confirmEmailChange(input: {
   code: string;
 }): Promise<User> {
+  const refresh = getRefreshToken();
   return apiRequest<User>("/auth/change-email/confirm", {
     method: "POST",
     body: {
       code: input.code.trim().toUpperCase().replace(/[\s-]/g, ""),
+      ...(refresh ? { refresh_token: refresh } : {}),
     },
   });
 }

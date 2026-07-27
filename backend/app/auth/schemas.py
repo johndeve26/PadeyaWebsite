@@ -156,6 +156,8 @@ class ChangePasswordRequest(BaseModel):
     # Empty allowed only during admin impersonation (validated in service).
     current_password: str = Field(default="", max_length=128)
     new_password: str = Field(min_length=8, max_length=128)
+    # Current device refresh token — other sessions are revoked, this one stays.
+    refresh_token: str | None = Field(default=None, max_length=512)
 
 
 class ChangeEmailRequest(BaseModel):
@@ -171,6 +173,7 @@ class ChangeEmailRequest(BaseModel):
 
 class ConfirmEmailChangeRequest(BaseModel):
     code: str = Field(min_length=6, max_length=16)
+    refresh_token: str | None = Field(default=None, max_length=512)
 
     @field_validator("code")
     @classmethod

@@ -109,19 +109,32 @@ def test_confirm_with_code_while_signed_in(client, db_session: Session):
     assert user.is_verified is True
 
 
-def test_resend_verification_generic_response(client, db_session: Session):
+def test_resend_verification_messages(client, db_session: Session):
     email = "resend@example.com"
     reg = _register(client, email=email, username="resend_verify")
     assert reg.status_code == 201
     headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
 
-    first = client.post("/api/v1/auth/email/verify/request", headers=headers)
-    assert first.status_code == 200
-    assert "verification" in first.json()["message"].lower()
+    # Register already queued verify_email — immediate resend is rate-limited.
+    cooled = client.post("/api/v1/auth/email/verify/request", headers=headers)
+    assert cooled.status_code == 429
+    assert "wait" in cooled.json()["detail"].lower()
 
     user = db_session.scalar(select(User).where(User.email == email))
     assert user is not None
-    tokens_after_first = len(
+    latest = db_session.scalar(
+        select(EmailVerificationToken)
+        .where(EmailVerificationToken.user_id == user.id)
+        .order_by(EmailVerificationToken.created_at.desc())
+        .limit(1)
+    )
+    assert latest is not None
+    from datetime import UTC, datetime, timedelta
+
+    latest.created_at = datetime.now(UTC) - timedelta(minutes=2)
+    db_session.commit()
+
+    tokens_before = len(
         list(
             db_session.scalars(
                 select(EmailVerificationToken).where(
@@ -131,9 +144,10 @@ def test_resend_verification_generic_response(client, db_session: Session):
         )
     )
 
-    second = client.post("/api/v1/auth/email/verify/request", headers=headers)
-    assert second.status_code == 200
-    tokens_after_second = len(
+    sent = client.post("/api/v1/auth/email/verify/request", headers=headers)
+    assert sent.status_code == 200
+    assert "verification code" in sent.json()["message"].lower()
+    tokens_after = len(
         list(
             db_session.scalars(
                 select(EmailVerificationToken).where(
@@ -142,14 +156,14 @@ def test_resend_verification_generic_response(client, db_session: Session):
             )
         )
     )
-    assert tokens_after_second == tokens_after_first
+    assert tokens_after == tokens_before + 1
 
     user.is_verified = True
     db_session.commit()
 
     third = client.post("/api/v1/auth/email/verify/request", headers=headers)
     assert third.status_code == 200
-    assert third.json()["message"] == first.json()["message"]
+    assert "already verified" in third.json()["message"].lower()
 
 
 def test_change_password_requires_verified_email(client, db_session: Session):

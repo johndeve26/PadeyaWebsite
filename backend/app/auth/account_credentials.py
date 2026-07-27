@@ -31,6 +31,28 @@ EMAIL_CHANGE_PENDING_MESSAGE = (
 )
 
 
+def revoke_other_sessions(
+    db: Session,
+    *,
+    user_id,
+    keep_refresh_token: str | None = None,
+) -> None:
+    """Sign out every device except the caller's current refresh session."""
+    now = datetime.now(UTC)
+    keep = (keep_refresh_token or "").strip()
+    stmt = (
+        update(RefreshToken)
+        .where(
+            RefreshToken.user_id == user_id,
+            RefreshToken.revoked_at.is_(None),
+        )
+        .values(revoked_at=now)
+    )
+    if keep:
+        stmt = stmt.where(RefreshToken.token_hash != hash_token(keep))
+    db.execute(stmt)
+
+
 def change_password(
     db: Session,
     *,
@@ -39,6 +61,7 @@ def change_password(
     new_password: str,
     ip_address: str | None = None,
     user_agent: str | None = None,
+    keep_refresh_token: str | None = None,
 ) -> None:
     from app.auth.impersonation_context import get_impersonation_context
 
@@ -80,15 +103,12 @@ def change_password(
             detail="Choose a password different from your current one",
         )
 
-    now = datetime.now(UTC)
     user.password_hash = hash_password(password)
-    db.execute(
-        update(RefreshToken)
-        .where(
-            RefreshToken.user_id == user.id,
-            RefreshToken.revoked_at.is_(None),
-        )
-        .values(revoked_at=now)
+    # Impersonation: sign out all of the target's devices. Own session: keep this device.
+    revoke_other_sessions(
+        db,
+        user_id=user.id,
+        keep_refresh_token=None if ctx is not None else keep_refresh_token,
     )
     write_audit_log(
         db,
@@ -194,18 +214,16 @@ def _apply_email_change(
     ctx: object | None,
     ip_address: str | None = None,
     user_agent: str | None = None,
+    keep_refresh_token: str | None = None,
 ) -> User:
     previous = user.email
     user.email = normalized
     user.is_verified = False
-    now = datetime.now(UTC)
-    db.execute(
-        update(RefreshToken)
-        .where(
-            RefreshToken.user_id == user.id,
-            RefreshToken.revoked_at.is_(None),
-        )
-        .values(revoked_at=now)
+    # Impersonation: revoke all. Own session: keep this device signed in.
+    revoke_other_sessions(
+        db,
+        user_id=user.id,
+        keep_refresh_token=None if ctx is not None else keep_refresh_token,
     )
     write_audit_log(
         db,
@@ -249,7 +267,7 @@ def _apply_email_change(
         to=normalized,
         recipient_user_id=user.id,
         context={
-            "detail": "This address is now the email for your Pàdéyá account.",
+            "detail": "This address is now the email for your Pàdéyá account. Verify it to keep using your dashboard.",
         },
         force=True,
         deliver_now=False,
@@ -298,6 +316,7 @@ def request_email_change(
             ctx=ctx,
             ip_address=ip_address,
             user_agent=user_agent,
+            keep_refresh_token=None,
         )
 
     now = datetime.now(UTC)
@@ -368,6 +387,7 @@ def confirm_email_change(
     code: str,
     ip_address: str | None = None,
     user_agent: str | None = None,
+    keep_refresh_token: str | None = None,
 ) -> User:
     """Apply a pending email change after the user enters the code."""
     from app.auth.impersonation_context import get_impersonation_context
@@ -427,4 +447,5 @@ def confirm_email_change(
         ctx=None,
         ip_address=ip_address,
         user_agent=user_agent,
+        keep_refresh_token=keep_refresh_token,
     )

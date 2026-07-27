@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { AuthPasswordField } from "@/components/auth/AuthPasswordField";
@@ -11,7 +12,7 @@ import {
   confirmEmailChange,
 } from "@/lib/api";
 import { errorDetail } from "@/lib/api-timeouts";
-import { markSessionExpired } from "@/lib/auth/session-expired";
+import { emailVerifyPath } from "@/lib/auth/email-verify-path";
 
 type Props = {
   email: string;
@@ -20,7 +21,8 @@ type Props = {
 
 export function AccountSecurityCard({ email, onEmailChanged }: Props) {
   const toast = useToast();
-  const { logout, isImpersonating, user } = useAuth();
+  const router = useRouter();
+  const { isImpersonating, user } = useAuth();
   const canChangeCredentials =
     !isImpersonating ||
     Boolean(user?.impersonation?.scopes?.includes("credentials"));
@@ -63,19 +65,19 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
         setCurrentPasswordForEmail("");
         setPendingEmail(null);
         setEmailCode("");
+        await onEmailChanged();
         if (isImpersonating) {
           toast.push({
             tone: "success",
             title: "Email updated for this account (audited impersonation).",
           });
-          await onEmailChanged();
           return;
         }
-        markSessionExpired(
-          "Your email was updated. Sign in again with your new email.",
-        );
-        await logout();
-        window.location.href = "/login";
+        toast.push({
+          tone: "success",
+          title: "Email updated. Verify the new address to keep using your dashboard.",
+        });
+        router.replace(emailVerifyPath("/dashboard/settings"));
         return;
       }
       setPendingEmail(result.pending_email);
@@ -104,11 +106,13 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
       setCurrentPasswordForEmail("");
       setPendingEmail(null);
       setEmailCode("");
-      markSessionExpired(
-        "Your email was updated. Sign in again with your new email.",
-      );
-      await logout();
-      window.location.href = "/login";
+      await onEmailChanged();
+      toast.push({
+        tone: "success",
+        title:
+          "Email updated. Other devices were signed out — verify your new address next.",
+      });
+      router.replace(emailVerifyPath("/dashboard/settings"));
     } catch (err) {
       setEmailError(errorDetail(err, "Could not confirm email change"));
     } finally {
@@ -134,20 +138,12 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      if (isImpersonating) {
-        toast.push({
-          tone: "success",
-          title:
-            "Password updated for this account. Their other sessions were signed out (audited).",
-        });
-        return;
-      }
-      markSessionExpired(
-        "Your password was updated. Sign in again with your new password.",
-      );
-      await logout();
-      window.location.href = "/login";
-      return;
+      toast.push({
+        tone: "success",
+        title: isImpersonating
+          ? "Password updated for this account. Their sessions were signed out (audited)."
+          : "Password updated. You stay signed in here; other devices were signed out.",
+      });
     } catch (err) {
       setPasswordError(errorDetail(err, "Could not update password"));
     } finally {
@@ -165,7 +161,7 @@ export function AccountSecurityCard({ email, onEmailChanged }: Props) {
             ? "Full impersonation pack may update this account’s credentials without the current password. Changes are audited."
             : isImpersonating
               ? "Credential changes require the full (super admin) impersonation pack."
-              : "Update sign-in credentials. Email changes require a code sent to the new address."
+              : "Update sign-in credentials. You stay signed in on this device; other sessions are signed out. Email changes need a code at the new address, then email verification."
         }
       />
 

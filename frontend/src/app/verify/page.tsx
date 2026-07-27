@@ -176,7 +176,7 @@ function VerifyEmailForm() {
         ) : null}
 
         {notice ? (
-          <Alert tone="success" title="Done">
+          <Alert tone="success" title="Check your inbox">
             {notice}
           </Alert>
         ) : null}

@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import CurrentUser, get_current_user_optional
 from app.auth.email_verification import (
-    EMAIL_VERIFICATION_REQUEST_MESSAGE,
     confirm_email_verification,
     request_email_verification_for_user,
 )
@@ -220,10 +219,10 @@ def email_verify_request(
     user: CurrentUser,
 ) -> MessageResponse:
     ip, ua = _client_meta(request)
-    request_email_verification_for_user(
+    message = request_email_verification_for_user(
         db, user=user, ip_address=ip, user_agent=ua
     )
-    return MessageResponse(message=EMAIL_VERIFICATION_REQUEST_MESSAGE)
+    return MessageResponse(message=message)
 
 
 @router.post(
@@ -273,8 +272,9 @@ def change_password_route(
         new_password=payload.new_password,
         ip_address=ip,
         user_agent=ua,
+        keep_refresh_token=payload.refresh_token,
     )
-    return MessageResponse(message="Password updated")
+    return MessageResponse(message="Password updated. Other signed-in devices were signed out.")
 
 
 @router.post(
@@ -321,6 +321,7 @@ def confirm_email_change_route(
         code=payload.code,
         ip_address=ip,
         user_agent=ua,
+        keep_refresh_token=payload.refresh_token,
     )
     return UserPublic.model_validate(build_user_public(updated, db=db))
 

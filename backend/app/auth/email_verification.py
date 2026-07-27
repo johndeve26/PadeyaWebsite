@@ -28,6 +28,10 @@ EMAIL_VERIFICATION_REQUEST_COOLDOWN = timedelta(minutes=1)
 EMAIL_VERIFICATION_REQUEST_MESSAGE = (
     "If your account needs verification, we sent an email with instructions."
 )
+EMAIL_VERIFICATION_SENT_MESSAGE = (
+    "We sent a verification code to your email. It expires in 24 hours."
+)
+EMAIL_VERIFICATION_ALREADY_VERIFIED_MESSAGE = "Your email is already verified."
 EMAIL_VERIFICATION_CONFIRM_INVALID = "Invalid or expired verification link or code."
 EMAIL_VERIFICATION_CONFIRM_SUCCESS = "Your email is verified."
 
@@ -127,13 +131,16 @@ def request_email_verification_for_user(
     user: User,
     ip_address: str | None = None,
     user_agent: str | None = None,
-) -> None:
-    """Logged-in resend — always generic success at the route layer."""
+) -> str:
+    """Logged-in resend. Returns a user-facing status message."""
     if user.is_verified:
-        return
+        return EMAIL_VERIFICATION_ALREADY_VERIFIED_MESSAGE
     wait = seconds_until_verification_request_allowed(db, user.id)
     if wait > 0:
-        return
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Wait {wait} seconds before requesting another verification email.",
+        )
     queue_email_verification_email(
         db,
         user,
@@ -142,6 +149,7 @@ def request_email_verification_for_user(
         audit_action="auth.email_verification_resent",
     )
     db.commit()
+    return EMAIL_VERIFICATION_SENT_MESSAGE
 
 
 def _find_active_verification_row(
