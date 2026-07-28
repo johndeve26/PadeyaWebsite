@@ -18,6 +18,7 @@ const discoverLinks = [
   { href: "/events/near-me", label: "Near me" },
   { href: "/hosts", label: "Hosts" },
   { href: "/fans", label: "Fans" },
+  { href: "/memories", label: "Memories" },
   { href: SPONSORSHIP_MARKETPLACE_PATH, label: "Sponsors" },
   { href: "/merch", label: "Shop" },
 ];

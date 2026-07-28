@@ -16,6 +16,7 @@ export const PUBLIC_NAV = [
   { href: "/events", label: "Events" },
   { href: "/hosts", label: "Hosts" },
   { href: "/fans", label: "Fans" },
+  { href: "/memories", label: "Memories" },
   { href: SPONSORSHIP_MARKETPLACE_PATH, label: "Sponsors" },
   { href: "/merch", label: "Shop" },
 ] as const;
@@ -135,6 +136,12 @@ export function isPublicNavActive(href: string, pathname: string): boolean {
         pathname === "/fans" ||
         pathname.startsWith("/fans/") ||
         pathname.startsWith("/f/")
+      );
+    case "/memories":
+      return (
+        pathname === "/memories" ||
+        pathname.startsWith("/memories/") ||
+        /^\/events\/[^/]+\/memories(?:\/|$)/.test(pathname)
       );
     case SPONSORSHIP_MARKETPLACE_PATH:
       return (
