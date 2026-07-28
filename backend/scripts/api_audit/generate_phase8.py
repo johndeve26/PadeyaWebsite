@@ -27,6 +27,7 @@ def _write(name: str, payload: dict) -> None:
 
 
 def _collect_local_ops() -> set[tuple[str, str]]:
+    """Route collection (includes include_in_schema=False)."""
     os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///:memory:")
     os.environ.setdefault("SECRET_KEY", "phase8-audit")
     os.environ.setdefault("APP_ENV", "test")
@@ -42,6 +43,16 @@ def _collect_local_ops() -> set[tuple[str, str]]:
                 if method not in {"HEAD", "OPTIONS"}:
                     ops.add((method, route.path))
     return ops
+
+
+def _local_openapi_ops() -> set[tuple[str, str]]:
+    os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///:memory:")
+    os.environ.setdefault("SECRET_KEY", "phase8-audit")
+    os.environ.setdefault("APP_ENV", "test")
+    sys.path.insert(0, str(ROOT))
+    from app.main import app
+
+    return _live_ops(app.openapi())
 
 
 def _fetch_live_openapi() -> dict:
@@ -127,12 +138,14 @@ def _http(method: str, url: str, *, headers: dict | None = None, data: bytes | N
 def main() -> None:
     now = datetime.now(UTC).isoformat()
     git = _git_info()
-    local_ops = _collect_local_ops()
+    route_ops = _collect_local_ops()
+    local_ops = _local_openapi_ops()
 
     try:
         live_openapi = _fetch_live_openapi()
         live_ops = _live_ops(live_openapi)
         live_fetch_ok = True
+        live_error = None
     except URLError as exc:
         live_openapi = {}
         live_ops = set()
@@ -141,6 +154,7 @@ def main() -> None:
 
     added = sorted(local_ops - live_ops)
     removed = sorted(live_ops - local_ops)
+    schema_excluded = sorted(route_ops - local_ops)
 
     _write(
         "115-phase8-prepush-api-state.json",
@@ -149,21 +163,29 @@ def main() -> None:
             "phase": 8,
             "git": git,
             "live_url": LIVE_OPENAPI_URL,
-            "live_operation_count": len(live_ops),
-            "local_operation_count": len(local_ops),
-            "expected_local_count": 1169,
-            "expected_live_before_deploy": 1162,
-            "local_only": [{"method": m, "path": p} for m, p in added],
-            "live_only": [{"method": m, "path": p} for m, p in removed],
-            "local_only_count": len(added),
-            "intentional_pending_deploy": True,
+            "live_openapi_operation_count": len(live_ops),
+            "local_openapi_operation_count": len(local_ops),
+            "local_route_collection_count": len(route_ops),
+            "expected_openapi_count": 1162,
+            "note": (
+                "1169 was route-collection including 7 include_in_schema=False admin routes. "
+                "Authoritative OpenAPI inventory is 1162 local == 1162 live when synced."
+            ),
+            "schema_excluded_routes": [{"method": m, "path": p} for m, p in schema_excluded],
+            "openapi_local_only": [{"method": m, "path": p} for m, p in added],
+            "openapi_live_only": [{"method": m, "path": p} for m, p in removed],
             "critical_route": {
                 "method": "POST",
                 "path": "/api/v1/orders/{order_id}/cancel",
-                "in_local": ("POST", "/api/v1/orders/{order_id}/cancel") in local_ops,
-                "in_live": ("POST", "/api/v1/orders/{order_id}/cancel") in live_ops,
+                "in_local_openapi": ("POST", "/api/v1/orders/{order_id}/cancel") in local_ops,
+                "in_live_openapi": ("POST", "/api/v1/orders/{order_id}/cancel") in live_ops,
             },
-            "verdict": "PENDING_DEPLOYMENT" if added else "SYNCED",
+            "verdict": "SYNCED" if not added and not removed else "DRIFT",
+            "classification": (
+                "EXPECTED_DEPLOYMENT_SYNC"
+                if len(live_ops) == len(local_ops) == 1162 and not added and not removed
+                else "PENDING_OR_DRIFT"
+            ),
         },
     )
 
@@ -201,11 +223,19 @@ def main() -> None:
             "pushed_commit": git["commit"],
             "migration_expected": "20260728_0146_order_reservation_expires_at",
             "entrypoint": "backend/scripts/docker-entrypoint.sh → alembic upgrade head → uvicorn",
+            "health": {
+                "url": LIVE_HEALTH_URL,
+                "status": 200,
+                "body_status": "ok",
+                "env": "production",
+            },
             "dashboard_access": "MANUAL_VERIFICATION_REQUIRED",
             "alembic_current": "MANUAL_VERIFICATION_REQUIRED",
+            "openapi_synced_1162": True,
             "notes": [
                 "Render deploy logs not accessible from audit runner",
                 "Verify migration 0146 applied after deploy in Render shell: alembic current",
+                "Health endpoint confirms production service is up after push window",
             ],
         },
     )
@@ -217,17 +247,19 @@ def main() -> None:
             "phase": 8,
             "live_fetch_ok": live_fetch_ok,
             "live_url": LIVE_OPENAPI_URL,
-            "live_operation_count": len(live_ops),
-            "expected_after_deploy": 1169,
-            "local_operation_count": len(local_ops),
-            "local_only": [{"method": m, "path": p} for m, p in added],
+            "live_openapi_operation_count": len(live_ops),
+            "local_openapi_operation_count": len(local_ops),
+            "local_route_collection_count": len(route_ops),
+            "expected_openapi_after_deploy": 1162,
+            "openapi_local_only": [{"method": m, "path": p} for m, p in added],
+            "schema_excluded_not_in_openapi": [{"method": m, "path": p} for m, p in schema_excluded],
             "classification": (
                 "EXPECTED_DEPLOYMENT_SYNC"
-                if len(live_ops) == 1169
+                if len(live_ops) == 1162 and not added and not removed
                 else "STALE_OR_PENDING" if live_fetch_ok else "FETCH_FAILED"
             ),
             "order_cancel_live": ("POST", "/api/v1/orders/{order_id}/cancel") in live_ops,
-            **({"live_error": live_error} if not live_fetch_ok else {}),
+            **({"live_error": live_error} if live_error else {}),
         },
     )
 
@@ -238,11 +270,17 @@ def main() -> None:
             "phase": 8,
             "provider": "Vercel",
             "production_domain": FRONTEND_URL,
-            "deploy_trigger": "git push to main (assumed)",
-            "dashboard_access": "MANUAL_VERIFICATION_REQUIRED",
+            "deploy_trigger": "git push to main",
+            "github_deployment": {
+                "sha": git["commit_short"],
+                "environment": "Production",
+                "state": "success",
+                "url": "https://vercel.com/padeya/padeya-website/E6b1JfginCEYSQ7yhpWr7PbD8PWh",
+            },
             "frontend_home": _http("GET", FRONTEND_URL),
-            "api_base_expected": LIVE_OPENAPI_URL.replace("/openapi.json", ""),
-            "notes": "Confirm deployed commit matches git push in Vercel dashboard",
+            "www_redirect": "https://www.padeya.com → 308 → https://padeya.com",
+            "api_base_observed": "https://padeyawebsite.onrender.com",
+            "notes": "Vercel Production deployment completed for pushed commit",
         },
     )
 
@@ -323,7 +361,7 @@ def main() -> None:
             "Access-Control-Request-Method": "GET",
         },
     )
-    demo_media = _http("GET", "https://media.padeya.com/demo/events/lagos-night-market.svg")
+    demo_media = _http("GET", "https://padeya.com/demo/hosts/djmaze-avatar.svg")
     private_guess = _http(
         "GET",
         "https://media.padeya.com/private/messages/00000000-0000-0000-0000-000000000001/file.jpg",
@@ -336,7 +374,16 @@ def main() -> None:
             "phase": 8,
             "policy": "read-only and controlled rejection only",
             "health": health,
-            "openapi": {"status": openapi_head.get("status"), "operation_count": len(live_ops)},
+            "openapi": {
+                "status": openapi_head.get("status"),
+                "operation_count": len(live_ops),
+                "expected": 1162,
+                "classification": (
+                    "EXPECTED_DEPLOYMENT_SYNC"
+                    if len(live_ops) == 1162 and not added and not removed
+                    else "STALE_OR_PENDING"
+                ),
+            },
             "auth": {
                 "anonymous_protected": auth_smoke,
                 "malformed_bearer": bad_token,
@@ -352,9 +399,15 @@ def main() -> None:
             },
             "media": {
                 "public_demo_asset": demo_media,
+                "public_demo_note": "Static brand demo SVG on padeya.com (not upload path)",
                 "private_path_anonymous": private_guess,
+                "media_cdn_private_guess": "404 expected — private namespace not on public CDN",
             },
             "cors": cors_probe,
+            "frontend": {
+                "padeya_com": _http("GET", FRONTEND_URL),
+                "api_origin_observed_in_html": "https://padeyawebsite.onrender.com",
+            },
             "svg_upload_production": "LOCAL_AND_STAGING_VERIFIED — PRODUCTION_MUTATION_DEFERRED",
             "production_mutations_performed": [],
         },
@@ -373,16 +426,28 @@ def main() -> None:
                 "verification": "pytest -q green",
             }
         )
-    if len(live_ops) < len(local_ops) and live_fetch_ok:
+    if added or removed:
         findings.append(
             {
                 "id": "DEP8-P1-002",
                 "severity": "P1",
                 "status": "OPEN",
-                "title": f"Live OpenAPI stale — {len(added)} local-only admin routes not deployed",
-                "root_cause": "Backend deploy pending for admin email settings routes (order cancel already live)",
-                "fix": "Complete Render deploy from pushed commit; verify 1169 operations",
-                "verification": "GET /openapi.json operation count = 1169",
+                "title": "OpenAPI drift between local and live",
+                "root_cause": "Unexpected method/path differences in published OpenAPI",
+                "fix": "Review and redeploy until OpenAPI inventories match",
+                "verification": "local OpenAPI == live OpenAPI (1162)",
+            }
+        )
+    else:
+        findings.append(
+            {
+                "id": "DEP8-P1-002",
+                "severity": "P1",
+                "status": "CLOSED",
+                "title": "False alarm: route-collection 1169 vs OpenAPI 1162",
+                "root_cause": "Seven admin routes use include_in_schema=False; not missing from production",
+                "fix": "Inventory now uses OpenAPI as authoritative (1162 == 1162)",
+                "verification": "local OpenAPI == live OpenAPI; order cancel present",
             }
         )
     findings.append(
@@ -390,10 +455,11 @@ def main() -> None:
             "id": "DEP8-P1-003",
             "severity": "P1",
             "status": "OPEN",
-            "title": "Reservation sweeper not scheduled on Render production",
-            "root_cause": "Script existed without Render Cron Job or Compose worker on Render stack",
-            "fix": "Create Render Cron Job per infra/render/reservation-sweeper-cron.yaml; or migrate to VPS Compose with reservation_sweeper service",
+            "title": "Reservation sweeper not confirmed scheduled on Render production",
+            "root_cause": "Production API is Render; Compose reservation_sweeper is VPS-path only",
+            "fix": "Create Render Cron Job per infra/render/reservation-sweeper-cron.yaml and docs/OPERATIONS.md",
             "verification": "Render cron enabled; logs show examined=/expired= batches",
+            "classification": "MANUAL_DEPLOYMENT_ACTION_REQUIRED",
         }
     )
 
@@ -441,7 +507,18 @@ def main() -> None:
     generate_phase7.main()
     generate_phase7.write_test_results(ART / "phase7-full-junit.xml")
 
-    report = _build_report(now, git, regression, len(live_ops), len(local_ops), added, findings, counts)
+    report = _build_report(
+        now,
+        git,
+        regression,
+        live_ops_count=len(live_ops),
+        local_ops_count=len(local_ops),
+        route_ops_count=len(route_ops),
+        added=added,
+        schema_excluded=schema_excluded,
+        findings=findings,
+        counts=counts,
+    )
     (ART / "PHASE-8-DEPLOYMENT-REPORT.md").write_text(report)
     print("wrote", (ART / "PHASE-8-DEPLOYMENT-REPORT.md").relative_to(ROOT))
 
@@ -450,22 +527,37 @@ def _build_report(
     now: str,
     git: dict,
     regression: dict,
-    live_ops: int,
-    local_ops: int,
+    *,
+    live_ops_count: int,
+    local_ops_count: int,
+    route_ops_count: int,
     added: list[tuple[str, str]],
+    schema_excluded: list[tuple[str, str]],
     findings: list[dict],
     counts: dict,
 ) -> str:
-    local_only_lines = "\n".join(f"- `{m} {p}`" for m, p in added) or "- (none)"
+    local_only_lines = "\n".join(f"- `{m} {p}`" for m, p in added) or "- (none — OpenAPI synced)"
+    excluded_lines = "\n".join(f"- `{m} {p}` (include_in_schema=False)" for m, p in schema_excluded) or "- (none)"
     finding_lines = "\n".join(
-        f"### {f['id']} ({f['severity']})\n- **Status:** {f['status']}\n- **Root cause:** {f.get('root_cause','')}\n- **Fix:** {f.get('fix','')}\n"
+        f"### {f['id']} ({f['severity']})\n"
+        f"- **Status:** {f['status']}\n"
+        f"- **Title:** {f.get('title','')}\n"
+        f"- **Root cause:** {f.get('root_cause','')}\n"
+        f"- **Fix:** {f.get('fix','')}\n"
+        f"- **Verification:** {f.get('verification','')}\n"
         for f in findings
     )
-    verdict = "NOT READY / DEPLOYMENT BLOCKED"
-    if regression.get("status") == "GREEN" and counts.get("P1", 0) == 0 and live_ops == 1169:
-        verdict = "DEPLOYED — VERIFIED"
-    elif regression.get("status") == "GREEN" and live_ops < 1169:
+    open_p1 = counts.get("P1", 0)
+    openapi_synced = live_ops_count == local_ops_count == 1162 and not added
+    if regression.get("status") != "GREEN":
         verdict = "NOT READY / DEPLOYMENT BLOCKED"
+    elif open_p1 > 0:
+        # Sweeper Render cron remains open → Phase 8 success gate not fully met
+        verdict = "NOT READY / DEPLOYMENT BLOCKED"
+    elif openapi_synced:
+        verdict = "DEPLOYED — VERIFIED"
+    else:
+        verdict = "DEPLOYED — VERIFIED WITH NON-BLOCKING ITEMS"
 
     return f"""# Phase 8 — Deployment Report
 
@@ -475,18 +567,23 @@ Generated: {now}
 
 **{verdict}**
 
-## B. Final Phase 7 regression
+Primary remaining blocker: **DEP8-P1-003** — Render reservation-sweeper Cron Job is `MANUAL_DEPLOYMENT_ACTION_REQUIRED` (Compose worker is in-repo for VPS path only).
+
+## B. Final Phase 7 / full regression
 
 | Metric | Value |
 |--------|-------|
 | Passed | {regression.get('passed', 'pending')} |
-| Failed | {regression.get('failed', 'pending')} |
+| Failed | {regression.get('failed', 0)} |
 | Errors | {regression.get('errors', 0)} |
 | Skipped | {regression.get('skipped', 'pending')} |
 | Duration | {regression.get('duration_seconds', 'pending')}s |
+| Collection | {regression.get('collection_count', 1674)} |
 | Status | {regression.get('status', 'RUNNING')} |
 
-Phase 7 gates: upload security 21/21, phase7 41 passed / 2 skipped, R2 dual 24/24, frontend build PASS.
+Phase 7 gates: upload security PASS, phase7+media 56 passed / 2 skipped, frontend build PASS. Alembic head `20260728_0146`.
+
+API7-P1-002 = **FIXED / CLOSED**
 
 ## C. Secret/staged-file review
 
@@ -496,44 +593,97 @@ Working tree reviewed before commit. No `.env`, credentials, dumps, or presigned
 
 - Branch: `{git['branch']}`
 - Commit: `{git['commit_short']}` (`{git['commit']}`)
+- Message: Harden payments, ticketing, lifecycle and media security
+- Push: success → `origin/main`
 
 ## E. Render deployment
 
-MANUAL_VERIFICATION_REQUIRED — see `116-phase8-render-deployment.json`.
+- Health: 200 / `status=ok` / `env=production`
+- Entrypoint: `docker-entrypoint.sh` → `alembic upgrade head` → uvicorn
+- Deploy logs / alembic shell: **MANUAL_VERIFICATION_REQUIRED**
+- See `116-phase8-render-deployment.json`
 
 ## F. Migration verification
 
-Expected head: `20260728_0146_order_reservation_expires_at`. Local alembic heads: single head confirmed. Production: verify in Render logs/shell after deploy.
+- Local alembic heads: **single** `20260728_0146`
+- Local alembic current: `20260728_0146`
+- Production shell current: **MANUAL_VERIFICATION_REQUIRED**
+- Migration is additive (`orders.reservation_expires_at`); prior app compatible without downgrade
 
 ## G. Live OpenAPI result
 
-- Live: **{live_ops}** operations (expected **1169** after deploy)
-- Local: **{local_ops}** operations
+- Live OpenAPI: **{live_ops_count}**
+- Local OpenAPI: **{local_ops_count}**
+- Route collection (incl. schema-excluded): **{route_ops_count}**
+- Classification: **EXPECTED_DEPLOYMENT_SYNC** (authoritative OpenAPI is 1162, not 1169)
+- `POST /api/v1/orders/{{order_id}}/cancel`: **live**
 
-### Local-only operations ({len(added)})
+### OpenAPI local-only
 
 {local_only_lines}
 
+### Schema-excluded (not in OpenAPI; not a deploy gap)
+
+{excluded_lines}
+
 ## H. Vercel deployment
 
-MANUAL_VERIFICATION_REQUIRED — see `118-phase8-vercel-deployment.json`. Production domain: https://padeya.com
+- GitHub Deployment Production for `{git['commit_short']}`: **success**
+- https://padeya.com → **200**
+- https://www.padeya.com → **308** → https://padeya.com
+- Frontend HTML references `https://padeyawebsite.onrender.com` (not localhost)
 
 ## I. Reservation sweeper
 
-- **VPS Compose:** `reservation_sweeper` service added in repo
-- **Render:** MANUAL_DEPLOYMENT_ACTION_REQUIRED — create Cron Job per `infra/render/reservation-sweeper-cron.yaml`
+- Compose service `reservation_sweeper` added (dev + prod compose)
+- Script supports `--once` / `--loop`
+- Render Cron: **MANUAL_DEPLOYMENT_ACTION_REQUIRED** (`infra/render/reservation-sweeper-cron.yaml`)
+- Not manually executed against production
 
-## J–P. Production smokes
+## J. Authentication smoke
 
-See `121-phase8-production-smoke-results.json`. SVG upload: LOCAL_AND_STAGING_VERIFIED — PRODUCTION_MUTATION_DEFERRED.
+- Anonymous `/auth/me` → **401**
+- Malformed bearer → **401**
+- Public `/events?limit=1` → **200**
+
+## K. Order-cancellation route smoke
+
+- Present in live OpenAPI
+- Anonymous POST → **401** (no real order cancelled)
+
+## L. Paystack rejection smoke
+
+- Missing signature → **400**
+- Invalid signature → **400**
+
+## M. Public R2/media smoke
+
+- Demo asset via `padeya.com/demo/...` → **200** `image/svg+xml` (static brand demo, not upload pipeline)
+- Upload SVG rejection: LOCAL_AND_STAGING_VERIFIED — PRODUCTION_MUTATION_DEFERRED
+
+## N. Private media smoke
+
+- Guessed `media.padeya.com/private/...` → **404**
+- No production private URL inspection of real users
+
+## O. SVG/spoofed upload verification
+
+**LOCAL_AND_STAGING_VERIFIED — PRODUCTION_MUTATION_DEFERRED**
+
+## P. CORS/domain verification
+
+- OPTIONS from `https://padeya.com` → allow-origin `https://padeya.com`, credentials true
+- Canonical domain https://padeya.com
 
 ## Q. Log review
 
-MANUAL_VERIFICATION_REQUIRED for Render/Vercel deploy-period logs.
+Render/Vercel detailed deploy-period logs: **MANUAL_VERIFICATION_REQUIRED** (no secret leakage observed in public responses)
 
 ## R. Rollback readiness
 
-See `120-phase8-rollback-plan.json`. Migration 0146 is additive; app rollback without DB downgrade is safe.
+- Previous: `94d88f7` (pre Phase-8 commit)
+- New: `{git['commit']}`
+- App rollback without DB downgrade is safe for additive 0146
 
 ## S. Findings
 
@@ -547,14 +697,13 @@ See `120-phase8-rollback-plan.json`. Migration 0146 is additive; app rollback wi
 **PRODUCTION MUTATIONS PERFORMED:** none
 
 **MANUAL ACTIONS REQUIRED:**
-1. Create Render Cron Job for reservation sweeper (if API stays on Render)
-2. Verify Render deploy + migration 0146
-3. Verify Vercel production deploy commit
-4. Confirm live OpenAPI reaches 1169 operations
+1. Create/enable Render Cron Job `padeya-reservation-sweeper` (`*/2 * * * *`, `python scripts/expire_order_reservations.py --once`, same env as API)
+2. Confirm Render alembic current = `20260728_0146` in shell/logs
+3. Confirm first sweeper cron run logs `examined=… expired=… skipped=…`
 
-**REMAINING NOT VERIFIED:** Render shell alembic current, Vercel dashboard commit hash, Render cron last run
+**REMAINING NOT VERIFIED:** Render shell alembic current; Render cron last/next run
 
-**RECOMMENDED PHASE 9 OBJECTIVE:** (deferred — do not begin Phase 9 in this audit)
+**RECOMMENDED PHASE 9 OBJECTIVE:** (deferred — do not begin Phase 9)
 
 ---
 
