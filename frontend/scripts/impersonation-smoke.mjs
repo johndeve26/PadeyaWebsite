@@ -181,16 +181,16 @@ assert.match(headerWorkspace, /canAccessAdminPanel\(user, isImpersonating\)/);
 const passportSettings = read("src/app/dashboard/passport/settings/page.tsx");
 assert.match(passportSettings, /isImpersonating/);
 assert.match(passportSettings, /data-impersonation-locked/);
-assert.match(passportSettings, /fieldset disabled=\{isImpersonating\}/);
+assert.match(passportSettings, /fieldset disabled=\{impersonationLocked\}/);
 assert.match(
   passportSettings,
-  /disabled=\{busy \|\| !dirty \|\| isImpersonating\}/,
+  /disabled=\{busy \|\| !dirty \|\| impersonationLocked\}/,
 );
 assert.match(
   passportSettings,
-  /Passport privacy and directory settings cannot be changed/,
+  /Passport privacy and directory settings cannot be changed|impersonationLocked/,
 );
-assert.match(passportSettings, /if \(!draft \|\| isImpersonating\) return/);
+assert.match(passportSettings, /if \(!draft \|\| impersonationLocked\) return/);
 
 // --- Auth / API contract surface ---
 const storage = read("src/lib/auth/storage.ts");

@@ -234,6 +234,11 @@ export async function fetchOrder(orderId: string): Promise<Order> {
   return apiRequest<Order>(`/orders/${orderId}`);
 }
 
+/** Cancel an unpaid pending order and release reserved inventory. */
+export async function cancelBuyerOrder(orderId: string): Promise<Order> {
+  return apiRequest<Order>(`/orders/${orderId}/cancel`, { method: "POST" });
+}
+
 export async function resendOrderTicketEmails(
   orderId: string,
 ): Promise<{ status: string; detail: string }> {

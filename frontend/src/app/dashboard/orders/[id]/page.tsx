@@ -15,7 +15,13 @@ import {
   SkeletonLoader,
   StatusBadge,
 } from "@/components/ui";
-import { confirmCheckoutPayment, downloadOrderPdf, fetchOrder, resendOrderTicketEmails } from "@/lib/commerce-api";
+import {
+  cancelBuyerOrder,
+  confirmCheckoutPayment,
+  downloadOrderPdf,
+  fetchOrder,
+  resendOrderTicketEmails,
+} from "@/lib/commerce-api";
 import { ApiError } from "@/lib/api";
 import { formatDateTime, formatNgn } from "@/lib/format";
 import type { Order } from "@/lib/types/commerce";
@@ -28,6 +34,8 @@ export default function OrderReceiptPage() {
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [resendBusy, setResendBusy] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [cancelMessage, setCancelMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -132,6 +140,24 @@ export default function OrderReceiptPage() {
     }
   }
 
+  async function onCancelPendingOrder() {
+    if (!order || order.status !== "pending" || cancelBusy) return;
+    setCancelBusy(true);
+    setCancelMessage(null);
+    try {
+      const updated = await cancelBuyerOrder(order.id);
+      setOrder(updated);
+      setConfirmHint(null);
+      setCancelMessage("Order cancelled. Reserved tickets were released.");
+    } catch (err) {
+      setCancelMessage(
+        err instanceof ApiError ? err.detail : "Could not cancel this order.",
+      );
+    } finally {
+      setCancelBusy(false);
+    }
+  }
+
   return (
     <DashboardShell
       tone="soft"
@@ -178,6 +204,21 @@ export default function OrderReceiptPage() {
           {confirmHint ? (
             <span className="mt-2 block text-foreground">{confirmHint}</span>
           ) : null}
+          {order.status === "pending" ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={cancelBusy}
+                onClick={() => void onCancelPendingOrder()}
+              >
+                {cancelBusy ? "Cancelling…" : "Cancel unpaid order"}
+              </Button>
+              {cancelMessage ? (
+                <span className="text-sm text-foreground">{cancelMessage}</span>
+              ) : null}
+            </div>
+          ) : null}
         </Alert>
       ) : (
         <Alert tone="success" title="Paid">
@@ -186,6 +227,12 @@ export default function OrderReceiptPage() {
             : "Payment confirmed."}
         </Alert>
       )}
+
+      {order.status === "cancelled" && cancelMessage ? (
+        <Alert tone="info" title="Order cancelled">
+          {cancelMessage}
+        </Alert>
+      ) : null}
 
       {order.status === "paid" && boughtForSomeoneElse ? (
         <Card className="space-y-3">

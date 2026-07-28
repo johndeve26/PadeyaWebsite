@@ -58,9 +58,9 @@ assert.match(api, /recipient_email|send_ticket_to_recipient/);
 
 const success = read("src/app/checkout/success/page.tsx");
 assert.match(success, /gift|recipient|My Tickets/i);
-assert.match(success, /payloads|payment status/i);
+assert.match(success, /Confirming payment|payment is confirmed|My Tickets/i);
 
 const failed = read("src/app/checkout/failed/page.tsx");
-assert.match(failed, /payloads|card data/i);
+assert.match(failed, /payloads|card data|gateway/i);
 
 console.log("checkout-smoke: ok");

@@ -63,9 +63,11 @@ assert.doesNotMatch(publicLayout, /RequireAuth/);
 assert.doesNotMatch(publicLayout, /supportNav/);
 
 const staffLayout = read("src/app/support/(staff)/layout.tsx");
-assert.match(staffLayout, /RequireAuth/);
-assert.match(staffLayout, /supportNav/);
-assert.match(staffLayout, /homeHref="\/support\/desk"/);
+assert.match(staffLayout, /SupportStaffLayoutClient/);
+const staffClient = read("src/app/support/(staff)/SupportStaffLayoutClient.tsx");
+assert.match(staffClient, /RequireAuth/);
+assert.match(staffClient, /supportNav/);
+assert.match(staffClient, /homeHref="\/support\/desk"/);
 
 const api = read("src/lib/support-api.ts");
 assert.match(api, /\/support\/tickets/);
