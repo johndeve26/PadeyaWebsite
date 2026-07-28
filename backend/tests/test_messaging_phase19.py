@@ -420,7 +420,8 @@ def test_publish_thread_read_emits_updated_and_unread(monkeypatch: pytest.Monkey
 
     published: list[tuple[list, dict]] = []
 
-    def _capture(user_ids, payload):
+    def _capture(user_ids, payload, *, db=None, **_kwargs):
+        del db, _kwargs
         published.append((list(user_ids), dict(payload)))
 
     monkeypatch.setattr(ws_events, "publish_to_users", _capture)

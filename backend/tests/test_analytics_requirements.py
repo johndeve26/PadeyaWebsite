@@ -581,14 +581,14 @@ def test_host_only_own_event_admin_platform_and_export_permissions(
             f"/api/v1/host/events/{event_a.id}/analytics/overview",
             headers=buyer_headers,
         ).status_code
-        == 403
+        == 404
     )
     assert (
         client.get(
             f"/api/v1/host/events/{event_a.id}/analytics/export",
             headers=buyer_headers,
         ).status_code
-        == 403
+        == 404
     )
     assert (
         client.get(

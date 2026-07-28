@@ -64,8 +64,8 @@ type HostFollowControlsProps = {
 };
 
 /**
- * Follow + email notify (bell). Privacy default: follow does not opt into email;
- * after Follow we invite the fan to turn notifications on explicitly.
+ * Follow + email notify (bell). Manual follow defaults notify off (prompt after
+ * follow). Paid buyers are auto-followed with notify on by the backend.
  */
 export function HostFollowControls({
   hostId,

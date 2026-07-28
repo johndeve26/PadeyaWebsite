@@ -19,11 +19,13 @@ from app.tickets.qr import new_public_ticket_code
 from app.users.models import User
 from app.users.service import get_role_by_name
 
+from tests.helpers.auth import register_json
+
 
 def _auth(client: TestClient, email: str, name: str = "User") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": name},
+        json=register_json(email=email, full_name=name),
     )
     login = client.post(
         "/api/v1/auth/login",

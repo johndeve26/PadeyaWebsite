@@ -22,11 +22,13 @@ from app.hosts.models import Host
 from app.payments.models import Order, OrderCheckoutAnswer
 from app.users.models import User
 
+from tests.helpers.auth import register_json
+
 
 def _auth_headers(client: TestClient, email: str) -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": "Life Host"},
+        json=register_json(email=email, full_name="Life Host"),
     )
     login = client.post(
         "/api/v1/auth/login",

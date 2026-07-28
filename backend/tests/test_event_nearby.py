@@ -9,11 +9,13 @@ from fastapi.testclient import TestClient
 from app.events.geo import discovery_point, haversine_km
 from app.events.models import Event
 
+from tests.helpers.auth import register_json
+
 
 def _auth_headers(client: TestClient, email: str) -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": "Near Host"},
+        json=register_json(email=email, full_name="Near Host"),
     )
     login = client.post(
         "/api/v1/auth/login",
@@ -88,7 +90,7 @@ def _publish(
     )
     client.post(
         "/api/v1/auth/register",
-        json={"email": admin_email, "password": "securepass1", "full_name": "Admin"},
+        json=register_json(email=admin_email, full_name="Admin"),
     )
     assign_role(admin_email, "super_admin")
     token = client.post(

@@ -18,7 +18,8 @@ def test_notify_user_creates_in_app(
 ):
     captured: list = []
 
-    def _capture(user_ids, payload):
+    def _capture(user_ids, payload, *, db=None, **_kwargs):
+        del db, _kwargs
         captured.append((list(user_ids), payload))
 
     monkeypatch.setattr(
@@ -446,6 +447,17 @@ def test_push_outbox_enqueue_dedupe_and_skip(
         headers=headers,
         json={"push_enabled": True, "provider": "log"},
     )
+
+    sub = client.post(
+        "/api/v1/push/subscriptions",
+        headers=headers,
+        json={
+            "endpoint": "https://push.example.com/sub/outbox-test",
+            "p256dh": "p256dh-outbox-test",
+            "auth": "auth-outbox-test",
+        },
+    )
+    assert sub.status_code in {200, 201}, sub.text
 
     # User master switch off → skipped
     from app.email.prefs import get_or_create_preferences

@@ -9,11 +9,13 @@ from sqlalchemy.orm import Session
 
 from app.events.models import EventCategory
 
+from tests.helpers.auth import register_json
+
 
 def _auth_headers(client: TestClient, email: str, password: str = "securepass1") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "full_name": "Taxonomy User"},
+        json=register_json(email=email, password=password, full_name="Taxonomy User"),
     )
     login = client.post(
         "/api/v1/auth/login",
@@ -25,7 +27,7 @@ def _auth_headers(client: TestClient, email: str, password: str = "securepass1")
 def _admin_headers(client: TestClient, assign_role, email: str = "tax-admin@example.com") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": "Tax Admin"},
+        json=register_json(email=email, full_name="Tax Admin"),
     )
     assign_role(email, "super_admin")
     login = client.post(

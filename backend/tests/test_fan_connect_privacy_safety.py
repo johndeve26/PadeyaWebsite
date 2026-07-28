@@ -815,6 +815,46 @@ def test_admin_message_report_required_for_fan_fan_moderation(
     _assert_no_private_leak(body)
 
 
+def test_accept_ws_publish_reuses_request_session(
+    client: TestClient, db_session: Session, monkeypatch
+):
+    """API3-P2-001: accept WS fan-out must pass the request Session into publish.
+
+    Nested SessionLocal() on the test StaticPool shares one SQLite connection and
+    can interleave cursors → IndexError in get_connection_pair during filter.
+    """
+    from app.messaging import ws_events
+    from app.messaging.ws_permissions import PERSONAL_EVENTS
+
+    h_a, h_b, _a, _b, _host, _ev = _pair_with_shared_event(
+        client, db_session, prefix="fcnest"
+    )
+    req = client.post(
+        "/api/v1/fan-connect/requests",
+        headers=h_a,
+        json={"username": "fcnestb"},
+    )
+    assert req.status_code == 200
+
+    thread_scoped: list[tuple[str, bool]] = []
+    original = ws_events.publish_to_users
+
+    def _spy(user_ids, payload, *, db=None):
+        event_type = str(payload.get("type") or "")
+        if payload.get("thread_id") and event_type not in PERSONAL_EVENTS:
+            thread_scoped.append((event_type, db is not None))
+        return original(user_ids, payload, db=db)
+
+    monkeypatch.setattr(ws_events, "publish_to_users", _spy)
+    acc = client.post(
+        f"/api/v1/fan-connect/requests/{req.json()['id']}/accept",
+        headers=h_b,
+    )
+    assert acc.status_code == 200, acc.text
+    assert thread_scoped, "expected thread-scoped WS publishes on accept"
+    assert all(has_db for _etype, has_db in thread_scoped), thread_scoped
+
+
 # --- Settings defaults (opt-out) -------------------------------------
 
 

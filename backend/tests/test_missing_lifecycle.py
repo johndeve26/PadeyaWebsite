@@ -318,19 +318,26 @@ def test_user_profile_deactivate_restore(client: TestClient, assign_role):
 
     assert client.delete(f"/api/v1/users/admin/{user_id}", headers=admin).status_code == 405
     deactivated = client.post(
-        f"/api/v1/users/admin/{user_id}/deactivate", headers=admin
+        f"/api/v1/users/admin/{user_id}/deactivate",
+        headers=admin,
+        json={"reason": "Profile lifecycle test deactivate"},
     )
     assert deactivated.status_code == 200
     assert deactivated.json()["is_active"] is False
+    assert deactivated.json().get("account_status") == "suspended"
 
-    # Deactivated user cannot login/auth
+    # Suspended users may sign in to view status and submit an appeal.
     login = client.post(
         "/api/v1/auth/login",
         json={"email": "profile-user@example.com", "password": "securepass1"},
     )
-    assert login.status_code in {401, 403}
+    assert login.status_code == 200
 
-    restored = client.post(f"/api/v1/users/admin/{user_id}/restore", headers=admin)
+    restored = client.post(
+        f"/api/v1/users/admin/{user_id}/restore",
+        headers=admin,
+        json={"reason": "Profile lifecycle test restore"},
+    )
     assert restored.json()["is_active"] is True
 
 

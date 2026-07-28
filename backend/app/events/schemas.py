@@ -446,6 +446,12 @@ class EventUpdate(BaseModel):
             and self.check_in_end_time <= self.check_in_start_time
         ):
             raise ValueError("check_in_end_time must be after check_in_start_time")
+        if (
+            self.start_datetime is not None
+            and self.end_datetime is not None
+            and self.end_datetime <= self.start_datetime
+        ):
+            raise ValueError("end_datetime must be after start_datetime")
         return self
 
 

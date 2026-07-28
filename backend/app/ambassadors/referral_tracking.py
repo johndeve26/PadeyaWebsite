@@ -24,20 +24,19 @@ from app.ambassadors.referral_click_stats import (
     _referral_clicks_table_error,
 )
 from app.ambassadors.service import _find_participant_by_code
-from app.auth.models import User
+from app.users.models import User
 from app.core.config import get_settings
 from app.events.models import Event
 from app.promos.ambassador_domain import (
     AmbassadorAttribution,
-    AmbassadorCampaign,
     AmbassadorParticipant,
 )
-from app.promos.constants import PROGRAM_HOST_CURATED
-from app.promos.models import Ambassador, PromoClick
+from app.promos.models import Ambassador, AmbassadorCampaign, PromoClick
 from app.promos.referral_clicks import ReferralClick
 from app.promos.service import (
     _ambassador_attribution_allowed,
     _aware,
+    PROGRAM_HOST_CURATED,
     resolve_ambassador_for_event,
 )
 from sqlalchemy.exc import OperationalError, ProgrammingError

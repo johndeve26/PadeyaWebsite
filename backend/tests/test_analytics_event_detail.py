@@ -337,4 +337,4 @@ def test_buyer_cannot_access_host_event_analytics(client: TestClient, db_session
         f"/api/v1/host/events/{event.id}/analytics/overview",
         headers=headers,
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 404

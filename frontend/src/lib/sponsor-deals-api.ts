@@ -73,7 +73,7 @@ export type SponsorshipDeliverable = {
 };
 
 export async function fetchHostDeliverables(dealId: string): Promise<SponsorshipDeliverable[]> {
-  return apiRequest(`/api/v1/host/sponsorship-deals/${dealId}/deliverables`);
+  return apiRequest(`/host/sponsorship-deals/${dealId}/deliverables`);
 }
 
 export async function hostPatchDeliverable(
@@ -82,7 +82,7 @@ export async function hostPatchDeliverable(
   body: { status?: string; proof_notes?: string; description?: string },
 ): Promise<SponsorshipDeliverable> {
   return apiRequest(
-    `/api/v1/host/sponsorship-deals/${dealId}/deliverables/${deliverableId}`,
+    `/host/sponsorship-deals/${dealId}/deliverables/${deliverableId}`,
     { method: "PATCH", body: JSON.stringify(body) },
   );
 }
@@ -93,7 +93,7 @@ export async function hostSubmitDeliverable(
   body: { proof_url: string; proof_notes?: string },
 ): Promise<SponsorshipDeliverable> {
   return apiRequest(
-    `/api/v1/host/sponsorship-deals/${dealId}/deliverables/${deliverableId}/submit`,
+    `/host/sponsorship-deals/${dealId}/deliverables/${deliverableId}/submit`,
     { method: "POST", body: JSON.stringify(body) },
   );
 }
@@ -103,7 +103,7 @@ export async function fetchSponsorDeliverables(
   dealId: string,
 ): Promise<SponsorshipDeliverable[]> {
   return apiRequest(
-    `/api/v1/sponsors/workspaces/${sponsorId}/deals/${dealId}/deliverables`,
+    `/sponsors/workspaces/${sponsorId}/deals/${dealId}/deliverables`,
   );
 }
 
@@ -113,7 +113,7 @@ export async function approveSponsorDeliverable(
   deliverableId: string,
 ): Promise<SponsorshipDeliverable> {
   return apiRequest(
-    `/api/v1/sponsors/workspaces/${sponsorId}/deals/${dealId}/deliverables/${deliverableId}/approve`,
+    `/sponsors/workspaces/${sponsorId}/deals/${dealId}/deliverables/${deliverableId}/approve`,
     { method: "POST" },
   );
 }
@@ -125,18 +125,18 @@ export async function rejectSponsorDeliverable(
   body: { rejection_reason: string },
 ): Promise<SponsorshipDeliverable> {
   return apiRequest(
-    `/api/v1/sponsors/workspaces/${sponsorId}/deals/${dealId}/deliverables/${deliverableId}/reject`,
+    `/sponsors/workspaces/${sponsorId}/deals/${dealId}/deliverables/${deliverableId}/reject`,
     { method: "POST", body: JSON.stringify(body) },
   );
 }
 
 export async function fetchAdminDeliverables(dealId: string): Promise<SponsorshipDeliverable[]> {
-  return apiRequest(`/api/v1/admin/sponsorship-deals/${dealId}/deliverables`);
+  return apiRequest(`/admin/sponsorship-deals/${dealId}/deliverables`);
 }
 
 export async function fetchSponsorDeals(sponsorId: string): Promise<SponsorshipDeal[]> {
   return apiRequest<SponsorshipDeal[]>(
-    `/api/v1/sponsors/workspaces/${sponsorId}/deals`,
+    `/sponsors/workspaces/${sponsorId}/deals`,
   );
 }
 
@@ -145,7 +145,7 @@ export async function fetchSponsorDeal(
   dealId: string,
 ): Promise<SponsorshipDeal> {
   return apiRequest<SponsorshipDeal>(
-    `/api/v1/sponsors/workspaces/${sponsorId}/deals/${dealId}`,
+    `/sponsors/workspaces/${sponsorId}/deals/${dealId}`,
   );
 }
 
@@ -154,7 +154,7 @@ export async function acceptSponsorDeal(
   dealId: string,
 ): Promise<SponsorshipDeal> {
   return apiRequest<SponsorshipDeal>(
-    `/api/v1/sponsors/workspaces/${sponsorId}/deals/${dealId}/accept`,
+    `/sponsors/workspaces/${sponsorId}/deals/${dealId}/accept`,
     { method: "POST" },
   );
 }
@@ -164,7 +164,7 @@ export async function rejectSponsorDeal(
   dealId: string,
 ): Promise<SponsorshipDeal> {
   return apiRequest<SponsorshipDeal>(
-    `/api/v1/sponsors/workspaces/${sponsorId}/deals/${dealId}/reject`,
+    `/sponsors/workspaces/${sponsorId}/deals/${dealId}/reject`,
     { method: "POST" },
   );
 }
@@ -173,17 +173,17 @@ export async function paySponsorDeal(
   sponsorId: string,
   dealId: string,
 ): Promise<{ payment_url: string; invoice_id: string; message: string }> {
-  return apiRequest(`/api/v1/sponsors/workspaces/${sponsorId}/deals/${dealId}/pay`, {
+  return apiRequest(`/sponsors/workspaces/${sponsorId}/deals/${dealId}/pay`, {
     method: "POST",
   });
 }
 
 export async function fetchHostSponsorshipDeals(): Promise<SponsorshipDeal[]> {
-  return apiRequest<SponsorshipDeal[]>("/api/v1/host/sponsorship-deals");
+  return apiRequest<SponsorshipDeal[]>("/host/sponsorship-deals");
 }
 
 export async function fetchHostSponsorshipDeal(dealId: string): Promise<SponsorshipDeal> {
-  return apiRequest<SponsorshipDeal>(`/api/v1/host/sponsorship-deals/${dealId}`);
+  return apiRequest<SponsorshipDeal>(`/host/sponsorship-deals/${dealId}`);
 }
 
 export async function createHostSponsorshipDeal(body: {
@@ -196,7 +196,7 @@ export async function createHostSponsorshipDeal(body: {
   description?: string;
   deliverables?: string[];
 }): Promise<SponsorshipDeal> {
-  return apiRequest<SponsorshipDeal>("/api/v1/host/sponsorship-deals", {
+  return apiRequest<SponsorshipDeal>("/host/sponsorship-deals", {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -204,42 +204,42 @@ export async function createHostSponsorshipDeal(body: {
 
 export async function sendHostSponsorshipDeal(dealId: string): Promise<SponsorshipDeal> {
   return apiRequest<SponsorshipDeal>(
-    `/api/v1/host/sponsorship-deals/${dealId}/send`,
+    `/host/sponsorship-deals/${dealId}/send`,
     { method: "POST" },
   );
 }
 
 export async function cancelHostSponsorshipDeal(dealId: string): Promise<SponsorshipDeal> {
   return apiRequest<SponsorshipDeal>(
-    `/api/v1/host/sponsorship-deals/${dealId}/cancel`,
+    `/host/sponsorship-deals/${dealId}/cancel`,
     { method: "POST" },
   );
 }
 
 export async function fetchHostSponsorshipRevenue(): Promise<HostSponsorshipRevenueReport> {
   return apiRequest<HostSponsorshipRevenueReport>(
-    "/api/v1/host/sponsorship-deals/reports/summary",
+    "/host/sponsorship-deals/reports/summary",
   );
 }
 
 export async function fetchAdminSponsorshipDeals(): Promise<SponsorshipDeal[]> {
-  return apiRequest<SponsorshipDeal[]>("/api/v1/admin/sponsorship-deals");
+  return apiRequest<SponsorshipDeal[]>("/admin/sponsorship-deals");
 }
 
 export async function fetchAdminSponsorshipDeal(dealId: string): Promise<SponsorshipDeal> {
-  return apiRequest<SponsorshipDeal>(`/api/v1/admin/sponsorship-deals/${dealId}`);
+  return apiRequest<SponsorshipDeal>(`/admin/sponsorship-deals/${dealId}`);
 }
 
 export async function adminCancelSponsorshipDeal(dealId: string): Promise<SponsorshipDeal> {
   return apiRequest<SponsorshipDeal>(
-    `/api/v1/admin/sponsorship-deals/${dealId}/cancel`,
+    `/admin/sponsorship-deals/${dealId}/cancel`,
     { method: "POST" },
   );
 }
 
 export async function adminVoidSponsorshipInvoice(invoiceId: string): Promise<SponsorshipDeal> {
   return apiRequest<SponsorshipDeal>(
-    `/api/v1/admin/sponsorship-invoices/${invoiceId}/void`,
+    `/admin/sponsorship-invoices/${invoiceId}/void`,
     { method: "POST" },
   );
 }

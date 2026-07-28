@@ -155,10 +155,11 @@ def _normalize_path(path: str) -> str:
 
 
 def is_impersonation_exit_path(method: str, path: str) -> bool:
-    """Exit impersonation must always remain allowed."""
-    return method.upper() == "POST" and _normalize_path(path).endswith(
-        "/admin/impersonation/end"
-    )
+    """Exit impersonation and auth logout must remain allowed."""
+    if method.upper() != "POST":
+        return False
+    path_n = _normalize_path(path)
+    return path_n.endswith("/admin/impersonation/end") or path_n.endswith("/auth/logout")
 
 
 def is_admin_api_path(path: str) -> bool:

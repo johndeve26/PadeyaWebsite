@@ -9,11 +9,13 @@ from sqlalchemy.orm import Session
 
 from app.events.models import EventCategory
 
+from tests.helpers.auth import register_json
+
 
 def _admin(client: TestClient, assign_role, email: str = "picks-admin@example.com"):
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": "Picks Admin"},
+        json=register_json(email=email, full_name="Picks Admin"),
     )
     assign_role(email, "super_admin")
     login = client.post(
@@ -26,7 +28,7 @@ def _admin(client: TestClient, assign_role, email: str = "picks-admin@example.co
 def _host_event(client: TestClient, assign_role, email: str, title: str) -> str:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": "Host"},
+        json=register_json(email=email, full_name="Host"),
     )
     assign_role(email, "host")
     login = client.post(

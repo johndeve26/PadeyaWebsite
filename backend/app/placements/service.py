@@ -672,6 +672,12 @@ def update_set_status(
         },
     )
     db.commit()
+    try:
+        from app.core.cache_invalidation import invalidate_event_caches
+
+        invalidate_event_caches(slug=None, event_id=None, host_id=None)
+    except Exception:
+        pass
     return get_set_by_id(db, set_id)
 
 

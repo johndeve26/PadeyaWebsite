@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.audit import write_audit_log
-from app.events.models import TicketType
+from app.events.models import Event, TicketType
 from app.payments.models import Order, Payment, PaymentWebhookEvent
 from app.payments.paystack import verify_webhook_signature
 from app.tickets.service import issue_tickets_for_paid_order, send_ticket_email
@@ -34,6 +34,46 @@ def _event_key(payload: dict[str, Any], body: bytes) -> str:
     return f"paystack:{event_type}:{reference}:{digest[:32]}"
 
 
+def _record_payment_without_fulfillment(
+    db: Session,
+    *,
+    order: Order,
+    payment: Payment,
+    provider_payment_id: str | None,
+    raw_payload: dict[str, Any],
+    actor_user_id: uuid.UUID | None,
+    reason: str,
+) -> list:
+    """Capture provider payment without issuing tickets or consuming inventory."""
+    from app.payments.reservations import release_order_inventory_holds
+
+    if order.status == "pending":
+        release_order_inventory_holds(db, order=order)
+
+    now = datetime.now(UTC)
+    order.status = "payment_received"
+    payment.status = "successful"
+    payment.paid_at = now
+    payment.provider_payment_id = provider_payment_id
+    payment.raw_response = raw_payload
+
+    write_audit_log(
+        db,
+        action="payments.captured_unfulfilled",
+        actor_user_id=actor_user_id or order.buyer_user_id,
+        resource_type="order",
+        resource_id=str(order.id),
+        details={
+            "reference": order.reference,
+            "reason": reason,
+            "provider_payment_id": provider_payment_id,
+            "recovery": "manual_refund_or_resolution_required",
+        },
+    )
+    db.flush()
+    return []
+
+
 def finalize_successful_payment(
     db: Session,
     *,
@@ -49,6 +89,16 @@ def finalize_successful_payment(
     from app.merch.constants import ITEM_KIND_MERCH, ITEM_KIND_TICKET
     from app.merch.fulfillment import create_fulfillments_for_paid_order
     from app.merch.notifications import notify_buyer_merch_paid
+    from app.payments.reservations import (
+        expire_pending_order,
+        reservation_is_expired,
+    )
+    from app.payments.fulfillment_policy import (
+        assert_ticket_fulfillment_allowed,
+        load_order_event,
+        order_has_ticket_lines,
+        ticket_fulfillment_decision,
+    )
 
     order_id_safe = order.id
 
@@ -56,6 +106,8 @@ def finalize_successful_payment(
         # Idempotent recovery: ensure merch fulfillments/inventory commit exist.
         merch_fulfillments = create_fulfillments_for_paid_order(db, order)
         tickets = list(db.scalars(select(Ticket).where(Ticket.order_id == order.id)))
+        if order_has_ticket_lines(order) and not tickets:
+            tickets = issue_tickets_for_paid_order(db, order)
         if merch_fulfillments:
             from app.merch.cart import mark_cart_converted
             from app.merch.discounts import finalize_paid_redemption
@@ -90,19 +142,117 @@ def finalize_successful_payment(
             db, order, actor_user_id=actor_user_id or order.buyer_user_id
         )
         if tickets:
-            send_ticket_email(db, order, tickets)
+            try:
+                send_ticket_email(db, order, tickets)
+            except Exception:  # noqa: BLE001
+                logger.exception("ticket email failed for order %s", order_id_safe)
+        from app.crm.buyer_follow import ensure_paid_order_buyer_follows_host
+
+        try:
+            ensure_paid_order_buyer_follows_host(db, order)
+        except Exception:  # noqa: BLE001
+            logger.exception("buyer follow hook failed for order %s", order_id_safe)
         return tickets
 
+    # Re-lock order so expiry workers cannot release under a concurrent finalize.
+    from sqlalchemy.orm import selectinload
+
+    locked = db.scalar(
+        select(Order)
+        .where(Order.id == order.id)
+        .options(selectinload(Order.items))
+        .with_for_update()
+    )
+    if locked is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    order = locked
+
+    if order.status == "paid":
+        tickets = list(db.scalars(select(Ticket).where(Ticket.order_id == order.id)))
+        return tickets
+
+    if order.status == "payment_received":
+        payment.status = "successful"
+        return []
+
     if order.status != "pending":
+        if order.status in {"expired", "cancelled", "failed", "abandoned"}:
+            return _record_payment_without_fulfillment(
+                db,
+                order=order,
+                payment=payment,
+                provider_payment_id=provider_payment_id,
+                raw_payload=raw_payload,
+                actor_user_id=actor_user_id,
+                reason=f"late_payment_order_{order.status}",
+            )
         raise HTTPException(
             status_code=400,
             detail=f"Order status {order.status} cannot be paid",
         )
 
+    # Payment vs expiry race: expire wins if hold elapsed → never paid+released.
+    if reservation_is_expired(order):
+        expire_pending_order(db, order=order, reason="reservation_ttl")
+        db.flush()
+        return _record_payment_without_fulfillment(
+            db,
+            order=order,
+            payment=payment,
+            provider_payment_id=provider_payment_id,
+            raw_payload=raw_payload,
+            actor_user_id=actor_user_id,
+            reason="reservation_ttl",
+        )
+
+    event = load_order_event(db, order)
+    decision = ticket_fulfillment_decision(db, order=order, event=event)
+    if order_has_ticket_lines(order) and not decision.allow_tickets:
+        return _record_payment_without_fulfillment(
+            db,
+            order=order,
+            payment=payment,
+            provider_payment_id=provider_payment_id,
+            raw_payload=raw_payload,
+            actor_user_id=actor_user_id,
+            reason=decision.block_reason or "fulfillment_blocked",
+        )
+
+    assert_ticket_fulfillment_allowed(db, order=order, event=event)
+
     from app.payments.checkout_account import provision_guest_merch_buyer_if_needed
 
     provision_guest_merch_buyer_if_needed(db, order)
-    db.refresh(order)
+
+    # Re-lock line items after guest attach; refresh lifecycle on authoritative event.
+    order = db.scalar(
+        select(Order)
+        .where(Order.id == order.id)
+        .options(selectinload(Order.items))
+        .with_for_update()
+    )
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.event_id:
+        event = db.scalar(select(Event).where(Event.id == order.event_id))
+    decision = ticket_fulfillment_decision(db, order=order, event=event)
+    if order_has_ticket_lines(order) and not decision.allow_tickets:
+        return _record_payment_without_fulfillment(
+            db,
+            order=order,
+            payment=payment,
+            provider_payment_id=provider_payment_id,
+            raw_payload=raw_payload,
+            actor_user_id=actor_user_id,
+            reason=decision.block_reason or "fulfillment_blocked",
+        )
+
+    tickets = issue_tickets_for_paid_order(db, order)
+    if order_has_ticket_lines(order) and not tickets:
+        raise HTTPException(
+            status_code=500,
+            detail="Ticket issuance failed for paid order",
+        )
 
     for item in order.items:
         kind = getattr(item, "item_kind", None) or (
@@ -130,7 +280,6 @@ def finalize_successful_payment(
 
     # Merch inventory deducts only after verified payment (never issue tickets for merch)
     merch_fulfillments = create_fulfillments_for_paid_order(db, order)
-    tickets = issue_tickets_for_paid_order(db, order)
 
     from app.promos.service import finalize_promo_and_attribution
 
@@ -257,12 +406,21 @@ def finalize_successful_payment(
         )
 
     if tickets:
-        send_ticket_email(db, order, tickets)
+        try:
+            send_ticket_email(db, order, tickets)
+        except Exception:  # noqa: BLE001 — delivery must not reverse paid state
+            logger.exception("ticket email failed for order %s", order_id_safe)
     if merch_fulfillments and order.buyer_user_id is not None:
         from app.merch.cart import mark_cart_converted
 
-        mark_cart_converted(db, user_id=order.buyer_user_id, order_id=order.id)
-        notify_buyer_merch_paid(db, order=order, fulfillments=merch_fulfillments)
+        try:
+            mark_cart_converted(db, user_id=order.buyer_user_id, order_id=order.id)
+        except Exception:  # noqa: BLE001
+            logger.exception("merch cart convert failed for order %s", order_id_safe)
+        try:
+            notify_buyer_merch_paid(db, order=order, fulfillments=merch_fulfillments)
+        except Exception:  # noqa: BLE001
+            logger.exception("merch paid notify failed for order %s", order_id_safe)
         try:
             from app.merch.badges_hook import award_merch_badges_for_user
 
@@ -272,8 +430,42 @@ def finalize_successful_payment(
                 "merch badge refresh failed for order %s", order_id_safe
             )
     elif merch_fulfillments:
-        notify_buyer_merch_paid(db, order=order, fulfillments=merch_fulfillments)
+        try:
+            notify_buyer_merch_paid(db, order=order, fulfillments=merch_fulfillments)
+        except Exception:  # noqa: BLE001
+            logger.exception("merch paid notify failed for order %s", order_id_safe)
+
+    from app.crm.buyer_follow import ensure_paid_order_buyer_follows_host
+
+    try:
+        ensure_paid_order_buyer_follows_host(db, order)
+    except Exception:  # noqa: BLE001
+        logger.exception("buyer follow hook failed for order %s", order_id_safe)
     return tickets
+
+
+def _require_paystack_amount_and_currency(
+    data: dict[str, Any],
+    *,
+    expected_amount_major,
+    expected_currency: str,
+) -> None:
+    """Authoritative amount/currency must come from server state — never skip amount."""
+    amount = data.get("amount")
+    if amount is None:
+        raise HTTPException(status_code=400, detail="Payment amount missing")
+    try:
+        amount_kobo = int(amount)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Payment amount invalid") from exc
+    expected_kobo = int(expected_amount_major * 100)
+    if amount_kobo != expected_kobo:
+        raise HTTPException(status_code=400, detail="Payment amount mismatch")
+
+    currency = data.get("currency")
+    if currency is not None:
+        if str(currency).strip().upper() != str(expected_currency or "").strip().upper():
+            raise HTTPException(status_code=400, detail="Payment currency mismatch")
 
 
 def apply_paystack_charge_success(
@@ -307,11 +499,11 @@ def apply_paystack_charge_success(
         purchase = get_vault_purchase_by_reference(db, ref, for_update=True)
         if purchase is None:
             raise HTTPException(status_code=404, detail="Vault purchase not found")
-        amount = data.get("amount")
-        if amount is not None:
-            expected_kobo = int(purchase.amount * 100)
-            if int(amount) != expected_kobo:
-                raise HTTPException(status_code=400, detail="Payment amount mismatch")
+        _require_paystack_amount_and_currency(
+            data,
+            expected_amount_major=purchase.amount,
+            expected_currency=getattr(purchase, "currency", None) or "NGN",
+        )
         finalize_vault_purchase(
             db,
             purchase=purchase,
@@ -348,11 +540,11 @@ def apply_paystack_charge_success(
         db.add(payment)
         db.flush()
 
-    amount = data.get("amount")
-    if amount is not None:
-        expected_kobo = int(order.total_amount * 100)
-        if int(amount) != expected_kobo:
-            raise HTTPException(status_code=400, detail="Payment amount mismatch")
+    _require_paystack_amount_and_currency(
+        data,
+        expected_amount_major=order.total_amount,
+        expected_currency=order.currency,
+    )
 
     finalize_successful_payment(
         db,
@@ -384,58 +576,17 @@ def mark_payment_failed(
 ) -> None:
     if order.status == "paid":
         return
+    if order.status in {"expired", "failed", "cancelled", "abandoned"}:
+        # Inventory already released — keep status; refresh payment failure meta.
+        payment.status = "failed"
+        payment.raw_response = raw_payload
+        return
     payment.status = "failed"
     payment.raw_response = raw_payload
     order.status = "failed"
-    from app.merch.bundles import release_bundle_reservation
-    from app.merch.constants import ITEM_KIND_MERCH, ITEM_KIND_TICKET
-    from app.merch.models import EventMerchVariant, MerchBundle
-    from app.merch.service import release_variant_reservation
+    from app.payments.reservations import release_order_inventory_holds
 
-    released_bundle_ids: set[uuid.UUID] = set()
-    for item in order.items:
-        kind = getattr(item, "item_kind", None) or (
-            ITEM_KIND_MERCH if item.merch_variant_id else ITEM_KIND_TICKET
-        )
-        if kind == ITEM_KIND_TICKET and item.ticket_type_id is not None:
-            tt = db.scalar(
-                select(TicketType)
-                .where(TicketType.id == item.ticket_type_id)
-                .with_for_update()
-            )
-            if tt is None:
-                continue
-            tt.quantity_reserved = max(0, tt.quantity_reserved - item.quantity)
-        elif kind == ITEM_KIND_MERCH and item.merch_variant_id is not None:
-            variant = db.scalar(
-                select(EventMerchVariant)
-                .where(EventMerchVariant.id == item.merch_variant_id)
-                .with_for_update()
-            )
-            if variant is not None:
-                release_variant_reservation(variant, item.quantity)
-                from app.merch.models import EventMerchProduct
-                from app.merch.stock_alerts import evaluate_variant_stock_alerts
-
-                product = db.get(EventMerchProduct, variant.product_id)
-                if product is not None:
-                    evaluate_variant_stock_alerts(
-                        db, product=product, variant=variant
-                    )
-
-        bid = getattr(item, "bundle_id", None)
-        if bid and bid not in released_bundle_ids and item.ticket_type_id is not None:
-            bundle = db.scalar(
-                select(MerchBundle).where(MerchBundle.id == bid).with_for_update()
-            )
-            if bundle is not None:
-                # Ticket line quantity == pack quantity for expanded bundles.
-                release_bundle_reservation(bundle, item.quantity)
-            released_bundle_ids.add(bid)
-
-    from app.promos.service import release_promo_reservation
-
-    release_promo_reservation(db, order=order)
+    release_order_inventory_holds(db, order=order)
 
     write_audit_log(
         db,
@@ -458,6 +609,44 @@ def mark_payment_failed(
             host_id=event_row.host_id,
             buyer_user_id=order.buyer_user_id,
         )
+
+
+def _record_webhook_failure(
+    db: Session,
+    *,
+    event_key: str,
+    reference: str | None,
+    event_type: str | None,
+    payload: dict[str, Any],
+    error_message: str,
+) -> None:
+    """Persist webhook failure after a full rollback of business mutations."""
+    row = db.scalar(
+        select(PaymentWebhookEvent).where(
+            PaymentWebhookEvent.provider == "paystack",
+            PaymentWebhookEvent.event_key == event_key,
+        )
+    )
+    if row is None:
+        row = PaymentWebhookEvent(
+            provider="paystack",
+            event_key=event_key,
+            reference=reference,
+            event_type=event_type,
+            payload=payload,
+            processing_status="failed",
+            error_message=error_message[:500],
+            processed_at=datetime.now(UTC),
+        )
+        db.add(row)
+    else:
+        # Never downgrade a successfully processed event.
+        if row.processing_status == "processed":
+            return
+        row.processing_status = "failed"
+        row.error_message = error_message[:500]
+        row.processed_at = datetime.now(UTC)
+    db.commit()
 
 
 def process_paystack_webhook(
@@ -552,15 +741,27 @@ def process_paystack_webhook(
         db.commit()
         return {"status": "ok", "event_key": event_key}
     except HTTPException as exc:
-        webhook_event.processing_status = "failed"
-        webhook_event.error_message = str(exc.detail)[:500]
-        webhook_event.processed_at = datetime.now(UTC)
-        db.commit()
+        # API45-P1-001: never commit partial paid/inventory/ticket mutations.
+        detail = str(exc.detail)[:500]
+        db.rollback()
+        _record_webhook_failure(
+            db,
+            event_key=event_key,
+            reference=str(reference) if reference else None,
+            event_type=str(event_type) if event_type else None,
+            payload=payload,
+            error_message=detail,
+        )
         raise
     except Exception as exc:  # noqa: BLE001
         logger.exception("Webhook processing failed")
-        webhook_event.processing_status = "failed"
-        webhook_event.error_message = str(exc)[:500]
-        webhook_event.processed_at = datetime.now(UTC)
-        db.commit()
+        db.rollback()
+        _record_webhook_failure(
+            db,
+            event_key=event_key,
+            reference=str(reference) if reference else None,
+            event_type=str(event_type) if event_type else None,
+            payload=payload,
+            error_message=str(exc)[:500],
+        )
         raise HTTPException(status_code=500, detail="Webhook processing failed") from exc

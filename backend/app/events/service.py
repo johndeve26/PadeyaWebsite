@@ -1259,6 +1259,35 @@ def update_event(
 
     data = payload.model_dump(exclude_unset=True, exclude=NESTED_EXCLUDE)
     _normalize_refund_fields(data)
+    if "capacity" in data:
+        from app.payments.capacity import event_admission_committed
+
+        locked = db.scalar(
+            select(Event).where(Event.id == event.id).with_for_update()
+        )
+        if locked is None:
+            raise HTTPException(status_code=404, detail="Event not found")
+        event = locked
+        new_cap = data["capacity"]
+        if new_cap is not None:
+            committed = event_admission_committed(
+                db, event_id=event.id, lock_rows=True
+            )
+            if int(new_cap) < committed:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "Cannot reduce capacity below committed seats "
+                        f"({committed} sold/reserved)"
+                    ),
+                )
+    next_start = data.get("start_datetime", event.start_datetime)
+    next_end = data.get("end_datetime", event.end_datetime)
+    if next_start is not None and next_end is not None and next_end <= next_start:
+        raise HTTPException(
+            status_code=400,
+            detail="end_datetime must be after start_datetime",
+        )
     explicit_slug = data.pop("slug", None)
     if explicit_slug:
         desired = slugify(str(explicit_slug))
@@ -1402,7 +1431,27 @@ def cancel_event(db: Session, *, user: User, event_id: uuid.UUID) -> Event:
     )
     if event.status in {"completed", "cancelled", "archived"}:
         raise HTTPException(status_code=400, detail="Event cannot be cancelled")
+    locked = db.scalar(
+        select(Event).where(Event.id == event.id).with_for_update()
+    )
+    if locked is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    event = locked
+    if event.status in {"completed", "cancelled", "archived"}:
+        raise HTTPException(status_code=400, detail="Event cannot be cancelled")
     event.status = "cancelled"
+    db.flush()
+    # Commit cancellation before locking pending orders so payment finalization
+    # cannot observe a published event while holding the order row lock.
+    db.commit()
+    event = get_event_by_id(db, event.id)
+    assert event is not None
+
+    from app.payments.reservations import invalidate_event_pending_reservations
+
+    invalidate_event_pending_reservations(
+        db, event_id=event.id, reason="event_cancelled", actor_user_id=user.id
+    )
     write_audit_log(
         db,
         action="events.cancel",

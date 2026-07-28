@@ -231,7 +231,7 @@ def edit_message(
     db.refresh(msg)
     ws_events.publish_message_updated(db, thread=thread, message=msg)
     if thread.last_message_id == msg.id:
-        ws_events.publish_thread_updated(thread)
+        ws_events.publish_thread_updated(thread, db=db)
     return msg
 
 
@@ -310,7 +310,7 @@ def pin_message(
     ws_events.publish_message_pinned(
         db, thread=thread, message_id=message_id, pinned=pinned, viewer_hint=user.id
     )
-    ws_events.publish_thread_updated(thread)
+    ws_events.publish_thread_updated(thread, db=db)
     return pinned
 
 
@@ -346,7 +346,7 @@ def unpin_message(
     ws_events.publish_message_unpinned(
         db, thread=thread, message_id=message_id, pinned=pinned, viewer_hint=user.id
     )
-    ws_events.publish_thread_updated(thread)
+    ws_events.publish_thread_updated(thread, db=db)
     return pinned
 
 

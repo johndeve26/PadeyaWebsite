@@ -234,6 +234,9 @@ def claim_order_for_user(
         details={"ticket_count": len(tickets)},
     )
     db.flush()
+    from app.crm.buyer_follow import ensure_paid_order_buyer_follows_host
+
+    ensure_paid_order_buyer_follows_host(db, order)
     return order
 
 

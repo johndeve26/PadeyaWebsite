@@ -28,6 +28,7 @@ from app.promos.ambassador_domain import (
     AmbassadorProfile,
 )
 from app.promos.models import AmbassadorCampaign
+from app.promos.referral_clicks import ReferralClick
 from app.users.models import User
 from app.users.service import get_role_by_name
 
@@ -276,12 +277,12 @@ def test_referral_click_and_session_attribution(
     assert attribution_id
 
     db_session.expire_all()
-    clicks = list(
-        db_session.scalars(
-            select(AmbassadorClick).where(AmbassadorClick.session_id == session_id)
-        )
-    )
-    assert len(clicks) == 1
+    referral_click_id = click.json().get("click_id") or click.json().get("referral_click_id")
+    assert referral_click_id is not None
+    ref_click = db_session.get(ReferralClick, UUID(str(referral_click_id)))
+    assert ref_click is not None
+    assert ref_click.metadata_json is not None
+    assert ref_click.metadata_json.get("session_id") == session_id
     attr = db_session.get(AmbassadorAttribution, UUID(str(attribution_id)))
     assert attr is not None
     assert attr.session_id == session_id

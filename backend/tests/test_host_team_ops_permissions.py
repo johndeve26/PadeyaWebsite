@@ -26,10 +26,13 @@ def _login(client: TestClient, email: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {login.json()['access_token']}"}
 
 
+from tests.helpers.auth import register_json
+
+
 def _register(client: TestClient, email: str, name: str) -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": name},
+        json=register_json(email=email, full_name=name),
     )
     return _login(client, email)
 

@@ -1,11 +1,22 @@
-"""Test fixtures using an isolated SQLite database."""
+"""Test fixtures using an isolated SQLite database (or Phase 4.5 Postgres)."""
 
 from __future__ import annotations
 
 import os
 
 # Configure test DB before app imports bind the engine.
-os.environ["DATABASE_URL"] = "sqlite+pysqlite:///:memory:"
+# Phase 4.5: PHASE45_POSTGRES=1 + TEST_DATABASE_URL → isolated PostgreSQL.
+_PHASE45 = os.environ.get("PHASE45_POSTGRES", "").strip() == "1"
+if _PHASE45:
+    _pg = (os.environ.get("TEST_DATABASE_URL") or "").strip()
+    if not _pg:
+        raise RuntimeError("PHASE45_POSTGRES=1 requires TEST_DATABASE_URL")
+    from tests.helpers.postgres_safety import assert_safe_postgres_url
+
+    assert_safe_postgres_url(_pg, app_env=os.environ.get("APP_ENV", "test"))
+    os.environ["DATABASE_URL"] = _pg
+else:
+    os.environ["DATABASE_URL"] = "sqlite+pysqlite:///:memory:"
 os.environ["SECRET_KEY"] = "test-secret-key-not-for-production"
 os.environ["APP_ENV"] = "test"
 os.environ["DEMO_MODE"] = "false"
@@ -110,6 +121,21 @@ def _seed_paystack_test_settings(session: Session) -> None:
 
 @pytest.fixture()
 def db_engine():
+    if _PHASE45:
+        from sqlalchemy.pool import NullPool
+
+        engine = create_engine(
+            os.environ["DATABASE_URL"],
+            poolclass=NullPool,
+            future=True,
+        )
+        # Schema comes from Alembic on the isolated Phase 4.5 DB — do not drop.
+        try:
+            yield engine
+        finally:
+            engine.dispose()
+        return
+
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -149,14 +175,6 @@ def db_session(db_engine):
 
 @pytest.fixture()
 def client(db_session: Session, db_engine):
-    def _override_get_db():
-        try:
-            yield db_session
-        finally:
-            pass
-
-    # WebSocket auth uses SessionLocal() directly (short-lived); point it at the
-    # same in-memory engine so JWT connect works in tests.
     import app.core.database as database
 
     TestingSessionLocal = sessionmaker(
@@ -164,6 +182,23 @@ def client(db_session: Session, db_engine):
     )
     previous_session_local = database.SessionLocal
     database.SessionLocal = TestingSessionLocal
+
+    if _PHASE45:
+        # Per-request sessions so concurrent workers do not share one Session.
+        # Webhook/payment routes manage commit/rollback themselves — do not
+        # auto-commit/rollback here (that can undo or mask transactional intent).
+        def _override_get_db():
+            session = TestingSessionLocal()
+            try:
+                yield session
+            finally:
+                session.close()
+    else:
+        def _override_get_db():
+            try:
+                yield db_session
+            finally:
+                pass
 
     app.dependency_overrides[get_db] = _override_get_db
     try:

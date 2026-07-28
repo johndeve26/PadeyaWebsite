@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.audit import AuditLog
 from app.core.security import decode_access_token
+from tests.helpers.auth import register_json
 
 
 def _register(
@@ -19,7 +20,7 @@ def _register(
 ):
     return client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "full_name": full_name},
+        json=register_json(email=email, password=password, full_name=full_name),
     )
 
 
@@ -293,16 +294,16 @@ def test_impersonation_audit_stamps_actor(
         headers=_auth_header(started["access_token"]),
         json={"full_name": "Impersonated Name"},
     )
-    assert updated.status_code == 200
+    assert updated.status_code == 403
+    assert (
+        updated.json()["detail"]
+        == "This action is disabled during admin impersonation."
+    )
 
     row = db_session.scalar(
         select(AuditLog).where(AuditLog.action == "users.profile_update")
     )
-    assert row is not None
-    assert str(row.actor_user_id) == admin_id
-    assert row.details is not None
-    assert row.details.get("impersonation") is True
-    assert row.details.get("impersonated_user_id") == target_id
+    assert row is None
 
 
 def test_impersonation_duration_and_ticket(
@@ -621,7 +622,7 @@ def test_impersonation_history_endpoint(client: TestClient, assign_role):
     rows = history.json()
     assert len(rows) >= 1
     row = next(r for r in rows if r["id"] == body["impersonation_id"])
-    assert row["started_by"] == "Hist Admin"
+    assert row["started_by"] == "Admin Hist"
     assert row["reason"] == "history check reason"
     assert row["support_ticket_id"] == "SUP-99"
     assert row["started_at"]

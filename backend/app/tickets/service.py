@@ -897,6 +897,10 @@ def claim_ticket_transfer(
             detail="Log in with the same email the ticket was transferred to.",
         )
 
+    # Lock order: transfer → ticket (same as revoke/decline after auth checks).
+    transfer = _load_transfer_for_claim(db, transfer.id)
+    if transfer.status != "pending":
+        raise HTTPException(status_code=400, detail="This transfer was already completed")
     ticket = _load_ticket_for_transfer_claim(db, transfer.ticket_id)
     return _finish_transfer_claim(db, transfer=transfer, ticket=ticket, user=user)
 
@@ -985,12 +989,28 @@ def _notify_recipient_transfer_completed(
     )
 
 
+def _load_transfer_for_claim(db: Session, transfer_id: uuid.UUID) -> TicketTransfer:
+    """Lock pending transfer row (CC-006) before mutating ownership."""
+    from app.tickets.advanced_models import TicketTransfer
+
+    transfer = db.scalar(
+        select(TicketTransfer)
+        .where(TicketTransfer.id == transfer_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if transfer is None:
+        raise HTTPException(status_code=404, detail="Transfer not found")
+    return transfer
+
+
 def _load_ticket_for_transfer_claim(db: Session, ticket_id: uuid.UUID) -> Ticket:
     ticket = db.scalar(
         select(Ticket)
         .where(Ticket.id == ticket_id)
         .options(selectinload(Ticket.qr_token))
         .with_for_update()
+        .execution_options(populate_existing=True)
     )
     if ticket is None:
         raise HTTPException(status_code=404, detail="Ticket not found")
@@ -1004,6 +1024,8 @@ def _finish_transfer_claim(
     ticket: Ticket,
     user: User,
 ) -> Ticket:
+    # Re-check under row locks — concurrent claim/revoke may have won.
+    db.refresh(transfer)
     if transfer.status != "pending":
         raise HTTPException(status_code=400, detail="This transfer was already completed")
 
@@ -1066,9 +1088,7 @@ def claim_pending_ticket_transfer_for_user(
     from app.payments.attendees import normalize_email
 
     assert_verified_email(user)
-    transfer = db.get(TicketTransfer, transfer_id)
-    if transfer is None:
-        raise HTTPException(status_code=404, detail="Transfer not found")
+    transfer = _load_transfer_for_claim(db, transfer_id)
     if transfer.status != "pending":
         raise HTTPException(status_code=400, detail="This transfer was already completed")
 
@@ -1178,9 +1198,7 @@ def revoke_pending_ticket_transfer(
     user: User,
     transfer_id: uuid.UUID,
 ) -> TicketTransfer:
-    transfer = db.get(TicketTransfer, transfer_id)
-    if transfer is None:
-        raise HTTPException(status_code=404, detail="Transfer not found")
+    transfer = _load_transfer_for_claim(db, transfer_id)
     if transfer.from_user_id != user.id:
         raise HTTPException(status_code=403, detail="Only the sender can revoke this transfer")
     if transfer.status != "pending":
@@ -1189,14 +1207,7 @@ def revoke_pending_ticket_transfer(
             detail=f"Only pending transfers can be revoked (status={transfer.status})",
         )
 
-    ticket = db.scalar(
-        select(Ticket)
-        .where(Ticket.id == transfer.ticket_id)
-        .options(selectinload(Ticket.qr_token))
-        .with_for_update()
-    )
-    if ticket is None:
-        raise HTTPException(status_code=404, detail="Ticket not found")
+    ticket = _load_ticket_for_transfer_claim(db, transfer.ticket_id)
 
     transfer.status = "revoked"
     _restore_ticket_after_pending_transfer_cancel(db, transfer=transfer, ticket=ticket)
@@ -1222,9 +1233,7 @@ def decline_pending_ticket_transfer(
 ) -> TicketTransfer:
     from app.payments.attendees import normalize_email
 
-    transfer = db.get(TicketTransfer, transfer_id)
-    if transfer is None:
-        raise HTTPException(status_code=404, detail="Transfer not found")
+    transfer = _load_transfer_for_claim(db, transfer_id)
     if transfer.status != "pending":
         raise HTTPException(
             status_code=400,
@@ -1235,14 +1244,7 @@ def decline_pending_ticket_transfer(
     if not email_norm or to_norm != email_norm:
         raise HTTPException(status_code=403, detail="This transfer was not sent to your email")
 
-    ticket = db.scalar(
-        select(Ticket)
-        .where(Ticket.id == transfer.ticket_id)
-        .options(selectinload(Ticket.qr_token))
-        .with_for_update()
-    )
-    if ticket is None:
-        raise HTTPException(status_code=404, detail="Ticket not found")
+    ticket = _load_ticket_for_transfer_claim(db, transfer.ticket_id)
 
     transfer.status = "declined"
     _restore_ticket_after_pending_transfer_cancel(db, transfer=transfer, ticket=ticket)
@@ -1759,7 +1761,9 @@ def admin_list_tickets(
 ) -> list[Ticket]:
     if not (
         user_has_permission(user, "admin.full_access")
-        or user_has_permission(user, "payments.view")
+        or user_has_permission(user, "admin.finance.view_fees")
+        or user_has_permission(user, "admin.finance.export_event_sales")
+        or user_has_permission(user, "refunds.review")
     ):
         raise HTTPException(status_code=403, detail="Not authorized")
     return list(
@@ -1775,7 +1779,9 @@ def admin_list_tickets(
 def admin_list_transfers(db: Session, *, user: User, limit: int = 100) -> list[TicketTransfer]:
     if not (
         user_has_permission(user, "admin.full_access")
-        or user_has_permission(user, "payments.view")
+        or user_has_permission(user, "admin.finance.view_fees")
+        or user_has_permission(user, "admin.finance.export_event_sales")
+        or user_has_permission(user, "refunds.review")
     ):
         raise HTTPException(status_code=403, detail="Not authorized")
     return list(

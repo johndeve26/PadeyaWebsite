@@ -44,7 +44,8 @@ class HostFollower(Base):
         nullable=False,
         index=True,
     )
-    # Privacy default: following does not opt into marketing blasts
+    # Buyers are auto-followed with marketing_opt_in=True on paid purchase.
+    # Manual follow still defaults off until the fan opts in.
     marketing_opt_in: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True

@@ -10,12 +10,13 @@ from sqlalchemy.orm import Session
 
 from app.appeals.models import AccountSuspension
 from app.core.audit import AuditLog
+from tests.helpers.auth import register_json
 
 
 def _auth(client: TestClient, email: str, name: str = "User") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": name},
+        json=register_json(email=email, full_name=name),
     )
     login = client.post(
         "/api/v1/auth/login",

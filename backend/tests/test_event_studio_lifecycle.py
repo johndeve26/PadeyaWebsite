@@ -13,11 +13,13 @@ from app.events.models import Event, TicketType
 from app.events.service import build_publish_checklist
 from app.taxonomy.models import Location, TaxonomyCategory
 
+from tests.helpers.auth import register_json
+
 
 def _auth_headers(client: TestClient, email: str, password: str = "securepass1") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "full_name": "Studio Host"},
+        json=register_json(email=email, password=password, full_name="Studio Host"),
     )
     login = client.post(
         "/api/v1/auth/login",
@@ -71,7 +73,7 @@ def _base_payload(**overrides):
 def _admin_headers(client: TestClient, assign_role, email: str) -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": "Admin"},
+        json=register_json(email=email, full_name="Admin"),
     )
     assign_role(email, "super_admin")
     token = client.post(

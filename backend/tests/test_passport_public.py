@@ -152,9 +152,15 @@ def test_private_passport_not_public(client: TestClient, db_session: Session) ->
     headers = _auth(client, "private-pp@example.com", "Private Fan")
     me = client.get("/api/v1/passport/me", headers=headers)
     assert me.status_code == 200
-    username = me.json()["username"]
+    patched = client.patch(
+        "/api/v1/passport/me/settings",
+        headers=headers,
+        json={"visibility": VISIBILITY_PRIVATE},
+    )
+    assert patched.status_code == 200, patched.text
+    username = patched.json()["username"]
     assert username
-    assert me.json()["visibility"] == VISIBILITY_PRIVATE
+    assert patched.json()["visibility"] == VISIBILITY_PRIVATE
 
     public = client.get(f"/api/v1/f/{username}")
     assert public.status_code == 404

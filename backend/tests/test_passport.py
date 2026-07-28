@@ -147,7 +147,8 @@ def _seed_ticket(
 
 def test_passport_creation(client: TestClient, db_session: Session):
     headers = _register(client, "passport-new@example.com", "New Fan")
-    assert db_session.query(FanPassport).count() == 0
+    # Registration provisions a passport before the first /passport/me read.
+    assert db_session.query(FanPassport).count() == 1
 
     response = client.get("/api/v1/passport/me", headers=headers)
     assert response.status_code == 200, response.text

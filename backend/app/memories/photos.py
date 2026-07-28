@@ -47,6 +47,58 @@ from app.users.models import User
 from app.users.service import user_has_permission
 
 
+def _assert_photo_slot_available(
+    db: Session,
+    *,
+    memory_id: UUID,
+    uploader_role: str,
+    uploader_user_id: UUID | None,
+    limit: int,
+) -> int:
+    """Lock memory row and enforce per-role photo limits (CC-007). Returns used count."""
+    locked = db.scalar(
+        select(EventMemory.id).where(EventMemory.id == memory_id).with_for_update()
+    )
+    if locked is None:
+        raise HTTPException(status_code=404, detail="Memory not found")
+    used = count_active_photos(
+        db,
+        memory_id=memory_id,
+        uploader_role=uploader_role,
+        uploader_user_id=uploader_user_id,
+    )
+    if used >= limit:
+        if uploader_role == "host":
+            detail = f"Host memory limit is {limit} photos"
+        else:
+            detail = f"Fan memory limit is {limit} photos per event"
+        raise HTTPException(status_code=400, detail=detail)
+    return used
+
+
+def _soft_check_photo_limit(
+    db: Session,
+    *,
+    memory_id: UUID,
+    uploader_role: str,
+    uploader_user_id: UUID | None,
+    limit: int,
+) -> None:
+    """Fast unlocked pre-check to reject obvious overflows before image processing."""
+    used = count_active_photos(
+        db,
+        memory_id=memory_id,
+        uploader_role=uploader_role,
+        uploader_user_id=uploader_user_id,
+    )
+    if used >= limit:
+        if uploader_role == "host":
+            detail = f"Host memory limit is {limit} photos"
+        else:
+            detail = f"Fan memory limit is {limit} photos per event"
+        raise HTTPException(status_code=400, detail=detail)
+
+
 def _next_sort_order(db: Session, memory_id: UUID) -> int:
     max_order = db.scalar(
         select(func.max(EventMemoryMedia.sort_order)).where(
@@ -202,12 +254,13 @@ async def upload_host_photo(
     if memory.status == "hidden":
         raise HTTPException(status_code=403, detail="This memory was hidden by moderation")
 
-    used = count_active_photos(db, memory_id=memory.id, uploader_role="host")
-    if used >= HOST_MEMORY_PHOTO_LIMIT:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Host memory limit is {HOST_MEMORY_PHOTO_LIMIT} photos",
-        )
+    _soft_check_photo_limit(
+        db,
+        memory_id=memory.id,
+        uploader_role="host",
+        uploader_user_id=None,
+        limit=HOST_MEMORY_PHOTO_LIMIT,
+    )
 
     raw = await _read_upload(file)
     try:
@@ -224,8 +277,15 @@ async def upload_host_photo(
             detail="Media storage temporarily unavailable",
         ) from exc
 
-    make_cover = is_cover or used == 0
     try:
+        used = _assert_photo_slot_available(
+            db,
+            memory_id=memory.id,
+            uploader_role="host",
+            uploader_user_id=None,
+            limit=HOST_MEMORY_PHOTO_LIMIT,
+        )
+        make_cover = is_cover or used == 0
         _create_photo_row(
             db,
             memory=memory,
@@ -248,6 +308,10 @@ async def upload_host_photo(
             },
         )
         db.commit()
+    except HTTPException:
+        db.rollback()
+        _cleanup_processed_uploads(processed)
+        raise
     except Exception:
         db.rollback()
         _cleanup_processed_uploads(processed)
@@ -284,17 +348,13 @@ async def upload_fan_photo(
     if memory.status == "hidden":
         raise HTTPException(status_code=403, detail="This memory was hidden by moderation")
 
-    used = count_active_photos(
+    _soft_check_photo_limit(
         db,
         memory_id=memory.id,
         uploader_role="fan",
         uploader_user_id=user.id,
+        limit=FAN_MEMORY_PHOTO_LIMIT,
     )
-    if used >= FAN_MEMORY_PHOTO_LIMIT:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Fan memory limit is {FAN_MEMORY_PHOTO_LIMIT} photos per event",
-        )
 
     raw = await _read_upload(file)
     try:
@@ -312,6 +372,13 @@ async def upload_fan_photo(
         ) from exc
 
     try:
+        _assert_photo_slot_available(
+            db,
+            memory_id=memory.id,
+            uploader_role="fan",
+            uploader_user_id=user.id,
+            limit=FAN_MEMORY_PHOTO_LIMIT,
+        )
         _create_photo_row(
             db,
             memory=memory,
@@ -334,6 +401,10 @@ async def upload_fan_photo(
             },
         )
         db.commit()
+    except HTTPException:
+        db.rollback()
+        _cleanup_processed_uploads(processed)
+        raise
     except Exception:
         db.rollback()
         _cleanup_processed_uploads(processed)
@@ -618,12 +689,13 @@ def add_memory_media_url(
     if memory.status == "hidden":
         raise HTTPException(status_code=403, detail="This memory was hidden by moderation")
 
-    used = count_active_photos(db, memory_id=memory.id, uploader_role="host")
-    if used >= HOST_MEMORY_PHOTO_LIMIT:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Host memory limit is {HOST_MEMORY_PHOTO_LIMIT} photos",
-        )
+    _soft_check_photo_limit(
+        db,
+        memory_id=memory.id,
+        uploader_role="host",
+        uploader_user_id=None,
+        limit=HOST_MEMORY_PHOTO_LIMIT,
+    )
 
     try:
         stored = get_public_media_storage().store_remote_url(
@@ -637,32 +709,43 @@ def add_memory_media_url(
         sort_order = _next_sort_order(db, memory.id)
 
     caption = payload.caption or payload.label
-    media = EventMemoryMedia(
-        memory_id=memory.id,
-        media_type=payload.media_type.strip().lower(),
-        url=stored.url,
-        storage_key=stored.key,
-        thumbnail_url=stored.url,
-        label=payload.label,
-        caption=(caption or "").strip() or None,
-        sort_order=sort_order,
-        uploader_user_id=user.id,
-        uploader_role="host",
-        is_cover=used == 0,
-        status="active",
-    )
-    if used == 0:
-        _clear_other_covers(db, memory_id=memory.id, keep_id=None)
-    db.add(media)
-    write_audit_log(
-        db,
-        action="memories.host.media_add",
-        actor_user_id=user.id,
-        resource_type="event_memory",
-        resource_id=str(memory.id),
-        details={"media_id": str(media.id)},
-    )
-    db.commit()
+    try:
+        used = _assert_photo_slot_available(
+            db,
+            memory_id=memory.id,
+            uploader_role="host",
+            uploader_user_id=None,
+            limit=HOST_MEMORY_PHOTO_LIMIT,
+        )
+        media = EventMemoryMedia(
+            memory_id=memory.id,
+            media_type=payload.media_type.strip().lower(),
+            url=stored.url,
+            storage_key=stored.key,
+            thumbnail_url=stored.url,
+            label=payload.label,
+            caption=(caption or "").strip() or None,
+            sort_order=sort_order,
+            uploader_user_id=user.id,
+            uploader_role="host",
+            is_cover=used == 0,
+            status="active",
+        )
+        if used == 0:
+            _clear_other_covers(db, memory_id=memory.id, keep_id=None)
+        db.add(media)
+        write_audit_log(
+            db,
+            action="memories.host.media_add",
+            actor_user_id=user.id,
+            resource_type="event_memory",
+            resource_id=str(memory.id),
+            details={"media_id": str(media.id)},
+        )
+        db.commit()
+    except HTTPException:
+        db.rollback()
+        raise
     db.refresh(memory)
     invalidate_memory_caches(event)
     return serialize_memory(db, memory, include_private=True)

@@ -112,6 +112,10 @@ def _attach_paid_order_to_buyer(db: Session, *, order: Order, user: User) -> Non
         resource_id=str(order.id),
         details={"reference": order.reference},
     )
+    if order.status == "paid":
+        from app.crm.buyer_follow import ensure_paid_order_buyer_follows_host
+
+        ensure_paid_order_buyer_follows_host(db, order)
 
 
 def provision_guest_merch_buyer_if_needed(db: Session, order: Order) -> User | None:
@@ -122,6 +126,8 @@ def provision_guest_merch_buyer_if_needed(db: Session, order: Order) -> User | N
     if order.buyer_user_id is not None:
         return None
     if not bool(getattr(order, "is_guest_checkout", False)):
+        return None
+    if not order_has_merch_or_bundle(order):
         return None
 
     email = normalize_email(order.guest_buyer_email or order.buyer_email or "")

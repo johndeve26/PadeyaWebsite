@@ -184,6 +184,20 @@ def test_notify_admins_report_emails_and_in_app(
     )
     assert admin is not None
 
+    from app.email.admin_template_service import ensure_admin_template_rows
+    from app.email.models import EmailAdminTemplate
+
+    ensure_admin_template_rows(db_session)
+    tpl = db_session.scalar(
+        select(EmailAdminTemplate).where(EmailAdminTemplate.key == "admin_message_report")
+    )
+    assert tpl is not None
+    tpl.is_enabled = True
+    tpl.delivery_mode = "instant"
+    tpl.recipient_mode = "group"
+    tpl.recipient_group = "super_admin"
+    db_session.commit()
+
     report_id = uuid4()
     n = notify_admins_report(
         db_session,
@@ -205,7 +219,7 @@ def test_notify_admins_report_emails_and_in_app(
     assert note is not None
     email = db_session.scalar(
         select(EmailEvent).where(
-            EmailEvent.template == "admin_new_report",
+            EmailEvent.template == "admin_message_report",
             EmailEvent.recipient_user_id == admin.id,
         )
     )

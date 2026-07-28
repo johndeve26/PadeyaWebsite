@@ -6,11 +6,13 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
 
+from tests.helpers.auth import register_json
+
 
 def _auth_headers(client: TestClient, email: str, password: str = "securepass1") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "full_name": "Test User"},
+        json=register_json(email=email, password=password, full_name="Test User"),
     )
     login = client.post(
         "/api/v1/auth/login",
@@ -186,7 +188,7 @@ def test_admin_approval_rejection(client: TestClient, assign_role):
     assert approved.json()["status"] == "published"
     assert approved.json()["admin_flagged"] is False
 
-    public = client.get("/api/v1/events")
+    public = client.get("/api/v1/events", params={"q": "Needs Approval"})
     assert any(e["id"] == event["id"] for e in public.json())
     detail = client.get(f"/api/v1/events/{event['slug']}")
     assert detail.status_code == 200

@@ -696,7 +696,7 @@ def disconnect(db: Session, user: User, connection_id: UUID) -> FanConnection:
         db.refresh(closed_thread)
         from app.messaging import ws_events
 
-        ws_events.publish_thread_disabled(closed_thread, reason="removed")
+        ws_events.publish_thread_disabled(closed_thread, reason="removed", db=db)
         ws_events.publish_connection_removed(
             user_ids=[user.id, other_id],
             connection_id=conn.id,
@@ -772,7 +772,7 @@ def report_fan(
         db.refresh(disabled_thread)
         from app.messaging import ws_events
 
-        ws_events.publish_thread_disabled(disabled_thread, reason="reported")
+        ws_events.publish_thread_disabled(disabled_thread, reason="reported", db=db)
     return report
 
 

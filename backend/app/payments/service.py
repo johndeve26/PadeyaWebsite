@@ -14,8 +14,18 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.audit import write_audit_log
 from app.core.config import get_settings
 from app.events.models import Event, EventCheckoutQuestion, TicketType
+from app.payments.capacity import (
+    assert_event_capacity_allows,
+    lock_event_for_capacity,
+    seats_for_units,
+)
 from app.payments.models import Order, OrderCheckoutAnswer, OrderItem, Payment
 from app.payments.paystack import PaystackError, initialize_transaction, verify_transaction
+from app.payments.reservations import (
+    assert_ticket_sales_window,
+    compute_reservation_expires_at,
+    ensure_pending_reservation_active,
+)
 from app.payments.schemas import CheckoutAnswerIn, OrderCreate
 from app.tickets.service import issue_tickets_for_paid_order, send_ticket_email
 from app.users.models import User
@@ -228,6 +238,7 @@ def serialize_order(db: Session, order: Order) -> dict:
         "created_at": order.created_at,
         "paid_at": order.paid_at,
         "archived_at": order.archived_at,
+        "reservation_expires_at": getattr(order, "reservation_expires_at", None),
         "items": items_out,
         "payments": order.payments,
         "checkout_answers": getattr(order, "checkout_answers", None) or [],
@@ -496,6 +507,7 @@ def _create_host_shop_merch_order(
         is_gift=False,
         purchased_for_someone_else=False,
         send_ticket_to_recipient=False,
+        reservation_expires_at=compute_reservation_expires_at(),
     )
     if merch_discount_code_id:
         order.merch_discount_code_id = merch_discount_code_id
@@ -731,6 +743,12 @@ def _create_event_order(
     merch_line_items: list[tuple[object, object, int, Decimal, uuid.UUID | None, bool]] = []
     subtotal = Decimal("0.00")
 
+    # Optional venue hard cap — lock event before tier reservations when set.
+    capacity_locked_event: Event | None = None
+    if getattr(event, "capacity", None) is not None and (qty_by_type or qty_by_bundle):
+        capacity_locked_event = lock_event_for_capacity(db, event.id)
+        event = capacity_locked_event
+
     for ticket_type_id, quantity in qty_by_type.items():
         tt = db.scalar(
             select(TicketType)
@@ -744,6 +762,7 @@ def _create_event_order(
             raise HTTPException(status_code=400, detail="Invalid ticket type for event")
         if tt.status != "active" or tt.visibility == "hidden":
             raise HTTPException(status_code=400, detail=f"Ticket type {tt.name} is unavailable")
+        assert_ticket_sales_window(tt)
         if quantity < tt.min_per_order or quantity > tt.max_per_order:
             raise HTTPException(
                 status_code=400,
@@ -754,6 +773,9 @@ def _create_event_order(
                 status_code=409,
                 detail=f"Not enough tickets available for {tt.name}",
             )
+        assert_event_capacity_allows(
+            db, event=event, additional_seats=seats_for_units(tt, quantity)
+        )
         tt.quantity_reserved += quantity
         unit = Decimal(tt.price)
         ticket_line_items.append((tt, quantity, unit, None))
@@ -782,6 +804,10 @@ def _create_event_order(
         )
         for tt, quantity, unit in b_tickets:
             # expand_bundle_allocation locked + validated inventory
+            assert_ticket_sales_window(tt)
+            assert_event_capacity_allows(
+                db, event=event, additional_seats=seats_for_units(tt, quantity)
+            )
             tt.quantity_reserved += quantity
             ticket_line_items.append((tt, quantity, unit, bundle.id))
         for product, variant, quantity, unit in b_merch:
@@ -1023,6 +1049,11 @@ def _create_event_order(
         recipient_email=gift_fields["recipient_email"],
         recipient_phone=gift_fields["recipient_phone"],
         recipient_user_id=gift_fields["recipient_user_id"],
+        reservation_expires_at=compute_reservation_expires_at(
+            ticket_types=[tt for tt, _q, _u, _b in ticket_line_items]
+        )
+        if (ticket_line_items or merch_line_items)
+        else None,
     )
     db.add(order)
     db.flush()
@@ -1214,6 +1245,8 @@ def initialize_checkout(
     if order.status != "pending":
         raise HTTPException(status_code=400, detail="Order is not pending payment")
 
+    ensure_pending_reservation_active(db, order=order)
+
     event = db.get(Event, order.event_id)
     if event is not None and user is not None:
         from app.hosts.fan_self_abuse import assert_owner_not_buying_own_host
@@ -1345,7 +1378,12 @@ def finalize_pending_order_via_paystack(
     if order.status == "paid":
         return order
 
-    if order.status != "pending":
+    if order.status == "paid":
+        return order
+    if order.status == "payment_received":
+        return order
+
+    if order.status not in {"pending", "expired", "cancelled"}:
         raise HTTPException(
             status_code=400,
             detail=f"Order status {order.status} cannot be confirmed",
@@ -1480,10 +1518,45 @@ def require_buyer_order(db: Session, user: User, order_id: uuid.UUID) -> Order:
     return order
 
 
+def cancel_buyer_order(db: Session, *, user: User, order_id: uuid.UUID) -> Order:
+    """Cancel an unpaid pending order and release inventory exactly once."""
+    from sqlalchemy.orm import selectinload
+
+    from app.payments.reservations import cancel_pending_order
+
+    order = require_buyer_order(db, user, order_id)
+    locked = db.scalar(
+        select(Order)
+        .where(Order.id == order.id)
+        .options(selectinload(Order.items))
+        .with_for_update()
+    )
+    if locked is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if locked.status == "cancelled":
+        return locked
+    if locked.status != "pending":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Order status {locked.status} cannot be cancelled",
+        )
+    cancel_pending_order(db, order=locked, actor_user_id=user.id)
+    db.commit()
+    db.refresh(locked)
+    return locked
+
+
 def archive_order(db: Session, *, user: User, order_id: uuid.UUID) -> Order:
     """UI archive for failed/abandoned orders — row remains in DB forever."""
     order = require_buyer_order(db, user, order_id)
-    if order.status not in {"pending", "failed", "abandoned", "cancelled"}:
+    if order.status not in {
+        "pending",
+        "failed",
+        "abandoned",
+        "cancelled",
+        "expired",
+        "payment_received",
+    }:
         raise HTTPException(
             status_code=400,
             detail="Only failed or abandoned unpaid orders can be archived",

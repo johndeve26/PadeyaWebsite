@@ -24,6 +24,7 @@ from app.maintenance.service import (
 from app.users.models import Permission, Role, User
 from app.users.service import get_role_by_name
 
+from tests.helpers.auth import register_json
 
 ADMIN = "/api/v1/admin/platform/maintenance"
 
@@ -31,11 +32,7 @@ ADMIN = "/api/v1/admin/platform/maintenance"
 def _register(client: TestClient, email: str) -> dict[str, str]:
     res = client.post(
         "/api/v1/auth/register",
-        json={
-            "email": email,
-            "password": "Password123!",
-            "full_name": "Maint User",
-        },
+        json=register_json(email=email, password="Password123!", full_name="Maint User"),
     )
     assert res.status_code == 201, res.text
     return {"Authorization": f"Bearer {res.json()['access_token']}"}

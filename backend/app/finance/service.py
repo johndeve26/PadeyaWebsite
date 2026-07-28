@@ -866,6 +866,16 @@ def mark_payout_paid(
     return _serialize_payout(db, row)
 
 
+def _has_platform_finance_access(user: User) -> bool:
+    """Platform finance surfaces — not host-scoped ``payments.view``."""
+    return (
+        user_has_permission(user, "admin.full_access")
+        or user_has_permission(user, "admin.finance.view_fees")
+        or user_has_permission(user, "admin.finance.export_event_sales")
+        or user_has_permission(user, "refunds.review")
+    )
+
+
 def list_ledger_entries(
     db: Session,
     user: User,
@@ -873,10 +883,7 @@ def list_ledger_entries(
     host_id: UUID | None = None,
     limit: int = 100,
 ) -> list[LedgerEntry]:
-    if not (
-        user_has_permission(user, "payments.view")
-        or user_has_permission(user, "admin.full_access")
-    ):
+    if not _has_platform_finance_access(user):
         raise HTTPException(status_code=403, detail="Insufficient permission")
     if user_has_role(user, "support_agent") and not (
         user_has_role(user, "finance_admin") or is_super_admin(user)
@@ -908,10 +915,7 @@ def list_host_ledger(db: Session, user: User, *, limit: int = 100) -> list[Ledge
 
 
 def settlement_report(db: Session, user: User, *, host_id: UUID | None = None) -> dict:
-    if not (
-        user_has_permission(user, "payments.view")
-        or user_has_permission(user, "admin.full_access")
-    ):
+    if not _has_platform_finance_access(user):
         raise HTTPException(status_code=403, detail="Insufficient permission")
     if user_has_role(user, "support_agent") and not (
         user_has_role(user, "finance_admin") or is_super_admin(user)

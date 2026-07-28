@@ -278,20 +278,28 @@ def test_click_spike_flagged(client: TestClient, db_session: Session):
     original_threshold = settings.ambassador_click_spike_threshold
     settings.ambassador_click_spike_threshold = 3
     try:
-        for i in range(4):
-            resp = client.post(
-                "/api/v1/ambassadors/track-click",
-                json={
-                    "ambassador_code": code,
-                    "campaign_id": str(campaign.id),
-                    "event_id": str(event.id),
-                    "landing_url": f"https://padeya.test/events/{event.slug}?ref={code}&n={i}",
-                },
-            )
-            assert resp.status_code == 200, resp.text
-        flags = db_session.query(AmbassadorFraudFlag).all()
-        assert any(f.flag_type == "click_spike" for f in flags)
-        assert hash_tracking_ip("127.0.0.1") is not None
+        with patch(
+            "app.runtime_settings.get_runtime_setting",
+            side_effect=lambda key, *, db=None, settings=None: (
+                3 if key == "ambassador_click_spike_threshold"
+                else 300 if key == "ambassador_click_spike_window_seconds"
+                else get_settings().__dict__.get(key)
+            ),
+        ), patch("app.ambassadors.referral_tracking.DUPLICATE_WINDOW_SECONDS", 0):
+            for i in range(4):
+                resp = client.post(
+                    "/api/v1/ambassadors/track-click",
+                    json={
+                        "ambassador_code": code,
+                        "campaign_id": str(campaign.id),
+                        "event_id": str(event.id),
+                        "landing_url": f"https://padeya.test/events/{event.slug}?ref={code}&n={i}",
+                    },
+                )
+                assert resp.status_code == 200, resp.text
+            flags = db_session.query(AmbassadorFraudFlag).all()
+            assert any(f.flag_type == "click_spike" for f in flags)
+            assert hash_tracking_ip("127.0.0.1") is not None
     finally:
         settings.ambassador_click_spike_threshold = original_threshold
 

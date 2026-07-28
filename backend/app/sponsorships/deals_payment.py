@@ -113,10 +113,19 @@ def finalize_sponsorship_paystack_success(
         return
 
     amount = data.get("amount")
-    if amount is not None:
-        expected_kobo = int(invoice.amount * 100)
-        if int(amount) != expected_kobo:
-            raise HTTPException(status_code=400, detail="Payment amount mismatch")
+    if amount is None:
+        raise HTTPException(status_code=400, detail="Payment amount missing")
+    try:
+        amount_kobo = int(amount)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Payment amount invalid") from exc
+    expected_kobo = int(invoice.amount * 100)
+    if amount_kobo != expected_kobo:
+        raise HTTPException(status_code=400, detail="Payment amount mismatch")
+    currency = data.get("currency")
+    if currency is not None:
+        if str(currency).strip().upper() != str(invoice.currency or "").strip().upper():
+            raise HTTPException(status_code=400, detail="Payment currency mismatch")
 
     provider_ref = str(data.get("id") or reference)
     redacted = redact_paystack_payload(raw_payload)

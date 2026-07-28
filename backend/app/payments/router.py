@@ -33,6 +33,7 @@ from app.payments.schemas import (
 )
 from app.payments.service import (
     archive_order,
+    cancel_buyer_order,
     confirm_checkout_payment,
     create_order,
     get_order_by_id,
@@ -262,6 +263,17 @@ def resend_ticket_emails_endpoint(
     return resend_order_ticket_emails(db, user=user, order_id=order_id)
 
 
+@router.post("/orders/{order_id}/cancel", response_model=OrderPublic)
+def cancel_order_endpoint(
+    order_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    user: CurrentUser,
+) -> OrderPublic:
+    """Cancel an unpaid pending order and release reserved inventory."""
+    order = cancel_buyer_order(db, user=user, order_id=order_id)
+    return OrderPublic.model_validate(serialize_order(db, order))
+
+
 @router.post("/orders/{order_id}/archive", response_model=OrderPublic)
 def archive_buyer_order(
     order_id: UUID,
@@ -362,8 +374,19 @@ async def paystack_webhook(
 @router.get("/admin/orders", response_model=list[OrderPublic])
 def admin_orders(
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[User, Depends(require_permission("payments.view", "admin.full_access"))],
+    user: Annotated[
+        User,
+        Depends(
+            require_permission(
+                "admin.finance.view_fees",
+                "admin.finance.export_event_sales",
+                "refunds.review",
+                "admin.full_access",
+            )
+        ),
+    ],
 ) -> list[OrderPublic]:
+    """Platform-wide order list — not host ``payments.view`` (own-event scope)."""
     _ = user
     return [OrderPublic.model_validate(serialize_order(db, o)) for o in list_all_orders(db)]
 
@@ -371,8 +394,19 @@ def admin_orders(
 @router.get("/admin/payments", response_model=list[PaymentPublic])
 def admin_payments(
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[User, Depends(require_permission("payments.view", "admin.full_access"))],
+    user: Annotated[
+        User,
+        Depends(
+            require_permission(
+                "admin.finance.view_fees",
+                "admin.finance.export_event_sales",
+                "refunds.review",
+                "admin.full_access",
+            )
+        ),
+    ],
 ) -> list[PaymentPublic]:
+    """Platform-wide payment list — not host ``payments.view``."""
     _ = user
     return [PaymentPublic.model_validate(p) for p in list_all_payments(db)]
 
@@ -381,7 +415,17 @@ def admin_payments(
 def admin_order_detail(
     order_id: UUID,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[User, Depends(require_permission("payments.view", "admin.full_access"))],
+    user: Annotated[
+        User,
+        Depends(
+            require_permission(
+                "admin.finance.view_fees",
+                "admin.finance.export_event_sales",
+                "refunds.review",
+                "admin.full_access",
+            )
+        ),
+    ],
 ) -> OrderPublic:
     _ = user
     order = get_order_by_id(db, order_id)

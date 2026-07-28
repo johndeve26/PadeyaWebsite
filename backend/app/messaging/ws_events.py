@@ -47,8 +47,18 @@ def participants(thread: MessageThread) -> list[UUID]:
     return thread_participant_ids(thread)
 
 
-def publish_to_users(user_ids: list[UUID], payload: dict[str, Any]) -> None:
-    """Fan-out after server-side receive permission filter (never trust FE)."""
+def publish_to_users(
+    user_ids: list[UUID],
+    payload: dict[str, Any],
+    *,
+    db: Session | None = None,
+) -> None:
+    """Fan-out after server-side receive permission filter (never trust FE).
+
+    When the caller already holds a Session (REST/accept paths), pass it in.
+    Nested SessionLocal() on StaticPool shares one SQLite connection and can
+    interleave cursors during filter queries (IndexError in row processors).
+    """
     from app.core import database as database_module
     from app.messaging.ws_permissions import (
         PERSONAL_EVENTS,
@@ -66,16 +76,21 @@ def publish_to_users(user_ids: list[UUID], payload: dict[str, Any]) -> None:
 
     targets = list(user_ids)
     if thread_id is not None and event_type not in PERSONAL_EVENTS:
-        db = database_module.SessionLocal()
+        owns_session = False
+        filter_db = db
+        if filter_db is None:
+            filter_db = database_module.SessionLocal()
+            owns_session = True
         try:
             targets = filter_event_recipients(
-                db,
+                filter_db,
                 targets,
                 thread_id=thread_id,
                 event_type=event_type,
             )
         finally:
-            db.close()
+            if owns_session:
+                filter_db.close()
     if not targets:
         return
     messaging_hub.publish(targets, payload)
@@ -113,6 +128,7 @@ def publish_unread_count(db: Session, user_id: UUID) -> None:
             "type": EVT_THREAD_UNREAD,
             "unread_count": n,
         },
+        db=db,
     )
 
 
@@ -122,6 +138,7 @@ def publish_thread_updated(
     viewer_ids: list[UUID] | None = None,
     unread_for: UUID | None = None,
     extra: dict[str, Any] | None = None,
+    db: Session | None = None,
 ) -> None:
     targets = viewer_ids or participants(thread)
     for uid in targets:
@@ -144,7 +161,7 @@ def publish_thread_updated(
         }
         if extra:
             payload.update(extra)
-        publish_to_users([uid], payload)
+        publish_to_users([uid], payload, db=db)
 
 
 def publish_new_message(
@@ -170,6 +187,7 @@ def publish_new_message(
                 "thread_id": str(thread.id),
                 "message": _normalize_message_public(payload_msg),
             },
+            db=db,
         )
 
     for uid in participant_ids:
@@ -177,6 +195,7 @@ def publish_new_message(
             thread,
             viewer_ids=[uid],
             unread_for=uid if uid != sender_id else None,
+            db=db,
         )
 
     for uid in participant_ids:
@@ -199,6 +218,7 @@ def publish_new_message(
                 "message_id": str(message.id),
                 "status": C.MESSAGE_STATUS_DELIVERED,
             },
+            db=db,
         )
 
 
@@ -219,6 +239,7 @@ def publish_message_updated(
                 "thread_id": str(thread.id),
                 "message": _normalize_message_public(payload_msg),
             },
+            db=db,
         )
 
 
@@ -241,6 +262,7 @@ def publish_message_deleted(
                 "message_id": str(message.id),
                 "message": _normalize_message_public(payload_msg),
             },
+            db=db,
         )
 
 
@@ -269,6 +291,7 @@ def _pinned_payload(
                 "message_id": str(message_id),
                 "pinned_messages": pinned_public,
             },
+            db=db,
         )
 
 
@@ -332,6 +355,7 @@ def publish_thread_read(
                 "reader_id": str(reader_id),
                 "read_at": _iso(read_at),
             },
+            db=db,
         )
     # Clear unread on the reader's inbox row in real time.
     publish_thread_updated(
@@ -339,6 +363,7 @@ def publish_thread_read(
         viewer_ids=[reader_id],
         unread_for=None,
         extra={"unread": False},
+        db=db,
     )
     for uid in participant_ids:
         publish_unread_count(db, uid)
@@ -375,6 +400,7 @@ def publish_message_request(
     *,
     event: str,
     notify_user_ids: list[UUID] | None = None,
+    db: Session | None = None,
 ) -> None:
     """Request lifecycle folded into thread.updated (+ request_event)."""
     targets = notify_user_ids or participants(thread)
@@ -382,6 +408,7 @@ def publish_message_request(
         thread,
         viewer_ids=targets,
         extra={"request_event": event},
+        db=db,
     )
 
 
@@ -401,6 +428,7 @@ def publish_connection_accepted(
             "connection_id": str(connection_id),
             "status": "connected",
         },
+        db=db,
     )
     if system_message is not None:
         publish_new_message(
@@ -410,7 +438,7 @@ def publish_connection_accepted(
             sender_id=system_message.sender_user_id,
         )
     else:
-        publish_thread_updated(thread, viewer_ids=user_ids)
+        publish_thread_updated(thread, viewer_ids=user_ids, db=db)
 
 
 def publish_connection_removed(
@@ -433,6 +461,7 @@ def publish_thread_disabled(
     *,
     reason: str,
     user_ids: list[UUID] | None = None,
+    db: Session | None = None,
 ) -> None:
     targets = user_ids or participants(thread)
     publish_to_users(
@@ -446,11 +475,13 @@ def publish_thread_disabled(
             "blocked": thread.status == C.THREAD_STATUS_BLOCKED
             or reason in {"blocked", "removed"},
         },
+        db=db,
     )
     publish_thread_updated(
         thread,
         viewer_ids=targets,
         extra={"disabled_reason": reason},
+        db=db,
     )
 
 

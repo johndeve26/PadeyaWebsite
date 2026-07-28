@@ -296,6 +296,7 @@ class OrderPublic(BaseModel):
     created_at: datetime
     paid_at: datetime | None
     archived_at: datetime | None = None
+    reservation_expires_at: datetime | None = None
     items: list[OrderItemPublic] = []
     payments: list[PaymentPublic] = []
     checkout_answers: list[OrderCheckoutAnswerPublic] = []

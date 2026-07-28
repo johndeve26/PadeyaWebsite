@@ -6,11 +6,13 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
 
+from tests.helpers.auth import register_json
+
 
 def _auth_headers(client: TestClient, email: str, password: str = "securepass1") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "full_name": "Test User"},
+        json=register_json(email=email, password=password, full_name="Test User"),
     )
     login = client.post(
         "/api/v1/auth/login",
@@ -78,11 +80,7 @@ def test_public_api_hides_address_until_payment(client: TestClient, assign_role)
     client.post(f"/api/v1/events/by-id/{event['id']}/submit", headers=host_headers)
     client.post(
         "/api/v1/auth/register",
-        json={
-            "email": "privacy-admin@example.com",
-            "password": "securepass1",
-            "full_name": "Admin",
-        },
+        json=register_json(email="privacy-admin@example.com", full_name="Admin"),
     )
     assign_role("privacy-admin@example.com", "super_admin")
     admin = _auth_headers(client, "privacy-admin@example.com")
@@ -133,11 +131,7 @@ def test_public_api_scrubs_private_address_from_seo_fields(
     client.post(f"/api/v1/events/by-id/{event['id']}/submit", headers=host_headers)
     client.post(
         "/api/v1/auth/register",
-        json={
-            "email": "seo-privacy-admin@example.com",
-            "password": "securepass1",
-            "full_name": "Admin",
-        },
+        json=register_json(email="seo-privacy-admin@example.com", full_name="Admin"),
     )
     assign_role("seo-privacy-admin@example.com", "super_admin")
     admin = {
@@ -183,11 +177,7 @@ def test_area_only_keeps_city_hides_street(client: TestClient, assign_role):
     client.post(f"/api/v1/events/by-id/{created['id']}/submit", headers=host_headers)
     client.post(
         "/api/v1/auth/register",
-        json={
-            "email": "area-admin@example.com",
-            "password": "securepass1",
-            "full_name": "Admin",
-        },
+        json=register_json(email="area-admin@example.com", full_name="Admin"),
     )
     assign_role("area-admin@example.com", "super_admin")
     admin_token = client.post(

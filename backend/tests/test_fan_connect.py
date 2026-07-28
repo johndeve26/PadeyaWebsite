@@ -457,11 +457,15 @@ def test_accept_unlocks_thread_pre_accept_denied(client: TestClient, db_session:
     assert fan_item["thread_type"] == "fan_fan"
     assert fan_item["connect_context"]["badge"] == "Fan Connect"
 
-    notif_api = client.get("/api/v1/messages/notifications", headers=h_b)
-    assert notif_api.status_code == 200
-    kinds = {n["kind"] for n in notif_api.json()["items"]}
-    assert "fan_connect.request" in kinds
-    assert "fan_connect.message" in kinds
+    msg_notif_api = client.get("/api/v1/messages/notifications", headers=h_b)
+    assert msg_notif_api.status_code == 200
+    msg_kinds = {n["kind"] for n in msg_notif_api.json()["items"]}
+    assert "fan_connect.message" in msg_kinds
+
+    account_notif_api = client.get("/api/v1/notifications", headers=h_b)
+    assert account_notif_api.status_code == 200
+    account_kinds = {n["kind"] for n in account_notif_api.json()["items"]}
+    assert "fan_connect.request" in account_kinds
 
 
 def test_block_stops_request_and_messaging(client: TestClient, db_session: Session):

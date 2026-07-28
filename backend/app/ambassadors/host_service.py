@@ -23,6 +23,7 @@ from app.promos.ambassador_domain import (
     AmbassadorParticipant,
     AmbassadorPayout,
 )
+from app.promos.commission import resolve_campaign_commission_input
 from app.promos.constants import (
     DOMAIN_CAMPAIGN_STATUS_ACTIVE,
     DOMAIN_CAMPAIGN_STATUS_ENDED,

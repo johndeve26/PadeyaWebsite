@@ -1472,6 +1472,7 @@ def accept_request(db: Session, user: User, thread_id: UUID) -> MessageThread:
         thread,
         event="accepted",
         notify_user_ids=_thread_participant_user_ids(thread),
+        db=db,
     )
     return thread
 
@@ -1935,6 +1936,7 @@ def create_thread_as_fan(
             thread,
             event="created",
             notify_user_ids=_thread_participant_user_ids(thread),
+            db=db,
         )
     return thread
 
@@ -2041,6 +2043,7 @@ def create_thread_as_host(
             thread,
             event="created",
             notify_user_ids=_thread_participant_user_ids(thread),
+            db=db,
         )
     return thread
 
@@ -2123,6 +2126,7 @@ def send_in_thread(
             thread,
             event="accepted",
             notify_user_ids=_thread_participant_user_ids(thread),
+            db=db,
         )
     return msg
 
@@ -2194,7 +2198,7 @@ def block_user(
     db.commit()
     for t in affected:
         db.refresh(t)
-        ws_events.publish_thread_disabled(t, reason="blocked")
+        ws_events.publish_thread_disabled(t, reason="blocked", db=db)
 
 
 def unblock_user(db: Session, user: User, blocked_user_id: UUID) -> None:
@@ -2266,7 +2270,7 @@ def report_thread(
     db.commit()
     db.refresh(report)
     db.refresh(thread)
-    ws_events.publish_thread_disabled(thread, reason="reported")
+    ws_events.publish_thread_disabled(thread, reason="reported", db=db)
     return report
 
 
@@ -2286,7 +2290,11 @@ def list_reports(
         reporter = db.get(User, r.reporter_user_id)
         reported = db.get(User, r.reported_user_id)
         thread = db.get(MessageThread, r.thread_id)
-        host = db.get(Host, thread.host_id) if thread else None
+        host = (
+            db.get(Host, thread.host_id)
+            if thread is not None and thread.host_id is not None
+            else None
+        )
         preview = None
         if r.message_id:
             msg = db.get(Message, r.message_id)
@@ -2614,7 +2622,7 @@ def hide_message(db: Session, admin: User, message_id: UUID) -> Message:
     db.refresh(msg)
     if thread is not None:
         ws_events.publish_message_deleted(db, thread=thread, message=msg)
-        ws_events.publish_thread_updated(thread)
+        ws_events.publish_thread_updated(thread, db=db)
     return msg
 
 
@@ -2660,7 +2668,7 @@ def restore_message(db: Session, admin: User, message_id: UUID) -> Message:
     db.refresh(msg)
     if thread is not None:
         ws_events.publish_message_updated(db, thread=thread, message=msg)
-        ws_events.publish_thread_updated(thread)
+        ws_events.publish_thread_updated(thread, db=db)
     return msg
 
 

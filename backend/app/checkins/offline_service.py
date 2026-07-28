@@ -11,11 +11,12 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.checkins.permissions import can_scan_event
 from app.checkins.service import (
-    INVALID_STATUSES,
+    _lock_ticket_for_admission,
     _log_checkin,
     _resolve_ticket_from_code,
     _resolve_ticket_from_qr,
     _ticket_info,
+    can_admit_ticket,
 )
 from app.core.audit import write_audit_log
 from app.tickets.advanced_models import OfflineScanBatch, OfflineScanItem
@@ -109,62 +110,74 @@ def sync_offline_scans(
                 ticket=ticket,
                 detail=resolve_message,
             )
-        elif ticket.status in INVALID_STATUSES:
-            sync_status = "invalid"
-            conflict_reason = f"Ticket is {ticket.status}"
-            batch.invalid_count += 1
-            _log_checkin(
-                db,
-                event_id=event_id,
-                user=user,
-                outcome="invalid",
-                method="offline",
-                ticket=ticket,
-                detail=conflict_reason,
-            )
-        elif ticket.status == "checked_in":
-            # Conflict: already checked in online (or earlier sync)
-            sync_status = "conflict"
-            conflict_reason = (
-                f"Ticket already checked in at {ticket.checked_in_at.isoformat() if ticket.checked_in_at else 'unknown'}"
-            )
-            batch.conflict_count += 1
-            entry = _log_checkin(
-                db,
-                event_id=event_id,
-                user=user,
-                outcome="duplicate",
-                method="offline",
-                ticket=ticket,
-                detail=conflict_reason,
-            )
-            check_in_id = entry.id
-        elif ticket.status != "active":
-            sync_status = "invalid"
-            conflict_reason = f"Unexpected status {ticket.status}"
-            batch.invalid_count += 1
         else:
-            now = datetime.now(UTC)
-            ticket.status = "checked_in"
-            ticket.checked_in_at = scanned_at_dt if scanned_at_dt.tzinfo else scanned_at_dt.replace(
-                tzinfo=UTC
-            )
-            entry = _log_checkin(
-                db,
-                event_id=event_id,
-                user=user,
-                outcome="success",
-                method="offline",
-                ticket=ticket,
-                detail="Offline sync check-in",
-            )
-            check_in_id = entry.id
-            sync_status = "accepted"
-            batch.accepted_count += 1
-            from app.checkins.notify import notify_attendee_checked_in
+            locked = _lock_ticket_for_admission(db, ticket.id)
+            if locked is None:
+                sync_status = "invalid"
+                conflict_reason = "Ticket not found"
+                batch.invalid_count += 1
+                ticket = None
+            else:
+                ticket = locked
+                ok, outcome, admit_message = can_admit_ticket(
+                    db, ticket=ticket, event_id=event_id
+                )
+                if not ok:
+                    if outcome == "duplicate":
+                        sync_status = "conflict"
+                        conflict_reason = (
+                            admit_message
+                            or (
+                                f"Ticket already checked in at "
+                                f"{ticket.checked_in_at.isoformat() if ticket.checked_in_at else 'unknown'}"
+                            )
+                        )
+                        batch.conflict_count += 1
+                        entry = _log_checkin(
+                            db,
+                            event_id=event_id,
+                            user=user,
+                            outcome="duplicate",
+                            method="offline",
+                            ticket=ticket,
+                            detail=conflict_reason,
+                        )
+                        check_in_id = entry.id
+                    else:
+                        sync_status = "invalid"
+                        conflict_reason = admit_message or f"Ticket is {ticket.status}"
+                        batch.invalid_count += 1
+                        _log_checkin(
+                            db,
+                            event_id=event_id,
+                            user=user,
+                            outcome="invalid",
+                            method="offline",
+                            ticket=ticket,
+                            detail=conflict_reason,
+                        )
+                else:
+                    ticket.status = "checked_in"
+                    ticket.checked_in_at = (
+                        scanned_at_dt
+                        if scanned_at_dt.tzinfo
+                        else scanned_at_dt.replace(tzinfo=UTC)
+                    )
+                    entry = _log_checkin(
+                        db,
+                        event_id=event_id,
+                        user=user,
+                        outcome="success",
+                        method="offline",
+                        ticket=ticket,
+                        detail="Offline sync check-in",
+                    )
+                    check_in_id = entry.id
+                    sync_status = "accepted"
+                    batch.accepted_count += 1
+                    from app.checkins.notify import notify_attendee_checked_in
 
-            notify_attendee_checked_in(db, ticket=ticket, event_id=event_id)
-            _ = now
+                    notify_attendee_checked_in(db, ticket=ticket, event_id=event_id)
 
         item = OfflineScanItem(
             batch_id=batch.id,

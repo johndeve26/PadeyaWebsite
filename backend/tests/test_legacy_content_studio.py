@@ -107,6 +107,35 @@ def test_host_can_update_own_legacy_page(client: TestClient, db_session: Session
     assert str(host.id) == body["host_id"]
 
 
+def test_host_can_save_legacy_profile_with_roundtripped_contact(
+    client: TestClient, db_session: Session
+) -> None:
+    """Studio edit reloads contact (id/host_id) from GET — PATCH must not 500 on audit."""
+    _make_host(db_session, email="studio-contact@example.com", slug="Padeya")
+    headers = _login(client, "studio-contact@example.com")
+
+    loaded = client.get("/api/v1/host/legacy", headers=headers)
+    assert loaded.status_code == 200, loaded.text
+    contact = loaded.json()["contact"]
+    assert contact is not None
+    assert contact.get("id")
+
+    res = client.patch(
+        "/api/v1/host/legacy",
+        headers=headers,
+        json={
+            "display_name": "Padeya",
+            "username": "Padeya",
+            "service_areas": [],
+            "sponsorship_available": False,
+            "social_links": [],
+            "contact": contact,
+        },
+    )
+    assert res.status_code == 200, res.text
+    assert res.json()["username"] == "padeya"
+
+
 def test_host_cannot_update_another_host_legacy(
     client: TestClient, db_session: Session
 ) -> None:

@@ -30,6 +30,10 @@ from app.users.models import User
 from app.users.service import get_role_by_name, get_user_by_email
 
 INVALID_STATUSES = {"refunded", "cancelled", "expired", "invalid", "transferred"}
+# Event statuses that must not admit attendees at the gate.
+NON_ADMITTING_EVENT_STATUSES = frozenset(
+    {"draft", "pending_review", "rejected", "cancelled", "archived"}
+)
 
 
 def _require_scan_access(db: Session, user: User, event_id: uuid.UUID) -> None:
@@ -226,6 +230,66 @@ def _resolve_ticket_from_code(
     )
 
 
+def _lock_ticket_for_admission(db: Session, ticket_id: uuid.UUID) -> Ticket | None:
+    """Serialize concurrent check-ins / offline sync on the same ticket (CC-002)."""
+    return db.scalar(
+        select(Ticket)
+        .where(Ticket.id == ticket_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+
+
+def _pending_transfer_blocks_admission(db: Session, ticket_id: uuid.UUID) -> bool:
+    from app.tickets.advanced_models import TicketTransfer
+
+    pending = db.scalar(
+        select(TicketTransfer.id).where(
+            TicketTransfer.ticket_id == ticket_id,
+            TicketTransfer.status == "pending",
+        )
+    )
+    return pending is not None
+
+
+def _event_admission_block_reason(db: Session, event_id: uuid.UUID) -> str | None:
+    from app.events.models import Event
+
+    event = db.get(Event, event_id)
+    if event is None:
+        return "Event not found"
+    if event.status in NON_ADMITTING_EVENT_STATUSES:
+        return f"Event is {event.status} and cannot admit attendees"
+    return None
+
+
+def can_admit_ticket(
+    db: Session,
+    *,
+    ticket: Ticket,
+    event_id: uuid.UUID,
+) -> tuple[bool, str, str | None]:
+    """Authoritative eligibility for gate admission.
+
+    Returns (ok, outcome, message). Outcome is success|duplicate|invalid when not ok
+    for duplicate/invalid paths; when ok, outcome is ``active``.
+    """
+    block = _event_admission_block_reason(db, event_id)
+    if block:
+        return False, "invalid", block
+    if ticket.event_id != event_id:
+        return False, "invalid", "Ticket is not valid for this event"
+    if ticket.status in INVALID_STATUSES:
+        return False, "invalid", f"Ticket is {ticket.status} and cannot be checked in"
+    if ticket.status == "checked_in":
+        return False, "duplicate", "Ticket already checked in"
+    if ticket.status != "active":
+        return False, "invalid", f"Ticket status '{ticket.status}' cannot be checked in"
+    if _pending_transfer_blocks_admission(db, ticket.id):
+        return False, "invalid", "Ticket has a pending transfer and cannot be checked in"
+    return True, "active", None
+
+
 def _log_checkin(
     db: Session,
     *,
@@ -277,19 +341,18 @@ def validate_qr(
             "scanner_name": user.full_name,
         }
 
-    if ticket.status in INVALID_STATUSES:
+    ok, outcome, admit_message = can_admit_ticket(
+        db, ticket=ticket, event_id=payload.event_id
+    )
+    if not ok:
         return {
-            "outcome": "invalid",
-            "message": f"Ticket is {ticket.status} and cannot be checked in",
-            "ticket": _ticket_info(ticket),
-            "check_in_id": None,
-            "checked_in_at": ticket.checked_in_at,
-            "scanner_name": user.full_name,
-        }
-    if ticket.status == "checked_in":
-        return {
-            "outcome": "duplicate",
-            "message": "Ticket already checked in",
+            "outcome": outcome,
+            "message": admit_message
+            or (
+                "Ticket already checked in"
+                if outcome == "duplicate"
+                else "Ticket cannot be checked in"
+            ),
             "ticket": _ticket_info(ticket),
             "check_in_id": None,
             "checked_in_at": ticket.checked_in_at,
@@ -363,93 +426,52 @@ def check_in_ticket(
             "scanner_name": user.full_name,
         }
 
-    if ticket.status in INVALID_STATUSES:
+    # CC-002: lock ticket row before status transition so concurrent scans serialize.
+    locked = _lock_ticket_for_admission(db, ticket.id)
+    if locked is None:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    ticket = locked
+
+    ok, outcome, admit_message = can_admit_ticket(
+        db, ticket=ticket, event_id=payload.event_id
+    )
+    if not ok:
+        detail = admit_message or (
+            "Duplicate scan"
+            if outcome == "duplicate"
+            else "Ticket cannot be checked in"
+        )
         entry = _log_checkin(
             db,
             event_id=payload.event_id,
             user=user,
-            outcome="invalid",
+            outcome=outcome,
             method=method,
             ticket=ticket,
             session=session,
-            detail=f"Ticket status is {ticket.status}",
+            detail=detail,
         )
         _audit_ticket_scan(
             db,
             user=user,
             event_id=payload.event_id,
-            result="invalid",
+            result=outcome,
             ticket_id=ticket.id,
-            denial_reason=f"Ticket status is {ticket.status}",
+            denial_reason=detail,
             metadata={"method": method},
         )
         db.commit()
+        message = (
+            "Duplicate scan — this ticket was already checked in"
+            if outcome == "duplicate"
+            else (admit_message or "Ticket cannot be checked in")
+        )
         return {
-            "outcome": "invalid",
-            "message": f"Ticket is {ticket.status} and cannot be checked in",
+            "outcome": outcome,
+            "message": message,
             "ticket": _ticket_info(ticket),
             "check_in_id": entry.id,
             "checked_in_at": ticket.checked_in_at,
-            "scanner_name": user.full_name,
-        }
-
-    if ticket.status == "checked_in":
-        entry = _log_checkin(
-            db,
-            event_id=payload.event_id,
-            user=user,
-            outcome="duplicate",
-            method=method,
-            ticket=ticket,
-            session=session,
-            detail="Duplicate scan",
-        )
-        _audit_ticket_scan(
-            db,
-            user=user,
-            event_id=payload.event_id,
-            result="duplicate",
-            ticket_id=ticket.id,
-            denial_reason="Duplicate scan",
-            metadata={"method": method},
-        )
-        db.commit()
-        return {
-            "outcome": "duplicate",
-            "message": "Duplicate scan — this ticket was already checked in",
-            "ticket": _ticket_info(ticket),
-            "check_in_id": entry.id,
-            "checked_in_at": ticket.checked_in_at,
-            "scanner_name": user.full_name,
-        }
-
-    if ticket.status != "active":
-        entry = _log_checkin(
-            db,
-            event_id=payload.event_id,
-            user=user,
-            outcome="invalid",
-            method=method,
-            ticket=ticket,
-            session=session,
-            detail=f"Unexpected status {ticket.status}",
-        )
-        _audit_ticket_scan(
-            db,
-            user=user,
-            event_id=payload.event_id,
-            result="invalid",
-            ticket_id=ticket.id,
-            denial_reason=f"Unexpected status {ticket.status}",
-            metadata={"method": method},
-        )
-        db.commit()
-        return {
-            "outcome": "invalid",
-            "message": f"Ticket status '{ticket.status}' cannot be checked in",
-            "ticket": _ticket_info(ticket),
-            "check_in_id": entry.id,
-            "checked_in_at": None,
             "scanner_name": user.full_name,
         }
 

@@ -14,6 +14,21 @@ from sqlalchemy.types import JSON, Uuid
 from app.core.database import Base
 
 
+def _json_safe_audit_value(value: Any) -> Any:
+    """Coerce audit detail payloads into JSON/JSONB-safe primitives."""
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, uuid.UUID):
+        return str(value)
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {str(k): _json_safe_audit_value(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe_audit_value(v) for v in value]
+    return str(value)
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
@@ -47,7 +62,7 @@ def write_audit_log(
 ) -> AuditLog:
     # During audited impersonation, attribute actions to the real admin and
     # retain the effective (impersonated) user in details — never drop trails.
-    merged_details = dict(details) if details else {}
+    merged_details = _json_safe_audit_value(dict(details)) if details else {}
     resolved_actor = actor_user_id
     try:
         from app.auth.impersonation_context import get_impersonation_context

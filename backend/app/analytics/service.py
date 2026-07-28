@@ -563,6 +563,7 @@ def export_host_event_analytics_csv(
     event_id: UUID,
     **filter_kwargs,
 ) -> str:
+    _require_host_event(db, user=user, event_id=event_id)
     if not _can_export(user, db):
         raise HTTPException(status_code=403, detail="Export permission required")
     overview = get_host_event_overview(db, user=user, event_id=event_id, **filter_kwargs)
