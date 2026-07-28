@@ -9,7 +9,7 @@ metrics (see ``order_excluded_from_public_metrics``).
 Capability packs (scopes) further restrict what is allowed:
 
 - ``view`` — GET / navigation only (plus exit)
-- ``host_events`` — host studio mutations (events / media / ticket tiers)
+- ``host_events``  — host studio mutations (events / media / ticket tiers / legacy)
 - ``credentials`` — password / email / phone recovery
 
 Exact 403 copy: ``IMPERSONATION_SENSITIVE_ACTION_DETAIL``.
@@ -57,11 +57,13 @@ _CREDENTIALS = re.compile(
     re.IGNORECASE,
 )
 
-# Host event studio mutations — allowed only with ``host_events`` scope.
+# Host studio mutations — allowed only with ``host_events`` scope.
 _HOST_EVENTS = re.compile(
     r"(?:"
     r"/events(?:/|$)"
     r"|/host/events(?:/|$)"
+    r"|/host/legacy(?:/|$)"
+    r"|/legacy/me(?:/|$)"
     r")",
     re.IGNORECASE,
 )

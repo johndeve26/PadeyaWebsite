@@ -6,7 +6,7 @@ checkboxes. Money / 2FA / admin-panel denylist stays global regardless of pack.
 Scopes
 ------
 ``view``         Read dashboards, tickets, orders, inbox (no mutations).
-``host_events``  Host event studio mutations (edit / media / tickets / submit).
+``host_events``  Host event + Legacy studio mutations (edit / media / tickets / profile).
 ``credentials``  Password / email / phone recovery (super_admin via full_access).
 
 Pack labels (for audit / UI)

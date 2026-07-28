@@ -136,6 +136,47 @@ def test_host_can_save_legacy_profile_with_roundtripped_contact(
     assert res.json()["username"] == "padeya"
 
 
+def test_impersonation_with_host_events_can_patch_legacy_profile(
+    client: TestClient,
+    db_session: Session,
+    assign_role,
+) -> None:
+    """Admins impersonating with host_events scope can save Legacy studio."""
+    from tests.helpers.auth import register_json
+
+    _make_host(db_session, email="legacy-imp-host@example.com", slug="legacy-imp-host")
+    host_headers = _login(client, "legacy-imp-host@example.com")
+    host_id = client.get("/api/v1/auth/me", headers=host_headers).json()["id"]
+
+    admin_reg = client.post(
+        "/api/v1/auth/register",
+        json=register_json(
+            email="legacy-imp-admin@example.com",
+            full_name="Legacy Imp Admin",
+        ),
+    )
+    assert admin_reg.status_code == 201
+    assign_role("legacy-imp-admin@example.com", "super_admin")
+    admin_token = admin_reg.json()["access_token"]
+
+    started = client.post(
+        f"/api/v1/admin/users/{host_id}/impersonation/start",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"reason": "legacy studio support", "duration_minutes": 30},
+    )
+    assert started.status_code == 200, started.text
+    imp_token = started.json()["access_token"]
+
+    res = client.patch(
+        "/api/v1/host/legacy",
+        headers={"Authorization": f"Bearer {imp_token}"},
+        json={"display_name": "Impersonated Save", "tagline": "via admin"},
+    )
+    assert res.status_code == 200, res.text
+    assert res.json()["display_name"] == "Impersonated Save"
+    assert res.json()["tagline"] == "via admin"
+
+
 def test_host_cannot_update_another_host_legacy(
     client: TestClient, db_session: Session
 ) -> None:

@@ -984,6 +984,22 @@ def test_should_block_impersonation_action_matrix():
     assert should_block_impersonation_action(
         "DELETE", "/api/v1/events/by-id/abc/ticket-types/def", view
     )
+    # Legacy studio — host_events pack
+    assert should_block_impersonation_action(
+        "PATCH", "/api/v1/host/legacy", view
+    )
+    assert not should_block_impersonation_action(
+        "PATCH", "/api/v1/host/legacy", host
+    )
+    assert not should_block_impersonation_action(
+        "PATCH", "/api/v1/legacy/me", host
+    )
+    assert should_block_impersonation_action(
+        "POST", "/api/v1/host/legacy/content-blocks", view
+    )
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/host/legacy/content-blocks/reorder", host
+    )
     # Blocked: 2FA / account delete
     assert should_block_impersonation_action("POST", "/api/v1/users/me/2fa/enable")
     assert should_block_impersonation_action("POST", "/api/v1/users/me/2fa/disable")
