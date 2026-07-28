@@ -2,11 +2,20 @@
 
 from __future__ import annotations
 
+import io
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+from PIL import Image
+
+
+def _tiny_png() -> bytes:
+    img = Image.new("RGB", (8, 8), (120, 80, 40))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 
 def _auth_headers(client: TestClient, email: str) -> dict[str, str]:
@@ -40,11 +49,7 @@ def test_host_can_upload_image_while_creating(client: TestClient):
     headers = _auth_headers(client, "upload-host@example.com")
     _onboard(client, headers)
 
-    png = (
-        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
-        b"\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00"
-        b"\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82"
-    )
+    png = _tiny_png()
     response = client.post(
         "/api/v1/events/media/upload",
         headers=headers,
@@ -97,11 +102,7 @@ def test_event_media_upload_sets_banner(client: TestClient):
         },
     ).json()
 
-    png = (
-        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
-        b"\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00"
-        b"\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82"
-    )
+    png = _tiny_png()
     response = client.post(
         f"/api/v1/events/by-id/{event['id']}/media/upload",
         headers=headers,
@@ -124,6 +125,37 @@ def test_rejects_non_image_upload(client: TestClient):
         data={"media_type": "banner"},
     )
     assert response.status_code == 400
+
+
+def test_rejects_svg_event_upload_without_storage_or_db_rows(client: TestClient):
+    headers = _auth_headers(client, "upload-svg@example.com")
+    _onboard(client, headers)
+    svg = b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
+    response = client.post(
+        "/api/v1/events/media/upload",
+        headers=headers,
+        files={"file": ("banner.svg", BytesIO(svg), "image/svg+xml")},
+        data={"media_type": "banner"},
+    )
+    assert response.status_code == 400
+    assert "svg" in response.json()["detail"].lower() or "active" in response.json()["detail"].lower()
+
+
+def test_local_media_served_with_nosniff(client: TestClient):
+    headers = _auth_headers(client, "upload-nosniff@example.com")
+    _onboard(client, headers)
+    png = _tiny_png()
+    response = client.post(
+        "/api/v1/events/media/upload",
+        headers=headers,
+        files={"file": ("banner.png", BytesIO(png), "image/png")},
+        data={"media_type": "banner"},
+    )
+    assert response.status_code == 200, response.text
+    media_path = response.json()["url"].removeprefix("http://testserver")
+    served = client.get(media_path)
+    assert served.status_code == 200
+    assert served.headers.get("x-content-type-options") == "nosniff"
 
 
 def teardown_module(_module):  # type: ignore[no-untyped-def]

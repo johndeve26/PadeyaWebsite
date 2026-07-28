@@ -826,10 +826,10 @@ def assemble_legacy_payload(
     """Assemble public or host-studio Legacy payload with content blocks."""
     from app.legacy.service import build_legacy_page
 
-    # Reuse existing aggregation for events/reviews/memories/stats.
-    # Public GETs must not rescore (expensive metrics + commit) on every view.
+    # Never rescore on page assembly — public views and studio edits must stay fast.
+    # Tier progress uses get_my_tier_progress / admin recalculate for fresh scores.
     base = build_legacy_page(
-        db, host=host, rescore=not public_only
+        db, host=host, rescore=False
     )
     page = ensure_legacy_page(db, host.id)
     contact = ensure_contact_settings(db, host.id)

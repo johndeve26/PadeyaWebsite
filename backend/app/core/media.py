@@ -15,17 +15,15 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from app.core.config import get_settings
+from app.core.public_image_validation import (
+    PUBLIC_RASTER_IMAGE_MIME_TYPES,
+    PublicImageValidationError,
+    validate_public_raster_upload,
+)
 
 logger = logging.getLogger(__name__)
 
-ALLOWED_IMAGE_CONTENT_TYPES = {
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/webp",
-    "image/gif",
-    "image/svg+xml",
-}
+ALLOWED_IMAGE_CONTENT_TYPES = set(PUBLIC_RASTER_IMAGE_MIME_TYPES)
 
 CONTENT_TYPE_EXTENSIONS = {
     "image/jpeg": ".jpg",
@@ -33,7 +31,6 @@ CONTENT_TYPE_EXTENSIONS = {
     "image/png": ".png",
     "image/webp": ".webp",
     "image/gif": ".gif",
-    "image/svg+xml": ".svg",
 }
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
@@ -195,27 +192,21 @@ class LocalMediaStorage(MediaStorage):
         content_type: str,
         folder: str = "events",
     ) -> StoredMedia:
-        ctype = (content_type or "").split(";")[0].strip().lower()
-        if ctype not in ALLOWED_IMAGE_CONTENT_TYPES:
-            raise ValueError(
-                "Unsupported image type. Use JPEG, PNG, WebP, GIF, or SVG."
-            )
-        if not data:
-            raise ValueError("Empty file")
         if len(data) > MAX_UPLOAD_BYTES:
             raise ValueError("Image must be 5MB or smaller")
-
-        ext = CONTENT_TYPE_EXTENSIONS.get(ctype, "")
-        if not ext:
-            match = re.search(r"\.([a-zA-Z0-9]{2,5})$", filename or "")
-            ext = f".{match.group(1).lower()}" if match else ".bin"
+        try:
+            validated = validate_public_raster_upload(
+                data, declared_content_type=content_type
+            )
+        except PublicImageValidationError as exc:
+            raise ValueError(str(exc)) from exc
 
         return self._write_bytes(
             data=data,
             folder=folder,
-            extension=ext,
+            extension=validated.extension,
             filename=filename,
-            content_type=ctype,
+            content_type=validated.content_type,
         )
 
     def store_validated_bytes(

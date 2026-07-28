@@ -19,6 +19,7 @@ from app.core.media import MediaStorageError
 logger = logging.getLogger(__name__)
 
 IMMUTABLE_PUBLIC_CACHE_CONTROL = "public, max-age=31536000, immutable"
+PUBLIC_MEDIA_OBJECT_METADATA = {"x-content-type-options": "nosniff"}
 PRIVATE_CACHE_CONTROL = "private, no-store"
 
 
@@ -144,6 +145,7 @@ class R2BucketClient:
         data: bytes,
         content_type: str,
         cache_control: str,
+        metadata: dict[str, str] | None = None,
     ) -> None:
         try:
             self._client.put_object(
@@ -152,6 +154,7 @@ class R2BucketClient:
                 Body=data,
                 ContentType=content_type,
                 CacheControl=cache_control,
+                Metadata=metadata or {},
             )
             logger.info(
                 "media_storage provider=r2 kind=%s bucket=%s operation=upload "

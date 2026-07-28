@@ -69,7 +69,7 @@ function MediaUploadThumbnail({
 function ImageUploadField({
   label,
   hint,
-  accept = "image/jpeg,image/png,image/webp,image/gif,image/svg+xml",
+  accept = "image/jpeg,image/png,image/webp,image/gif",
   uploading,
   previewUrl,
   previewAlt,

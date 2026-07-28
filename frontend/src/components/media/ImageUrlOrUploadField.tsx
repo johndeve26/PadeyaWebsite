@@ -7,7 +7,7 @@ import { ApiError } from "@/lib/api";
 import { splitImageUrlLines, uploadFormImage } from "@/lib/media-upload";
 
 const DEFAULT_ACCEPT =
-  "image/jpeg,image/png,image/webp,image/gif,image/svg+xml";
+  "image/jpeg,image/png,image/webp,image/gif";
 
 function ImagePreview({
   url,

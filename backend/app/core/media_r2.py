@@ -7,15 +7,18 @@ import uuid
 
 from app.core.config import Settings, get_settings
 from app.core.media import (
-    ALLOWED_IMAGE_CONTENT_TYPES,
-    CONTENT_TYPE_EXTENSIONS,
     MAX_UPLOAD_BYTES,
     MediaStorage,
     StoredMedia,
     normalize_public_media_url,
 )
+from app.core.public_image_validation import (
+    PublicImageValidationError,
+    validate_public_raster_upload,
+)
 from app.core.r2_client import (
     IMMUTABLE_PUBLIC_CACHE_CONTROL,
+    PUBLIC_MEDIA_OBJECT_METADATA,
     R2BucketClient,
     make_object_key,
     public_r2_config,
@@ -79,27 +82,21 @@ class R2MediaStorage(MediaStorage):
         content_type: str,
         folder: str = "events",
     ) -> StoredMedia:
-        ctype = (content_type or "").split(";")[0].strip().lower()
-        if ctype not in ALLOWED_IMAGE_CONTENT_TYPES:
-            raise ValueError(
-                "Unsupported image type. Use JPEG, PNG, WebP, GIF, or SVG."
-            )
-        if not data:
-            raise ValueError("Empty file")
         if len(data) > MAX_UPLOAD_BYTES:
             raise ValueError("Image must be 5MB or smaller")
-
-        ext = CONTENT_TYPE_EXTENSIONS.get(ctype, "")
-        if not ext:
-            match = re.search(r"\.([a-zA-Z0-9]{2,5})$", filename or "")
-            ext = f".{match.group(1).lower()}" if match else ".bin"
+        try:
+            validated = validate_public_raster_upload(
+                data, declared_content_type=content_type
+            )
+        except PublicImageValidationError as exc:
+            raise ValueError(str(exc)) from exc
 
         return self.store_validated_bytes(
             data=data,
             filename=filename,
-            content_type=ctype,
+            content_type=validated.content_type,
             folder=folder,
-            extension=ext,
+            extension=validated.extension,
             max_bytes=MAX_UPLOAD_BYTES,
         )
 
@@ -120,12 +117,15 @@ class R2MediaStorage(MediaStorage):
             raise ValueError("File exceeds the allowed size.")
         _ = filename  # never used as object key
         ctype = (content_type or "application/octet-stream").split(";")[0].strip()
+        if not ctype.startswith("image/"):
+            raise ValueError("Public media must use an image Content-Type.")
         key = make_object_key(folder=folder, extension=extension)
         self._r2.put_object(
             key=key,
             data=data,
-            content_type=ctype or "application/octet-stream",
+            content_type=ctype,
             cache_control=cache_control or IMMUTABLE_PUBLIC_CACHE_CONTROL,
+            metadata=PUBLIC_MEDIA_OBJECT_METADATA,
         )
         return StoredMedia(url=self._public_url(key), key=key)
 

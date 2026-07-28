@@ -12,6 +12,7 @@ import { LegacyStudioShell } from "@/components/legacy/studio/LegacyStudioShell"
 import { ImageUrlOrUploadField } from "@/components/media/ImageUrlOrUploadField";
 import { Alert, Button, Card, Input, SectionHeader, Textarea } from "@/components/ui";
 import { ApiError } from "@/lib/api";
+import { errorDetail } from "@/lib/api-timeouts";
 import { fetchMyLegacyPage, updateMyLegacyProfile } from "@/lib/legacy-api";
 import type { LegacyContactSettings } from "@/lib/types/legacy";
 
@@ -86,7 +87,7 @@ export default function HostLegacyEditPage() {
         if (page.contact) setContact(page.contact);
       } catch (err) {
         if (active) {
-          setError(err instanceof ApiError ? err.detail : "Failed to load profile");
+          setError(errorDetail(err, "Failed to load profile"));
         }
       }
     })();
@@ -126,12 +127,18 @@ export default function HostLegacyEditPage() {
         secondary_cta_type: secondaryCtaType || null,
         secondary_cta_value: secondaryCtaValue || null,
         social_links: socialLinks.filter((l) => l.platform && l.url),
-        contact,
+        contact: {
+          preference: contact.preference,
+          public_email: contact.public_email ?? null,
+          show_contact_form: contact.show_contact_form,
+          preferred_channel: contact.preferred_channel ?? null,
+          note: contact.note ?? null,
+        },
       });
       setUsername(updated.username);
       setSaved(true);
     } catch (err) {
-      setError(err instanceof ApiError ? err.detail : "Save failed");
+      setError(errorDetail(err, "Save failed"));
     } finally {
       setBusy(false);
     }

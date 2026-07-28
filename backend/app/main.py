@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.responses import Response
 
 from sqlalchemy import text
 
@@ -128,6 +129,15 @@ from app.vault.router import router as vault_router
 settings = get_settings()
 MEDIA_ROOT = Path(settings.media_root)
 MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+
+
+class SafeMediaStaticFiles(StaticFiles):
+    """Serve local public uploads with nosniff to reduce content-sniffing risk."""
+
+    async def get_response(self, path: str, scope) -> Response:  # type: ignore[override]
+        response = await super().get_response(path, scope)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
 
 
 def _run_orphan_attachment_cleanup() -> None:
@@ -375,7 +385,7 @@ app.include_router(finance_router, prefix=api)
 app.include_router(finance_fees_router, prefix=api)
 app.include_router(pricing_router, prefix=api)
 
-app.mount("/media", StaticFiles(directory=str(MEDIA_ROOT)), name="media")
+app.mount("/media", SafeMediaStaticFiles(directory=str(MEDIA_ROOT)), name="media")
 
 
 @app.get("/health")
