@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import exists, func, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.events.models import Event
@@ -35,20 +35,10 @@ def _listed_event_clause():
 
 
 def list_discover_hosts(db: Session, *, limit: int = 60) -> list[dict]:
-    """Active hosts with ≥1 listed public event — for /hosts marketplace cards."""
-    has_listed_event = exists(
-        select(1).where(
-            Event.host_id == Host.id,
-            *_listed_event_clause(),
-        )
-    )
-
+    """All active hosts for /hosts marketplace cards (including zero upcoming events)."""
     hosts = db.scalars(
         select(Host)
-        .where(
-            Host.status == "active",
-            has_listed_event,
-        )
+        .where(Host.status == "active")
         .options(selectinload(Host.profile), selectinload(Host.verifications))
         .order_by(Host.display_name.asc())
     ).all()

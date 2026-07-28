@@ -158,7 +158,7 @@ Priority: **same host → same city → same category → similar vibe** (`relat
 | Route / component | `frontend/src/app/hosts/page.tsx` → `HostsMarketplace` |
 | API | `GET /api/v1/legacy/discover/hosts` (cached ~180s) |
 | Backend | `legacy/discover.list_discover_hosts` |
-| Who appears | `Host.status == active` + ≥1 published listed/approval_required event |
+| Who appears | `Host.status == active` (all registered hosts, including zero upcoming events) |
 | Server rank | Verified first → upcoming event count → verified check-ins → display name; cap 60–120 |
 | Featured strip (FE) | Top 3 **verified** by `upcoming_events_count + tickets_sold_count` |
 | Directory | Excludes featured IDs when unfiltered; category/location = **client** chip filters |
@@ -451,7 +451,7 @@ Mean rating over visible/published reviews (owner excluded where enforced) — e
 | Homepage nearby | `/`, `GET /events/nearby` | Distance → start → featured → proxies | Geo, coords, ticket proxy | No | Yes | Tie-break only | Discovery-safe coords | Saved home city without GPS | Default city from profile preference | P2 |
 | Event marketplace | `/events` | BE publish filter + FE sort; signed-in **Recommended** lane | Featured, start, price, filters + rules rec API | **Yes** (rail/sort) | Near-me optional | Featured + Picks elsewhere | Hides unlisted | — | Tune runtime `event-recommendations` | **Done** |
 | Event related | Event detail | Signed-in: rules rec rail; logged-out: host → city → category | Same list pool + rec API | **Yes** (signed-in) | City match | No | Safe reasons | — | Optional server `GET /events/{slug}/related` | P2 |
-| Public hosts | `/hosts`, `/legacy/discover/hosts` | Verified → upcoming → check-ins → name | Legacy score fields | No | Client city chips | No | Active + listed events only | Search relevance | Signed-in re-rank optional strip | P2 |
+| Public hosts | `/hosts`, `/legacy/discover/hosts` | Verified → upcoming → check-ins → name | Legacy score fields | No | Client city chips | No | Active hosts (incl. zero upcoming) | Search relevance | Signed-in re-rank optional strip | P2 |
 | Host recommendations | `/dashboard`, `/hosts`, `GET /hosts/recommendations` | Weighted rules 0–100 | Tickets, follows, connect graph, geo prefs, dismiss, impressions | **Yes** | Yes | No | Safe reasons, no spend | Impression + feedback wired | Runtime `host-recommendations` + admin debug | **Done** |
 | Fan Connect | `/connect`, `GET /fan-connect/suggestions` | Score + mixer | Events, hosts, geo, FoF, feedback | **Yes** | Optional one-shot | No | Policies, blocks, safe reasons | Larger candidate pool | Candidate sampling strategy | P1 |
 | Fan directory | `/fans`, `GET /fans` | Sort keys on passport stats | Badges, events, reviews | No | City filter | Opt-in directory | Hidden passports excluded | Interest similarity | Optional “similar fans” (Connect overlap) | P3 |

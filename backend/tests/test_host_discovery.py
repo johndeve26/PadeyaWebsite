@@ -94,7 +94,7 @@ def test_discover_hosts_returns_safe_public_fields(
     assert "Hidden Street" not in blob
 
 
-def test_discover_hosts_excludes_hosts_without_listed_events(
+def test_discover_hosts_includes_hosts_without_listed_events(
     client: TestClient, db_session: Session
 ) -> None:
     host_user = User(
@@ -128,5 +128,7 @@ def test_discover_hosts_excludes_hosts_without_listed_events(
 
     res = client.get("/api/v1/legacy/discover/hosts")
     assert res.status_code == 200
-    usernames = {row["username"] for row in res.json()}
-    assert "no-event-host" not in usernames
+    match = next((r for r in res.json() if r["username"] == "no-event-host"), None)
+    assert match is not None
+    assert match["upcoming_events_count"] == 0
+    assert match["next_upcoming_event"] is None

@@ -18,7 +18,7 @@ export function MemoriesHubClient({ albums }: { albums: MemoryAlbumCard[] }) {
     <Container className="py-10 sm:py-14">
       <SectionHeader
         eyebrow="Memories"
-        title="Relive the nights that brought people together."
+        title="Relive the moments that brought people together."
         description="Event albums shared by hosts and verified attendees, after the night ends."
       />
 
