@@ -23,28 +23,42 @@ import { useUnsavedChanges } from "@/lib/hooks/useUnsavedChanges";
 export default function DashboardSettingsPage() {
   const { user, refreshUser } = useAuth();
   const toast = useToast();
-  const serverName = user?.full_name ?? "";
-  const [draftName, setDraftName] = useState<string | null>(null);
-  const fullName = draftName ?? serverName;
+  const serverDisplayName = user?.full_name ?? "";
+  const serverUsername = user?.username ?? "";
+  const [draftDisplayName, setDraftDisplayName] = useState<string | null>(null);
+  const [draftUsername, setDraftUsername] = useState<string | null>(null);
+  const displayName = draftDisplayName ?? serverDisplayName;
+  const username = draftUsername ?? serverUsername;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const dirty = draftName !== null && draftName.trim() !== serverName.trim();
+  const dirty =
+    (draftDisplayName !== null &&
+      draftDisplayName.trim() !== serverDisplayName.trim()) ||
+    (draftUsername !== null && draftUsername.trim() !== serverUsername.trim());
   useUnsavedChanges(dirty);
 
   const email = user?.email ?? "—";
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!fullName.trim()) {
-      setError("Full name is required.");
+    if (!displayName.trim()) {
+      setError("Display name is required.");
+      return;
+    }
+    if (!username.trim()) {
+      setError("Username is required.");
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      await updateMyProfile({ full_name: fullName.trim() });
-      setDraftName(null);
+      await updateMyProfile({
+        display_name: displayName.trim(),
+        username: username.trim().toLowerCase(),
+      });
+      setDraftDisplayName(null);
+      setDraftUsername(null);
       await refreshUser();
       toast.push({ tone: "success", title: "Profile updated" });
     } catch (err) {
@@ -59,7 +73,7 @@ export default function DashboardSettingsPage() {
       tone="soft"
       eyebrow="Account"
       title="Profile & security"
-      description="Your display name, sign-in email, password, appearance, and notifications."
+      description="Your display name, username, sign-in email, password, appearance, and notifications."
     >
       {error ? (
         <Alert tone="danger" title="Could not save">
@@ -84,12 +98,24 @@ export default function DashboardSettingsPage() {
           />
           <form onSubmit={(e) => void onSave(e)} className="space-y-4">
             <Input
-              label="Full name"
-              value={fullName}
-              onChange={(e) => setDraftName(e.target.value)}
+              label="Display name"
+              value={displayName}
+              onChange={(e) => setDraftDisplayName(e.target.value)}
               required
             />
-            <Button type="submit" disabled={busy || !dirty || !fullName.trim()}>
+            <Input
+              label="Username"
+              value={username}
+              onChange={(e) =>
+                setDraftUsername(e.target.value.toLowerCase().replace(/^@/, ""))
+              }
+              hint="Same on your Fan Card (/f/username) and Host Legacy (/@username). 3–32 characters: lowercase letters, numbers, underscore."
+              required
+            />
+            <Button
+              type="submit"
+              disabled={busy || !dirty || !displayName.trim() || !username.trim()}
+            >
               {busy ? "Saving…" : "Save profile"}
             </Button>
           </form>

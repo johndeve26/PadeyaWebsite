@@ -121,24 +121,9 @@ def update_passport_settings(db: Session, user: User, payload) -> FanPassport:
     previous_username = passport.username
     data = payload.model_dump(exclude_unset=True)
     if "username" in data and data["username"] is not None:
-        username = normalize_username(data["username"])
-        if not is_valid_passport_username(username):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username must be 3–32 characters: lowercase letters, numbers, underscore.",
-            )
-        clash = db.scalar(
-            select(FanPassport).where(
-                FanPassport.username == username,
-                FanPassport.user_id != user.id,
-            )
-        )
-        if clash:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="That Fan Passport username is already taken.",
-            )
-        passport.username = username
+        from app.users.unified_profile import apply_unified_username
+
+        apply_unified_username(db, user, data["username"])
     for field in (
         "display_name",
         "avatar_url",

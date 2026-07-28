@@ -33,6 +33,7 @@ class UserPublic(BaseModel):
     # Plain str: reserved TLDs (e.g. .test demo accounts) are rejected by EmailStr.
     email: str
     full_name: str
+    username: str | None = None
     is_active: bool
     is_verified: bool
     ambassadors_blocked: bool = False

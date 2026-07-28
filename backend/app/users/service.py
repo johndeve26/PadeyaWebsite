@@ -100,15 +100,19 @@ def serialize_user(user: User, db: Session | None = None) -> dict:
     # End-user: active keys only — never reason / internal_note.
     restriction_keys: list[str] = []
     session = db or object_session(user)
+    username: str | None = None
     if session is not None:
         from app.users.restrictions import active_restriction_keys
+        from app.users.unified_profile import resolve_user_username
 
         restriction_keys = active_restriction_keys(session, user.id)
+        username = resolve_user_username(session, user)
 
     data = {
         "id": user.id,
         "email": user.email,
         "full_name": user.full_name,
+        "username": username,
         "is_active": user.is_active,
         "is_verified": user.is_verified,
         "ambassadors_blocked": bool(getattr(user, "ambassadors_blocked", False)),

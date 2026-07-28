@@ -41,6 +41,7 @@ export type User = {
   id: string;
   email: string;
   full_name: string;
+  username?: string | null;
   is_active: boolean;
   is_verified: boolean;
   roles: string[];

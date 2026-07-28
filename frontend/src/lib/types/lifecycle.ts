@@ -98,6 +98,7 @@ export type UserPublic = {
   /** Email address or Pàdéyá username (with or without @). */
   email: string;
   full_name: string;
+  username?: string | null;
   is_active: boolean;
   is_verified: boolean;
   ambassadors_blocked?: boolean;

@@ -603,14 +603,10 @@ def update_legacy_studio(
         page = ensure_legacy_page(db, host.id)
 
     if "username" in payload and payload["username"]:
-        new_slug = slugify(str(payload["username"]))
-        if new_slug != host.slug:
-            taken = db.scalar(
-                select(Host.id).where(Host.slug == new_slug, Host.id != host.id)
-            )
-            if taken:
-                raise HTTPException(status_code=409, detail="Username already taken")
-            host.slug = new_slug
+        from app.passport.privacy import normalize_username
+        from app.users.unified_profile import apply_unified_username
+
+        apply_unified_username(db, user, normalize_username(str(payload["username"])))
 
     page_keys = (
         "tagline",

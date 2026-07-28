@@ -173,6 +173,8 @@ export async function fetchAuditLogs(params?: {
 
 export async function updateMyProfile(body: {
   full_name?: string;
+  display_name?: string;
+  username?: string;
 }): Promise<UserPublic> {
   return apiRequest<UserPublic>("/users/me", { method: "PATCH", body });
 }

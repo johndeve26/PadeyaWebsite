@@ -50,6 +50,8 @@ _FORCE_PASSWORD_RESET = require_permission("admin.users.force_password_reset")
 
 class UserProfileUpdate(BaseModel):
     full_name: str | None = Field(default=None, min_length=2, max_length=200)
+    display_name: str | None = Field(default=None, min_length=2, max_length=200)
+    username: str | None = Field(default=None, min_length=3, max_length=32)
 
 
 @router.get("/health")
@@ -69,7 +71,11 @@ def patch_me(
     user: CurrentUser,
 ) -> UserPublic:
     updated = lifecycle_service.update_my_profile(
-        db, user=user, full_name=payload.full_name
+        db,
+        user=user,
+        full_name=payload.full_name,
+        display_name=payload.display_name,
+        username=payload.username,
     )
     return UserPublic.model_validate(build_user_public(updated))
 

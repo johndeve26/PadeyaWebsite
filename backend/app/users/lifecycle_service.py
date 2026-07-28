@@ -19,20 +19,32 @@ from app.users.service import get_user_by_id
 
 
 def update_my_profile(
-    db: Session, *, user: User, full_name: str | None = None
+    db: Session,
+    *,
+    user: User,
+    full_name: str | None = None,
+    display_name: str | None = None,
+    username: str | None = None,
 ) -> User:
-    if full_name is not None:
-        name = full_name.strip()
-        if len(name) < 2:
-            raise HTTPException(status_code=400, detail="full_name too short")
-        user.full_name = name
+    from app.users.unified_profile import (
+        apply_unified_display_name,
+        apply_unified_username,
+    )
+
+    details: dict[str, str] = {}
+    name = display_name if display_name is not None else full_name
+    if name is not None:
+        applied = apply_unified_display_name(db, user, name)
+        details["display_name"] = applied
+    if username is not None:
+        details["username"] = apply_unified_username(db, user, username)
     write_audit_log(
         db,
         action="users.profile_update",
         actor_user_id=user.id,
         resource_type="user",
         resource_id=str(user.id),
-        details={"full_name": user.full_name},
+        details=details or {"display_name": user.full_name},
     )
     db.commit()
     db.refresh(user)
