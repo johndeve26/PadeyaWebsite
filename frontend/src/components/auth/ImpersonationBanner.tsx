@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui";
-import { packLabel } from "@/lib/auth/impersonation-scopes";
+import { packLabel, hasUnrestrictedImpersonation } from "@/lib/auth/impersonation-scopes";
 import { cn } from "@/lib/cn";
 import { formatRemainingDuration } from "@/lib/format";
 
@@ -99,6 +99,8 @@ export function ImpersonationBanner() {
     .toLowerCase()
     .endsWith("@demo.padeye.test");
 
+  const unrestricted = hasUnrestrictedImpersonation(impersonation?.scopes);
+
   return (
     <div
       ref={rootRef}
@@ -155,8 +157,10 @@ export function ImpersonationBanner() {
           </div>
           <p className="text-sm font-extrabold leading-snug tracking-tight sm:text-[0.95rem]">
             Impersonating {displayName}. Pack:{" "}
-            {packLabel(impersonation?.pack)}. Checkout and payouts stay blocked.
-            Actions are audited.
+            {packLabel(impersonation?.pack)}.
+            {unrestricted
+              ? " Mutations are allowed and audited. Admin panel stays off-limits."
+              : " Most mutations stay blocked. Actions are audited."}
           </p>
           <p className="flex flex-col gap-0.5 text-xs font-medium leading-snug opacity-90 sm:flex-row sm:flex-wrap sm:items-center sm:gap-0 sm:text-sm">
             <span className="min-w-0 truncate">

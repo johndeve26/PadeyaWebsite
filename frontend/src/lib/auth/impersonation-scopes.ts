@@ -14,7 +14,7 @@ export type ImpersonationPack = "view" | "host_events" | "full" | "none";
 const PACK_LABELS: Record<ImpersonationPack, string> = {
   view: "View only",
   host_events: "View + host events",
-  full: "Full (incl. credentials)",
+  full: "Full (unrestricted + credentials)",
   none: "None",
 };
 
@@ -34,6 +34,13 @@ export function hasImpersonationScope(
   scope: ImpersonationScope | string,
 ): boolean {
   return Boolean(scopes?.includes(scope));
+}
+
+/** Full pack (super admin): finance, privacy, and other mutations are allowed. */
+export function hasUnrestrictedImpersonation(
+  scopes: string[] | null | undefined,
+): boolean {
+  return hasImpersonationScope(scopes, IMPERSONATION_SCOPE_CREDENTIALS);
 }
 
 /** Predict scopes from the actor admin's permissions (pre-start UI). */

@@ -21,6 +21,7 @@ import {
   trackFanDirectoryOptOut,
 } from "@/lib/analytics";
 import { ApiError } from "@/lib/api";
+import { hasUnrestrictedImpersonation } from "@/lib/auth/impersonation-scopes";
 import { useUnsavedChanges } from "@/lib/hooks/useUnsavedChanges";
 import {
   fetchPassportSettings,
@@ -86,7 +87,9 @@ const TOGGLES: { key: BoolKey; label: string; hint: string }[] = [
 
 export default function PassportSettingsPage() {
   const toast = useToast();
-  const { isImpersonating } = useAuth();
+  const { isImpersonating, impersonation } = useAuth();
+  const impersonationLocked =
+    isImpersonating && !hasUnrestrictedImpersonation(impersonation?.scopes);
   const [settings, setSettings] = useState<PassportSettings | null>(null);
   const [draft, setDraft] = useState<PassportSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -97,7 +100,7 @@ export default function PassportSettingsPage() {
     !!settings &&
     !!draft &&
     JSON.stringify(settings) !== JSON.stringify(draft);
-  useUnsavedChanges(dirty && !isImpersonating);
+  useUnsavedChanges(dirty && !impersonationLocked);
 
   useEffect(() => {
     let alive = true;
@@ -122,7 +125,7 @@ export default function PassportSettingsPage() {
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!draft || isImpersonating) return;
+    if (!draft || impersonationLocked) return;
     setBusy(true);
     setError(null);
     try {
@@ -180,13 +183,13 @@ export default function PassportSettingsPage() {
           {error}
         </Alert>
       ) : null}
-      {isImpersonating ? (
+      {impersonationLocked ? (
         <Alert tone="warning" title="Impersonation — privacy settings disabled">
           Passport privacy and directory settings cannot be changed during an
-          audited impersonation session.
+          audited impersonation session with a view-only or host-events pack.
         </Alert>
       ) : null}
-      {dirty && !isImpersonating ? (
+      {dirty && !impersonationLocked ? (
         <Alert tone="warning" title="Unsaved changes">
           Save before leaving this page.
         </Alert>
@@ -198,9 +201,9 @@ export default function PassportSettingsPage() {
         <form
           onSubmit={(e) => void onSave(e)}
           className="space-y-5"
-          data-impersonation-locked={isImpersonating ? "true" : "false"}
+          data-impersonation-locked={impersonationLocked ? "true" : "false"}
         >
-          <fieldset disabled={isImpersonating} className="space-y-5 disabled:opacity-70">
+          <fieldset disabled={impersonationLocked} className="space-y-5 disabled:opacity-70">
           <Card className="space-y-4">
             <h3 className="text-lg font-extrabold text-foreground">
               Public discovery
@@ -294,7 +297,7 @@ export default function PassportSettingsPage() {
             <FanPassportBioAIAssist
               bio={draft.bio || ""}
               aiNotes={aiNotes}
-              disabled={isImpersonating}
+              disabled={impersonationLocked}
               onApply={(text) => setDraft({ ...draft, bio: text })}
             />
             <Textarea
@@ -369,7 +372,7 @@ export default function PassportSettingsPage() {
             <Button
               type="submit"
               size="lg"
-              disabled={busy || !dirty || isImpersonating}
+              disabled={busy || !dirty || impersonationLocked}
             >
               {busy ? "Saving…" : "Save Passport settings"}
             </Button>

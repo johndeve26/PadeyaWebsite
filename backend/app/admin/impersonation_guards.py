@@ -10,7 +10,8 @@ Capability packs (scopes) further restrict what is allowed:
 
 - ``view`` — GET / navigation only (plus exit)
 - ``host_events``  — host studio mutations (events / media / ticket tiers / legacy)
-- ``credentials`` — password / email / phone recovery
+- ``credentials`` — full pack: unrestricted audited mutations (finance, privacy, …)
+  plus password / email / phone recovery. Admin APIs stay blocked.
 
 Exact 403 copy: ``IMPERSONATION_SENSITIVE_ACTION_DETAIL``.
 """
@@ -25,6 +26,7 @@ from app.admin.impersonation_scopes import (
     SCOPE_HOST_EVENTS,
     SCOPE_VIEW,
     has_scope,
+    has_unrestricted_impersonation,
     normalize_scopes,
 )
 
@@ -188,9 +190,9 @@ def should_block_impersonation_action(
 ) -> bool:
     """Return True when this HTTP action must be refused during impersonation.
 
-    Global denylist always applies (money, 2FA, admin, …). Mutations outside
-    the actor's capability pack are also refused. ``scopes=None`` is treated
-    as view-only (safest default for legacy tokens).
+    Admin APIs are always blocked. View / host_events packs use a mutation
+    denylist (money, privacy, …). Full pack (``credentials`` scope) allows
+    unrestricted audited mutations. ``scopes=None`` is view-only.
     """
     method_u = method.upper()
     path_n = _normalize_path(path)
@@ -218,7 +220,11 @@ def should_block_impersonation_action(
     if method_u not in _MUTATING:
         return False
 
-    # Hard denylist — never pack-overrideable.
+    # Full pack (super_admin): allow all user-surface mutations (audited).
+    if has_unrestricted_impersonation(have):
+        return False
+
+    # Denylist for view / host_events packs.
     if _ACCOUNT_SECURITY.search(path_n):
         return True
     if _MONEY.search(path_n):

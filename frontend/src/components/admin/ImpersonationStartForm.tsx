@@ -132,10 +132,13 @@ export function ImpersonationStartForm({
             You are about to impersonate <strong>{summaryLabel}</strong>.{" "}
           </>
         ) : null}
-        This is not a real login — passwords are never exposed, sensitive actions are
-        blocked, and every request is audited. Your pack:{" "}
+        This is not a real login — passwords are never exposed, and every request
+        is audited. Your pack:{" "}
         <strong>{packDescription}</strong>
         {actorScopes.length ? ` (${actorScopes.join(", ")})` : ""}.
+        {actorPack === "full"
+          ? " Full pack allows finance, privacy, and other mutations."
+          : " View / host-events packs keep most mutations blocked."}
       </Alert>
 
       <Alert tone="info" title="Prefer admin tools when you only need to look">

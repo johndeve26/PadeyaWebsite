@@ -1,7 +1,9 @@
 """Role-based impersonation capability packs (scopes).
 
 Packs are derived from the actor admin's permissions — not per-session
-checkboxes. Money / 2FA / admin-panel denylist stays global regardless of pack.
+checkboxes. View / host_events packs keep a mutation denylist; the full pack
+(super_admin ``credentials`` scope) allows unrestricted audited mutations.
+Admin-panel routes stay blocked for every pack.
 
 Scopes
 ------
@@ -13,7 +15,7 @@ Pack labels (for audit / UI)
 ---------------------------
 ``view``         → only view
 ``host_events``  → view + host_events
-``full``         → view + host_events + credentials
+``full``         → view + host_events + credentials (unrestricted mutations)
 """
 
 from __future__ import annotations
@@ -61,6 +63,11 @@ def pack_label(scopes: Collection[str] | None) -> str:
 
 def has_scope(scopes: Collection[str] | None, scope: str) -> bool:
     return scope in set(normalize_scopes(scopes))
+
+
+def has_unrestricted_impersonation(scopes: Collection[str] | None) -> bool:
+    """Full pack (``credentials`` scope): audited mutations allowed except admin APIs."""
+    return has_scope(scopes, SCOPE_CREDENTIALS)
 
 
 def resolve_impersonation_scopes(admin: User) -> list[str]:

@@ -274,17 +274,25 @@ def test_end_without_impersonation(client: TestClient, assign_role):
 def test_impersonation_audit_stamps_actor(
     client: TestClient, assign_role, db_session: Session
 ):
-    admin = _register(client, email="admin-audit@example.com").json()
+    from app.users.service import get_permission_by_code, get_role_by_name
+
+    support = _register(client, email="support-audit@example.com").json()
     target = _register(
         client, email="target-audit@example.com", full_name="Target Audit"
     ).json()
-    assign_role("admin-audit@example.com", "super_admin")
+    assign_role("support-audit@example.com", "support_agent")
+    role = get_role_by_name(db_session, "support_agent")
+    perm = get_permission_by_code(db_session, "admin.users.impersonate")
+    assert role is not None and perm is not None
+    if perm not in role.permissions:
+        role.permissions.append(perm)
+        db_session.commit()
+
     target_id = _user_id(client, target["access_token"])
-    admin_id = _user_id(client, admin["access_token"])
 
     started = _start(
         client,
-        admin_token=admin["access_token"],
+        admin_token=support["access_token"],
         user_id=target_id,
         reason="audit stamp check",
     ).json()
@@ -663,11 +671,7 @@ def test_impersonation_internal_audit_fields(
 
     assert client.get("/api/v1/auth/me", headers=headers).status_code == 200
 
-    blocked = client.patch(
-        "/api/v1/passport/me/settings",
-        headers=headers,
-        json={"visibility": "private"},
-    )
+    blocked = client.get("/api/v1/admin/audit-logs", headers=headers)
     assert blocked.status_code == 403
 
     ended = client.post("/api/v1/admin/impersonation/end", headers=headers)
@@ -730,7 +734,7 @@ def test_impersonation_internal_audit_fields(
         )
     )
     assert len(blocked_rows) >= 1
-    assert any(r.path and "passport" in (r.path or "") for r in blocked_rows)
+    assert any(r.path and "/admin/" in (r.path or "") for r in blocked_rows)
 
     # 11B field matrix on every stamped event.
     for row in (start_row, end_row, *request_rows, *blocked_rows):
@@ -1000,92 +1004,125 @@ def test_should_block_impersonation_action_matrix():
     assert not should_block_impersonation_action(
         "POST", "/api/v1/host/legacy/content-blocks/reorder", host
     )
-    # Blocked: 2FA / account delete
-    assert should_block_impersonation_action("POST", "/api/v1/users/me/2fa/enable")
-    assert should_block_impersonation_action("POST", "/api/v1/users/me/2fa/disable")
-    assert should_block_impersonation_action("POST", "/api/v1/delete-account")
-    assert should_block_impersonation_action("DELETE", "/api/v1/users/me")
+    # Blocked: 2FA / account delete (view / host_events packs)
+    assert should_block_impersonation_action("POST", "/api/v1/users/me/2fa/enable", view)
+    assert should_block_impersonation_action("POST", "/api/v1/users/me/2fa/disable", host)
+    assert should_block_impersonation_action("POST", "/api/v1/delete-account", view)
+    assert should_block_impersonation_action("DELETE", "/api/v1/users/me", host)
+    # Full pack allows account-security mutations (audited)
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/users/me/2fa/enable", full
+    )
+    assert not should_block_impersonation_action("POST", "/api/v1/delete-account", full)
 
-    # Blocked: bank / payouts / finance mutations
+    # Blocked: bank / payouts / finance mutations (view / host_events)
     assert should_block_impersonation_action(
-        "POST", "/api/v1/hosts/me/bank-accounts"
-    )
-    assert should_block_impersonation_action("POST", "/api/v1/finance/host/payouts")
-    assert should_block_impersonation_action(
-        "POST", "/api/v1/finance/refunds/requests"
+        "POST", "/api/v1/hosts/me/bank-accounts", view
     )
     assert should_block_impersonation_action(
-        "POST", "/api/v1/finance/admin/payouts/x/review"
-    )
-
-    # Blocked: checkout / paid purchase / cart
-    assert should_block_impersonation_action("POST", "/api/v1/orders")
-    assert should_block_impersonation_action(
-        "POST", "/api/v1/payments/checkout/abc"
+        "POST", "/api/v1/finance/host/payouts", host
     )
     assert should_block_impersonation_action(
-        "POST", "/api/v1/dashboard/cart/items"
+        "POST", "/api/v1/finance/refunds/requests", view
     )
     assert should_block_impersonation_action(
-        "POST", "/api/v1/merch/discounts/validate"
+        "POST", "/api/v1/finance/admin/payouts/x/review", host
     )
-
-    # Blocked: ticket transfer + content delete
-    assert should_block_impersonation_action(
-        "POST", "/api/v1/tickets/abc/transfer"
+    # Full pack allows finance mutations
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/hosts/me/bank-accounts", full
     )
-    assert should_block_impersonation_action("DELETE", "/api/v1/reviews/abc")
-    assert should_block_impersonation_action(
-        "POST", "/api/v1/messages/abc/delete"
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/finance/host/payouts", full
     )
 
-    # Blocked: Passport privacy + social / Fan Connect
+    # Blocked: checkout / paid purchase / cart (view / host_events)
+    assert should_block_impersonation_action("POST", "/api/v1/orders", view)
     assert should_block_impersonation_action(
-        "PATCH", "/api/v1/passport/me/settings"
+        "POST", "/api/v1/payments/checkout/abc", host
     )
     assert should_block_impersonation_action(
-        "PATCH", "/api/v1/dashboard/passport/settings"
+        "POST", "/api/v1/dashboard/cart/items", view
     )
     assert should_block_impersonation_action(
-        "POST", "/api/v1/oauth/google/connect"
+        "POST", "/api/v1/merch/discounts/validate", host
     )
+    assert not should_block_impersonation_action("POST", "/api/v1/orders", full)
+
+    # Blocked: ticket transfer + content delete (view / host_events)
     assert should_block_impersonation_action(
-        "POST", "/api/v1/fan-connect/requests"
+        "POST", "/api/v1/tickets/abc/transfer", view
     )
+    assert should_block_impersonation_action("DELETE", "/api/v1/reviews/abc", host)
     assert should_block_impersonation_action(
-        "POST", "/api/v1/fan-connect/connections/x/disconnect"
+        "POST", "/api/v1/messages/abc/delete", view
     )
-    assert should_block_impersonation_action(
-        "PATCH", "/api/v1/fan-connect/settings"
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/tickets/abc/transfer", full
     )
 
-    # Blocked: provider / API keys + support queue actions
+    # Blocked: Passport privacy + social / Fan Connect (view / host_events)
     assert should_block_impersonation_action(
-        "PUT", "/api/v1/admin/settings/runtime/email/smtp_host"
+        "PATCH", "/api/v1/passport/me/settings", view
     )
     assert should_block_impersonation_action(
-        "PUT", "/api/v1/host/merchandise/print-on-demand/integrations"
+        "PATCH", "/api/v1/dashboard/passport/settings", host
     )
     assert should_block_impersonation_action(
-        "POST", "/api/v1/support/cases/abc/assign"
+        "POST", "/api/v1/oauth/google/connect", view
     )
     assert should_block_impersonation_action(
-        "POST", "/api/v1/support/cases/abc/resolve"
+        "POST", "/api/v1/fan-connect/requests", host
+    )
+    assert should_block_impersonation_action(
+        "POST", "/api/v1/fan-connect/connections/x/disconnect", view
+    )
+    assert should_block_impersonation_action(
+        "PATCH", "/api/v1/fan-connect/settings", host
+    )
+    assert not should_block_impersonation_action(
+        "PATCH", "/api/v1/passport/me/settings", full
+    )
+
+    # Blocked: provider / API keys + support queue actions (view / host_events)
+    assert should_block_impersonation_action(
+        "PUT", "/api/v1/admin/settings/runtime/email/smtp_host", view
+    )
+    assert should_block_impersonation_action(
+        "PUT", "/api/v1/host/merchandise/print-on-demand/integrations", host
+    )
+    assert should_block_impersonation_action(
+        "POST", "/api/v1/support/cases/abc/assign", view
+    )
+    assert should_block_impersonation_action(
+        "POST", "/api/v1/support/cases/abc/resolve", host
+    )
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/support/cases/abc/assign", full
     )
 
 
 def test_sensitive_actions_blocked_while_impersonating(
-    client: TestClient, assign_role
+    client: TestClient, assign_role, db_session: Session
 ):
+    from app.users.service import get_permission_by_code, get_role_by_name
+
     detail = "This action is disabled during admin impersonation."
-    admin = _register(client, email="admin-sens@example.com").json()
+    support = _register(client, email="support-sens@example.com").json()
     target = _register(client, email="target-sens@example.com").json()
-    assign_role("admin-sens@example.com", "super_admin")
+    assign_role("support-sens@example.com", "support_agent")
+    role = get_role_by_name(db_session, "support_agent")
+    perm = get_permission_by_code(db_session, "admin.users.impersonate")
+    assert role is not None and perm is not None
+    if perm not in role.permissions:
+        role.permissions.append(perm)
+        db_session.commit()
+
     target_id = _user_id(client, target["access_token"])
 
     started = _start(
         client,
-        admin_token=admin["access_token"],
+        admin_token=support["access_token"],
         user_id=target_id,
         reason="sensitive action audit",
     ).json()
@@ -1154,6 +1191,41 @@ def test_sensitive_actions_blocked_while_impersonating(
     ended = client.post("/api/v1/admin/impersonation/end", headers=headers)
     assert ended.status_code == 200
     assert ended.json()["ended"] is True
+
+
+def test_full_impersonation_pack_allows_sensitive_mutations(
+    client: TestClient, assign_role
+):
+    admin = _register(client, email="admin-full-sens@example.com").json()
+    target = _register(client, email="target-full-sens@example.com").json()
+    assign_role("admin-full-sens@example.com", "super_admin")
+    target_id = _user_id(client, target["access_token"])
+
+    started = _start(
+        client,
+        admin_token=admin["access_token"],
+        user_id=target_id,
+        reason="full pack unrestricted QA",
+    ).json()
+    headers = _auth_header(started["access_token"])
+    assert started["scopes"] == ["view", "host_events", "credentials"]
+
+    passport = client.patch(
+        "/api/v1/passport/me/settings",
+        headers=headers,
+        json={"visibility": "private"},
+    )
+    assert passport.status_code == 200, passport.text
+
+    profile = client.patch(
+        "/api/v1/users/me",
+        headers=headers,
+        json={"full_name": "Full Pack Name"},
+    )
+    assert profile.status_code == 200, profile.text
+
+    admin_denied = client.get("/api/v1/admin/audit-logs", headers=headers)
+    assert admin_denied.status_code == 403
 
 
 def test_one_active_impersonation_per_admin(client: TestClient, assign_role):
@@ -2021,15 +2093,23 @@ def test_audit_log_created_on_blocked_sensitive_action(
     from uuid import UUID
 
     from app.admin.impersonation_models import AdminImpersonationAuditLog
+    from app.users.service import get_permission_by_code, get_role_by_name
 
-    admin = _register(client, email="admin-blok2@example.com").json()
+    support = _register(client, email="support-blok2@example.com").json()
     target = _register(client, email="target-blok2@example.com").json()
-    assign_role("admin-blok2@example.com", "super_admin")
+    assign_role("support-blok2@example.com", "support_agent")
+    role = get_role_by_name(db_session, "support_agent")
+    perm = get_permission_by_code(db_session, "admin.users.impersonate")
+    assert role is not None and perm is not None
+    if perm not in role.permissions:
+        role.permissions.append(perm)
+        db_session.commit()
+
     target_id = _user_id(client, target["access_token"])
 
     started = _start(
         client,
-        admin_token=admin["access_token"],
+        admin_token=support["access_token"],
         user_id=target_id,
         reason="block audit",
     ).json()
