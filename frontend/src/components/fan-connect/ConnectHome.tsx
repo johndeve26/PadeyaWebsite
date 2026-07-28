@@ -11,7 +11,7 @@ import {
   EmptyState,
   SkeletonLoader,
 } from "@/components/ui";
-import { ApiError } from "@/lib/api";
+import { errorDetail } from "@/lib/api-timeouts";
 import { trackFanConnectPageView } from "@/lib/analytics";
 import { brand } from "@/lib/brand";
 import {
@@ -128,7 +128,7 @@ export function ConnectHome() {
     let active = true;
     void (async () => {
       try {
-        const [s, sugMixed, sugInterests, inReq, conns] = await Promise.all([
+        const results = await Promise.allSettled([
           fetchFanConnectSettings(),
           fetchConnectSuggestions({ limit: 24, mode: "mixed" }),
           fetchConnectSuggestions({ limit: 12, mode: "same_interests" }),
@@ -136,23 +136,51 @@ export function ConnectHome() {
           fetchConnections(),
         ]);
         if (!active) return;
-        setSettings(s);
+
+        const failures = results.filter(
+          (result): result is PromiseRejectedResult => result.status === "rejected",
+        );
+        if (failures.length === results.length) {
+          throw failures[0]?.reason;
+        }
+
+        const [settingsResult, mixedResult, interestsResult, incomingResult, connectionsResult] =
+          results;
+
+        if (settingsResult.status === "fulfilled") {
+          setSettings(settingsResult.value);
+        }
         const byUser = new Map<string, FanConnectSuggestion>();
-        for (const item of [...sugMixed.items, ...sugInterests.items]) {
-          if (item.username && !byUser.has(item.username)) {
-            byUser.set(item.username, item);
+        for (const result of [mixedResult, interestsResult]) {
+          if (result.status !== "fulfilled") continue;
+          for (const item of result.value.items ?? []) {
+            if (item.username && !byUser.has(item.username)) {
+              byUser.set(item.username, item);
+            }
           }
         }
         setSuggestions(Array.from(byUser.values()));
-        setIncoming(inReq.items);
-        setConnections(conns.items);
-        setError(null);
+        if (incomingResult.status === "fulfilled") {
+          setIncoming(incomingResult.value.items ?? []);
+        }
+        if (connectionsResult.status === "fulfilled") {
+          setConnections(connectionsResult.value.items ?? []);
+        }
+
+        if (failures.length > 0) {
+          setError(
+            errorDetail(
+              failures[0]?.reason,
+              "Some Fan Connect data could not be loaded.",
+            ),
+          );
+        } else {
+          setError(null);
+        }
       } catch (err) {
         if (!active) return;
         setError(
-          err instanceof ApiError
-            ? err.detail
-            : "Could not load Fan Connect.",
+          errorDetail(err, "Could not load Fan Connect."),
         );
       } finally {
         if (active) setLoading(false);
@@ -164,7 +192,9 @@ export function ConnectHome() {
   }, [tick]);
 
   if (loading) return <SkeletonLoader className="h-64" />;
-  if (error) return <Alert tone="danger">{error}</Alert>;
+  if (error && !settings) {
+    return <Alert tone="danger">{error}</Alert>;
+  }
 
   const enabled = Boolean(settings?.fan_connect_enabled);
   const { sameEvents, sameHosts, similarScenes } =
@@ -172,6 +202,11 @@ export function ConnectHome() {
 
   return (
     <div className="space-y-12 sm:space-y-14">
+      {error ? (
+        <Alert tone="warning" title="Some Fan Connect data is unavailable">
+          {error}
+        </Alert>
+      ) : null}
       {/* Hero — one composition */}
       <section className="relative overflow-hidden rounded-[var(--radius-xl)] bg-ink text-paper">
         <div

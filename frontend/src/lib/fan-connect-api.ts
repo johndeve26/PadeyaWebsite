@@ -148,7 +148,9 @@ export async function fetchConnectSuggestions(params?: {
   if (params?.page != null) sp.set("page", String(params.page));
   if (params?.cursor) sp.set("cursor", params.cursor);
   const qs = sp.toString();
-  return apiRequest(`/fan-connect/suggestions${qs ? `?${qs}` : ""}`);
+  return apiRequest(`/fan-connect/suggestions${qs ? `?${qs}` : ""}`, {
+    timeout: "long",
+  });
 }
 
 export async function dismissConnectSuggestion(

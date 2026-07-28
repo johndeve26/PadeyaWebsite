@@ -307,8 +307,9 @@ api = settings.api_prefix
 app.include_router(maintenance_router, prefix=api)
 app.include_router(platform_readiness_router, prefix=api)
 app.include_router(auth_router, prefix=api)
-app.include_router(email_router, prefix=api)
+# Register template/notification routes before `/admin/emails/{email_id}` catch-all.
 app.include_router(admin_email_templates_router, prefix=api)
+app.include_router(email_router, prefix=api)
 app.include_router(notifications_router, prefix=api)
 app.include_router(push_router, prefix=api)
 app.include_router(push_admin_router, prefix=api)

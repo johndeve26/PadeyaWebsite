@@ -311,6 +311,29 @@ def test_admin_email_list(client: TestClient, db_session: Session, assign_role):
     assert listed.json()["total"] >= 1
 
 
+def test_admin_email_notification_settings_route(client: TestClient, assign_role):
+    reg = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "admin-notif-mail@example.com",
+            "password": "Password123!",
+            "full_name": "Admin Notif",
+        },
+    )
+    assert reg.status_code == 201, reg.text
+    assign_role("admin-notif-mail@example.com", "super_admin")
+    headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
+
+    settings = client.get("/api/v1/admin/emails/notification-settings", headers=headers)
+    assert settings.status_code == 200, settings.text
+    body = settings.json()
+    assert "master_enabled" in body
+    assert "digest_enabled" in body
+
+    templates = client.get("/api/v1/admin/emails/templates", headers=headers)
+    assert templates.status_code == 200, templates.text
+
+
 def _seed_event(db_session: Session) -> tuple[Event, TicketType]:
     host_user = User(
         email=f"email-host-{uuid4().hex[:8]}@example.com",
