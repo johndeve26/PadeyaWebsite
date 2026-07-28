@@ -178,6 +178,17 @@ docker compose -f docker-compose.prod.yml --env-file frontend/.env.production lo
 
 Without `email_worker` (or an equivalent cron), purchase emails enqueue but are not delivered.
 
+Ensure `reservation_sweeper` is up (releases expired checkout holds):
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file frontend/.env.production ps reservation_sweeper
+docker compose -f docker-compose.prod.yml --env-file frontend/.env.production logs reservation_sweeper --tail=50
+```
+
+Without `reservation_sweeper` (or an equivalent cron), pending orders past `reservation_expires_at` keep inventory reserved.
+
+**Render (padeyawebsite.onrender.com):** if not using Compose, create a **Cron Job** in the Render dashboard — see [OPERATIONS.md](./OPERATIONS.md#reservation-sweeper).
+
 ### 5. Nginx + TLS
 
 ```bash

@@ -12,23 +12,25 @@ Brand: **Pàdéyá**. Related: [DEPLOYMENT.md](./DEPLOYMENT.md) · [EMAILS.md](.
 | `docker-compose.prod.yml` | `email_worker` | `padeya-prod-email-worker` |
 | `docker-compose.yml` | `push_worker` | `padeya-push-worker` |
 | `docker-compose.prod.yml` | `push_worker` | `padeya-prod-push-worker` |
+| `docker-compose.yml` | `reservation_sweeper` | `padeya-reservation-sweeper` |
+| `docker-compose.prod.yml` | `reservation_sweeper` | `padeya-prod-reservation-sweeper` |
 
 ### Start / restart
 
 Local:
 
 ```bash
-docker compose up -d backend email_worker push_worker
-docker compose restart email_worker push_worker
-docker compose logs email_worker push_worker --tail=100
+docker compose up -d backend email_worker push_worker reservation_sweeper
+docker compose restart email_worker push_worker reservation_sweeper
+docker compose logs email_worker push_worker reservation_sweeper --tail=100
 ```
 
 Production:
 
 ```bash
-docker compose -f docker-compose.prod.yml --env-file frontend/.env.production up -d backend email_worker push_worker
-docker compose -f docker-compose.prod.yml --env-file frontend/.env.production restart email_worker push_worker
-docker compose -f docker-compose.prod.yml --env-file frontend/.env.production logs email_worker push_worker --tail=100
+docker compose -f docker-compose.prod.yml --env-file frontend/.env.production up -d backend email_worker push_worker reservation_sweeper
+docker compose -f docker-compose.prod.yml --env-file frontend/.env.production restart email_worker push_worker reservation_sweeper
+docker compose -f docker-compose.prod.yml --env-file frontend/.env.production logs email_worker push_worker reservation_sweeper --tail=100
 ```
 
 Manual one-shot (host or inside container):
@@ -41,13 +43,50 @@ PYTHONPATH=. python scripts/process_email_outbox.py --loop
 PYTHONPATH=. python scripts/process_push_outbox.py
 # Equivalent explicit flags:
 PYTHONPATH=. python scripts/process_push_outbox.py --loop --maintenance
+PYTHONPATH=. python scripts/expire_order_reservations.py --once
+PYTHONPATH=. python scripts/expire_order_reservations.py --loop
 ```
 
-Push worker logs batch counts only (`attempted` / `sent` / `failed` / `skipped` / `deactivated_subscriptions`). It never logs title, body, endpoints, or VAPID material.
+## Reservation sweeper
+
+Releases inventory when pending checkout orders pass `reservation_expires_at` (Phase 6). Idempotent; safe to run frequently.
+
+### Compose
+
+`reservation_sweeper` runs `scripts/expire_order_reservations.py --loop` with `RESERVATION_SWEEPER_POLL_SECONDS` (default **60**).
+
+### One-shot (cron / manual)
+
+```bash
+cd backend && PYTHONPATH=. python scripts/expire_order_reservations.py --once
+```
+
+Example host cron (if not using the Compose worker):
+
+```cron
+* * * * * cd /path/to/PadeyaWebsite/backend && PYTHONPATH=. /path/to/.venv/bin/python scripts/expire_order_reservations.py --once >> /var/log/padeya-reservation-sweeper.log 2>&1
+```
+
+### Render Cron Job (production API on Render)
+
+If the backend runs on Render without Docker Compose workers:
+
+1. Render dashboard → **New** → **Cron Job**
+2. **Name:** `padeya-reservation-sweeper`
+3. **Schedule:** `*/2 * * * *` (every 2 minutes; UTC)
+4. **Root directory:** `backend`
+5. **Build command:** `pip install -r requirements.txt`
+6. **Start command:** `python scripts/expire_order_reservations.py --once`
+7. **Environment:** copy the same env group as the web service (`DATABASE_URL`, `APP_ENV=production`, `SECRET_KEY`, etc.). Do not run against staging DB.
+8. Enable the job and confirm first run logs `examined=… expired=… skipped=…` with no stack trace.
+
+Repository reference: `infra/render/reservation-sweeper-cron.yaml` (documentation snippet; apply via dashboard if Blueprint is not linked).
 
 ## Push outbox worker
 
 Product code only **enqueues** `push_events`. Compose `push_worker` (or the CLI above) drains them.
+
+Push worker logs batch counts only (`attempted` / `sent` / `failed` / `skipped` / `deactivated_subscriptions`). It never logs title, body, endpoints, or VAPID material.
 
 ### Admin push (no redeploy)
 

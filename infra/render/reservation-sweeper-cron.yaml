@@ -1,0 +1,26 @@
+# Render Cron Job — order reservation expiry sweeper
+#
+# Apply via Render Dashboard → New → Cron Job when the API runs on Render
+# (padeyawebsite.onrender.com) without docker-compose.prod.yml workers.
+#
+# Do NOT commit secrets. Link the same Environment Group as the web service.
+
+# Dashboard fields (reference):
+#   Name:          padeya-reservation-sweeper
+#   Schedule:      */2 * * * *   (UTC, every 2 minutes)
+#   Root dir:      backend
+#   Build:         pip install -r requirements.txt
+#   Start:         python scripts/expire_order_reservations.py --once
+#   Env:           DATABASE_URL, APP_ENV=production, SECRET_KEY, REDIS_URL, …
+#
+# Expected stdout (no PII):
+#   examined=N expired=N skipped=N
+#
+# Idempotent; bounded batch (--limit default 100).
+
+type: cron
+name: padeya-reservation-sweeper
+schedule: "*/2 * * * *"
+rootDir: backend
+buildCommand: pip install -r requirements.txt
+startCommand: python scripts/expire_order_reservations.py --once

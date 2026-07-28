@@ -117,6 +117,33 @@ services:
     networks:
       - padeya_prod
 
+  # Pending checkout reservations — releases inventory when reservation_expires_at passes.
+  reservation_sweeper:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: padeya-prod-reservation-sweeper
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.production
+    environment:
+      PYTHONPATH: /app
+      APP_ENV: ${APP_ENV:-production}
+      DEBUG: ${DEBUG:-false}
+      DEMO_MODE: ${DEMO_MODE:-false}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-padeya}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-padeya}
+      REDIS_URL: redis://redis:6379/0
+      RESERVATION_SWEEPER_POLL_SECONDS: ${RESERVATION_SWEEPER_POLL_SECONDS:-60}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    entrypoint: ["python", "scripts/expire_order_reservations.py"]
+    command: ["--loop"]
+    networks:
+      - padeya_prod
+
   push_worker:
     build:
       context: ./backend
