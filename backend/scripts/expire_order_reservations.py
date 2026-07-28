@@ -25,6 +25,8 @@ logger = logging.getLogger("padeya.reservation_sweeper")
 
 
 def run_once(*, limit: int) -> dict[str, int]:
+    # Ensure SQLAlchemy relationship targets (Ticket, Host, …) are registered.
+    import app.main  # noqa: F401
     from app.core.database import SessionLocal
     from app.payments.reservations import expire_due_reservations
 
