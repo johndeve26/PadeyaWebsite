@@ -34,6 +34,7 @@ class UserPublic(BaseModel):
     email: str
     full_name: str
     username: str | None = None
+    avatar_url: str | None = None
     is_active: bool
     is_verified: bool
     ambassadors_blocked: bool = False

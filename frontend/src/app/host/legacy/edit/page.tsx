@@ -252,9 +252,11 @@ export default function HostLegacyEditPage() {
             />
             <ImageUrlOrUploadField
               label="Profile image"
+              hint="Same photo as Account settings and Fan Passport."
               value={avatarUrl}
               onChange={setAvatarUrl}
-              mediaType="other"
+              mediaType="avatar"
+              accountAvatar
               previewClassName="h-16 w-16 rounded-full"
             />
             <ImageUrlOrUploadField

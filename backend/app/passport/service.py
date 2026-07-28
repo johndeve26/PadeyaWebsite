@@ -124,9 +124,18 @@ def update_passport_settings(db: Session, user: User, payload) -> FanPassport:
         from app.users.unified_profile import apply_unified_username
 
         apply_unified_username(db, user, data["username"])
+        data.pop("username", None)
+    if "display_name" in data and data["display_name"] is not None:
+        from app.users.unified_profile import apply_unified_display_name
+
+        apply_unified_display_name(db, user, data["display_name"])
+        data.pop("display_name", None)
+    if "avatar_url" in data:
+        from app.users.unified_profile import apply_unified_avatar
+
+        apply_unified_avatar(db, user, data.get("avatar_url"))
+        data.pop("avatar_url", None)
     for field in (
-        "display_name",
-        "avatar_url",
         "tagline",
         "bio",
         "visibility",

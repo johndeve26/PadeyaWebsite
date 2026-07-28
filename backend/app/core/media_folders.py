@@ -34,6 +34,13 @@ def host_public_folder(host_id: UUID | str, media_type: str = "showcase") -> str
     return f"hosts/{host_id}/{leaf}"
 
 
+def user_public_folder(user_id: UUID | str, media_type: str = "avatar") -> str:
+    """Account-level public media (shared Fan Passport + Host Legacy avatar)."""
+    kind = (media_type or "avatar").strip().lower()
+    leaf = "avatar" if kind in {"avatar", "logo", "profile"} else "media"
+    return f"users/{user_id}/{leaf}"
+
+
 def memory_public_folder(event_id: UUID | str, *, thumb: bool = False) -> str:
     base = f"memories/events/{event_id}"
     return f"{base}/thumbs" if thumb else base

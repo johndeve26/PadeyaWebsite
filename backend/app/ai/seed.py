@@ -7,8 +7,18 @@ from sqlalchemy.orm import Session
 
 from app.ai.constants import (
     FEATURE_ADMIN_BLOG_EXCERPT,
+    FEATURE_ADMIN_BLOG_FACT_REVIEW,
+    FEATURE_ADMIN_BLOG_FAQS,
+    FEATURE_ADMIN_BLOG_FULL_DRAFT,
+    FEATURE_ADMIN_BLOG_IMAGE_PROMPT,
+    FEATURE_ADMIN_BLOG_INTERNAL_LINKS,
     FEATURE_ADMIN_BLOG_OUTLINE,
+    FEATURE_ADMIN_BLOG_REVIEW,
+    FEATURE_ADMIN_BLOG_REWRITE,
+    FEATURE_ADMIN_BLOG_SECTION,
     FEATURE_ADMIN_BLOG_SEO,
+    FEATURE_ADMIN_BLOG_SEO_BRIEF,
+    FEATURE_ADMIN_BLOG_SIMILARITY,
     FEATURE_ADMIN_BLOG_SOCIAL,
     FEATURE_ADMIN_BLOG_TAGS,
     FEATURE_ADMIN_BLOG_TITLE,
@@ -554,6 +564,118 @@ TEMPLATES: list[dict[str, str]] = [
             "Copy-only drafts — never send. No policy inventions.\n"
             "Title: {title}\nExcerpt: {excerpt}\nCategory: {category}\n"
             "Audience: {audience}\nGoal: {goal}\nBody draft:\n{body}"
+        ),
+    },
+    {
+        "slug": FEATURE_ADMIN_BLOG_SEO_BRIEF,
+        "name": "Blog AI Studio SEO brief",
+        "audience": "admin",
+        "system_prompt": SYSTEM_BLOG,
+        "user_template": (
+            "Task marker: blog seo_brief json.\n"
+            "Return JSON only for BlogSeoBrief. Draft only — never publish.\n"
+            "Spell brand as Pàdéyá. No fake citations.\n"
+            "Title: {title}\nExcerpt: {excerpt}\nBody:\n{body}\nNotes: {notes}"
+        ),
+    },
+    {
+        "slug": FEATURE_ADMIN_BLOG_SECTION,
+        "name": "Blog AI Studio section",
+        "audience": "admin",
+        "system_prompt": SYSTEM_BLOG,
+        "user_template": (
+            "Task marker: generate section json.\n"
+            "Return BlogGeneratedSection JSON only. Mark Needs verification.\n"
+            "Title: {title}\nBody:\n{body}\nNotes: {notes}"
+        ),
+    },
+    {
+        "slug": FEATURE_ADMIN_BLOG_FULL_DRAFT,
+        "name": "Blog AI Studio full draft",
+        "audience": "admin",
+        "system_prompt": SYSTEM_BLOG,
+        "user_template": (
+            "Task marker: full draft json.\n"
+            "Return section drafts as JSON. Never set status=published.\n"
+            "Title: {title}\nBody:\n{body}\nNotes: {notes}"
+        ),
+    },
+    {
+        "slug": FEATURE_ADMIN_BLOG_REWRITE,
+        "name": "Blog AI Studio rewrite",
+        "audience": "admin",
+        "system_prompt": SYSTEM_BLOG,
+        "user_template": (
+            "Task marker: rewrite selection json.\n"
+            "Return {\"text\":\"...\",\"action\":\"...\"} JSON only.\n"
+            "Selection:\n{body}\nNotes: {notes}"
+        ),
+    },
+    {
+        "slug": FEATURE_ADMIN_BLOG_REVIEW,
+        "name": "Blog AI Studio quality review",
+        "audience": "admin",
+        "system_prompt": SYSTEM_BLOG,
+        "user_template": (
+            "Task marker: review article json.\n"
+            "Return BlogQualityReview JSON only. Draft advisory.\n"
+            "Title: {title}\nBody:\n{body}"
+        ),
+    },
+    {
+        "slug": FEATURE_ADMIN_BLOG_FAQS,
+        "name": "Blog AI Studio FAQs",
+        "audience": "admin",
+        "system_prompt": SYSTEM_BLOG,
+        "user_template": (
+            "Task marker: faq json.\n"
+            "Return {\"faqs\":[...]} JSON only. Never publish.\n"
+            "Title: {title}\nBody:\n{body}"
+        ),
+    },
+    {
+        "slug": FEATURE_ADMIN_BLOG_IMAGE_PROMPT,
+        "name": "Blog AI Studio image prompt",
+        "audience": "admin",
+        "system_prompt": SYSTEM_BLOG,
+        "user_template": (
+            "Task marker: image prompt json.\n"
+            "Return BlogImagePrompt JSON only.\n"
+            "Title: {title}\nExcerpt: {excerpt}"
+        ),
+    },
+    {
+        "slug": FEATURE_ADMIN_BLOG_INTERNAL_LINKS,
+        "name": "Blog AI Studio internal links",
+        "audience": "admin",
+        "system_prompt": SYSTEM_BLOG,
+        "user_template": (
+            "Task marker: internal links json.\n"
+            "Only suggest real inventory URLs. Return {\"links\":[]} JSON.\n"
+            "Title: {title}\nBody:\n{body}"
+        ),
+    },
+    {
+        "slug": FEATURE_ADMIN_BLOG_FACT_REVIEW,
+        "name": "Blog AI Studio fact review",
+        "audience": "admin",
+        "system_prompt": SYSTEM_BLOG,
+        "user_template": (
+            "Task marker: fact review json.\n"
+            "Return {\"claims\":[...]} JSON. Never invent verified citations; "
+            "mark Needs verification.\n"
+            "Title: {title}\nBody:\n{body}"
+        ),
+    },
+    {
+        "slug": FEATURE_ADMIN_BLOG_SIMILARITY,
+        "name": "Blog AI Studio similarity",
+        "audience": "admin",
+        "system_prompt": SYSTEM_BLOG,
+        "user_template": (
+            "Task marker: similarity review json.\n"
+            "Return BlogSimilarityReview JSON. Not legal plagiarism detection.\n"
+            "Title: {title}\nBody:\n{body}"
         ),
     },
     {

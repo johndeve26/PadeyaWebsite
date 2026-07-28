@@ -42,6 +42,33 @@ FEATURE_ADMIN_BLOG_SEO = "admin.blog.seo_meta"
 FEATURE_ADMIN_BLOG_SOCIAL = "admin.blog.social_snippets"
 FEATURE_ADMIN_BLOG_TAGS = "admin.blog.tags"
 
+# Blog AI Studio keys (structured JSON; draft-only; never auto-publish)
+FEATURE_ADMIN_BLOG_SEO_BRIEF = "admin.blog.seo_brief"
+FEATURE_ADMIN_BLOG_SECTION = "admin.blog.section"
+FEATURE_ADMIN_BLOG_FULL_DRAFT = "admin.blog.full_draft"
+FEATURE_ADMIN_BLOG_REWRITE = "admin.blog.rewrite"
+FEATURE_ADMIN_BLOG_REVIEW = "admin.blog.review"
+FEATURE_ADMIN_BLOG_FAQS = "admin.blog.faqs"
+FEATURE_ADMIN_BLOG_IMAGE_PROMPT = "admin.blog.image_prompt"
+FEATURE_ADMIN_BLOG_INTERNAL_LINKS = "admin.blog.internal_links"
+FEATURE_ADMIN_BLOG_FACT_REVIEW = "admin.blog.fact_review"
+FEATURE_ADMIN_BLOG_SIMILARITY = "admin.blog.similarity"
+
+BLOG_STUDIO_FEATURES = frozenset(
+    {
+        FEATURE_ADMIN_BLOG_SEO_BRIEF,
+        FEATURE_ADMIN_BLOG_SECTION,
+        FEATURE_ADMIN_BLOG_FULL_DRAFT,
+        FEATURE_ADMIN_BLOG_REWRITE,
+        FEATURE_ADMIN_BLOG_REVIEW,
+        FEATURE_ADMIN_BLOG_FAQS,
+        FEATURE_ADMIN_BLOG_IMAGE_PROMPT,
+        FEATURE_ADMIN_BLOG_INTERNAL_LINKS,
+        FEATURE_ADMIN_BLOG_FACT_REVIEW,
+        FEATURE_ADMIN_BLOG_SIMILARITY,
+    }
+)
+
 # Shipped host AI (canonical Phase 1 — Control Center + product UI)
 CANONICAL_HOST_AI_FEATURES: frozenset[str] = frozenset(
     {
@@ -114,6 +141,16 @@ ADMIN_FEATURES = (
     FEATURE_ADMIN_BLOG_SEO,
     FEATURE_ADMIN_BLOG_SOCIAL,
     FEATURE_ADMIN_BLOG_TAGS,
+    FEATURE_ADMIN_BLOG_SEO_BRIEF,
+    FEATURE_ADMIN_BLOG_SECTION,
+    FEATURE_ADMIN_BLOG_FULL_DRAFT,
+    FEATURE_ADMIN_BLOG_REWRITE,
+    FEATURE_ADMIN_BLOG_REVIEW,
+    FEATURE_ADMIN_BLOG_FAQS,
+    FEATURE_ADMIN_BLOG_IMAGE_PROMPT,
+    FEATURE_ADMIN_BLOG_INTERNAL_LINKS,
+    FEATURE_ADMIN_BLOG_FACT_REVIEW,
+    FEATURE_ADMIN_BLOG_SIMILARITY,
 )
 
 SUPPORT_FEATURES = frozenset(
@@ -144,7 +181,7 @@ BLOG_FEATURES = frozenset(
         FEATURE_ADMIN_BLOG_SOCIAL,
         FEATURE_ADMIN_BLOG_TAGS,
     }
-)
+) | BLOG_STUDIO_FEATURES
 
 # Future keys — Control Center only; disabled by default
 FUTURE_AI_FEATURES: tuple[str, ...] = (
@@ -157,6 +194,9 @@ HIGH_RISK_HUMAN_REVIEW_LOCKED: frozenset[str] = frozenset(
         FEATURE_SUPPORT_REPLY_DRAFT,
         FEATURE_ADMIN_BLOG_SEO,
         FEATURE_ADMIN_BLOG_SOCIAL,
+        FEATURE_ADMIN_BLOG_SEO_BRIEF,
+        FEATURE_ADMIN_BLOG_FULL_DRAFT,
+        FEATURE_ADMIN_BLOG_REVIEW,
         FEATURE_HOST_ANNOUNCEMENTS_DRAFT,
         FEATURE_HOST_SPONSORSHIP_PITCH,
         FEATURE_FAN_PASSPORT_BIO,
@@ -189,6 +229,16 @@ ADMIN_CONTROL_FEATURES: tuple[str, ...] = (
     FEATURE_ADMIN_BLOG_SEO,
     FEATURE_ADMIN_BLOG_SOCIAL,
     FEATURE_ADMIN_BLOG_TAGS,
+    FEATURE_ADMIN_BLOG_SEO_BRIEF,
+    FEATURE_ADMIN_BLOG_SECTION,
+    FEATURE_ADMIN_BLOG_FULL_DRAFT,
+    FEATURE_ADMIN_BLOG_REWRITE,
+    FEATURE_ADMIN_BLOG_REVIEW,
+    FEATURE_ADMIN_BLOG_FAQS,
+    FEATURE_ADMIN_BLOG_IMAGE_PROMPT,
+    FEATURE_ADMIN_BLOG_INTERNAL_LINKS,
+    FEATURE_ADMIN_BLOG_FACT_REVIEW,
+    FEATURE_ADMIN_BLOG_SIMILARITY,
 )
 
 DEFAULT_FEATURE_PERMISSIONS: dict[str, list[str]] = {
@@ -216,6 +266,16 @@ DEFAULT_FEATURE_PERMISSIONS: dict[str, list[str]] = {
     FEATURE_ADMIN_BLOG_SEO: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
     FEATURE_ADMIN_BLOG_SOCIAL: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
     FEATURE_ADMIN_BLOG_TAGS: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
+    FEATURE_ADMIN_BLOG_SEO_BRIEF: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
+    FEATURE_ADMIN_BLOG_SECTION: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
+    FEATURE_ADMIN_BLOG_FULL_DRAFT: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
+    FEATURE_ADMIN_BLOG_REWRITE: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
+    FEATURE_ADMIN_BLOG_REVIEW: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
+    FEATURE_ADMIN_BLOG_FAQS: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
+    FEATURE_ADMIN_BLOG_IMAGE_PROMPT: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
+    FEATURE_ADMIN_BLOG_INTERNAL_LINKS: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
+    FEATURE_ADMIN_BLOG_FACT_REVIEW: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
+    FEATURE_ADMIN_BLOG_SIMILARITY: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
 }
 
 
@@ -260,6 +320,16 @@ FEATURE_CANONICAL: dict[str, str] = {
     FEATURE_ADMIN_BLOG_SEO: FEATURE_ADMIN_BLOG_SEO,
     FEATURE_ADMIN_BLOG_SOCIAL: FEATURE_ADMIN_BLOG_SOCIAL,
     FEATURE_ADMIN_BLOG_TAGS: FEATURE_ADMIN_BLOG_TAGS,
+    FEATURE_ADMIN_BLOG_SEO_BRIEF: FEATURE_ADMIN_BLOG_SEO_BRIEF,
+    FEATURE_ADMIN_BLOG_SECTION: FEATURE_ADMIN_BLOG_SECTION,
+    FEATURE_ADMIN_BLOG_FULL_DRAFT: FEATURE_ADMIN_BLOG_FULL_DRAFT,
+    FEATURE_ADMIN_BLOG_REWRITE: FEATURE_ADMIN_BLOG_REWRITE,
+    FEATURE_ADMIN_BLOG_REVIEW: FEATURE_ADMIN_BLOG_REVIEW,
+    FEATURE_ADMIN_BLOG_FAQS: FEATURE_ADMIN_BLOG_FAQS,
+    FEATURE_ADMIN_BLOG_IMAGE_PROMPT: FEATURE_ADMIN_BLOG_IMAGE_PROMPT,
+    FEATURE_ADMIN_BLOG_INTERNAL_LINKS: FEATURE_ADMIN_BLOG_INTERNAL_LINKS,
+    FEATURE_ADMIN_BLOG_FACT_REVIEW: FEATURE_ADMIN_BLOG_FACT_REVIEW,
+    FEATURE_ADMIN_BLOG_SIMILARITY: FEATURE_ADMIN_BLOG_SIMILARITY,
     "summarize_support_complaints": FEATURE_ADMIN_SUPPORT_QUEUE,
     "explain_revenue_trends": FEATURE_ADMIN_REVENUE_SUMMARY,
     "summarize_review_reports": FEATURE_ADMIN_REPORTS_SUMMARY,
@@ -293,6 +363,16 @@ FEATURE_TEMPLATE_SLUG: dict[str, str] = {
     FEATURE_ADMIN_BLOG_SEO: FEATURE_ADMIN_BLOG_SEO,
     FEATURE_ADMIN_BLOG_SOCIAL: FEATURE_ADMIN_BLOG_SOCIAL,
     FEATURE_ADMIN_BLOG_TAGS: FEATURE_ADMIN_BLOG_TAGS,
+    FEATURE_ADMIN_BLOG_SEO_BRIEF: FEATURE_ADMIN_BLOG_SEO_BRIEF,
+    FEATURE_ADMIN_BLOG_SECTION: FEATURE_ADMIN_BLOG_SECTION,
+    FEATURE_ADMIN_BLOG_FULL_DRAFT: FEATURE_ADMIN_BLOG_FULL_DRAFT,
+    FEATURE_ADMIN_BLOG_REWRITE: FEATURE_ADMIN_BLOG_REWRITE,
+    FEATURE_ADMIN_BLOG_REVIEW: FEATURE_ADMIN_BLOG_REVIEW,
+    FEATURE_ADMIN_BLOG_FAQS: FEATURE_ADMIN_BLOG_FAQS,
+    FEATURE_ADMIN_BLOG_IMAGE_PROMPT: FEATURE_ADMIN_BLOG_IMAGE_PROMPT,
+    FEATURE_ADMIN_BLOG_INTERNAL_LINKS: FEATURE_ADMIN_BLOG_INTERNAL_LINKS,
+    FEATURE_ADMIN_BLOG_FACT_REVIEW: FEATURE_ADMIN_BLOG_FACT_REVIEW,
+    FEATURE_ADMIN_BLOG_SIMILARITY: FEATURE_ADMIN_BLOG_SIMILARITY,
     "summarize_support_complaints": FEATURE_ADMIN_SUPPORT_QUEUE,
     "explain_revenue_trends": FEATURE_ADMIN_REVENUE_SUMMARY,
     "summarize_review_reports": FEATURE_ADMIN_REPORTS_SUMMARY,
@@ -323,6 +403,16 @@ FEATURE_LABELS: dict[str, str] = {
     FEATURE_ADMIN_BLOG_SEO: "Generate SEO meta",
     FEATURE_ADMIN_BLOG_SOCIAL: "Generate social snippets",
     FEATURE_ADMIN_BLOG_TAGS: "Suggest blog tags",
+    FEATURE_ADMIN_BLOG_SEO_BRIEF: "Generate SEO content brief",
+    FEATURE_ADMIN_BLOG_SECTION: "Generate blog section",
+    FEATURE_ADMIN_BLOG_FULL_DRAFT: "Generate full blog draft",
+    FEATURE_ADMIN_BLOG_REWRITE: "Rewrite blog selection",
+    FEATURE_ADMIN_BLOG_REVIEW: "Review blog article quality",
+    FEATURE_ADMIN_BLOG_FAQS: "Generate blog FAQs",
+    FEATURE_ADMIN_BLOG_IMAGE_PROMPT: "Generate blog image prompt",
+    FEATURE_ADMIN_BLOG_INTERNAL_LINKS: "Suggest blog internal links",
+    FEATURE_ADMIN_BLOG_FACT_REVIEW: "Review blog factual claims",
+    FEATURE_ADMIN_BLOG_SIMILARITY: "Review blog similarity",
     "generate_event_title": "Generate event title",
     "generate_event_description": "Generate event description",
     "generate_ticket_tier_copy": "Generate ticket tier copy",
@@ -370,6 +460,16 @@ DEFAULT_FEATURE_ENABLED: dict[str, bool] = {
     FEATURE_ADMIN_BLOG_SEO: True,
     FEATURE_ADMIN_BLOG_SOCIAL: True,
     FEATURE_ADMIN_BLOG_TAGS: True,
+    FEATURE_ADMIN_BLOG_SEO_BRIEF: True,
+    FEATURE_ADMIN_BLOG_SECTION: True,
+    FEATURE_ADMIN_BLOG_FULL_DRAFT: True,
+    FEATURE_ADMIN_BLOG_REWRITE: True,
+    FEATURE_ADMIN_BLOG_REVIEW: True,
+    FEATURE_ADMIN_BLOG_FAQS: True,
+    FEATURE_ADMIN_BLOG_IMAGE_PROMPT: True,
+    FEATURE_ADMIN_BLOG_INTERNAL_LINKS: True,
+    FEATURE_ADMIN_BLOG_FACT_REVIEW: True,
+    FEATURE_ADMIN_BLOG_SIMILARITY: True,
     "generate_event_title": True,
     "generate_event_description": True,
     "summarize_support_complaints": True,

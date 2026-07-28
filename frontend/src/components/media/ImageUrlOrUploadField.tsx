@@ -67,6 +67,8 @@ export function ImageUrlOrUploadField({
   urlPlaceholder = "https://",
   showClear = true,
   onUploaded,
+  /** Force account-level avatar upload (fans + hosts). Overrides host media staging. */
+  accountAvatar = false,
 }: {
   label: string;
   hint?: string;
@@ -86,19 +88,24 @@ export function ImageUrlOrUploadField({
   urlPlaceholder?: string;
   showClear?: boolean;
   onUploaded?: (url: string) => void;
+  accountAvatar?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const useAccountAvatar =
+    accountAvatar || mediaType === "avatar" || mediaType === "logo";
 
   async function onPick(file: File) {
     setError(null);
     setUploading(true);
     try {
       const url = await uploadFormImage(file, {
-        eventId,
-        mediaType,
-        setAsBanner,
+        eventId: useAccountAvatar ? undefined : eventId,
+        mediaType: useAccountAvatar ? "avatar" : mediaType,
+        setAsBanner: useAccountAvatar ? false : setAsBanner,
+        accountAvatar: useAccountAvatar,
       });
       onChange(url);
       onUploaded?.(url);

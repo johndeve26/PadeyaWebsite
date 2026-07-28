@@ -10,6 +10,7 @@ import {
 } from "@/components/hosts/HostTaxonomyFields";
 import { RequireHost } from "@/components/hosts/RequireHost";
 import { DashboardShell } from "@/components/layout/DashboardShell";
+import { ImageUrlOrUploadField } from "@/components/media/ImageUrlOrUploadField";
 import { ThemeAppearanceCard } from "@/components/theme/ThemeAppearanceCard";
 import {
   Alert,
@@ -64,6 +65,7 @@ export default function HostSettingsPage() {
   const toast = useToast();
   const [host, setHost] = useState<Host | null>(null);
   const [displayName, setDisplayName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [bio, setBio] = useState("");
   const [website, setWebsite] = useState("");
   const [city, setCity] = useState("");
@@ -76,6 +78,7 @@ export default function HostSettingsPage() {
 
   const snapshot = JSON.stringify({
     displayName,
+    avatarUrl,
     bio,
     website,
     city,
@@ -103,6 +106,7 @@ export default function HostSettingsPage() {
         };
         const next = {
           displayName: row.display_name ?? "",
+          avatarUrl: row.profile?.avatar_url ?? "",
           bio: row.profile?.bio ?? "",
           website: row.profile?.website ?? "",
           city: row.profile?.city ?? "",
@@ -111,6 +115,7 @@ export default function HostSettingsPage() {
           taxonomy: tax,
         };
         setDisplayName(next.displayName);
+        setAvatarUrl(next.avatarUrl);
         setBio(next.bio);
         setWebsite(next.website);
         setCity(next.city);
@@ -136,6 +141,7 @@ export default function HostSettingsPage() {
     try {
       const updated = await updateMyHost({
         display_name: displayName.trim(),
+        avatar_url: avatarUrl.trim() || null,
         bio: bio.trim() || null,
         website: website.trim() || null,
         city: city.trim() || null,
@@ -159,6 +165,7 @@ export default function HostSettingsPage() {
       };
       const next = {
         displayName: updated.display_name ?? "",
+        avatarUrl: updated.profile?.avatar_url ?? "",
         bio: updated.profile?.bio ?? "",
         website: updated.profile?.website ?? "",
         city: updated.profile?.city ?? "",
@@ -166,6 +173,7 @@ export default function HostSettingsPage() {
         country: updated.profile?.country ?? "",
         taxonomy: tax,
       };
+      setAvatarUrl(next.avatarUrl);
       setTaxonomy(tax);
       setBaseline(JSON.stringify(next));
       toast.push({ tone: "success", title: "Host settings saved" });
@@ -206,6 +214,17 @@ export default function HostSettingsPage() {
             description={`Slug: ${host?.slug ?? "—"} · Status: ${host?.status ?? "—"}`}
           />
           <form className="grid gap-4 sm:grid-cols-2" onSubmit={(e) => void onSave(e)}>
+            <div className="sm:col-span-2">
+              <ImageUrlOrUploadField
+                label="Profile photo"
+                hint="Same photo as Account settings and Fan Passport."
+                value={avatarUrl}
+                onChange={setAvatarUrl}
+                mediaType="avatar"
+                accountAvatar
+                previewClassName="h-16 w-16 rounded-full"
+              />
+            </div>
             <Input
               className="sm:col-span-2"
               label="Display name"

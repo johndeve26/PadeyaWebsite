@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner";
 import { DashboardShell } from "@/components/layout/DashboardShell";
+import { ImageUrlOrUploadField } from "@/components/media/ImageUrlOrUploadField";
 import { AccountSecurityCard } from "@/components/settings/AccountSecurityCard";
 import { NotificationPreferencesSections } from "@/components/notifications/NotificationPreferencesSections";
 import { ThemeAppearanceCard } from "@/components/theme/ThemeAppearanceCard";
@@ -25,17 +26,21 @@ export default function DashboardSettingsPage() {
   const toast = useToast();
   const serverDisplayName = user?.full_name ?? "";
   const serverUsername = user?.username ?? "";
+  const serverAvatar = user?.avatar_url ?? "";
   const [draftDisplayName, setDraftDisplayName] = useState<string | null>(null);
   const [draftUsername, setDraftUsername] = useState<string | null>(null);
+  const [draftAvatar, setDraftAvatar] = useState<string | null>(null);
   const displayName = draftDisplayName ?? serverDisplayName;
   const username = draftUsername ?? serverUsername;
+  const avatarUrl = draftAvatar ?? serverAvatar;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const dirty =
     (draftDisplayName !== null &&
       draftDisplayName.trim() !== serverDisplayName.trim()) ||
-    (draftUsername !== null && draftUsername.trim() !== serverUsername.trim());
+    (draftUsername !== null && draftUsername.trim() !== serverUsername.trim()) ||
+    (draftAvatar !== null && draftAvatar.trim() !== serverAvatar.trim());
   useUnsavedChanges(dirty);
 
   const email = user?.email ?? "—";
@@ -53,12 +58,19 @@ export default function DashboardSettingsPage() {
     setBusy(true);
     setError(null);
     try {
+      const trimmedAvatar = avatarUrl.trim();
       await updateMyProfile({
         display_name: displayName.trim(),
         username: username.trim().toLowerCase(),
+        ...(draftAvatar !== null
+          ? trimmedAvatar
+            ? { avatar_url: trimmedAvatar }
+            : { clear_avatar: true }
+          : {}),
       });
       setDraftDisplayName(null);
       setDraftUsername(null);
+      setDraftAvatar(null);
       await refreshUser();
       toast.push({ tone: "success", title: "Profile updated" });
     } catch (err) {
@@ -73,7 +85,7 @@ export default function DashboardSettingsPage() {
       tone="soft"
       eyebrow="Account"
       title="Profile & security"
-      description="Your display name, username, sign-in email, password, appearance, and notifications."
+      description="Your photo, display name, username, sign-in email, password, appearance, and notifications."
     >
       {error ? (
         <Alert tone="danger" title="Could not save">
@@ -94,9 +106,19 @@ export default function DashboardSettingsPage() {
           <SectionHeader
             eyebrow="Profile"
             title="Your details"
-            description="Shown on tickets, receipts, and host communications."
+            description="One photo and username for your Fan Card, Host Legacy, messages, and tickets."
           />
           <form onSubmit={(e) => void onSave(e)} className="space-y-4">
+            <ImageUrlOrUploadField
+              label="Profile photo"
+              hint="Same photo on Fan Passport, Host Legacy, and messages. JPEG, PNG, WebP, or GIF — SVG is not allowed."
+              value={avatarUrl}
+              onChange={(url) => setDraftAvatar(url)}
+              mediaType="avatar"
+              accountAvatar
+              previewClassName="h-20 w-20 rounded-full"
+              previewEmptyLabel="No photo"
+            />
             <Input
               label="Display name"
               value={displayName}

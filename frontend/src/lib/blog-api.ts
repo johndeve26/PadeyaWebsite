@@ -51,8 +51,16 @@ export type BlogPost = BlogPostListItem & {
   seo_description?: string | null;
   canonical_url?: string | null;
   og_image_url?: string | null;
+  og_title?: string | null;
+  social_share_text?: string | null;
+  focus_keyword?: string | null;
+  secondary_keywords?: string[] | null;
   related?: BlogPostListItem[];
   admin_notes?: string | null;
+  content_version?: number;
+  studio_brief?: Record<string, unknown> | null;
+  studio_outline?: Record<string, unknown> | null;
+  faqs?: Array<{ id: string; question: string; answer: string }> | null;
 };
 
 export type BlogComment = {

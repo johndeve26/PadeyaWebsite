@@ -145,6 +145,12 @@ def onboard_host(
         state=payload.state,
         country=payload.country,
     )
+    # Carry over the account photo so Host Legacy matches Fan Passport.
+    passport_avatar = db.scalar(
+        select(FanPassport.avatar_url).where(FanPassport.user_id == user.id)
+    )
+    if passport_avatar:
+        profile.avatar_url = passport_avatar
     verification = HostVerification(host_id=host.id, status="pending")
     db.add(profile)
     db.add(verification)
@@ -185,10 +191,17 @@ def update_host_profile(
     taxonomy_payload = {k: data.pop(k) for k in list(data) if k in taxonomy_keys}
 
     if "display_name" in data and data["display_name"]:
-        host.display_name = data.pop("display_name").strip()
+        from app.users.unified_profile import apply_unified_display_name
+
+        apply_unified_display_name(db, user, data.pop("display_name"))
 
     if host.profile is None:
         host.profile = HostProfile(host_id=host.id)
+
+    if "avatar_url" in data:
+        from app.users.unified_profile import apply_unified_avatar
+
+        apply_unified_avatar(db, user, data.pop("avatar_url"))
 
     if "niche_positioning" in taxonomy_payload:
         links = dict(host.profile.social_links or {})

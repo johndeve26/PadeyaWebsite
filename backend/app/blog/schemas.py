@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -71,6 +72,14 @@ class PostAdmin(PostPublic):
     created_by: UUID | None = None
     updated_by: UUID | None = None
     archived_at: datetime | None = None
+    studio_brief: dict[str, Any] | None = None
+    studio_outline: dict[str, Any] | None = None
+    faqs: list[Any] | None = None
+    content_version: int = 1
+    focus_keyword: str | None = None
+    secondary_keywords: list[str] | None = None
+    social_share_text: str | None = None
+    og_title: str | None = None
 
 
 class PostCreate(BaseModel):
@@ -89,6 +98,13 @@ class PostCreate(BaseModel):
     og_image_url: str | None = None
     admin_notes: str | None = None
     scheduled_at: datetime | None = None
+    studio_brief: dict[str, Any] | None = None
+    studio_outline: dict[str, Any] | None = None
+    faqs: list[Any] | None = None
+    focus_keyword: str | None = Field(default=None, max_length=120)
+    secondary_keywords: list[str] | None = None
+    social_share_text: str | None = None
+    og_title: str | None = Field(default=None, max_length=200)
 
     @field_validator("title")
     @classmethod
@@ -113,6 +129,14 @@ class PostUpdate(BaseModel):
     admin_notes: str | None = None
     scheduled_at: datetime | None = None
     status: str | None = None
+    studio_brief: dict[str, Any] | None = None
+    studio_outline: dict[str, Any] | None = None
+    faqs: list[Any] | None = None
+    focus_keyword: str | None = None
+    secondary_keywords: list[str] | None = None
+    social_share_text: str | None = None
+    og_title: str | None = None
+    content_version: int | None = None
 
 
 class CategoryCreate(BaseModel):

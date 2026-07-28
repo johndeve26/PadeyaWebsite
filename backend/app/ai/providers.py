@@ -456,6 +456,30 @@ def _template_draft(user_prompt: str) -> str:
             "5. Guides for fans and hosts on Pàdéyá"
         )
 
+    # Blog AI Studio structured JSON tasks (extend Phase-1; do not replace)
+    studio_markers = (
+        "seo_brief json",
+        "blog titles json",
+        "blog outline json",
+        "outline section json",
+        "generate section json",
+        "full draft",
+        "rewrite selection json",
+        "review article json",
+        "similarity review",
+        "faq json",
+        "image prompt json",
+        "internal links",
+        "fact review json",
+    )
+    if any(m in lower for m in studio_markers):
+        try:
+            from app.blog.studio.templates import template_payload_for_task
+
+            return template_payload_for_task(user_prompt)
+        except Exception:
+            pass
+
     if "structured markdown outline" in lower or "write a structured markdown outline" in lower:
         return (
             "## Opening\n"

@@ -102,6 +102,15 @@ class BlogPost(Base):
     canonical_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     og_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Blog AI Studio fields (draft-only; never auto-publish)
+    studio_brief: Mapped[dict[str, Any] | None] = mapped_column(JSON_TYPE, nullable=True)
+    studio_outline: Mapped[dict[str, Any] | None] = mapped_column(JSON_TYPE, nullable=True)
+    faqs: Mapped[list[Any] | None] = mapped_column(JSON_TYPE, nullable=True)
+    content_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    focus_keyword: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    secondary_keywords: Mapped[list[Any] | None] = mapped_column(JSON_TYPE, nullable=True)
+    social_share_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    og_title: Mapped[str | None] = mapped_column(String(200), nullable=True)
     scheduled_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
     )
@@ -134,6 +143,18 @@ class BlogPost(Base):
         "BlogTag",
         secondary="blog_post_tags",
         lazy="selectin",
+    )
+    revisions = relationship(
+        "BlogRevision",
+        back_populates="post",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+    ai_operations = relationship(
+        "BlogAiOperation",
+        back_populates="post",
+        lazy="selectin",
+        cascade="all, delete-orphan",
     )
 
 
@@ -240,3 +261,80 @@ class BlogCommentEdit(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
     )
+
+
+class BlogRevision(Base):
+    """Immutable draft snapshots for Blog AI Studio / manual checkpoints."""
+
+    __tablename__ = "blog_revisions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    post_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("blog_posts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    # Snapshot fields (never store secrets/prompts)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    excerpt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    body: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    seo_title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    seo_description: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    faqs: Mapped[list[Any] | None] = mapped_column(JSON_TYPE, nullable=True)
+    studio_outline: Mapped[dict[str, Any] | None] = mapped_column(JSON_TYPE, nullable=True)
+    studio_brief: Mapped[dict[str, Any] | None] = mapped_column(JSON_TYPE, nullable=True)
+    content_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    # Metadata
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    # manual | ai
+    source: Mapped[str] = mapped_column(String(32), nullable=False, default="manual")
+    # checkpoint | autosave | publish | full_draft | restore | etc.
+    action_type: Mapped[str] = mapped_column(String(64), nullable=False, default="checkpoint")
+    provider: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    model_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    summary: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
+
+    post = relationship("BlogPost", back_populates="revisions")
+
+
+class BlogAiOperation(Base):
+    """Safe metadata log for Blog AI Studio operations (no prompts/secrets/bodies)."""
+
+    __tablename__ = "blog_ai_operations"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    post_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("blog_posts.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    operation: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    feature_key: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    provider: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    model_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    success: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    tokens_in: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    tokens_out: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Safe error summary only — never API keys or full prompts
+    error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    client_request_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
+
+    post = relationship("BlogPost", back_populates="ai_operations")

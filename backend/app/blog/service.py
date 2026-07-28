@@ -123,6 +123,14 @@ def serialize_post(row: BlogPost, *, admin: bool = False, related: list[BlogPost
         data["created_by"] = row.created_by
         data["updated_by"] = row.updated_by
         data["archived_at"] = row.archived_at
+        data["studio_brief"] = row.studio_brief
+        data["studio_outline"] = row.studio_outline
+        data["faqs"] = row.faqs
+        data["content_version"] = int(getattr(row, "content_version", None) or 1)
+        data["focus_keyword"] = row.focus_keyword
+        data["secondary_keywords"] = row.secondary_keywords
+        data["social_share_text"] = row.social_share_text
+        data["og_title"] = row.og_title
     return data
 
 
@@ -327,6 +335,14 @@ def create_post(db: Session, *, user: User, payload: PostCreate) -> BlogPost:
         published_at=published_at,
         created_by=user.id,
         updated_by=user.id,
+        studio_brief=payload.studio_brief,
+        studio_outline=payload.studio_outline,
+        faqs=payload.faqs,
+        content_version=1,
+        focus_keyword=payload.focus_keyword,
+        secondary_keywords=payload.secondary_keywords,
+        social_share_text=payload.social_share_text,
+        og_title=payload.og_title,
     )
     db.add(row)
     db.flush()
@@ -354,6 +370,8 @@ def update_post(
         raise HTTPException(status_code=400, detail="Restore before updating")
     data = payload.model_dump(exclude_unset=True)
     tag_ids = data.pop("tag_ids", None)
+    # content_version is server-managed unless explicitly provided for conflict checks elsewhere
+    client_version = data.pop("content_version", None)
     if "slug" in data and data["slug"]:
         slug = _slugify(data["slug"])
         if not slug_available(db, slug, exclude_id=post_id):
@@ -379,8 +397,14 @@ def update_post(
             raise HTTPException(
                 status_code=400, detail="scheduled_at required for scheduled posts"
             )
+    meaningful = {"title", "excerpt", "body", "seo_title", "seo_description", "faqs", "studio_outline", "studio_brief"}
+    bump = bool(meaningful.intersection(data.keys()))
     for key, value in data.items():
         setattr(row, key, value)
+    if bump:
+        row.content_version = int(row.content_version or 1) + 1
+    elif client_version is not None:
+        row.content_version = int(client_version)
     row.updated_by = user.id
     if tag_ids is not None:
         _set_tags(db, row, tag_ids)
@@ -404,6 +428,20 @@ def publish_post(db: Session, *, user: User, post_id: uuid.UUID) -> BlogPost:
     row.published_at = _utcnow()
     row.scheduled_at = None
     row.updated_by = user.id
+    try:
+        from app.blog.studio.revisions import create_revision
+
+        create_revision(
+            db,
+            post=row,
+            actor=user,
+            source="manual",
+            action_type="publish",
+            summary="Published snapshot",
+            commit=False,
+        )
+    except Exception:
+        pass
     write_audit_log(
         db,
         action="blog.post_publish",

@@ -35,10 +35,12 @@ from app.blog.rate_limit import (
     rate_limit_blog_comment_edit,
     rate_limit_blog_comment_reply,
 )
+from app.blog.studio.router import router as studio_router
 from app.core.database import get_db
 from app.users.models import User
 
 router = APIRouter(tags=["blog"])
+router.include_router(studio_router)
 
 
 # --- Public ---

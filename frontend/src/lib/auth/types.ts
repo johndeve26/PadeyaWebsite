@@ -42,6 +42,7 @@ export type User = {
   email: string;
   full_name: string;
   username?: string | null;
+  avatar_url?: string | null;
   is_active: boolean;
   is_verified: boolean;
   roles: string[];

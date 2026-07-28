@@ -1,4 +1,4 @@
-"""Unified display name + username across account, Fan Passport, and Host Legacy."""
+"""Unified display name + username + avatar across account, Fan Passport, and Host Legacy."""
 
 from __future__ import annotations
 
@@ -8,7 +8,8 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.hosts.models import Host
+from app.blog.sanitize import validate_image_url
+from app.hosts.models import Host, HostProfile
 from app.hosts.service import get_host_by_user_id
 from app.passport.models import FanPassport
 from app.passport.privacy import is_valid_passport_username, normalize_username
@@ -23,6 +24,23 @@ def resolve_user_username(db: Session, user: User) -> str | None:
     if passport_username:
         return passport_username
     return db.scalar(select(Host.slug).where(Host.user_id == user.id))
+
+
+def resolve_user_avatar(db: Session, user: User) -> str | None:
+    """Prefer Fan Passport avatar, then Host Legacy — they should match after sync."""
+    passport_avatar = db.scalar(
+        select(FanPassport.avatar_url).where(FanPassport.user_id == user.id)
+    )
+    if passport_avatar:
+        return passport_avatar
+    host = get_host_by_user_id(db, user.id)
+    if host is None:
+        return None
+    if host.profile is not None and host.profile.avatar_url:
+        return host.profile.avatar_url
+    return db.scalar(
+        select(HostProfile.avatar_url).where(HostProfile.host_id == host.id)
+    )
 
 
 def assert_username_available_for_user(
@@ -103,3 +121,33 @@ def apply_unified_display_name(db: Session, user: User, raw_name: str) -> str:
         host.display_name = name
 
     return name
+
+
+def apply_unified_avatar(db: Session, user: User, raw_url: str | None) -> str | None:
+    """Set one profile photo on Fan Passport and Host Legacy (same as username sync)."""
+    try:
+        url = validate_image_url(raw_url)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    passport = ensure_passport(db, user)
+    passport.avatar_url = url
+
+    host = get_host_by_user_id(db, user.id)
+    if host is not None:
+        if host.profile is None:
+            host.profile = HostProfile(host_id=host.id)
+        host.profile.avatar_url = url
+
+    try:
+        from app.core.cache_invalidation import invalidate_fan_public_caches
+
+        if passport.username:
+            invalidate_fan_public_caches(username=passport.username)
+    except Exception:
+        pass
+
+    return url

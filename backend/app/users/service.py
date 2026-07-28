@@ -101,18 +101,21 @@ def serialize_user(user: User, db: Session | None = None) -> dict:
     restriction_keys: list[str] = []
     session = db or object_session(user)
     username: str | None = None
+    avatar_url: str | None = None
     if session is not None:
         from app.users.restrictions import active_restriction_keys
-        from app.users.unified_profile import resolve_user_username
+        from app.users.unified_profile import resolve_user_avatar, resolve_user_username
 
         restriction_keys = active_restriction_keys(session, user.id)
         username = resolve_user_username(session, user)
+        avatar_url = resolve_user_avatar(session, user)
 
     data = {
         "id": user.id,
         "email": user.email,
         "full_name": user.full_name,
         "username": username,
+        "avatar_url": avatar_url,
         "is_active": user.is_active,
         "is_verified": user.is_verified,
         "ambassadors_blocked": bool(getattr(user, "ambassadors_blocked", False)),

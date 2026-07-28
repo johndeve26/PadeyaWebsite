@@ -3,7 +3,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -52,6 +52,8 @@ class UserProfileUpdate(BaseModel):
     full_name: str | None = Field(default=None, min_length=2, max_length=200)
     display_name: str | None = Field(default=None, min_length=2, max_length=200)
     username: str | None = Field(default=None, min_length=3, max_length=32)
+    avatar_url: str | None = Field(default=None, max_length=500)
+    clear_avatar: bool = False
 
 
 @router.get("/health")
@@ -60,8 +62,11 @@ async def users_module_health() -> dict[str, str]:
 
 
 @router.get("/me", response_model=UserPublic)
-def read_me(user: CurrentUser) -> UserPublic:
-    return UserPublic.model_validate(build_user_public(user))
+def read_me(
+    db: Annotated[Session, Depends(get_db)],
+    user: CurrentUser,
+) -> UserPublic:
+    return UserPublic.model_validate(build_user_public(user, db=db))
 
 
 @router.patch("/me", response_model=UserPublic)
@@ -70,14 +75,56 @@ def patch_me(
     db: Annotated[Session, Depends(get_db)],
     user: CurrentUser,
 ) -> UserPublic:
+    data = payload.model_dump(exclude_unset=True)
+    clear_avatar = bool(data.pop("clear_avatar", False))
+    avatar_url: str | None = None
+    if "avatar_url" in data:
+        avatar_url = data.get("avatar_url")
+        if avatar_url is None:
+            clear_avatar = True
     updated = lifecycle_service.update_my_profile(
         db,
         user=user,
-        full_name=payload.full_name,
-        display_name=payload.display_name,
-        username=payload.username,
+        full_name=data.get("full_name"),
+        display_name=data.get("display_name"),
+        username=data.get("username"),
+        avatar_url=None if clear_avatar else avatar_url,
+        clear_avatar=clear_avatar,
     )
-    return UserPublic.model_validate(build_user_public(updated))
+    return UserPublic.model_validate(build_user_public(updated, db=db))
+
+
+class UserAvatarUploadPublic(BaseModel):
+    url: str
+
+
+@router.post("/me/avatar", response_model=UserAvatarUploadPublic)
+async def upload_my_avatar(
+    db: Annotated[Session, Depends(get_db)],
+    user: CurrentUser,
+    file: Annotated[UploadFile, File(...)],
+) -> UserAvatarUploadPublic:
+    """Upload a raster profile photo for any signed-in user (fan or host).
+
+    Returns a public URL. Call PATCH /users/me with avatar_url to apply it
+    across Fan Passport and Host Legacy, or use this after selecting a file
+    from settings and then saving the profile form.
+    """
+    from app.core.media import get_public_media_storage
+    from app.core.media_folders import user_public_folder
+
+    data = await file.read()
+    storage = get_public_media_storage()
+    try:
+        stored = storage.store_bytes(
+            data=data,
+            filename=file.filename or "avatar.jpg",
+            content_type=file.content_type or "application/octet-stream",
+            folder=user_public_folder(user.id, "avatar"),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return UserAvatarUploadPublic(url=stored.url)
 
 
 @router.get("/admin", response_model=AdminUserListPublic)

@@ -25,8 +25,11 @@ def update_my_profile(
     full_name: str | None = None,
     display_name: str | None = None,
     username: str | None = None,
+    avatar_url: str | None = None,
+    clear_avatar: bool = False,
 ) -> User:
     from app.users.unified_profile import (
+        apply_unified_avatar,
         apply_unified_display_name,
         apply_unified_username,
     )
@@ -38,6 +41,12 @@ def update_my_profile(
         details["display_name"] = applied
     if username is not None:
         details["username"] = apply_unified_username(db, user, username)
+    if clear_avatar:
+        apply_unified_avatar(db, user, None)
+        details["avatar_url"] = ""
+    elif avatar_url is not None:
+        applied_avatar = apply_unified_avatar(db, user, avatar_url)
+        details["avatar_url"] = applied_avatar or ""
     write_audit_log(
         db,
         action="users.profile_update",

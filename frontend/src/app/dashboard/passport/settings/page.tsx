@@ -279,12 +279,13 @@ export default function PassportSettingsPage() {
             />
             <ImageUrlOrUploadField
               label="Public avatar"
-              hint="Optional profile photo. Host accounts can upload; others can paste a URL."
+              hint="Same photo as Account settings and Host Legacy. Upload works for fans and hosts — JPEG, PNG, WebP, or GIF (not SVG)."
               value={draft.avatar_url || ""}
               onChange={(url) =>
                 setDraft({ ...draft, avatar_url: url.trim() || null })
               }
-              mediaType="other"
+              mediaType="avatar"
+              accountAvatar
               previewClassName="h-16 w-16 rounded-full"
             />
             <Input
