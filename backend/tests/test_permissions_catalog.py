@@ -77,6 +77,18 @@ def test_merch_role_permission_matrix(db_session: Session):
     assert "merch.moderate" not in support_codes
     assert "payments.view" not in support_codes
     assert "refunds.approve" not in support_codes
+    assert "admin.sponsorship_deals.finance" not in support_codes
+
+
+def test_support_and_moderation_cannot_void_sponsorship_invoices(db_session: Session):
+    """Product invariant: support cannot modify financial records."""
+    support = get_role_by_name(db_session, "support_agent")
+    moderation = get_role_by_name(db_session, "moderation")
+    finance = get_role_by_name(db_session, "finance_admin")
+    assert support and moderation and finance
+    assert "admin.sponsorship_deals.finance" not in {p.code for p in support.permissions}
+    assert "admin.sponsorship_deals.finance" not in {p.code for p in moderation.permissions}
+    assert "admin.sponsorship_deals.finance" in {p.code for p in finance.permissions}
 
 
 def test_events_manage_own_implies_granular():

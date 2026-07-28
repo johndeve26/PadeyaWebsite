@@ -581,7 +581,8 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         "admin.sponsor_campaigns.moderate",
         "admin.sponsorship_deals.view",
         "admin.sponsorship_deals.manage",
-        "admin.sponsorship_deals.finance",
+        # admin.sponsorship_deals.finance intentionally omitted —
+        # support cannot void invoices / modify financial records
         "admin.events.view",
         "admin.events.export_buyers",
         "admin.events.export_private_contact",
@@ -748,7 +749,7 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         "admin.sponsor_campaigns.moderate",
         "admin.sponsorship_deals.view",
         "admin.sponsorship_deals.manage",
-        "admin.sponsorship_deals.finance",
+        # admin.sponsorship_deals.finance intentionally omitted — no finance mutations
         "merch.moderate",
         "vault.moderate",
         "support.reply",
