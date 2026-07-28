@@ -479,20 +479,22 @@ def send_ticket_email(
                 link_path="/host/analytics",
                 dedupe_key=f"order:{order.id}:host.ticket_sale",
             )
-        from app.email.admin_triggers import admin_notify_ticket_sale_paid
+        # Admin ops alert only on first fulfillment — not buyer email resends.
+        if not resend_tag:
+            from app.notifications.triggers import notify_admins_ticket_sale_paid
 
-        host_name = host.display_name if host else "Host"
-        admin_notify_ticket_sale_paid(
-            db,
-            order_id=order.id,
-            order_reference=order.reference,
-            event_title=title,
-            host_name=host_name,
-            buyer_name=order.buyer_name or "Buyer",
-            ticket_count=len(tickets),
-            amount=order.total_amount,
-            currency=order.currency or "NGN",
-        )
+            host_name = host.display_name if host else "Host"
+            notify_admins_ticket_sale_paid(
+                db,
+                order_id=order.id,
+                order_reference=order.reference,
+                event_title=title,
+                host_name=host_name,
+                buyer_name=order.buyer_name or "Buyer",
+                ticket_count=len(tickets),
+                amount=order.total_amount,
+                currency=order.currency or "NGN",
+            )
 
 
 def resend_order_ticket_emails(

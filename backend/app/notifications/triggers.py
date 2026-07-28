@@ -11,6 +11,8 @@ Channel matrix (important events):
 | Fan Connect request | preference | preference | yes |
 | Sponsor inquiry | yes | host preference | yes |
 | Admin report | admin (required) | admin preference | admin inbox |
+| Admin new registration | admin (ops email) | admin preference | admin inbox |
+| Admin ticket sale | admin (finance email) | admin preference | admin inbox |
 
 Domain modules still call ``enqueue_template`` for email. This module covers
 shared fan-out that must stay next to those email sends.
@@ -18,13 +20,41 @@ shared fan-out that must stay next to those email sends.
 
 from __future__ import annotations
 
+import logging
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.notifications.service import notify_user
-from app.users.models import Role
+from app.users.models import Role, User
+from app.users.service import user_has_permission, user_has_role
+
+logger = logging.getLogger("padeya.notifications.triggers")
+
+# Cap in-app fan-out so registration/payment hooks stay cheap.
+_ADMIN_IN_APP_LIMIT = 20
+
+
+def _admin_user_ids_for_alert(
+    db: Session,
+    *,
+    permissions: tuple[str, ...],
+    roles: tuple[str, ...] = ("super_admin",),
+    limit: int = _ADMIN_IN_APP_LIMIT,
+) -> list[UUID]:
+    """Active staff who hold any listed permission or role (deduped, capped)."""
+    rows = db.scalars(select(User).where(User.is_active.is_(True))).all()
+    out: list[UUID] = []
+    for user in rows:
+        if any(user_has_permission(user, code) for code in permissions) or user_has_role(
+            user, *roles
+        ):
+            out.append(user.id)
+            if len(out) >= limit:
+                break
+    return out
 
 
 def notify_ticket_qr_ready(
@@ -175,3 +205,130 @@ def notify_admins_report(
 
 # Back-compat alias
 notify_admins_new_report = notify_admins_report
+
+
+def notify_admins_user_registered(
+    db: Session,
+    *,
+    user_id: UUID,
+    user_name: str,
+    user_email: str,
+    username: str,
+    registered_at: str,
+) -> int:
+    """Email + in-app + push when a new account is created.
+
+    Failures are logged and never raised — registration must keep succeeding.
+    """
+    notified = 0
+    try:
+        from app.email.admin_triggers import admin_notify_user_registered
+
+        admin_notify_user_registered(
+            db,
+            user_id=user_id,
+            user_name=user_name,
+            user_email=user_email,
+            username=username,
+            registered_at=registered_at,
+        )
+    except Exception:  # noqa: BLE001 — never block registration
+        logger.exception("admin email for new user %s failed", user_id)
+
+    display = (user_name or username or "New user").strip() or "New user"
+    handle = (username or "").strip()
+    body = f"{display} joined Pàdéyá."
+    if handle:
+        body = f"{display} (@{handle}) joined Pàdéyá."
+
+    try:
+        admin_ids = _admin_user_ids_for_alert(
+            db,
+            permissions=("admin.users.view", "admin.full_access"),
+        )
+        for admin_id in admin_ids:
+            row = notify_user(
+                db,
+                user_id=admin_id,
+                kind="admin.user_registered",
+                title="New user registered",
+                body=body[:240],
+                link_path=f"/admin/users/{user_id}",
+                dedupe_key=f"admin:user_registered:{user_id}:notif:{admin_id}",
+                send_push=True,
+            )
+            if row is not None:
+                notified += 1
+    except Exception:  # noqa: BLE001 — never block registration
+        logger.exception("admin in-app for new user %s failed", user_id)
+    return notified
+
+
+def notify_admins_ticket_sale_paid(
+    db: Session,
+    *,
+    order_id: UUID,
+    order_reference: str,
+    event_title: str,
+    host_name: str,
+    buyer_name: str,
+    ticket_count: int,
+    amount: Decimal | float,
+    currency: str = "NGN",
+    payment_status: str = "paid",
+) -> int:
+    """Email + in-app + push after verified payment / ticket issuance.
+
+    Call only from the paid-fulfillment path (not checkout init). Dedupe keys
+    keep webhook retries and email resends from spamming admins.
+    """
+    notified = 0
+    try:
+        from app.email.admin_triggers import admin_notify_ticket_sale_paid
+
+        admin_notify_ticket_sale_paid(
+            db,
+            order_id=order_id,
+            order_reference=order_reference,
+            event_title=event_title,
+            host_name=host_name,
+            buyer_name=buyer_name,
+            ticket_count=ticket_count,
+            amount=amount,
+            currency=currency,
+            payment_status=payment_status,
+        )
+    except Exception:  # noqa: BLE001 — never block fulfillment
+        logger.exception("admin email for ticket sale %s failed", order_id)
+
+    title_text = (event_title or "an event").strip() or "an event"
+    buyer = (buyer_name or "Buyer").strip() or "Buyer"
+    count = max(int(ticket_count or 0), 0)
+    body = f"{count} ticket(s) sold for {title_text} ({buyer})."
+
+    try:
+        admin_ids = _admin_user_ids_for_alert(
+            db,
+            permissions=(
+                "payments.view",
+                "admin.finance.view_fees",
+                "refunds.review",
+                "admin.full_access",
+            ),
+        )
+        for admin_id in admin_ids:
+            row = notify_user(
+                db,
+                user_id=admin_id,
+                kind="admin.ticket_sale",
+                title="New ticket sale",
+                body=body[:240],
+                link_path=f"/admin/payments/orders/{order_id}",
+                dedupe_key=f"admin:ticket_sale:{order_id}:notif:{admin_id}",
+                send_push=True,
+            )
+            if row is not None:
+                notified += 1
+    except Exception:  # noqa: BLE001 — never block fulfillment
+        logger.exception("admin in-app for ticket sale %s failed", order_id)
+    return notified

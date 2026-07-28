@@ -454,6 +454,23 @@ def _team_invite(c: dict[str, Any]) -> list[str]:
     ]
 
 
+def _admin_team_invite(c: dict[str, Any]) -> list[str]:
+    role = _ctx(c, "role_label") or _ctx(c, "role", "admin team member")
+    provisioned = c.get("provisioned")
+    if provisioned is True or str(provisioned).lower() in {"1", "true", "yes"}:
+        return [
+            f"You’ve been added to the {BRAND_NAME} admin team as {role}.",
+            "Sign in with this email to open the admin console.",
+            "If you did not expect this, contact a platform administrator.",
+        ]
+    return [
+        f"You’ve been invited to join the {BRAND_NAME} admin team as {role}.",
+        "Sign in or create an account with this email to accept. "
+        "The invite expires in 7 days.",
+        "If you did not expect this, you can ignore this email.",
+    ]
+
+
 def _team_invite_accepted(c: dict[str, Any]) -> list[str]:
     member = _ctx(c, "member_name") or _ctx(c, "member_email", "A teammate")
     role = _ctx(c, "role_label") or _ctx(c, "role", "team member")
@@ -859,6 +876,16 @@ TEMPLATES: dict[str, TemplateDef] = {
         _team_invite,
         "Accept invite",
         "/team/invite",
+    ),
+    "admin_team_invite": TemplateDef(
+        "admin_team_invite",
+        f"You're invited to the {BRAND_NAME} admin team",
+        None,
+        True,
+        "Admin team invite",
+        _admin_team_invite,
+        "Accept invite",
+        "/admin/team/invites",
     ),
     "team_invite_accepted": TemplateDef(
         "team_invite_accepted",

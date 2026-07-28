@@ -92,6 +92,7 @@ Short copy in `backend/app/push/templates.py`. `notify_user` maps dotted in-app 
 | Support / account | `support_ticket_updated`, `account_suspended`, `account_appeal_decision`, `system_maintenance` |
 | Vault | `vault_item_published` |
 | Host team | `team_invite` (existing users / username invites), `team_invite_accepted`, `team_invite_revoked`, `team_member_removed`, `team_permission_updated`, `team_security_alert` |
+| Admin team | `admin_team_invite` (pending + provisioned) |
 | Ambassadors | `ambassador_joined`, `ambassador_first_sale`, `ambassador_commission_payable`, `ambassador_payout_ready`, `ambassador_campaign_paused`, `ambassador_campaign_ended`, `host_ambassador_milestone` (+ admin fraud via `admin_new_report`) |
 | Sponsor | `sponsor_inquiry_confirmation`, `sponsor_inquiry_host_alert`, `sponsor_inquiry_status_update` |
 | Admin | `admin_new_report`, `admin_payment_issue`, `admin_support_ticket`, `admin_push_test` |

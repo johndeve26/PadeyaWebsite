@@ -46,6 +46,8 @@ REQUIRED = [
     "admin_new_report",
     "admin_payment_issue",
     "admin_support_ticket",
+    "admin_new_user_registered",
+    "admin_new_ticket_sale",
     # Ambassadors
     "ambassador_joined",
     "ambassador_first_sale",

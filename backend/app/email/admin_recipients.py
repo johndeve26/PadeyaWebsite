@@ -162,7 +162,7 @@ GROUP_PERMISSIONS: dict[str, tuple[str, ...]] = {
     "support": ("admin.support.view_all", "admin.support.view"),
     "moderation": ("reviews.moderate", "merch.moderate", "vault.moderate"),
     "finance": ("payments.view", "admin.finance.view_fees", "refunds.review"),
-    "operations": ("admin.events.view", "hosts.verify", "events.review"),
+    "operations": ("admin.events.view", "hosts.verify", "events.review", "admin.users.view"),
     "marketing": ("sponsorships.moderate",),
 }
 

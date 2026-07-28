@@ -85,6 +85,16 @@ def _create_user_from_checkout(
         resource_id=str(user.id),
         details={"email": user.email, "username": username},
     )
+    from app.notifications.triggers import notify_admins_user_registered
+
+    notify_admins_user_registered(
+        db,
+        user_id=user.id,
+        user_name=user.full_name,
+        user_email=user.email,
+        username=username,
+        registered_at=datetime.now(UTC).isoformat(),
+    )
     return user
 
 

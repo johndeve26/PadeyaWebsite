@@ -293,6 +293,18 @@ TEMPLATES: dict[str, PushTemplate] = {
         f"A support case needs attention on {BRAND}.",
         "/admin/support",
     ),
+    "admin_new_user_registered": _t(
+        "admin_new_user_registered",
+        "New user registered",
+        f"A new account was created on {BRAND}.",
+        "/admin/users",
+    ),
+    "admin_new_ticket_sale": _t(
+        "admin_new_ticket_sale",
+        "New ticket sale",
+        f"A verified ticket order was paid on {BRAND}.",
+        "/admin/payments",
+    ),
     # --- Host team ---
     "team_invite": _t(
         "team_invite",
@@ -662,6 +674,8 @@ KIND_ALIASES: dict[str, str] = {
     "admin.payment_issue": "admin_payment_issue",
     "admin.support_ticket": "admin_support_ticket",
     "admin_support_ticket": "admin_support_ticket",
+    "admin.user_registered": "admin_new_user_registered",
+    "admin.ticket_sale": "admin_new_ticket_sale",
     "support.ticket_updated": "support_ticket_updated",
     "account.suspended": "account_suspended",
     "account.appeal_decision": "account_appeal_decision",

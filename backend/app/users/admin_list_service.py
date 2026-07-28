@@ -81,10 +81,12 @@ def list_admin_users(
         count_stmt = count_stmt.where(*filters)
     total = int(db.scalar(count_stmt) or 0)
 
+    # Active accounts first; deactivated/inactive sink to the bottom.
+    # Secondary sort preserves newest-first within each group.
     stmt = (
         select(User)
         .options(selectinload(User.roles))
-        .order_by(User.created_at.desc())
+        .order_by(User.is_active.desc(), User.created_at.desc())
         .offset((page - 1) * limit)
         .limit(limit)
     )

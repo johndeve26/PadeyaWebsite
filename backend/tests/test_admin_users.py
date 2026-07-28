@@ -151,3 +151,45 @@ def test_admin_deactivate_with_reason_and_status_filter(
     assert restored.status_code == 200
     assert restored.json()["is_active"] is True
     assert restored.json()["deactivated_at"] is None
+
+
+def test_admin_list_users_active_before_inactive(client: TestClient, assign_role):
+    """Deactivated/inactive accounts sink below active ones (then created desc)."""
+    active_h = _auth(client, "sort-active@example.com", "Sort Active")
+    inactive_h = _auth(client, "sort-inactive@example.com", "Sort Inactive")
+    active_id = client.get("/api/v1/users/me", headers=active_h).json()["id"]
+    inactive_id = client.get("/api/v1/users/me", headers=inactive_h).json()["id"]
+
+    admin_email = "users-sort-admin@example.com"
+    _auth(client, admin_email, "Sort Admin")
+    assign_role(admin_email, "super_admin")
+    admin = _relogin(client, admin_email)
+
+    deactivated = client.post(
+        f"/api/v1/users/admin/{inactive_id}/deactivate",
+        headers=admin,
+        json={"reason": "Park inactive for sort test"},
+    )
+    assert deactivated.status_code == 200
+    assert deactivated.json()["is_active"] is False
+
+    listed = client.get(
+        "/api/v1/admin/users",
+        headers=admin,
+        params={"q": "sort-", "limit": 40},
+    )
+    assert listed.status_code == 200, listed.text
+    items = listed.json()["items"]
+    ids = [row["id"] for row in items]
+    assert active_id in ids
+    assert inactive_id in ids
+
+    # Within this filtered page, every active row must appear before any inactive.
+    seen_inactive = False
+    for row in items:
+        if not row["is_active"]:
+            seen_inactive = True
+        elif seen_inactive:
+            raise AssertionError("Active user appeared after an inactive user")
+
+    assert ids.index(active_id) < ids.index(inactive_id)

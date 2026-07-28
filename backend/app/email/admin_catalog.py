@@ -99,7 +99,7 @@ ADMIN_TEMPLATE_CATALOG: dict[str, AdminTemplateCatalogEntry] = {
             "View user",
             "/admin/users",
             ("user_name", "user_email", "username", "registered_at", "user_id_safe", "admin_user_url"),
-            enabled=False,
+            enabled=True,
             group="operations",
         ),
         _entry(
@@ -173,7 +173,7 @@ ADMIN_TEMPLATE_CATALOG: dict[str, AdminTemplateCatalogEntry] = {
                 "admin_order_url",
                 "admin_event_url",
             ),
-            enabled=False,
+            enabled=True,
             group="finance",
         ),
         _entry(

@@ -105,10 +105,11 @@ def register_user(
     from app.auth.email_verification import queue_email_verification_email
 
     queue_email_verification_email(db, user, ip_address=ip_address, user_agent=user_agent)
-    from app.email.admin_triggers import admin_notify_user_registered
     from datetime import UTC, datetime
 
-    admin_notify_user_registered(
+    from app.notifications.triggers import notify_admins_user_registered
+
+    notify_admins_user_registered(
         db,
         user_id=user.id,
         user_name=user.full_name,

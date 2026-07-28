@@ -145,6 +145,8 @@ Merch: `merch_order_confirmed`, `merch_pickup_ready`, `merch_shipping_update`, `
 Host / Fan Connect / Messaging / Sponsor / Admin / System — see [EMAIL_AUDIT.md](./EMAIL_AUDIT.md).  
 Host team (true pending invite by email or Pàdéyá username): `team_invite` (required; subject “You’re invited to join a Pàdéyá host team”; CTA **Accept invite**), `team_invite_accepted`, `team_invite_revoked`, `team_member_removed`, `team_permission_updated`, `team_security_alert` — [TEAMS.md](./TEAMS.md#emails--notifications) · [HOST_TEAM.md](./HOST_TEAM.md). Legacy aliases: `host_team_invite`, `host_team_invite_accepted`.
 
+Admin team: `admin_team_invite` (required) — pending invites CTA `/admin/team/invites/[token]`; provisioned existing users get the same template with `provisioned=true` and CTA `/admin`.
+
 ### Ambassadors
 
 Templates: `ambassador_joined`, `ambassador_first_sale`, `ambassador_commission_payable`, `ambassador_payout_ready`, `ambassador_campaign_paused`, `ambassador_campaign_ended`, `host_ambassador_milestone` — [AMBASSADORS.md](./AMBASSADORS.md#notifications-phase-15).

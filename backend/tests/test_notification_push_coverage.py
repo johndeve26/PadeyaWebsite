@@ -61,6 +61,8 @@ WIRED_NOTIFY_KINDS: frozenset[str] = frozenset(
         "support.ticket_updated",
         "admin_support_ticket",
         "admin.report",
+        "admin.user_registered",
+        "admin.ticket_sale",
         "account.suspended",
         "account.appeal_decision",
         "system.maintenance",

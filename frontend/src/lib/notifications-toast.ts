@@ -48,6 +48,21 @@ const KIND_FALLBACK: Array<{ match: RegExp; title: string; description?: string 
     title: "Host activity",
     description: "Something new happened on your host account.",
   },
+  {
+    match: /^admin\.user_registered$/i,
+    title: "New user registered",
+    description: "A new account joined Pàdéyá.",
+  },
+  {
+    match: /^admin\.ticket_sale$/i,
+    title: "New ticket sale",
+    description: "A verified ticket order was paid.",
+  },
+  {
+    match: /^admin\./i,
+    title: "Admin alert",
+    description: "Open Pàdéyá admin for details.",
+  },
 ];
 
 const UNSAFE_BODY =
