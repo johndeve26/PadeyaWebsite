@@ -9,12 +9,32 @@ export type UploadFormImageOptions = {
   accountAvatar?: boolean;
 };
 
-/** Upload an account profile photo — available to any signed-in user. */
+/** Upload an account profile photo — available to any signed-in user.
+ * Applies the photo to Fan Passport (and Host Legacy when present) immediately.
+ */
 export async function uploadAccountAvatar(file: File): Promise<string> {
   const form = new FormData();
   form.append("file", file);
   const res = await apiUpload<{ url: string }>("/users/me/avatar", form);
   return res.url;
+}
+
+/**
+ * Upload a profile image with fallbacks so fans never need host onboarding.
+ * 1) Account avatar endpoint
+ * 2) Staging media with media_type=avatar (backend routes fans to account storage)
+ */
+export async function uploadProfileImage(file: File): Promise<string> {
+  try {
+    return await uploadAccountAvatar(file);
+  } catch (primary) {
+    try {
+      const staged = await uploadHostMediaFile(file, "avatar");
+      return staged.url;
+    } catch {
+      throw primary;
+    }
+  }
 }
 
 /** Upload an image via host staging or event media API; returns a stored URL. */
@@ -30,7 +50,7 @@ export async function uploadFormImage(
 
   // Profile photos must never require host onboarding.
   if (wantAccountAvatar) {
-    return uploadAccountAvatar(file);
+    return uploadProfileImage(file);
   }
 
   if (options.eventId) {
@@ -54,6 +74,7 @@ export async function uploadFormImage(
     throw new Error("Upload succeeded but no URL was returned");
   }
 
+  // Backend routes non-host avatar/logo/other profile uploads to account storage.
   const staged = await uploadHostMediaFile(file, mediaType);
   return staged.url;
 }

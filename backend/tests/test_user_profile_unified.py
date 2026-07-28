@@ -148,6 +148,9 @@ def test_fan_can_upload_account_avatar(client: TestClient, db_session: Session) 
     )
     assert reg.status_code == 201, reg.text
     headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
+    user_id = UUID(
+        client.get("/api/v1/auth/me", headers=headers).json()["id"]
+    )
 
     buf = BytesIO()
     Image.new("RGB", (8, 8), (20, 180, 80)).save(buf, format="PNG")
@@ -161,10 +164,57 @@ def test_fan_can_upload_account_avatar(client: TestClient, db_session: Session) 
     url = upload.json()["url"]
     assert url
 
-    apply = client.patch(
-        "/api/v1/users/me",
-        headers=headers,
-        json={"avatar_url": url},
+    me = client.get("/api/v1/auth/me", headers=headers)
+    assert me.status_code == 200
+    assert me.json()["avatar_url"] == url
+
+    passport = db_session.scalar(
+        select(FanPassport).where(FanPassport.user_id == user_id)
     )
-    assert apply.status_code == 200, apply.text
-    assert apply.json()["avatar_url"] == url
+    assert passport is not None
+    assert passport.avatar_url == url
+
+
+def test_fan_can_upload_via_legacy_media_staging(
+    client: TestClient, db_session: Session
+) -> None:
+    """Old passport UI posted to /events/media/upload — fans must still succeed."""
+    from io import BytesIO
+
+    from PIL import Image
+
+    reg = client.post(
+        "/api/v1/auth/register",
+        json=register_json(
+            email="fan-legacy-upload@example.com",
+            username="fan_legacy_up",
+            full_name="Fan Legacy",
+        ),
+    )
+    assert reg.status_code == 201, reg.text
+    headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
+    user_id = UUID(
+        client.get("/api/v1/auth/me", headers=headers).json()["id"]
+    )
+
+    buf = BytesIO()
+    Image.new("RGB", (8, 8), (40, 120, 200)).save(buf, format="PNG")
+    png = buf.getvalue()
+
+    for media_type in ("other", "avatar"):
+        upload = client.post(
+            "/api/v1/events/media/upload",
+            headers=headers,
+            data={"media_type": media_type},
+            files={"file": ("avatar.png", BytesIO(png), "image/png")},
+        )
+        assert upload.status_code == 200, upload.text
+        url = upload.json()["url"]
+        assert url
+        db_session.expire_all()
+        passport = db_session.scalar(
+            select(FanPassport).where(FanPassport.user_id == user_id)
+        )
+        assert passport is not None
+        assert passport.avatar_url == url
+

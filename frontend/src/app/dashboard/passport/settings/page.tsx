@@ -279,11 +279,24 @@ export default function PassportSettingsPage() {
             />
             <ImageUrlOrUploadField
               label="Public avatar"
-              hint="Same photo as Account settings and Host Legacy. Upload works for fans and hosts — JPEG, PNG, WebP, or GIF (not SVG)."
+              hint="Works for every account — you do not need to be a host. JPEG, PNG, WebP, or GIF (not SVG). Upload applies immediately."
               value={draft.avatar_url || ""}
               onChange={(url) =>
                 setDraft({ ...draft, avatar_url: url.trim() || null })
               }
+              onUploaded={(url) => {
+                setDraft((prev) =>
+                  prev ? { ...prev, avatar_url: url } : prev,
+                );
+                setSettings((prev) =>
+                  prev ? { ...prev, avatar_url: url } : prev,
+                );
+                toast.push({
+                  tone: "success",
+                  title: "Photo updated",
+                  description: "Your profile photo is saved.",
+                });
+              }}
               mediaType="avatar"
               accountAvatar
               previewClassName="h-16 w-16 rounded-full"

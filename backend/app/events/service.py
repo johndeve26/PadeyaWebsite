@@ -1897,11 +1897,35 @@ def upload_host_media_file(
     content_type: str,
     media_type: str = "gallery",
 ) -> dict[str, Any]:
-    """Stage an image upload for a host (usable before an event exists)."""
+    """Stage a public image upload.
+
+    Profile photos (avatar/logo, or legacy `other` when the user has no host)
+    use account storage so fans can upload without host onboarding. All other
+    media types still require a host profile.
+    """
+    kind = (media_type or "gallery").strip().lower()
+    from app.hosts.service import get_host_by_user_id
+
+    host = get_host_by_user_id(db, user.id)
+    is_profile_kind = kind in {"avatar", "logo"}
+    # Older passport UI uploaded with media_type=other — allow fans through.
+    fan_profile_upload = host is None and kind in {"avatar", "logo", "other"}
+
+    if is_profile_kind or fan_profile_upload:
+        from app.users.avatar_upload import upload_and_apply_account_avatar
+
+        return upload_and_apply_account_avatar(
+            db,
+            user=user,
+            data=data,
+            filename=filename,
+            content_type=content_type,
+        )
+
     host, _ = require_host_for_permission(
         db, user=user, host_id=None, permission=("events.create", "events.edit")
     )
-    if media_type not in {
+    if kind not in {
         "banner",
         "mobile_banner",
         "gallery",
@@ -1917,14 +1941,14 @@ def upload_host_media_file(
             data=data,
             filename=filename,
             content_type=content_type,
-            folder=host_public_folder(host.id, media_type),
+            folder=host_public_folder(host.id, kind),
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {
         "url": stored.url,
         "key": stored.key,
-        "media_type": media_type,
+        "media_type": kind,
         "event_id": None,
     }
 

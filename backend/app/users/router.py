@@ -104,27 +104,22 @@ async def upload_my_avatar(
     user: CurrentUser,
     file: Annotated[UploadFile, File(...)],
 ) -> UserAvatarUploadPublic:
-    """Upload a raster profile photo for any signed-in user (fan or host).
+    """Upload a profile photo for any signed-in user (fan or host).
 
-    Returns a public URL. Call PATCH /users/me with avatar_url to apply it
-    across Fan Passport and Host Legacy, or use this after selecting a file
-    from settings and then saving the profile form.
+    Stores the image, applies it to Fan Passport (and Host Legacy when present),
+    and returns the public URL. No host onboarding required.
     """
-    from app.core.media import get_public_media_storage
-    from app.core.media_folders import user_public_folder
+    from app.users.avatar_upload import upload_and_apply_account_avatar
 
     data = await file.read()
-    storage = get_public_media_storage()
-    try:
-        stored = storage.store_bytes(
-            data=data,
-            filename=file.filename or "avatar.jpg",
-            content_type=file.content_type or "application/octet-stream",
-            folder=user_public_folder(user.id, "avatar"),
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return UserAvatarUploadPublic(url=stored.url)
+    result = upload_and_apply_account_avatar(
+        db,
+        user=user,
+        data=data,
+        filename=file.filename or "avatar.jpg",
+        content_type=file.content_type or "application/octet-stream",
+    )
+    return UserAvatarUploadPublic(url=result["url"])
 
 
 @router.get("/admin", response_model=AdminUserListPublic)
