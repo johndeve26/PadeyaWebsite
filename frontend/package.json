@@ -9,6 +9,9 @@
     "lint": "eslint",
     "test:pwa": "node scripts/pwa-smoke.mjs",
     "test:theme": "node scripts/theme-smoke.mjs",
+    "test:e2e:theme": "playwright test e2e/theme-visual-smoke.spec.ts --project=chromium-desktop",
+    "test:e2e:visual": "playwright test e2e/theme-visual-smoke.spec.ts",
+    "test:unit": "vitest run",
     "test:checkout": "node scripts/checkout-smoke.mjs",
     "test:host-team": "node scripts/host-team-smoke.mjs",
     "test:host-command-center": "node scripts/host-command-center-smoke.mjs",
@@ -60,6 +63,8 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@playwright/test": "^1.62.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

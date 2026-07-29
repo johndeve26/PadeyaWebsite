@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-07-29T04:33:37.100Z",
+  "total_routes": 432,
+  "smoked_public": 14,
+  "smoked_authenticated": 0,
+  "pending_routes": 418,
+  "themes_covered": [
+    "light",
+    "dark",
+    "system-light",
+    "system-dark"
+  ],
+  "viewports_covered": [
+    "375x812",
+    "1440x900"
+  ],
+  "shared_components_prioritized": 17,
+  "gate": "public+shared complete; authenticated visual pack deferred"
+}

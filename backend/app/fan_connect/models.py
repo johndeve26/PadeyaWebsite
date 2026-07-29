@@ -25,7 +25,9 @@ from app.core.database import Base
 
 
 def _default_request_policies() -> list[str]:
-    return ["same_event"]
+    from app.fan_connect.constants import DEFAULT_REQUEST_POLICIES
+
+    return list(DEFAULT_REQUEST_POLICIES)
 
 
 class FanConnectSettings(Base):
@@ -73,7 +75,7 @@ class FanConnectSettings(Base):
     # Legacy single policy — kept in sync with the most permissive selected value.
     # same_event | same_host | public_passports | nobody
     request_policy: Mapped[str] = mapped_column(
-        String(32), default="same_event", nullable=False
+        String(32), default="public_passports", nullable=False
     )
     # Multi-select policies (OR). ``nobody`` is exclusive.
     request_policies: Mapped[list[Any]] = mapped_column(

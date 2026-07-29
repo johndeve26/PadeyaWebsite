@@ -1,0 +1,105 @@
+{
+  "generated_at": "2026-07-29T04:33:37.100Z",
+  "status": "complete",
+  "smoked_routes": 14,
+  "results": [
+    {
+      "path": "/",
+      "theme": "dark",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/login",
+      "theme": "dark",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/register",
+      "theme": "dark",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/forgot-password",
+      "theme": "dark",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/events",
+      "theme": "dark",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/blog",
+      "theme": "dark",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/merch",
+      "theme": "dark",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/about",
+      "theme": "dark",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/help",
+      "theme": "dark",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/faq",
+      "theme": "dark",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/pricing",
+      "theme": "dark",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/offline",
+      "theme": "dark",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/terms",
+      "theme": "dark",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/hosts",
+      "theme": "dark",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    }
+  ]
+}

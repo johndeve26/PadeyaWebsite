@@ -20,6 +20,12 @@ def test_normalize_orders_and_dedupes():
     ) == [C.POLICY_SAME_EVENT, C.POLICY_PUBLIC_PASSPORTS]
 
 
+def test_normalize_empty_defaults_to_all_open_paths():
+    assert normalize_request_policies(None) == list(C.DEFAULT_REQUEST_POLICIES)
+    assert normalize_request_policies([]) == list(C.DEFAULT_REQUEST_POLICIES)
+    assert normalize_request_policies(["nope"]) == list(C.DEFAULT_REQUEST_POLICIES)
+
+
 def test_primary_is_most_permissive():
     assert (
         primary_request_policy([C.POLICY_SAME_EVENT, C.POLICY_SAME_HOST])

@@ -1,0 +1,21 @@
+{
+  "generated_at": "2026-07-29T04:33:37.100Z",
+  "status": "complete",
+  "results": [
+    {
+      "case": "system+OS dark",
+      "result": "pass",
+      "assertion": "html.dark present"
+    },
+    {
+      "case": "system+OS light",
+      "result": "pass",
+      "assertion": "html.dark absent"
+    },
+    {
+      "case": "persist across reload",
+      "result": "pass",
+      "preference": "dark"
+    }
+  ]
+}

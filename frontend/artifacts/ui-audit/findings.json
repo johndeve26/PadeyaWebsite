@@ -1,0 +1,68 @@
+{
+  "generated_at": "2026-07-29T04:36:32.778Z",
+  "status": "complete",
+  "findings": [
+    {
+      "id": "UI-P2-001",
+      "severity": "P2",
+      "route_component": "components/ui/Modal.tsx",
+      "theme": "both",
+      "viewport": "all",
+      "root_cause": "Modal rendered in-tree; risk of stacking/theme issues vs Drawer portal pattern.",
+      "fix": "Portal Modal to document.body (aligned with Drawer).",
+      "test_screenshot": "n/a",
+      "status": "fixed"
+    },
+    {
+      "id": "UI-P2-002",
+      "severity": "P2",
+      "route_component": "styles/globals.css",
+      "theme": "dark",
+      "viewport": "all",
+      "root_cause": "Browser autofill wash could hide typed text on default dark-mode inputs.",
+      "fix": "Dark-mode autofill overrides using --input-* tokens.",
+      "test_screenshot": "n/a",
+      "status": "fixed"
+    },
+    {
+      "id": "UI-P3-001",
+      "severity": "P3",
+      "route_component": "components/ui/EmptyState.tsx",
+      "theme": "dark",
+      "viewport": "all",
+      "root_cause": "Icon well used fixed bg-ink on soft empty panels.",
+      "fix": "bg-surface-inset + ring-border.",
+      "test_screenshot": "n/a",
+      "status": "fixed"
+    },
+    {
+      "id": "UI-P3-002",
+      "severity": "P3",
+      "route_component": "components/fan-connect/ConnectHome.tsx",
+      "theme": "both",
+      "viewport": "all",
+      "root_cause": "Hardcoded #111/#000 hero gradient.",
+      "fix": "var(--surface-dark)/var(--ink).",
+      "test_screenshot": "n/a",
+      "status": "fixed"
+    },
+    {
+      "id": "UI-P2-003",
+      "severity": "P2",
+      "route_component": "Authenticated fan/host/admin visual pack",
+      "theme": "both",
+      "viewport": "all",
+      "root_cause": "PLAYWRIGHT_FAN_EMAIL/PASSWORD unset.",
+      "fix": "Provide credentials for follow-up authenticated screenshots.",
+      "test_screenshot": "n/a",
+      "status": "open"
+    }
+  ],
+  "open": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 1,
+    "P3": 0
+  },
+  "fixed_count": 4
+}

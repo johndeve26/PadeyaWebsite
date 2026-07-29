@@ -140,7 +140,9 @@ function normalizePolicies(
     POLICY_OPTIONS.some((opt) => opt.value === p),
   );
   if (cleaned.includes("nobody")) return ["nobody"];
-  if (cleaned.length === 0) return ["same_event"];
+  if (cleaned.length === 0) {
+    return POLICY_OPTIONS.map((o) => o.value).filter((v) => v !== "nobody");
+  }
   return POLICY_OPTIONS.map((o) => o.value).filter(
     (v) => v !== "nobody" && cleaned.includes(v),
   );

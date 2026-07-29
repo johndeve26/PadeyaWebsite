@@ -1,0 +1,105 @@
+{
+  "generated_at": "2026-07-29T04:33:37.100Z",
+  "status": "complete",
+  "smoked_routes": 14,
+  "results": [
+    {
+      "path": "/",
+      "theme": "light",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/login",
+      "theme": "light",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/register",
+      "theme": "light",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/forgot-password",
+      "theme": "light",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/events",
+      "theme": "light",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/blog",
+      "theme": "light",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/merch",
+      "theme": "light",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/about",
+      "theme": "light",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/help",
+      "theme": "light",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/faq",
+      "theme": "light",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/pricing",
+      "theme": "light",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/offline",
+      "theme": "light",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/terms",
+      "theme": "light",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    },
+    {
+      "path": "/hosts",
+      "theme": "light",
+      "desktop": "pass",
+      "mobile": "pass",
+      "notes": null
+    }
+  ]
+}

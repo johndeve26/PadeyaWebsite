@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-07-29T01:18:58.242Z",
+  "storage_key": "padeya-theme",
+  "preferences": [
+    "light",
+    "dark",
+    "system"
+  ],
+  "dark_class_target": "document.documentElement",
+  "dark_class": "dark",
+  "blocking_script": "src/components/theme/ThemeScript.tsx",
+  "provider": "src/components/theme/ThemeProvider.tsx",
+  "store": "src/lib/theme.ts",
+  "toggle": "src/components/theme/ThemeToggle.tsx",
+  "tokens": {
+    "files": [
+      "src/styles/globals.css",
+      "src/styles/tailwind-theme.css"
+    ],
+    "brand_green": "#8EF012",
+    "semantic": [
+      "background",
+      "foreground",
+      "card",
+      "muted",
+      "border",
+      "primary",
+      "primary-text",
+      "popover",
+      "destructive",
+      "accent"
+    ]
+  },
+  "ssr_hydration": {
+    "server_snapshot": "system preference resolved as light",
+    "fouc_mitigation": "blocking ThemeScript before paint",
+    "suppress_hydration_warning": true
+  },
+  "playwright": "to_be_added",
+  "existing_theme_test": "npm run test:theme → scripts/theme-smoke.mjs"
+}

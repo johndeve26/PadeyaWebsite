@@ -384,6 +384,43 @@ textarea.auth-field-on-dark:-webkit-autofill:focus {
     0 0 0 2px rgb(142 240 18 / 0.35) !important;
 }
 
+/*
+ * Default form autofill in dark mode — yellow wash must not hide typed text.
+ * Uses semantic input tokens so light mode is unchanged.
+ */
+@keyframes padeya-autofill-theme {
+  from,
+  to {
+    color: var(--input-foreground);
+    caret-color: var(--input-foreground);
+    -webkit-text-fill-color: var(--input-foreground);
+    border-color: var(--input-border);
+    background-color: var(--input-background);
+    background-image: none;
+    -webkit-box-shadow: 0 0 0 1000px var(--input-background) inset;
+    box-shadow: 0 0 0 1000px var(--input-background) inset;
+  }
+}
+
+.dark input:not(.auth-field-on-dark):-webkit-autofill,
+.dark input:not(.auth-field-on-dark):-webkit-autofill:hover,
+.dark input:not(.auth-field-on-dark):-webkit-autofill:focus,
+.dark input:not(.auth-field-on-dark):-webkit-autofill:active,
+.dark textarea:not(.auth-field-on-dark):-webkit-autofill,
+.dark textarea:not(.auth-field-on-dark):-webkit-autofill:hover,
+.dark textarea:not(.auth-field-on-dark):-webkit-autofill:focus,
+.dark textarea:not(.auth-field-on-dark):-webkit-autofill:active {
+  -webkit-text-fill-color: var(--input-foreground) !important;
+  color: var(--input-foreground) !important;
+  caret-color: var(--input-foreground) !important;
+  border-color: var(--input-border) !important;
+  background-color: var(--input-background) !important;
+  background-image: none !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--input-background) inset !important;
+  box-shadow: 0 0 0 1000px var(--input-background) inset !important;
+  animation: padeya-autofill-theme 0s forwards;
+}
+
 /* Full-bleed hero media — slow ken-burns for presence without distraction */
 @keyframes padeya-hero-drift {
   0% {

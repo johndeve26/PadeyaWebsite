@@ -241,8 +241,12 @@ def test_settings_defaults_on(client: TestClient, db_session: Session):
     assert data["show_shared_hosts"] is True
     assert data["show_public_city"] is True
     assert data["hide_private_events_always"] is True
-    assert data["request_policy"] == "same_event"
-    assert data["request_policies"] == ["same_event"]
+    assert data["request_policy"] == "public_passports"
+    assert data["request_policies"] == [
+        "same_event",
+        "same_host",
+        "public_passports",
+    ]
 
 
 def test_settings_request_policies_multi_select(

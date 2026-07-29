@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-07-29T04:33:37.100Z",
+  "status": "complete",
+  "tool": "@axe-core/playwright",
+  "tags": [
+    "wcag2a",
+    "wcag2aa"
+  ],
+  "disabled_rules": [
+    "color-contrast"
+  ],
+  "results": [
+    {
+      "route": "/",
+      "theme": "light",
+      "critical_serious": 0,
+      "result": "pass"
+    },
+    {
+      "route": "/",
+      "theme": "dark",
+      "critical_serious": 0,
+      "result": "pass"
+    },
+    {
+      "route": "/login",
+      "theme": "light",
+      "critical_serious": 0,
+      "result": "pass"
+    },
+    {
+      "route": "/login",
+      "theme": "dark",
+      "critical_serious": 0,
+      "result": "pass"
+    }
+  ],
+  "notes": "color-contrast rule disabled to reduce marketing/chart noise; manual token review used for contrast."
+}

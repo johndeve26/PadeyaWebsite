@@ -34,6 +34,8 @@ REQUEST_POLICY_OPTIONS = (
     POLICY_SAME_HOST,
     POLICY_PUBLIC_PASSPORTS,
 )
+# Default for new users + empty selections: all open paths, never nobody.
+DEFAULT_REQUEST_POLICIES = list(REQUEST_POLICY_OPTIONS)
 REQUEST_POLICY_RANK = {
     POLICY_NOBODY: 0,
     POLICY_SAME_EVENT: 1,

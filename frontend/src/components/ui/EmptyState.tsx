@@ -26,7 +26,7 @@ export function EmptyState({
       )}
     >
       {icon ? (
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-ink text-primary">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-inset text-primary ring-1 ring-border">
           {icon}
         </div>
       ) : (

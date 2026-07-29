@@ -14,7 +14,7 @@ def normalize_request_policies(
 
     - ``nobody`` is exclusive.
     - Other options may be combined (OR eligibility).
-    - Invalid / empty input falls back to ``same_event``.
+    - Invalid / empty input falls back to all open paths (never nobody).
     """
     raw = list(policies or [])
     cleaned: list[str] = []
@@ -35,11 +35,11 @@ def normalize_request_policies(
     if ordered:
         return ordered
 
-    if fallback in C.REQUEST_POLICIES:
-        return [C.POLICY_NOBODY] if fallback == C.POLICY_NOBODY else (
-            [fallback] if fallback in C.REQUEST_POLICY_OPTIONS else [C.POLICY_SAME_EVENT]
-        )
-    return [C.POLICY_SAME_EVENT]
+    if fallback == C.POLICY_NOBODY:
+        return [C.POLICY_NOBODY]
+    if fallback in C.REQUEST_POLICY_OPTIONS:
+        return [fallback]
+    return list(C.DEFAULT_REQUEST_POLICIES)
 
 
 def primary_request_policy(policies: list[str]) -> str:

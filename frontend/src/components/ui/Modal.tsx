@@ -1,6 +1,7 @@
 "use client";
 
-import { type ReactNode, useEffect, useId } from "react";
+import { type ReactNode, useEffect, useId, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/cn";
 
@@ -27,6 +28,11 @@ export function Modal({
 }: ModalProps) {
   const titleId = useId();
   const descId = useId();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -42,10 +48,10 @@ export function Modal({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+  const panel = (
+    <div className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4">
       <button
         type="button"
         aria-label="Close dialog"
@@ -71,7 +77,10 @@ export function Modal({
               {title}
             </h2>
             {description ? (
-              <p id={descId} className="text-pretty text-sm leading-relaxed text-muted-foreground">
+              <p
+                id={descId}
+                className="text-pretty text-sm leading-relaxed text-muted-foreground"
+              >
                 {description}
               </p>
             ) : null}
@@ -99,4 +108,6 @@ export function Modal({
       </div>
     </div>
   );
+
+  return createPortal(panel, document.body);
 }

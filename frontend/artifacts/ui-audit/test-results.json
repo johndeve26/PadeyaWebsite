@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-07-29T04:36:32.778Z",
+  "theme_smoke": {
+    "command": "npm run test:theme",
+    "result": "pass"
+  },
+  "unit": {
+    "command": "npm run test:unit",
+    "result": "partial",
+    "passed": 354,
+    "failed": 2,
+    "notes": "Pre-existing runtime-settings.test.ts failures unrelated to UI audit"
+  },
+  "playwright": {
+    "command": "npx playwright test e2e/theme-visual-smoke.spec.ts --workers=2",
+    "passed": 70,
+    "failed": 0,
+    "skipped": 2,
+    "duration_s": 25,
+    "notes": "Authenticated pack skipped without PLAYWRIGHT_FAN_* credentials"
+  },
+  "frontend_build": {
+    "command": "npm run build",
+    "result": "pass"
+  },
+  "screenshot_count": 57
+}

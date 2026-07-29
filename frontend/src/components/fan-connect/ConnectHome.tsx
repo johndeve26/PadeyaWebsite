@@ -213,7 +213,7 @@ export function ConnectHome() {
           className="pointer-events-none absolute inset-0 opacity-40"
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 70% 20%, color-mix(in srgb, var(--primary) 55%, transparent), transparent 55%), linear-gradient(135deg, #111 0%, #000 55%)",
+              "radial-gradient(ellipse 80% 60% at 70% 20%, color-mix(in srgb, var(--primary) 55%, transparent), transparent 55%), linear-gradient(135deg, var(--surface-dark) 0%, var(--ink) 55%)",
           }}
         />
         <div className="relative grid gap-8 px-6 py-10 sm:px-8 sm:py-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-10">
