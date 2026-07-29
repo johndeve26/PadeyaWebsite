@@ -1,3 +1,4 @@
+import { API_TIMEOUT_MS, withTimeoutRace } from "@/lib/api-timeouts";
 import { isUpcomingEvent } from "@/lib/discovery/event-filters";
 import { resolvePadeyaPicks } from "@/lib/discovery/padeya-picks";
 import { diversifyHomepageEvents } from "@/lib/home/diversify-events";
@@ -20,10 +21,32 @@ export type HomepagePublicData = {
   defaultCityLabel: string;
 };
 
+function emptyHomepageData(): HomepagePublicData {
+  return {
+    picks: [],
+    placementEventIds: [],
+    featured: [],
+    railPool: [],
+    defaultCityEvents: [],
+    defaultCityLabel: DEFAULT_DISCOVERY_CITY.label,
+  };
+}
+
 /**
  * Cached public homepage payload. No geolocation — nearby is client-enhanced.
+ *
+ * Bounded overall budget: if the API is slow/unavailable, render empty rails
+ * (hero + CTAs still paint). Runtime ISR / revalidate can fill content later.
  */
 export async function loadHomepagePublicData(): Promise<HomepagePublicData> {
+  return withTimeoutRace(
+    loadHomepagePublicDataInner(),
+    API_TIMEOUT_MS.public + 2_000,
+    emptyHomepageData,
+  );
+}
+
+async function loadHomepagePublicDataInner(): Promise<HomepagePublicData> {
   const defaultCity = DEFAULT_DISCOVERY_CITY;
   const [adminPicks, featuredPool, soonestPool, cityPool] = await Promise.all([
     fetchPadeyaPicksServer("homepage"),

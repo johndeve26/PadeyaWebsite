@@ -7,6 +7,8 @@ export type UploadFormImageOptions = {
   setAsBanner?: boolean;
   /** Prefer account avatar upload (works for fans without a host profile). */
   accountAvatar?: boolean;
+  /** Blog media role key — routes to /admin/blog/media/upload */
+  blogMediaRole?: string;
 };
 
 /** Upload an account profile photo — available to any signed-in user.
@@ -37,7 +39,7 @@ export async function uploadProfileImage(file: File): Promise<string> {
   }
 }
 
-/** Upload an image via host staging or event media API; returns a stored URL. */
+/** Upload an image via host staging, blog media, or event media API; returns a stored URL. */
 export async function uploadFormImage(
   file: File,
   options: UploadFormImageOptions = {},
@@ -51,6 +53,15 @@ export async function uploadFormImage(
   // Profile photos must never require host onboarding.
   if (wantAccountAvatar) {
     return uploadProfileImage(file);
+  }
+
+  if (options.blogMediaRole || mediaType === "blog" || mediaType.startsWith("blog_")) {
+    const role =
+      options.blogMediaRole ||
+      (mediaType.startsWith("blog_") ? mediaType.slice(5) : "inline");
+    const { uploadBlogMedia } = await import("@/lib/blog-api");
+    const res = await uploadBlogMedia(file, role);
+    return res.url;
   }
 
   if (options.eventId) {

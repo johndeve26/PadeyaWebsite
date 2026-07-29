@@ -34,7 +34,10 @@ export function BlogPublishWorkspace() {
   useEffect(() => {
     void (async () => {
       try {
-        const [c, a] = await Promise.all([fetchAdminBlogCategories(), fetchAdminBlogAuthors()]);
+        const [c, a] = await Promise.all([
+          fetchAdminBlogCategories({ includeArchived: true }),
+          fetchAdminBlogAuthors(),
+        ]);
         setCategories(c);
         setAuthors(a);
       } catch {

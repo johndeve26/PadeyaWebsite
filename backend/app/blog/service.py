@@ -21,6 +21,7 @@ from app.blog.schemas import (
     PostUpdate,
     TagCreate,
 )
+from app.blog import taxonomy_service as blog_taxonomy
 from app.core.audit import write_audit_log
 from app.core.http_errors import raise_not_found
 from app.users.models import User
@@ -106,6 +107,7 @@ def serialize_post(row: BlogPost, *, admin: bool = False, related: list[BlogPost
         "canonical_url": row.canonical_url,
         "og_image_url": row.og_image_url,
         "category": row.category,
+        "post_type": row.post_type,
         "author": row.author if (row.author and row.author.is_active) or admin else row.author,
         "tags": list(row.tags or []),
         "related": [],
@@ -125,6 +127,7 @@ def serialize_post(row: BlogPost, *, admin: bool = False, related: list[BlogPost
                 "scheduled_at": r.scheduled_at,
                 "updated_at": r.updated_at,
                 "category": r.category,
+                "post_type": r.post_type,
                 "author": r.author,
                 "tags": list(r.tags or []),
             }
@@ -244,14 +247,12 @@ def related_posts(db: Session, post: BlogPost, *, limit: int = 3) -> list[BlogPo
     return rows
 
 
-def list_categories(db: Session) -> list[BlogCategory]:
-    return list(
-        db.scalars(select(BlogCategory).order_by(BlogCategory.sort_order, BlogCategory.name))
-    )
+def list_categories(db: Session, *, include_archived: bool = False) -> list[BlogCategory]:
+    return blog_taxonomy.list_categories(db, include_archived=include_archived)
 
 
-def list_tags(db: Session) -> list[BlogTag]:
-    return list(db.scalars(select(BlogTag).order_by(BlogTag.name)))
+def list_tags(db: Session, *, include_archived: bool = False) -> list[BlogTag]:
+    return blog_taxonomy.list_tags(db, include_archived=include_archived)
 
 
 def list_authors(db: Session, *, active_only: bool = True) -> list[BlogAuthor]:
@@ -262,17 +263,11 @@ def list_authors(db: Session, *, active_only: bool = True) -> list[BlogAuthor]:
 
 
 def get_category_by_slug(db: Session, slug: str) -> BlogCategory:
-    row = db.scalar(select(BlogCategory).where(BlogCategory.slug == slug))
-    if row is None:
-        raise_not_found()
-    return row
+    return blog_taxonomy.get_category_by_slug(db, slug)
 
 
 def get_tag_by_slug(db: Session, slug: str) -> BlogTag:
-    row = db.scalar(select(BlogTag).where(BlogTag.slug == slug))
-    if row is None:
-        raise_not_found()
-    return row
+    return blog_taxonomy.get_tag_by_slug(db, slug)
 
 
 def get_author_by_slug(db: Session, slug: str) -> BlogAuthor:
@@ -321,6 +316,29 @@ def _set_tags(db: Session, post: BlogPost, tag_ids: list[uuid.UUID]) -> None:
         db.add(BlogPostTag(post_id=post.id, tag_id=tid))
 
 
+def _validate_taxonomy_assignment(
+    db: Session,
+    *,
+    category_id: uuid.UUID | None,
+    tag_ids: list[uuid.UUID] | None,
+    post_type_id: uuid.UUID | None,
+    previous_category_id: uuid.UUID | None = None,
+    previous_tag_ids: set[uuid.UUID] | None = None,
+    previous_post_type_id: uuid.UUID | None = None,
+) -> list[uuid.UUID] | None:
+    blog_taxonomy.assert_assignable_category(
+        db, category_id, previous_id=previous_category_id
+    )
+    blog_taxonomy.assert_assignable_post_type(
+        db, post_type_id, previous_id=previous_post_type_id
+    )
+    if tag_ids is None:
+        return None
+    return blog_taxonomy.assert_assignable_tags(
+        db, tag_ids, previous_ids=previous_tag_ids
+    )
+
+
 def create_post(db: Session, *, user: User, payload: PostCreate) -> BlogPost:
     _require_blog_perm(user, "admin.blog.create")
     if payload.client_creation_id is not None:
@@ -343,6 +361,13 @@ def create_post(db: Session, *, user: User, payload: PostCreate) -> BlogPost:
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    clean_tags = _validate_taxonomy_assignment(
+        db,
+        category_id=payload.category_id,
+        tag_ids=payload.tag_ids,
+        post_type_id=payload.post_type_id,
+    ) or []
+
     status_val = "draft"
     published_at = None
     if payload.scheduled_at and payload.scheduled_at > _utcnow():
@@ -358,6 +383,7 @@ def create_post(db: Session, *, user: User, payload: PostCreate) -> BlogPost:
         is_featured=payload.is_featured,
         reading_time_minutes=estimate_reading_minutes(payload.body or ""),
         category_id=payload.category_id,
+        post_type_id=payload.post_type_id,
         author_id=payload.author_id,
         seo_title=payload.seo_title,
         seo_description=payload.seo_description,
@@ -380,7 +406,7 @@ def create_post(db: Session, *, user: User, payload: PostCreate) -> BlogPost:
     )
     db.add(row)
     db.flush()
-    _set_tags(db, row, payload.tag_ids)
+    _set_tags(db, row, clean_tags)
     write_audit_log(
         db,
         action="blog.post_create",
@@ -421,6 +447,30 @@ def update_post(
         raise HTTPException(status_code=400, detail="Invalid status")
     if "body" in data and data["body"] is not None:
         data["reading_time_minutes"] = estimate_reading_minutes(data["body"])
+
+    next_category = data["category_id"] if "category_id" in data else row.category_id
+    next_post_type = data["post_type_id"] if "post_type_id" in data else row.post_type_id
+    prev_tags = {t.id for t in (row.tags or [])}
+    clean_tags = _validate_taxonomy_assignment(
+        db,
+        category_id=next_category if "category_id" in data else None,
+        tag_ids=tag_ids,
+        post_type_id=next_post_type if "post_type_id" in data else None,
+        previous_category_id=row.category_id,
+        previous_tag_ids=prev_tags,
+        previous_post_type_id=row.post_type_id,
+    )
+    # When category/post_type not in payload, still validate only if present in data —
+    # assert_assignable_* no-ops on None. Re-validate when explicitly set:
+    if "category_id" in data:
+        blog_taxonomy.assert_assignable_category(
+            db, data["category_id"], previous_id=row.category_id
+        )
+    if "post_type_id" in data:
+        blog_taxonomy.assert_assignable_post_type(
+            db, data["post_type_id"], previous_id=row.post_type_id
+        )
+
     next_status = data.get("status", row.status)
     if next_status == "published" and row.published_at is None:
         data.setdefault("published_at", _utcnow())
@@ -440,8 +490,8 @@ def update_post(
     elif client_version is not None:
         row.content_version = int(client_version)
     row.updated_by = user.id
-    if tag_ids is not None:
-        _set_tags(db, row, tag_ids)
+    if clean_tags is not None:
+        _set_tags(db, row, clean_tags)
     write_audit_log(
         db,
         action="blog.post_update",
@@ -548,32 +598,27 @@ def delete_post(db: Session, *, user: User, post_id: uuid.UUID) -> None:
 
 
 def create_category(db: Session, *, user: User, payload: CategoryCreate) -> BlogCategory:
-    _require_blog_perm(user, "admin.blog.edit", "admin.blog.create")
-    slug = _slugify(payload.slug or payload.name)
-    if db.scalar(select(BlogCategory.id).where(BlogCategory.slug == slug)):
-        raise HTTPException(status_code=409, detail="Category slug exists")
-    row = BlogCategory(
-        name=payload.name.strip(),
-        slug=slug,
+    return blog_taxonomy.create_category(
+        db,
+        user=user,
+        name=payload.name,
+        slug=payload.slug,
         description=payload.description,
         sort_order=payload.sort_order,
+        seo_title=getattr(payload, "seo_title", None),
+        seo_description=getattr(payload, "seo_description", None),
     )
-    db.add(row)
-    db.commit()
-    db.refresh(row)
-    return row
 
 
 def create_tag(db: Session, *, user: User, payload: TagCreate) -> BlogTag:
-    _require_blog_perm(user, "admin.blog.edit", "admin.blog.create")
-    slug = _slugify(payload.slug or payload.name)
-    if db.scalar(select(BlogTag.id).where(BlogTag.slug == slug)):
-        raise HTTPException(status_code=409, detail="Tag slug exists")
-    row = BlogTag(name=payload.name.strip(), slug=slug)
-    db.add(row)
-    db.commit()
-    db.refresh(row)
-    return row
+    return blog_taxonomy.create_tag(
+        db,
+        user=user,
+        name=payload.name,
+        slug=payload.slug,
+        description=getattr(payload, "description", None),
+        sort_order=getattr(payload, "sort_order", 0) or 0,
+    )
 
 
 def create_author(db: Session, *, user: User, payload: AuthorCreate) -> BlogAuthor:

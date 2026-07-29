@@ -84,6 +84,7 @@ WIRED_NOTIFY_KINDS: frozenset[str] = frozenset(
         "team.member_removed",
         "team.permission_updated",
         "team.security_alert",
+        "admin_team.invite",
         "admin.push_test",
         "marketing.promo",
         "message_request_accepted",

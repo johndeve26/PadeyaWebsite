@@ -3,19 +3,67 @@
 import { cache } from "react";
 
 import { apiRequest } from "@/lib/api";
-import { getApiBaseUrl, getApiPrefix } from "@/lib/api-base";
+import { API_TIMEOUT_MS } from "@/lib/api-timeouts";
+import { fetchPublicJson } from "@/lib/cache/public-api";
 
 export type BlogCategory = {
   id: string;
   name: string;
   slug: string;
   description?: string | null;
+  sort_order?: number;
+  is_active?: boolean;
+  archived_at?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  usage_count?: number;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 export type BlogTag = {
   id: string;
   name: string;
   slug: string;
+  description?: string | null;
+  sort_order?: number;
+  is_active?: boolean;
+  archived_at?: string | null;
+  usage_count?: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type BlogPostType = {
+  id: string;
+  key: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  sort_order?: number;
+  is_system?: boolean;
+  is_active?: boolean;
+  archived_at?: string | null;
+  usage_count?: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type BlogMediaRole = {
+  id: string;
+  key: string;
+  name: string;
+  description?: string | null;
+  sort_order?: number;
+  is_system?: boolean;
+  is_required?: boolean;
+  storage_folder?: string;
+  allowed_contexts?: string[];
+  is_active?: boolean;
+  archived_at?: string | null;
+  usage_count?: number;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 export type BlogAuthor = {
@@ -40,6 +88,7 @@ export type BlogPostListItem = {
   scheduled_at?: string | null;
   updated_at?: string | null;
   category?: BlogCategory | null;
+  post_type?: BlogPostType | null;
   author?: BlogAuthor | null;
   tags?: BlogTag[];
 };
@@ -256,11 +305,13 @@ export async function updateAdminBlogPost(
 }
 
 async function revalidatePublicBlog(): Promise<void> {
-  try {
-    await fetch("/api/revalidate/blog", { method: "POST" });
-  } catch {
+  // Fire-and-forget with a short timeout so mutations never hang on ISR bust.
+  void fetch("/api/revalidate/blog", {
+    method: "POST",
+    signal: AbortSignal.timeout(2_500),
+  }).catch(() => {
     /* public pages refresh on next ISR window */
-  }
+  });
 }
 
 export async function publishAdminBlogPost(id: string) {
@@ -293,30 +344,282 @@ export async function checkBlogSlug(slug: string, excludeId?: string) {
   );
 }
 
-export async function fetchAdminBlogCategories() {
-  return apiRequest<BlogCategory[]>("/admin/blog/categories");
+export async function fetchAdminBlogCategories(opts?: {
+  includeArchived?: boolean;
+  activeOnly?: boolean;
+}) {
+  const qs = new URLSearchParams();
+  if (opts?.includeArchived) qs.set("include_archived", "true");
+  if (opts?.activeOnly) qs.set("active_only", "true");
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return apiRequest<BlogCategory[]>(`/admin/blog/categories${suffix}`);
 }
 
 export async function createAdminBlogCategory(body: {
   name: string;
   slug?: string;
   description?: string;
+  sort_order?: number;
+  seo_title?: string;
+  seo_description?: string;
 }) {
-  return apiRequest<BlogCategory>("/admin/blog/categories", {
+  const row = await apiRequest<BlogCategory>("/admin/blog/categories", {
+    method: "POST",
+    body,
+  });
+  await revalidatePublicBlog();
+  return row;
+}
+
+export async function updateAdminBlogCategory(
+  id: string,
+  body: {
+    name?: string;
+    slug?: string;
+    description?: string | null;
+    sort_order?: number;
+    seo_title?: string | null;
+    seo_description?: string | null;
+    confirm_slug_change?: boolean;
+  },
+) {
+  const row = await apiRequest<BlogCategory>(`/admin/blog/categories/${id}`, {
+    method: "PATCH",
+    body,
+  });
+  await revalidatePublicBlog();
+  return row;
+}
+
+export async function archiveAdminBlogCategory(id: string) {
+  const row = await apiRequest<BlogCategory>(`/admin/blog/categories/${id}/archive`, {
+    method: "POST",
+  });
+  await revalidatePublicBlog();
+  return row;
+}
+
+export async function restoreAdminBlogCategory(id: string) {
+  const row = await apiRequest<BlogCategory>(`/admin/blog/categories/${id}/restore`, {
+    method: "POST",
+  });
+  await revalidatePublicBlog();
+  return row;
+}
+
+export async function reorderAdminBlogCategories(orderedIds: string[]) {
+  const rows = await apiRequest<BlogCategory[]>("/admin/blog/categories/reorder", {
+    method: "POST",
+    body: { ordered_ids: orderedIds },
+  });
+  await revalidatePublicBlog();
+  return rows;
+}
+
+export async function fetchAdminBlogTags(opts?: {
+  includeArchived?: boolean;
+  activeOnly?: boolean;
+}) {
+  const qs = new URLSearchParams();
+  if (opts?.includeArchived) qs.set("include_archived", "true");
+  if (opts?.activeOnly) qs.set("active_only", "true");
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return apiRequest<BlogTag[]>(`/admin/blog/tags${suffix}`);
+}
+
+export async function createAdminBlogTag(body: {
+  name: string;
+  slug?: string;
+  description?: string;
+  sort_order?: number;
+}) {
+  const row = await apiRequest<BlogTag>("/admin/blog/tags", {
+    method: "POST",
+    body,
+  });
+  await revalidatePublicBlog();
+  return row;
+}
+
+export async function updateAdminBlogTag(
+  id: string,
+  body: {
+    name?: string;
+    slug?: string;
+    description?: string | null;
+    sort_order?: number;
+    confirm_slug_change?: boolean;
+  },
+) {
+  const row = await apiRequest<BlogTag>(`/admin/blog/tags/${id}`, {
+    method: "PATCH",
+    body,
+  });
+  await revalidatePublicBlog();
+  return row;
+}
+
+export async function archiveAdminBlogTag(id: string) {
+  const row = await apiRequest<BlogTag>(`/admin/blog/tags/${id}/archive`, {
+    method: "POST",
+  });
+  await revalidatePublicBlog();
+  return row;
+}
+
+export async function restoreAdminBlogTag(id: string) {
+  const row = await apiRequest<BlogTag>(`/admin/blog/tags/${id}/restore`, {
+    method: "POST",
+  });
+  await revalidatePublicBlog();
+  return row;
+}
+
+export async function reorderAdminBlogTags(orderedIds: string[]) {
+  const rows = await apiRequest<BlogTag[]>("/admin/blog/tags/reorder", {
+    method: "POST",
+    body: { ordered_ids: orderedIds },
+  });
+  await revalidatePublicBlog();
+  return rows;
+}
+
+export async function fetchAdminBlogPostTypes(opts?: {
+  includeArchived?: boolean;
+  activeOnly?: boolean;
+}) {
+  const qs = new URLSearchParams();
+  if (opts?.includeArchived) qs.set("include_archived", "true");
+  if (opts?.activeOnly) qs.set("active_only", "true");
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return apiRequest<BlogPostType[]>(`/admin/blog/post-types${suffix}`);
+}
+
+export async function createAdminBlogPostType(body: {
+  name: string;
+  key?: string;
+  slug?: string;
+  description?: string;
+  sort_order?: number;
+}) {
+  const row = await apiRequest<BlogPostType>("/admin/blog/post-types", {
+    method: "POST",
+    body,
+  });
+  await revalidatePublicBlog();
+  return row;
+}
+
+export async function updateAdminBlogPostType(
+  id: string,
+  body: {
+    name?: string;
+    slug?: string;
+    description?: string | null;
+    sort_order?: number;
+  },
+) {
+  const row = await apiRequest<BlogPostType>(`/admin/blog/post-types/${id}`, {
+    method: "PATCH",
+    body,
+  });
+  await revalidatePublicBlog();
+  return row;
+}
+
+export async function archiveAdminBlogPostType(id: string) {
+  const row = await apiRequest<BlogPostType>(`/admin/blog/post-types/${id}/archive`, {
+    method: "POST",
+  });
+  await revalidatePublicBlog();
+  return row;
+}
+
+export async function restoreAdminBlogPostType(id: string) {
+  const row = await apiRequest<BlogPostType>(`/admin/blog/post-types/${id}/restore`, {
+    method: "POST",
+  });
+  await revalidatePublicBlog();
+  return row;
+}
+
+export async function reorderAdminBlogPostTypes(orderedIds: string[]) {
+  const rows = await apiRequest<BlogPostType[]>("/admin/blog/post-types/reorder", {
+    method: "POST",
+    body: { ordered_ids: orderedIds },
+  });
+  await revalidatePublicBlog();
+  return rows;
+}
+
+export async function fetchAdminBlogMediaRoles(opts?: {
+  includeArchived?: boolean;
+  activeOnly?: boolean;
+}) {
+  const qs = new URLSearchParams();
+  if (opts?.includeArchived) qs.set("include_archived", "true");
+  if (opts?.activeOnly) qs.set("active_only", "true");
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return apiRequest<BlogMediaRole[]>(`/admin/blog/media-roles${suffix}`);
+}
+
+export async function createAdminBlogMediaRole(body: {
+  name: string;
+  key: string;
+  description?: string;
+  sort_order?: number;
+  storage_folder?: string;
+  allowed_contexts?: string[];
+}) {
+  return apiRequest<BlogMediaRole>("/admin/blog/media-roles", {
     method: "POST",
     body,
   });
 }
 
-export async function fetchAdminBlogTags() {
-  return apiRequest<BlogTag[]>("/admin/blog/tags");
-}
-
-export async function createAdminBlogTag(body: { name: string; slug?: string }) {
-  return apiRequest<BlogTag>("/admin/blog/tags", {
-    method: "POST",
+export async function updateAdminBlogMediaRole(
+  id: string,
+  body: {
+    name?: string;
+    description?: string | null;
+    sort_order?: number;
+    allowed_contexts?: string[];
+  },
+) {
+  return apiRequest<BlogMediaRole>(`/admin/blog/media-roles/${id}`, {
+    method: "PATCH",
     body,
   });
+}
+
+export async function archiveAdminBlogMediaRole(id: string) {
+  return apiRequest<BlogMediaRole>(`/admin/blog/media-roles/${id}/archive`, {
+    method: "POST",
+  });
+}
+
+export async function restoreAdminBlogMediaRole(id: string) {
+  return apiRequest<BlogMediaRole>(`/admin/blog/media-roles/${id}/restore`, {
+    method: "POST",
+  });
+}
+
+export async function reorderAdminBlogMediaRoles(orderedIds: string[]) {
+  return apiRequest<BlogMediaRole[]>("/admin/blog/media-roles/reorder", {
+    method: "POST",
+    body: { ordered_ids: orderedIds },
+  });
+}
+
+export async function uploadBlogMedia(
+  file: File,
+  mediaRoleKey: string = "inline",
+): Promise<{ url: string; key: string; media_role_key: string }> {
+  const { apiUpload } = await import("@/lib/api");
+  const form = new FormData();
+  form.append("file", file);
+  form.append("media_role_key", mediaRoleKey);
+  return apiUpload("/admin/blog/media/upload", form);
 }
 
 export async function fetchAdminBlogAuthors() {
@@ -332,15 +635,7 @@ export async function seedAdminBlog() {
 }
 
 /** Server-side fetch for RSC / sitemap (no auth cookie). */
-function apiRoot(): string {
-  const base = getApiBaseUrl();
-  const prefix = getApiPrefix();
-  // Server must hit the backend directly (empty base = browser same-origin only).
-  const origin = base || "http://127.0.0.1:8000";
-  return `${origin}${prefix}`;
-}
-
-const BLOG_FETCH = { next: { revalidate: 300, tags: ["blog"] as string[] } };
+const BLOG_NEXT = { revalidate: 300, tags: ["blog"] as string[] };
 
 export async function fetchBlogPostsServer(params?: {
   category?: string;
@@ -348,79 +643,57 @@ export async function fetchBlogPostsServer(params?: {
   author?: string;
   limit?: number;
 }): Promise<BlogPostListItem[]> {
-  try {
-    const qs = new URLSearchParams();
-    if (params?.category) qs.set("category", params.category);
-    if (params?.tag) qs.set("tag", params.tag);
-    if (params?.author) qs.set("author", params.author);
-    qs.set("limit", String(params?.limit ?? 50));
-    const res = await fetch(`${apiRoot()}/blog/posts?${qs}`, BLOG_FETCH);
-    if (!res.ok) return [];
-    return (await res.json()) as BlogPostListItem[];
-  } catch {
-    return [];
-  }
+  const qs = new URLSearchParams();
+  if (params?.category) qs.set("category", params.category);
+  if (params?.tag) qs.set("tag", params.tag);
+  if (params?.author) qs.set("author", params.author);
+  qs.set("limit", String(params?.limit ?? 50));
+  const rows = await fetchPublicJson<BlogPostListItem[]>(`/blog/posts?${qs}`, {
+    next: BLOG_NEXT,
+    timeoutMs: API_TIMEOUT_MS.public,
+  });
+  return rows ?? [];
 }
 
 export const fetchBlogPostServer = cache(async (
   slug: string,
 ): Promise<BlogPost | null> => {
-  try {
-    const res = await fetch(
-      `${apiRoot()}/blog/posts/${encodeURIComponent(slug)}`,
-      BLOG_FETCH,
-    );
-    if (res.status === 404) return null;
-    if (!res.ok) return null;
-    return (await res.json()) as BlogPost;
-  } catch {
-    return null;
-  }
+  return fetchPublicJson<BlogPost>(
+    `/blog/posts/${encodeURIComponent(slug)}`,
+    { next: BLOG_NEXT, timeoutMs: API_TIMEOUT_MS.public },
+  );
 });
 
 export async function fetchBlogCategoriesServer(): Promise<BlogCategory[]> {
-  try {
-    const res = await fetch(`${apiRoot()}/blog/categories`, BLOG_FETCH);
-    if (!res.ok) return [];
-    return (await res.json()) as BlogCategory[];
-  } catch {
-    return [];
-  }
+  const rows = await fetchPublicJson<BlogCategory[]>("/blog/categories", {
+    next: BLOG_NEXT,
+    timeoutMs: API_TIMEOUT_MS.public,
+  });
+  return rows ?? [];
 }
 
 export async function fetchBlogTagsServer(): Promise<BlogTag[]> {
-  try {
-    const res = await fetch(`${apiRoot()}/blog/tags`, BLOG_FETCH);
-    if (!res.ok) return [];
-    return (await res.json()) as BlogTag[];
-  } catch {
-    return [];
-  }
+  const rows = await fetchPublicJson<BlogTag[]>("/blog/tags", {
+    next: BLOG_NEXT,
+    timeoutMs: API_TIMEOUT_MS.public,
+  });
+  return rows ?? [];
 }
 
 export async function fetchBlogAuthorsServer(): Promise<BlogAuthor[]> {
-  try {
-    const res = await fetch(`${apiRoot()}/blog/authors`, BLOG_FETCH);
-    if (!res.ok) return [];
-    return (await res.json()) as BlogAuthor[];
-  } catch {
-    return [];
-  }
+  const rows = await fetchPublicJson<BlogAuthor[]>("/blog/authors", {
+    next: BLOG_NEXT,
+    timeoutMs: API_TIMEOUT_MS.public,
+  });
+  return rows ?? [];
 }
 
 export async function fetchBlogTaxonomyServer(
   kind: "categories" | "tags" | "authors",
   slug: string,
 ): Promise<BlogCategory | BlogTag | BlogAuthor | null> {
-  try {
-    const res = await fetch(
-      `${apiRoot()}/blog/${kind}/${encodeURIComponent(slug)}`,
-      BLOG_FETCH,
-    );
-    if (res.status === 404) return null;
-    if (!res.ok) return null;
-    return (await res.json()) as BlogCategory | BlogTag | BlogAuthor;
-  } catch {
-    return null;
-  }
+  return fetchPublicJson<BlogCategory | BlogTag | BlogAuthor>(
+    `/blog/${kind}/${encodeURIComponent(slug)}`,
+    { next: BLOG_NEXT, timeoutMs: API_TIMEOUT_MS.public },
+  );
 }

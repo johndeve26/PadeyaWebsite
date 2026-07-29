@@ -97,6 +97,7 @@ function payloadFromStudio(studio: StudioSnapshot) {
       : null,
     is_featured: studio.featured,
     category_id: studio.categoryId || null,
+    post_type_id: studio.postTypeId || null,
     author_id: studio.authorId || null,
     tag_ids: studio.tagIds,
     scheduled_at: studio.scheduledAt
@@ -260,6 +261,7 @@ export function useBlogStudioAutosave(opts?: {
     studio.focusKeyword,
     studio.secondaryKeywords,
     studio.categoryId,
+    studio.postTypeId,
     studio.authorId,
     studio.tagIds,
     studio.featured,

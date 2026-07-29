@@ -96,6 +96,7 @@ export function BlogBlockSettings({ block, onChange }: Props) {
             value={String(block.content.url || "")}
             onChange={(url) => updateContent("url", url)}
             mediaType="blog"
+            blogMediaRole="inline"
             disabled={Boolean(block.props.locked)}
             onUploaded={(url) => updateContent("url", url)}
           />

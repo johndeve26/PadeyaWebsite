@@ -38,6 +38,7 @@ type SeedProps = Partial<{
   secondaryKeywords: string[];
   featured: boolean;
   categoryId: string;
+  postTypeId: string;
   authorId: string;
   tagIds: string[];
   scheduledAt: string;
@@ -82,6 +83,7 @@ function buildSeed(post: BlogPost): SeedProps {
     secondaryKeywords: p.secondary_keywords || [],
     featured: post.is_featured,
     categoryId: post.category?.id || "",
+    postTypeId: post.post_type?.id || "",
     authorId: post.author?.id || "",
     tagIds: (post.tags || []).map((t) => t.id),
     scheduledAt: post.scheduled_at
@@ -91,7 +93,16 @@ function buildSeed(post: BlogPost): SeedProps {
     status: post.status,
     contentVersion: p.content_version ?? 1,
     bodyHtml: post.body_html,
-    brief: p.studio_brief || undefined,
+    brief: (() => {
+      const brief = { ...(p.studio_brief || {}) } as BlogContentBrief;
+      if (post.post_type) {
+        brief.post_type_id = post.post_type.id;
+        brief.post_type_key = post.post_type.key;
+        brief.post_type_name = post.post_type.name;
+        if (!brief.content_type) brief.content_type = post.post_type.name;
+      }
+      return Object.keys(brief).length ? brief : undefined;
+    })(),
     outline: p.studio_outline ? normalizeOutline(p.studio_outline) : undefined,
     faqs: p.faqs || undefined,
   };

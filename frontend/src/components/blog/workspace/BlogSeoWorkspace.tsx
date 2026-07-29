@@ -1,8 +1,21 @@
 "use client";
 // BlogSeoWorkspace — SEO & Social tab: form fields + live previews
 
+import { useEffect, useState } from "react";
+
 import { useBlogStudio } from "@/components/blog/studio/BlogStudioProvider";
-import { Input, Textarea } from "@/components/ui";
+import { ImageUrlOrUploadField } from "@/components/media/ImageUrlOrUploadField";
+import { Input, Select, Textarea, Badge } from "@/components/ui";
+import {
+  fetchAdminBlogCategories,
+  fetchAdminBlogMediaRoles,
+  fetchAdminBlogPostTypes,
+  fetchAdminBlogTags,
+  type BlogCategory,
+  type BlogMediaRole,
+  type BlogPostType,
+  type BlogTag,
+} from "@/lib/blog-api";
 import { seoTitleScore, seoDescriptionScore } from "@/lib/blog-workspace";
 
 function CharCount({ value, min, max }: { value: string; min: number; max: number }) {
@@ -54,15 +67,166 @@ function SocialPreview({ title, description, imageUrl }: { title: string; descri
 
 export function BlogSeoWorkspace() {
   const studio = useBlogStudio();
+  const [categories, setCategories] = useState<BlogCategory[]>([]);
+  const [tags, setTags] = useState<BlogTag[]>([]);
+  const [postTypes, setPostTypes] = useState<BlogPostType[]>([]);
+  const [mediaRoles, setMediaRoles] = useState<BlogMediaRole[]>([]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const [c, t, p, m] = await Promise.all([
+          fetchAdminBlogCategories({ includeArchived: true }),
+          fetchAdminBlogTags({ includeArchived: true }),
+          fetchAdminBlogPostTypes({ includeArchived: true }),
+          fetchAdminBlogMediaRoles({ activeOnly: true }),
+        ]);
+        setCategories(c);
+        setTags(t);
+        setPostTypes(p);
+        setMediaRoles(m);
+      } catch {
+        /* catalogs optional */
+      }
+    })();
+  }, []);
 
   const metaTitleScore = seoTitleScore(studio.seoTitle);
   const metaDescScore = seoDescriptionScore(studio.seoDescription);
+  const coverRole = mediaRoles.find((r) => r.key === "cover");
+  const ogRole = mediaRoles.find((r) => r.key === "og");
+
+  const activeCategories = categories.filter((c) => c.is_active !== false);
+  const selectedCategory = categories.find((c) => c.id === studio.categoryId);
+  const categoryOptions =
+    selectedCategory && selectedCategory.is_active === false
+      ? [selectedCategory, ...activeCategories.filter((c) => c.id !== selectedCategory.id)]
+      : activeCategories;
+
+  const activeTypes = postTypes.filter((t) => t.is_active !== false);
+  const selectedType = postTypes.find((t) => t.id === studio.postTypeId);
+  const typeOptions =
+    selectedType && selectedType.is_active === false
+      ? [selectedType, ...activeTypes.filter((t) => t.id !== selectedType.id)]
+      : activeTypes;
+
+  const activeTags = tags.filter((t) => t.is_active !== false);
+  const selectedTags = tags.filter((t) => studio.tagIds.includes(t.id));
 
   return (
     <div className="flex-1 overflow-y-auto p-6">
       <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left column: form */}
         <div className="space-y-6">
+          <section className="space-y-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Metadata
+            </h2>
+            <Select
+              label="Category"
+              value={studio.categoryId || ""}
+              onChange={(e) => studio.patch({ categoryId: e.target.value, dirty: true })}
+            >
+              <option value="">No category</option>
+              {categoryOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                  {c.is_active === false ? " (Archived)" : ""}
+                </option>
+              ))}
+            </Select>
+            <Select
+              label="Post type"
+              value={studio.postTypeId || ""}
+              onChange={(e) => {
+                const id = e.target.value;
+                const row = postTypes.find((t) => t.id === id);
+                studio.patch({ postTypeId: id, dirty: true });
+                if (row) {
+                  studio.setBrief({
+                    ...studio.brief,
+                    post_type_id: id,
+                    post_type_key: row.key,
+                    post_type_name: row.name,
+                    content_type: row.name,
+                  });
+                } else {
+                  studio.setBrief({
+                    ...studio.brief,
+                    post_type_id: undefined,
+                    post_type_key: undefined,
+                    post_type_name: undefined,
+                  });
+                }
+              }}
+            >
+              <option value="">No post type</option>
+              {typeOptions.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                  {t.is_active === false ? " (Archived)" : ""}
+                </option>
+              ))}
+            </Select>
+            <div>
+              <p className="mb-2 text-sm font-semibold text-foreground">Tags</p>
+              <div className="flex flex-wrap gap-2">
+                {selectedTags.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className="inline-flex items-center gap-1"
+                    onClick={() =>
+                      studio.patch({
+                        tagIds: studio.tagIds.filter((id) => id !== t.id),
+                        dirty: true,
+                      })
+                    }
+                  >
+                    <Badge tone="accent" size="sm">
+                      {t.name}
+                      {t.is_active === false ? " · Archived" : ""}
+                      {" ×"}
+                    </Badge>
+                  </button>
+                ))}
+                {activeTags
+                  .filter((t) => !studio.tagIds.includes(t.id))
+                  .map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() =>
+                        studio.patch({
+                          tagIds: [...studio.tagIds, t.id],
+                          dirty: true,
+                        })
+                      }
+                    >
+                      <Badge tone="outline" size="sm">
+                        + {t.name}
+                      </Badge>
+                    </button>
+                  ))}
+              </div>
+            </div>
+            <ImageUrlOrUploadField
+              label={coverRole?.name || "Featured image"}
+              hint="Uses the cover media role"
+              value={studio.coverUrl}
+              onChange={(url) => studio.patch({ coverUrl: url, dirty: true })}
+              blogMediaRole="cover"
+              previewClassName="h-24 w-40"
+            />
+            <ImageUrlOrUploadField
+              label={ogRole?.name || "Open Graph image"}
+              hint="Uses the og media role"
+              value={studio.ogImageUrl}
+              onChange={(url) => studio.patch({ ogImageUrl: url, dirty: true })}
+              blogMediaRole="og"
+              previewClassName="h-24 w-40"
+            />
+          </section>
+
           <section className="space-y-4">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Search</h2>
             <Input
@@ -164,12 +328,6 @@ export function BlogSeoWorkspace() {
               onChange={(e) => studio.patch({ excerpt: e.target.value, dirty: true })}
               placeholder="Open Graph description"
             />
-            <Input
-              label="OG image URL"
-              value={studio.ogImageUrl}
-              onChange={(e) => studio.patch({ ogImageUrl: e.target.value, dirty: true })}
-              placeholder="https://…"
-            />
             <Textarea
               label="Social share text"
               rows={2}
@@ -179,7 +337,6 @@ export function BlogSeoWorkspace() {
           </section>
         </div>
 
-        {/* Right column: previews */}
         <div className="space-y-6">
           <GooglePreview
             title={studio.seoTitle || studio.title}

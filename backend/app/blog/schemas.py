@@ -14,6 +14,14 @@ class CategoryPublic(BaseModel):
     name: str
     slug: str
     description: str | None = None
+    sort_order: int = 0
+    is_active: bool = True
+    archived_at: datetime | None = None
+    seo_title: str | None = None
+    seo_description: str | None = None
+    usage_count: int = 0
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -22,6 +30,53 @@ class TagPublic(BaseModel):
     id: UUID
     name: str
     slug: str
+    description: str | None = None
+    sort_order: int = 0
+    is_active: bool = True
+    archived_at: datetime | None = None
+    usage_count: int = 0
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class PostTypePublic(BaseModel):
+    id: UUID
+    key: str
+    name: str
+    slug: str
+    description: str | None = None
+    sort_order: int = 0
+    is_system: bool = False
+    is_active: bool = True
+    archived_at: datetime | None = None
+    usage_count: int = 0
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class MediaRolePublic(BaseModel):
+    id: UUID
+    key: str
+    name: str
+    description: str | None = None
+    sort_order: int = 0
+    is_system: bool = False
+    is_required: bool = False
+    required_system_role: bool = False
+    storage_folder: str = "content"
+    allowed_contexts: list[str] = Field(default_factory=list)
+    is_active: bool = True
+    archived_at: datetime | None = None
+    usage_count: int = 0
+    display_usage_count: int = 0
+    usage_count_is_approximate: bool = False
+    can_archive: bool = True
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -50,6 +105,7 @@ class PostListItem(BaseModel):
     scheduled_at: datetime | None = None
     updated_at: datetime | None = None
     category: CategoryPublic | None = None
+    post_type: PostTypePublic | None = None
     author: AuthorPublic | None = None
     tags: list[TagPublic] = Field(default_factory=list)
 
@@ -94,6 +150,7 @@ class PostCreate(BaseModel):
     body: str = ""
     cover_url: str | None = None
     category_id: UUID | None = None
+    post_type_id: UUID | None = None
     author_id: UUID | None = None
     tag_ids: list[UUID] = Field(default_factory=list)
     is_featured: bool = False
@@ -125,6 +182,7 @@ class PostUpdate(BaseModel):
     body: str | None = None
     cover_url: str | None = None
     category_id: UUID | None = None
+    post_type_id: UUID | None = None
     author_id: UUID | None = None
     tag_ids: list[UUID] | None = None
     is_featured: bool | None = None
@@ -154,11 +212,75 @@ class CategoryCreate(BaseModel):
     slug: str | None = None
     description: str | None = None
     sort_order: int = 0
+    seo_title: str | None = Field(default=None, max_length=200)
+    seo_description: str | None = Field(default=None, max_length=320)
+
+
+class CategoryUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=120)
+    slug: str | None = None
+    description: str | None = None
+    sort_order: int | None = None
+    seo_title: str | None = Field(default=None, max_length=200)
+    seo_description: str | None = Field(default=None, max_length=320)
+    confirm_slug_change: bool = False
 
 
 class TagCreate(BaseModel):
     name: str = Field(min_length=2, max_length=80)
     slug: str | None = None
+    description: str | None = None
+    sort_order: int = 0
+
+
+class TagUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=80)
+    slug: str | None = None
+    description: str | None = None
+    sort_order: int | None = None
+    confirm_slug_change: bool = False
+
+
+class PostTypeCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    key: str | None = Field(default=None, max_length=64)
+    slug: str | None = None
+    description: str | None = None
+    sort_order: int = 0
+
+
+class PostTypeUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=120)
+    slug: str | None = None
+    description: str | None = None
+    sort_order: int | None = None
+
+
+class MediaRoleCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    key: str = Field(min_length=2, max_length=64)
+    description: str | None = None
+    sort_order: int = 0
+    storage_folder: str = Field(default="content", max_length=80)
+    allowed_contexts: list[str] | None = None
+
+
+class MediaRoleUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=120)
+    description: str | None = None
+    sort_order: int | None = None
+    allowed_contexts: list[str] | None = None
+
+
+class ReorderPayload(BaseModel):
+    ordered_ids: list[UUID] = Field(min_length=1)
+
+
+class BlogMediaUploadPublic(BaseModel):
+    url: str
+    key: str
+    media_role_key: str
+    media_role_id: str
 
 
 class AuthorCreate(BaseModel):

@@ -1,10 +1,11 @@
 "use client";
 // BlogPlanWorkspace — Plan tab: content brief + title + outline
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Input, Select, Textarea } from "@/components/ui";
 import { useBlogStudio } from "@/components/blog/studio/BlogStudioProvider";
-import { BLOG_CONTENT_TYPES, BLOG_SEARCH_INTENTS, BLOG_TONES } from "@/components/blog/studio/types";
+import { BLOG_SEARCH_INTENTS, BLOG_TONES } from "@/components/blog/studio/types";
+import { fetchAdminBlogPostTypes, type BlogPostType } from "@/lib/blog-api";
 import { cn } from "@/lib/cn";
 import type { WorkspaceTab } from "@/lib/blog-workspace";
 
@@ -15,9 +16,28 @@ type Props = {
 export function BlogPlanWorkspace({ onNavigate }: Props) {
   const studio = useBlogStudio();
   const [briefOpen, setBriefOpen] = useState(true);
+  const [postTypes, setPostTypes] = useState<BlogPostType[]>([]);
 
   const brief = studio.brief;
   const outline = studio.outline;
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const rows = await fetchAdminBlogPostTypes({ includeArchived: true });
+        setPostTypes(rows);
+      } catch {
+        setPostTypes([]);
+      }
+    })();
+  }, []);
+
+  const activeTypes = postTypes.filter((t) => t.is_active !== false);
+  const selected = postTypes.find((t) => t.id === studio.postTypeId);
+  const typeOptions =
+    selected && selected.is_active === false
+      ? [selected, ...activeTypes.filter((t) => t.id !== selected.id)]
+      : activeTypes;
 
   return (
     <div className="flex min-h-0 flex-1">
@@ -80,14 +100,33 @@ export function BlogPlanWorkspace({ onNavigate }: Props) {
             onChange={(e) => studio.setBrief({ ...brief, article_objective: e.target.value })}
           />
           <Select
-            label="Content type"
-            value={brief.content_type ?? "How-to guide"}
-            onChange={(e) => studio.setBrief({ ...brief, content_type: e.target.value })}
+            label="Post type"
+            value={studio.postTypeId || ""}
+            onChange={(e) => {
+              const id = e.target.value;
+              const row = postTypes.find((t) => t.id === id);
+              studio.patch({ postTypeId: id, dirty: true });
+              studio.setBrief({
+                ...brief,
+                post_type_id: id || undefined,
+                post_type_key: row?.key || undefined,
+                post_type_name: row?.name || undefined,
+                // Keep legacy content_type as display mirror only (not authority).
+                content_type: row?.name || brief.content_type,
+              });
+            }}
           >
-            {BLOG_CONTENT_TYPES.map((t) => (
-              <option key={t} value={t}>{t}</option>
+            <option value="">Select post type</option>
+            {typeOptions.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+                {t.is_active === false ? " (Archived)" : ""}
+              </option>
             ))}
           </Select>
+          {selected?.description ? (
+            <p className="text-xs text-muted-foreground">{selected.description}</p>
+          ) : null}
           <Select
             label="Tone"
             value={brief.tone ?? "Professional"}

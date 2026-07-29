@@ -1,5 +1,6 @@
 /** Blog AI Studio types — mirrors backend studio schemas (flexible/optional). */
 
+/** @deprecated Prefer DB-backed BlogPostType via /admin/blog/post-types. Kept for migration compatibility only. */
 export const BLOG_CONTENT_TYPES = [
   "How-to guide",
   "Event planning guide",
@@ -50,7 +51,14 @@ export type BlogContentBrief = {
   target_audience?: string;
   search_intent?: string;
   article_objective?: string;
+  /** @deprecated Prefer post_type_key / post_type_id — display label only. */
   content_type?: string;
+  /** Immutable post-type key for AI and programmatic identity. */
+  post_type_key?: string;
+  /** Stable post-type UUID. */
+  post_type_id?: string;
+  /** Human-readable post-type label (may change without remapping). */
+  post_type_name?: string;
   tone?: string;
   custom_tone?: string;
   desired_length?: string;
@@ -349,6 +357,7 @@ export type BlogStudioPostFields = {
   secondaryKeywords: string[];
   featured: boolean;
   categoryId: string;
+  postTypeId: string;
   authorId: string;
   tagIds: string[];
   scheduledAt: string;
@@ -370,7 +379,10 @@ export function emptyBrief(): BlogContentBrief {
     target_audience: "",
     search_intent: "Informational",
     article_objective: "",
-    content_type: "How-to guide",
+    content_type: "",
+    post_type_key: "",
+    post_type_id: "",
+    post_type_name: "",
     tone: "Professional",
     custom_tone: "",
     desired_length: "1200-1600 words",
@@ -410,7 +422,7 @@ export function normalizeOutline(raw: unknown): BlogOutline {
     }
   }
 
-  const sections = Array.isArray(o.sections)
+  const sections: BlogOutlineSection[] = Array.isArray(o.sections)
     ? o.sections
         .filter(
           (s): s is BlogOutlineSection =>
@@ -418,7 +430,7 @@ export function normalizeOutline(raw: unknown): BlogOutline {
         )
         .map((s) => ({
           ...s,
-          level: s.level === 3 ? 3 : 2,
+          level: (s.level === 3 ? 3 : 2) as 2 | 3,
         }))
     : [];
 

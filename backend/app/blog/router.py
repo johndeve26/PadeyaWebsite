@@ -14,7 +14,6 @@ from app.blog import service as blog_service
 from app.blog.schemas import (
     AuthorCreate,
     AuthorPublic,
-    CategoryCreate,
     CategoryPublic,
     CommentAdmin,
     CommentCreate,
@@ -27,7 +26,6 @@ from app.blog.schemas import (
     PostPublic,
     PostUpdate,
     SlugCheck,
-    TagCreate,
     TagPublic,
 )
 from app.blog.seed import seed_blog_content
@@ -37,12 +35,14 @@ from app.blog.rate_limit import (
 )
 from app.blog.studio.router import router as studio_router
 from app.blog.document.router import router as document_router
+from app.blog.taxonomy_router import router as taxonomy_router
 from app.core.database import get_db
 from app.users.models import User
 
 router = APIRouter(tags=["blog"])
 router.include_router(studio_router)
 router.include_router(document_router)
+router.include_router(taxonomy_router)
 
 
 # --- Public ---
@@ -115,11 +115,15 @@ def public_post_detail(
 @router.get("/blog/categories", response_model=list[CategoryPublic])
 def public_categories(db: Annotated[Session, Depends(get_db)]) -> list[CategoryPublic]:
     from app.core.cache import CacheTTL, cache_key, get_or_set
+    from app.blog import taxonomy_service as blog_taxonomy
 
     def _produce() -> list[dict]:
+        rows = blog_taxonomy.list_categories(db, active_only=True)
         return [
-            CategoryPublic.model_validate(r).model_dump(mode="json")
-            for r in blog_service.list_categories(db)
+            CategoryPublic.model_validate(
+                blog_taxonomy.serialize_category(r)
+            ).model_dump(mode="json")
+            for r in rows
         ]
 
     cached = get_or_set(cache_key("blog", "categories"), CacheTTL.taxonomy, _produce)
@@ -128,7 +132,12 @@ def public_categories(db: Annotated[Session, Depends(get_db)]) -> list[CategoryP
 
 @router.get("/blog/tags", response_model=list[TagPublic])
 def public_tags(db: Annotated[Session, Depends(get_db)]) -> list[TagPublic]:
-    return [TagPublic.model_validate(r) for r in blog_service.list_tags(db)]
+    from app.blog import taxonomy_service as blog_taxonomy
+
+    rows = blog_taxonomy.list_tags(db, active_only=True)
+    return [
+        TagPublic.model_validate(blog_taxonomy.serialize_tag(r)) for r in rows
+    ]
 
 
 @router.get("/blog/authors", response_model=list[AuthorPublic])
@@ -341,50 +350,6 @@ def admin_slug_check(
 ) -> SlugCheck:
     s = blog_service._slugify(slug)
     return SlugCheck(slug=s, available=blog_service.slug_available(db, s, exclude_id=exclude_id))
-
-
-@router.get("/admin/blog/categories", response_model=list[CategoryPublic])
-def admin_categories(
-    db: Annotated[Session, Depends(get_db)],
-    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
-) -> list[CategoryPublic]:
-    return [CategoryPublic.model_validate(r) for r in blog_service.list_categories(db)]
-
-
-@router.post(
-    "/admin/blog/categories",
-    response_model=CategoryPublic,
-    status_code=status.HTTP_201_CREATED,
-)
-def admin_create_category(
-    payload: CategoryCreate,
-    db: Annotated[Session, Depends(get_db)],
-    user: Annotated[User, Depends(require_permission("admin.blog.edit"))],
-) -> CategoryPublic:
-    return CategoryPublic.model_validate(
-        blog_service.create_category(db, user=user, payload=payload)
-    )
-
-
-@router.get("/admin/blog/tags", response_model=list[TagPublic])
-def admin_tags(
-    db: Annotated[Session, Depends(get_db)],
-    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
-) -> list[TagPublic]:
-    return [TagPublic.model_validate(r) for r in blog_service.list_tags(db)]
-
-
-@router.post(
-    "/admin/blog/tags",
-    response_model=TagPublic,
-    status_code=status.HTTP_201_CREATED,
-)
-def admin_create_tag(
-    payload: TagCreate,
-    db: Annotated[Session, Depends(get_db)],
-    user: Annotated[User, Depends(require_permission("admin.blog.edit"))],
-) -> TagPublic:
-    return TagPublic.model_validate(blog_service.create_tag(db, user=user, payload=payload))
 
 
 @router.get("/admin/blog/authors", response_model=list[AuthorPublic])

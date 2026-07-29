@@ -1,4 +1,4 @@
-import { type SelectHTMLAttributes } from "react";
+import { useId, type SelectHTMLAttributes } from "react";
 
 import { cn } from "@/lib/cn";
 import {
@@ -23,7 +23,8 @@ export function Select({
   children,
   ...props
 }: SelectProps) {
-  const inputId = id ?? props.name;
+  const autoId = useId();
+  const inputId = id ?? props.name ?? autoId;
 
   return (
     <label className="flex w-full flex-col gap-1.5 text-sm" htmlFor={inputId}>

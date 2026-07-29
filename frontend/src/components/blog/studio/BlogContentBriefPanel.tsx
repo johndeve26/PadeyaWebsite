@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { Input, Select, Textarea } from "@/components/ui";
+import { fetchAdminBlogPostTypes, type BlogPostType } from "@/lib/blog-api";
 
 import {
-  BLOG_CONTENT_TYPES,
   BLOG_SEARCH_INTENTS,
   BLOG_TONES,
   type BlogContentBrief,
@@ -25,15 +27,30 @@ export function BlogContentBriefPanel({
   brief,
   onChange,
   disabled,
+  postTypeId,
+  onPostTypeChange,
 }: {
   brief: BlogContentBrief;
   onChange: (next: BlogContentBrief) => void;
   disabled?: boolean;
+  postTypeId?: string;
+  onPostTypeChange?: (id: string) => void;
 }) {
+  const [postTypes, setPostTypes] = useState<BlogPostType[]>([]);
   const set = <K extends keyof BlogContentBrief>(
     key: K,
     value: BlogContentBrief[K],
   ) => onChange({ ...brief, [key]: value });
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        setPostTypes(await fetchAdminBlogPostTypes({ activeOnly: true }));
+      } catch {
+        setPostTypes([]);
+      }
+    })();
+  }, []);
 
   return (
     <StudioPanel
@@ -86,14 +103,28 @@ export function BlogContentBriefPanel({
           onChange={(e) => set("article_objective", e.target.value)}
         />
         <Select
-          label="Content type"
-          value={brief.content_type || BLOG_CONTENT_TYPES[0]}
+          label="Post type"
+          value={postTypeId || ""}
           disabled={disabled}
-          onChange={(e) => set("content_type", e.target.value)}
+          onChange={(e) => {
+            const id = e.target.value;
+            const row = postTypes.find((t) => t.id === id);
+            onPostTypeChange?.(id);
+            if (row) {
+              onChange({
+                ...brief,
+                post_type_id: id,
+                post_type_key: row.key,
+                post_type_name: row.name,
+                content_type: row.name,
+              });
+            }
+          }}
         >
-          {BLOG_CONTENT_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
+          <option value="">Select post type</option>
+          {postTypes.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
             </option>
           ))}
         </Select>

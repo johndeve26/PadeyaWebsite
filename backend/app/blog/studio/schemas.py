@@ -16,7 +16,10 @@ class BlogContentBrief(BaseModel):
     target_audience: str = ""
     search_intent: str = ""
     article_objective: str = ""
-    content_type: str = "guide"
+    content_type: str = "guide"  # legacy display mirror only
+    post_type_key: str | None = None
+    post_type_id: str | None = None
+    post_type_name: str | None = None
     tone: str = "practical"
     custom_tone: str | None = None
     desired_length: str = "medium"

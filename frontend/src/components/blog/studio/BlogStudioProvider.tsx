@@ -112,6 +112,7 @@ export function initialStudioState(
     secondaryKeywords: seed?.secondaryKeywords ?? [],
     featured: seed?.featured ?? false,
     categoryId: seed?.categoryId ?? "",
+    postTypeId: seed?.postTypeId ?? "",
     authorId: seed?.authorId ?? "",
     tagIds: seed?.tagIds ?? [],
     scheduledAt: seed?.scheduledAt ?? "",

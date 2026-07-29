@@ -106,16 +106,10 @@ export default function AdminBlogListPage() {
             Comments
           </Link>
           <Link
-            href="/admin/blog/categories"
+            href="/admin/blog/taxonomies"
             className="inline-flex h-9 items-center rounded-[var(--radius-sm)] border border-border px-3 text-sm font-semibold"
           >
-            Categories
-          </Link>
-          <Link
-            href="/admin/blog/tags"
-            className="inline-flex h-9 items-center rounded-[var(--radius-sm)] border border-border px-3 text-sm font-semibold"
-          >
-            Tags
+            Taxonomies
           </Link>
           <Link
             href="/admin/blog/new"

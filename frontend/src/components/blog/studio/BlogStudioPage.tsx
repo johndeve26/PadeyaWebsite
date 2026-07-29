@@ -616,6 +616,10 @@ function BlogStudioInner({
             <BlogContentBriefPanel
               brief={studio.brief}
               disabled={studio.generating}
+              postTypeId={studio.postTypeId}
+              onPostTypeChange={(id) =>
+                studio.patch({ postTypeId: id, dirty: true })
+              }
               onChange={(brief) => {
                 studio.setBrief(brief);
                 if (brief.primary_keyword) {
@@ -1234,6 +1238,7 @@ function hydrateFromPost(
     secondaryKeywords: p.secondary_keywords || [],
     featured: post.is_featured,
     categoryId: post.category?.id || "",
+    postTypeId: post.post_type?.id || "",
     authorId: post.author?.id || "",
     tagIds: (post.tags || []).map((t) => t.id),
     scheduledAt: post.scheduled_at
@@ -1306,6 +1311,7 @@ export function BlogStudioPage({
           secondaryKeywords: p.secondary_keywords || [],
           featured: initialPost.is_featured,
           categoryId: initialPost.category?.id || "",
+          postTypeId: initialPost.post_type?.id || "",
           authorId: initialPost.author?.id || "",
           tagIds: (initialPost.tags || []).map((t) => t.id),
           scheduledAt: initialPost.scheduled_at

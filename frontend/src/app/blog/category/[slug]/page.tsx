@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 
 import { BlogCard } from "@/components/blog/BlogCard";
 import { BlogIndexViewTracker } from "@/components/blog/BlogAnalyticsTrackers";
@@ -23,9 +23,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     slug,
   )) as BlogCategory | null;
   if (!cat) return { title: "Category", robots: { index: false } };
+  if (cat.slug && cat.slug !== slug) {
+    return buildPageMetadata({
+      title: `${cat.name} · Blog`,
+      description: cat.seo_description || cat.description || `Posts in ${cat.name} on Pàdéyá.`,
+      path: `/blog/category/${cat.slug}`,
+    });
+  }
   return buildPageMetadata({
-    title: `${cat.name} · Blog`,
-    description: cat.description || `Posts in ${cat.name} on Pàdéyá.`,
+    title: cat.seo_title || `${cat.name} · Blog`,
+    description: cat.seo_description || cat.description || `Posts in ${cat.name} on Pàdéyá.`,
     path: `/blog/category/${slug}`,
   });
 }
@@ -39,6 +46,9 @@ export default async function BlogCategoryPage({ params }: Props) {
     slug,
   )) as BlogCategory | null;
   if (!category) notFound();
+  if (category.slug && category.slug !== slug) {
+    permanentRedirect(`/blog/category/${category.slug}`);
+  }
   const [posts, categories] = await Promise.all([
     fetchBlogPostsServer({ category: slug }),
     fetchBlogCategoriesServer(),

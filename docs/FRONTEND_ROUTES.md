@@ -64,8 +64,9 @@ No `/dashboard/host`, `/personal`, or `/workspace/personal` trees. Privacy: Pers
 | `/admin/blog/new` | Create draft / publish + AI writing assistant (draft-only) | Admin |
 | `/admin/blog/[postId]/edit` | Edit + SEO + schedule + AI writing assistant (never auto-publish) | Admin |
 | `/admin/blog/comments` | Moderate / edit blog comments | Admin (`admin.blog.comments.*` / `admin.blog.edit`) |
-| `/admin/blog/categories` | Blog categories | Admin |
-| `/admin/blog/tags` | Blog tags | Admin |
+| `/admin/blog/taxonomies` | Blog taxonomies hub (categories, tags, post types, media roles) | Admin (`admin.blog.view` / taxonomy.manage) |
+| `/admin/blog/categories` | Redirect → `/admin/blog/taxonomies?tab=categories` | Admin |
+| `/admin/blog/tags` | Redirect → `/admin/blog/taxonomies?tab=tags` | Admin |
 | `/admin/analytics/blog` | Blog engagement + editorial analytics | Admin (`analytics.view_platform` / `admin.blog.view`) |
 | `/admin/cms/blog*` | Legacy redirect → `/admin/blog*` | Implemented |
 | `/events/near-me` | Near-me placeholder | Implemented |

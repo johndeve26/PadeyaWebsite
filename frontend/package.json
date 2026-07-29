@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "PADEYA_SSG_ABORT_FETCH=1 next build",
     "start": "next start",
     "lint": "eslint",
     "test:pwa": "node scripts/pwa-smoke.mjs",

@@ -305,6 +305,20 @@ TEMPLATES: dict[str, PushTemplate] = {
         f"A verified ticket order was paid on {BRAND}.",
         "/admin/payments",
     ),
+    # --- Admin team ---
+    "admin_team_invite": _t(
+        "admin_team_invite",
+        f"{BRAND} admin team",
+        lambda c: (
+            f"You’ve been added to the {BRAND} admin team"
+            + (
+                f" as {_ctx_str(c, 'role_label', 'a teammate')}."
+                if str(c.get("role_label") or "").strip()
+                else "."
+            )
+        ),
+        lambda c: _ctx_str(c, "action_url", "/admin"),
+    ),
     # --- Host team ---
     "team_invite": _t(
         "team_invite",
@@ -682,6 +696,7 @@ KIND_ALIASES: dict[str, str] = {
     "account.restricted": "account_suspended",
     "system.maintenance": "system_maintenance",
     "admin.push_test": "admin_push_test",
+    "admin_team.invite": "admin_team_invite",
     "team.invite": "team_invite",
     "team.invite_accepted": "team_invite_accepted",
     "team.invite_revoked": "team_invite_revoked",

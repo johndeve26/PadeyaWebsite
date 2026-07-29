@@ -385,6 +385,7 @@ DEMO_COMMENTS: dict[str, list[dict[str, str]]] = {
 def seed_blog_content(db: Session) -> dict[str, int]:
     """Idempotent seed of categories, tags, author, and demo posts (upsert by slug)."""
     import app.users.models  # noqa: F401 — BlogAuthor FK → users.id
+    from app.blog import taxonomy_service as blog_taxonomy
 
     created = {
         "categories": 0,
@@ -393,7 +394,13 @@ def seed_blog_content(db: Session) -> dict[str, int]:
         "posts": 0,
         "updated": 0,
         "comments": 0,
+        "post_types": 0,
+        "media_roles": 0,
     }
+
+    created["post_types"] = blog_taxonomy.ensure_system_post_types(db)
+    created["media_roles"] = blog_taxonomy.ensure_system_media_roles(db)
+    blog_taxonomy.migrate_studio_content_types(db)
 
     cat_by_slug: dict[str, BlogCategory] = {
         c.slug: c for c in db.scalars(select(BlogCategory)).all()

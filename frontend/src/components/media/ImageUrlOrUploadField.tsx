@@ -69,6 +69,8 @@ export function ImageUrlOrUploadField({
   onUploaded,
   /** Force account-level avatar upload (fans + hosts). Overrides host media staging. */
   accountAvatar = false,
+  /** Blog taxonomy media role (cover, og, inline, …). */
+  blogMediaRole,
 }: {
   label: string;
   hint?: string;
@@ -89,6 +91,7 @@ export function ImageUrlOrUploadField({
   showClear?: boolean;
   onUploaded?: (url: string) => void;
   accountAvatar?: boolean;
+  blogMediaRole?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -106,6 +109,9 @@ export function ImageUrlOrUploadField({
         mediaType: useAccountAvatar ? "avatar" : mediaType,
         setAsBanner: useAccountAvatar ? false : setAsBanner,
         accountAvatar: useAccountAvatar,
+        blogMediaRole:
+          blogMediaRole ||
+          (mediaType === "blog" ? "inline" : undefined),
       });
       onChange(url);
       onUploaded?.(url);

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 
 import { BlogCard } from "@/components/blog/BlogCard";
 import { BlogIndexViewTracker } from "@/components/blog/BlogAnalyticsTrackers";
@@ -18,10 +18,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const tag = (await fetchBlogTaxonomyServer("tags", slug)) as BlogTag | null;
   if (!tag) return { title: "Tag", robots: { index: false } };
+  const canonical = tag.slug || slug;
   return buildPageMetadata({
     title: `#${tag.name} · Blog`,
-    description: `Posts tagged ${tag.name} on Pàdéyá.`,
-    path: `/blog/tag/${slug}`,
+    description: tag.description || `Posts tagged ${tag.name} on Pàdéyá.`,
+    path: `/blog/tag/${canonical}`,
   });
 }
 
@@ -31,7 +32,10 @@ export default async function BlogTagPage({ params }: Props) {
   const { slug } = await params;
   const tag = (await fetchBlogTaxonomyServer("tags", slug)) as BlogTag | null;
   if (!tag) notFound();
-  const posts = await fetchBlogPostsServer({ tag: slug });
+  if (tag.slug && tag.slug !== slug) {
+    permanentRedirect(`/blog/tag/${tag.slug}`);
+  }
+  const posts = await fetchBlogPostsServer({ tag: tag.slug || slug });
 
   return (
     <main className="bg-background pb-20 pt-10">
