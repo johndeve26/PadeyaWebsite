@@ -19,10 +19,10 @@ export function EventsSearchHero({
         <h1 className="mt-2 max-w-2xl text-3xl font-extrabold tracking-tight sm:text-4xl">
           {title}
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-subtle-foreground sm:text-base">
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-paper/75 sm:text-base">
           {description}
         </p>
-        <p className="mt-4 text-xs font-semibold text-subtle-foreground sm:text-sm">
+        <p className="mt-4 text-xs font-semibold text-paper/70 sm:text-sm">
           Verified hosts · Secure tickets · QR entry
         </p>
       </div>

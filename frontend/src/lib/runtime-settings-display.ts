@@ -23,17 +23,28 @@ export function formatSecretDisplay(opts: {
   const configured = Boolean(opts.configured);
   if (!configured) return "Not configured";
 
-  if (opts.masked_value?.trim()) {
-    return opts.masked_value.trim();
+  const masked = opts.masked_value?.trim() || "";
+  // Only trust API strings that already look like fingerprints — never echo raw secrets.
+  if (masked && looksLikeFingerprintDisplay(masked)) {
+    return masked;
   }
 
   const first = sanitizeFirst(opts.first_four);
   const last =
-    sanitizeLast(opts.last_four) || sanitizeLast(extractLastFour(opts.masked_value));
+    sanitizeLast(opts.last_four) || sanitizeLast(extractLastFour(masked || null));
   if (first && last) return `Configured · ${first}…${last}`;
   if (last) return `Configured · ····${last}`;
   if (first) return `Configured · ${first}…`;
   return "Configured";
+}
+
+/** Safe fingerprint labels from the API (short, already redacted). */
+function looksLikeFingerprintDisplay(value: string): boolean {
+  if (value.length > 48) return false;
+  if (/Configured\s*·/.test(value)) return true;
+  if (/[A-Za-z0-9]{2,8}…[A-Za-z0-9]{2,8}/.test(value)) return true;
+  if (/ending in\s*[A-Za-z0-9]{2,8}/i.test(value)) return true;
+  return false;
 }
 
 function extractLastFour(masked: string | null | undefined): string | null {

@@ -43,10 +43,7 @@ export default function FaqPage() {
 
         <Container>
           <header className="mx-auto max-w-3xl text-center">
-            <p
-              className="text-xs font-bold uppercase tracking-[0.16em]"
-              style={{ color: brand.colors.green }}
-            >
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary-text">
               {brand.name} FAQ
             </p>
             <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight text-heading sm:text-5xl">

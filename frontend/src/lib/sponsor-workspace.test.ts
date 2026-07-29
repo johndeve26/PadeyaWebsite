@@ -6,7 +6,7 @@ import {
 } from "@/lib/nav/sponsor-nav";
 
 describe("sponsor nav", () => {
-  it("includes workspace routes", () => {
+  it("includes workspace routes", async () => {
     const hrefs = flatSponsorNav().map((i) => i.href);
     expect(hrefs).toContain("/sponsor");
     expect(hrefs).toContain("/sponsor/opportunities");
@@ -14,8 +14,12 @@ describe("sponsor nav", () => {
     expect(hrefs).toContain("/sponsor/saved");
     expect(hrefs).toContain("/sponsor/campaigns");
     expect(hrefs).toContain("/sponsor/deals");
-    const dealPage = await import("../../app/sponsor/deals/page.tsx");
-    expect(dealPage.default).toBeDefined();
+    const fs = await import("node:fs/promises");
+    const dealPage = await fs.readFile(
+      new URL("../app/sponsor/deals/page.tsx", import.meta.url),
+      "utf8",
+    );
+    expect(dealPage).toMatch(/export default/);
     expect(hrefs).toContain("/sponsor/reports");
   });
 });
@@ -35,7 +39,7 @@ describe("workspace switcher sponsor visibility", () => {
   it("documents sponsor opt-in in switcher source", async () => {
     const fs = await import("node:fs/promises");
     const src = await fs.readFile(
-      new URL("../../components/hosts/WorkspaceSwitcher.tsx", import.meta.url),
+      new URL("../components/hosts/WorkspaceSwitcher.tsx", import.meta.url),
       "utf8",
     );
     expect(src).toMatch(/Sponsor workspaces/);
@@ -47,7 +51,7 @@ describe("sponsor onboarding route", () => {
   it("create page exists", async () => {
     const fs = await import("node:fs/promises");
     const src = await fs.readFile(
-      new URL("../../app/sponsor/create/page.tsx", import.meta.url),
+      new URL("../app/sponsor/create/page.tsx", import.meta.url),
       "utf8",
     );
     expect(src).toMatch(/createSponsorProfile/);
@@ -59,18 +63,18 @@ describe("public sponsor profile route", () => {
   it("loads public profile by slug", async () => {
     const fs = await import("node:fs/promises");
     const src = await fs.readFile(
-      new URL("../../app/sponsors/[slug]/page.tsx", import.meta.url),
+      new URL("../app/sponsors/[slug]/page.tsx", import.meta.url),
       "utf8",
     );
-    expect(src).toMatch(/fetchPublicSponsorProfile/);
-    expect(src).toMatch(/PublicSponsorProfileView/);
+    expect(src).toMatch(/getPublicSponsorBySlug/);
+    expect(src).toMatch(/SponsorProfileClient/);
   });
 
   it("renders rich sections and host CTAs", async () => {
     const fs = await import("node:fs/promises");
     const view = await fs.readFile(
       new URL(
-        "../../components/sponsors/PublicSponsorProfileView.tsx",
+        "../components/sponsors/PublicSponsorProfileView.tsx",
         import.meta.url,
       ),
       "utf8",
@@ -83,7 +87,7 @@ describe("public sponsor profile route", () => {
     expect(view).toMatch(/Send sponsorship inquiry/);
     const cards = await fs.readFile(
       new URL(
-        "../../components/sponsors/SponsorPublicProfileCards.tsx",
+        "../components/sponsors/SponsorPublicProfileCards.tsx",
         import.meta.url,
       ),
       "utf8",
@@ -99,7 +103,7 @@ describe("public sponsor profile route", () => {
     const fs = await import("node:fs/promises");
     const hero = await fs.readFile(
       new URL(
-        "../../components/sponsors/SponsorBrandProfileHero.tsx",
+        "../components/sponsors/SponsorBrandProfileHero.tsx",
         import.meta.url,
       ),
       "utf8",
@@ -114,7 +118,7 @@ describe("admin sponsor moderation page", () => {
   it("renders admin sponsors list", async () => {
     const fs = await import("node:fs/promises");
     const src = await fs.readFile(
-      new URL("../../app/admin/sponsors/page.tsx", import.meta.url),
+      new URL("../app/admin/sponsors/page.tsx", import.meta.url),
       "utf8",
     );
     expect(src).toMatch(/fetchAdminSponsors/);
@@ -126,7 +130,7 @@ describe("sponsor saved page", () => {
   it("saved page renders list controls", async () => {
     const fs = await import("node:fs/promises");
     const src = await fs.readFile(
-      new URL("../../app/sponsor/saved/page.tsx", import.meta.url),
+      new URL("../app/sponsor/saved/page.tsx", import.meta.url),
       "utf8",
     );
     expect(src).toMatch(/fetchSponsorSaved/);
@@ -138,22 +142,22 @@ describe("sponsor campaigns pages", () => {
   it("campaign list and inquiry form integration exist", async () => {
     const fs = await import("node:fs/promises");
     const list = await fs.readFile(
-      new URL("../../app/sponsor/campaigns/page.tsx", import.meta.url),
+      new URL("../app/sponsor/campaigns/page.tsx", import.meta.url),
       "utf8",
     );
     expect(list).toMatch(/fetchSponsorCampaigns/);
     const detail = await fs.readFile(
-      new URL("../../app/sponsor/campaigns/[id]/page.tsx", import.meta.url),
+      new URL("../app/sponsor/campaigns/[id]/page.tsx", import.meta.url),
       "utf8",
     );
     expect(detail).toMatch(/SponsorCampaignRecommendations/);
     const form = await fs.readFile(
-      new URL("../../components/sponsors/SponsorInquiryForm.tsx", import.meta.url),
+      new URL("../components/sponsors/SponsorInquiryForm.tsx", import.meta.url),
       "utf8",
     );
     expect(form).toMatch(/Link to campaign/);
     const saved = await fs.readFile(
-      new URL("../../app/sponsor/saved/page.tsx", import.meta.url),
+      new URL("../app/sponsor/saved/page.tsx", import.meta.url),
       "utf8",
     );
     expect(saved).toMatch(/addSavedItemToCampaign/);
@@ -162,7 +166,7 @@ describe("sponsor campaigns pages", () => {
   it("reports pages render dashboard", async () => {
     const fs = await import("node:fs/promises");
     const reports = await fs.readFile(
-      new URL("../../app/sponsor/reports/page.tsx", import.meta.url),
+      new URL("../app/sponsor/reports/page.tsx", import.meta.url),
       "utf8",
     );
     expect(reports).toMatch(/fetchSponsorOverviewReport/);
@@ -174,14 +178,14 @@ describe("sponsor team settings page", () => {
   it("team page and invite modal exist", async () => {
     const fs = await import("node:fs/promises");
     const team = await fs.readFile(
-      new URL("../../app/sponsor/settings/team/page.tsx", import.meta.url),
+      new URL("../app/sponsor/settings/team/page.tsx", import.meta.url),
       "utf8",
     );
     expect(team).toMatch(/fetchSponsorTeam/);
     expect(team).toMatch(/SponsorTeamInviteModal/);
     const modal = await fs.readFile(
       new URL(
-        "../../components/sponsor/team/SponsorTeamInviteModal.tsx",
+        "../components/sponsor/team/SponsorTeamInviteModal.tsx",
         import.meta.url,
       ),
       "utf8",

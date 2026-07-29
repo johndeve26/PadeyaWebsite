@@ -1,0 +1,33 @@
+
+Running 20 tests using 2 workers
+
+(node:59661) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59662) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   2 [chromium-desktop] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › light · /login (1.5s)
+  ✓   1 [chromium-desktop] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › light · / (2.0s)
+  ✓   3 [chromium-desktop] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › light · /register (3.5s)
+  ✓   4 [chromium-desktop] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › light · /events (3.6s)
+  ✓   5 [chromium-desktop] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › light · /blog (3.1s)
+  ✓   6 [chromium-desktop] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › dark · / (5.4s)
+  ✓   7 [chromium-desktop] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › dark · /login (3.8s)
+  ✓   8 [chromium-desktop] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › dark · /register (1.6s)
+  ✓   9 [chromium-desktop] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › dark · /events (1.9s)
+  ✓  10 [chromium-desktop] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › dark · /blog (1.5s)
+(node:59961) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59962) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  12 [chromium-mobile] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › light · /login (1.3s)
+  ✓  11 [chromium-mobile] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › light · / (2.2s)
+  ✓  13 [chromium-mobile] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › light · /register (1.6s)
+  ✓  14 [chromium-mobile] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › light · /events (1.4s)
+  ✓  15 [chromium-mobile] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › light · /blog (1.1s)
+  ✓  17 [chromium-mobile] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › dark · /login (984ms)
+  ✓  16 [chromium-mobile] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › dark · / (1.6s)
+  ✓  18 [chromium-mobile] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › dark · /register (3.3s)
+  ✓  19 [chromium-mobile] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › dark · /events (3.3s)
+  ✓  20 [chromium-mobile] › e2e/contrast-public.spec.ts:22:11 › Public contrast (axe color-contrast enabled) › dark · /blog (975ms)
+
+  20 passed (25.0s)

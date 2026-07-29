@@ -1,0 +1,12 @@
+
+> frontend@0.1.0 test:theme
+> node scripts/theme-smoke.mjs
+
+Theme smoke checks passed:
+  ✓ ThemeProvider / ThemeToggle / ThemeScript present + wired
+  ✓ preference persists to padeya-theme localStorage (mock)
+  ✓ ThemeToggle cycle light → dark → system
+  ✓ system mode resolve + init script do not crash
+  ✓ hydration-safe SSR snapshot + suppressHydrationWarning
+  ✓ Appearance on dashboard + host settings
+THEME_EXIT:0

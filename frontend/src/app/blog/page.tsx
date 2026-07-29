@@ -31,10 +31,7 @@ export default async function BlogIndexPage() {
       <BlogIndexViewTracker />
       <Container>
         <header className="max-w-2xl">
-          <p
-            className="text-xs font-bold uppercase tracking-[0.16em]"
-            style={{ color: brand.colors.green }}
-          >
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary-text">
             {brand.name} Blog
           </p>
           <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight text-heading sm:text-5xl">

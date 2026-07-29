@@ -1,0 +1,57 @@
+
+> frontend@0.1.0 test:e2e:auth
+> playwright test e2e/authenticated-visual-smoke.spec.ts --project=chromium-desktop --project=chromium-mobile --workers=1
+
+
+Running 40 tests using 1 worker
+
+(node:23770) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:181:11 › Fan authenticated visual pack › light · pack (2.1m)
+  ✓   2 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:181:11 › Fan authenticated visual pack › dark · pack (2.2m)
+  ✓   3 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:181:11 › Host authenticated visual pack › light · pack (2.5m)
+  ✓   4 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:181:11 › Host authenticated visual pack › dark · pack (2.3m)
+  ✓   5 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:181:11 › Admin (super_admin) authenticated visual pack › light · pack (1.9m)
+  ✓   6 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:181:11 › Admin (super_admin) authenticated visual pack › dark · pack (1.8m)
+  ✓   7 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:218:7 › Admin role visibility smoke › support cannot open finance settlements as privileged write UI (22.7s)
+  ✓   8 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:233:7 › Admin role visibility smoke › finance can open payments table (18.2s)
+  ✓   9 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:243:7 › Admin role visibility smoke › super_admin platform settings shell (14.5s)
+  ✓  10 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:252:7 › Admin role visibility smoke › host_staff reaches host desk without admin shell (32.3s)
+  -  11 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:272:7 › Modal / portal + empty-state smoke › host invite modal portals under html.dark
+  ✓  12 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:298:7 › Modal / portal + empty-state smoke › fan notifications empty-or-list shell (16.6s)
+  ✓  13 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:309:7 › Modal / portal + empty-state smoke › host analytics chart shell (19.9s)
+  ✓  14 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:319:7 › Modal / portal + empty-state smoke › admin users data table shell (20.7s)
+  ✓  15 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:341:11 › Contrast — authenticated dashboards › axe contrast · fan-dashboard · light (17.3s)
+  ✓  16 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:341:11 › Contrast — authenticated dashboards › axe contrast · host-dashboard · light (20.1s)
+  ✓  17 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:341:11 › Contrast — authenticated dashboards › axe contrast · admin-dashboard · light (17.4s)
+  ✓  18 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:341:11 › Contrast — authenticated dashboards › axe contrast · fan-dashboard · dark (16.6s)
+  ✓  19 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:341:11 › Contrast — authenticated dashboards › axe contrast · host-dashboard · dark (18.7s)
+  ✓  20 [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts:341:11 › Contrast — authenticated dashboards › axe contrast · admin-dashboard · dark (15.8s)
+(node:43006) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  21 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:181:11 › Fan authenticated visual pack › light · pack (2.1m)
+  ✓  22 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:181:11 › Fan authenticated visual pack › dark · pack (2.4m)
+  ✓  23 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:181:11 › Host authenticated visual pack › light · pack (2.3m)
+  ✓  24 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:181:11 › Host authenticated visual pack › dark · pack (2.5m)
+  ✓  25 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:181:11 › Admin (super_admin) authenticated visual pack › light · pack (1.8m)
+  ✓  26 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:181:11 › Admin (super_admin) authenticated visual pack › dark · pack (1.6m)
+  ✓  27 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:218:7 › Admin role visibility smoke › support cannot open finance settlements as privileged write UI (27.8s)
+  ✓  28 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:233:7 › Admin role visibility smoke › finance can open payments table (18.9s)
+  ✓  29 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:243:7 › Admin role visibility smoke › super_admin platform settings shell (10.9s)
+  ✓  30 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:252:7 › Admin role visibility smoke › host_staff reaches host desk without admin shell (31.7s)
+  -  31 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:272:7 › Modal / portal + empty-state smoke › host invite modal portals under html.dark
+  ✓  32 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:298:7 › Modal / portal + empty-state smoke › fan notifications empty-or-list shell (16.1s)
+  ✓  33 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:309:7 › Modal / portal + empty-state smoke › host analytics chart shell (17.8s)
+  ✓  34 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:319:7 › Modal / portal + empty-state smoke › admin users data table shell (18.9s)
+  ✓  35 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:341:11 › Contrast — authenticated dashboards › axe contrast · fan-dashboard · light (18.6s)
+  ✓  36 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:341:11 › Contrast — authenticated dashboards › axe contrast · host-dashboard · light (19.4s)
+  ✓  37 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:341:11 › Contrast — authenticated dashboards › axe contrast · admin-dashboard · light (16.0s)
+  ✓  38 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:341:11 › Contrast — authenticated dashboards › axe contrast · fan-dashboard · dark (16.4s)
+  ✓  39 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:341:11 › Contrast — authenticated dashboards › axe contrast · host-dashboard · dark (18.2s)
+  ✓  40 [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts:341:11 › Contrast — authenticated dashboards › axe contrast · admin-dashboard · dark (16.9s)
+
+  Slow test file: [chromium-desktop] › e2e/authenticated-visual-smoke.spec.ts (17.1m)
+  Slow test file: [chromium-mobile] › e2e/authenticated-visual-smoke.spec.ts (17.0m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  2 skipped
+  38 passed (34.1m)

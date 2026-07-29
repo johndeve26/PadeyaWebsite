@@ -1,27 +1,46 @@
 {
-  "generated_at": "2026-07-29T04:36:32.778Z",
+  "generated_at": "2026-07-29T06:40:00Z",
   "theme_smoke": {
     "command": "npm run test:theme",
     "result": "pass"
   },
   "unit": {
     "command": "npm run test:unit",
-    "result": "partial",
-    "passed": 354,
-    "failed": 2,
-    "notes": "Pre-existing runtime-settings.test.ts failures unrelated to UI audit"
+    "result": "pass",
+    "passed": 369,
+    "failed": 0
   },
-  "playwright": {
-    "command": "npx playwright test e2e/theme-visual-smoke.spec.ts --workers=2",
-    "passed": 70,
+  "playwright_theme": {
+    "command": "npm run test:e2e:theme",
+    "passed": 35,
+    "failed": 0,
+    "skipped": 0
+  },
+  "playwright_visual": {
+    "command": "npm run test:e2e:visual",
+    "passed": 90,
+    "failed": 0,
+    "skipped": 0,
+    "notes": "theme-visual-smoke + contrast-public; desktop+mobile"
+  },
+  "playwright_auth": {
+    "command": "npm run test:e2e:auth",
+    "passed": 38,
     "failed": 0,
     "skipped": 2,
-    "duration_s": 25,
-    "notes": "Authenticated pack skipped without PLAYWRIGHT_FAN_* credentials"
+    "duration_m": 34.1,
+    "notes": "Fan/host/admin packs + role visibility + axe; invite-modal skipped then replaced by notification popover (verified separately, 1 passed)."
+  },
+  "playwright_browsers": {
+    "command": "npm run test:e2e:browsers",
+    "passed": 14,
+    "failed": 0,
+    "notes": "firefox-critical + webkit-critical subset"
   },
   "frontend_build": {
     "command": "npm run build",
     "result": "pass"
   },
-  "screenshot_count": 57
+  "screenshot_count": 241,
+  "authenticated_screenshot_count": 174
 }

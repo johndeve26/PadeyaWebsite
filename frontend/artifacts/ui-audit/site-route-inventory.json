@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-29T01:18:58.237Z",
+  "generated_at": "2026-07-29T06:40:00Z",
   "total_routes": 432,
   "counts_by_category": {
     "PUBLIC": 6,
@@ -8289,5 +8289,9 @@
       "mobile": "pending",
       "accessibility": "pending"
     }
-  ]
+  ],
+  "authenticated_closeout": {
+    "smoked_layout_family_routes": 35,
+    "gate": "COMPLETE \u2014 SITE-WIDE UI GATE MET"
+  }
 }

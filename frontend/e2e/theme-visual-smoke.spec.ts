@@ -111,9 +111,9 @@ test.describe("Accessibility smoke (critical public)", () => {
       await stabilizePage(page);
       await assertResolvedTheme(page, preference);
 
+      // color-contrast enabled on critical public pages (also covered by contrast-public.spec).
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa"])
-        .disableRules(["color-contrast"]) // sampled separately; charts/marketing can noise
         .analyze();
 
       const critical = results.violations.filter(
@@ -133,7 +133,6 @@ test.describe("Accessibility smoke (critical public)", () => {
 
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa"])
-        .disableRules(["color-contrast"])
         .analyze();
 
       const critical = results.violations.filter(
@@ -142,22 +141,4 @@ test.describe("Accessibility smoke (critical public)", () => {
       expect(critical).toEqual([]);
     });
   }
-});
-
-test.describe("Authenticated routes", () => {
-  test.skip(
-    !process.env.PLAYWRIGHT_FAN_EMAIL || !process.env.PLAYWRIGHT_FAN_PASSWORD,
-    "Set PLAYWRIGHT_FAN_EMAIL / PLAYWRIGHT_FAN_PASSWORD for authenticated visual pack",
-  );
-
-  test("fan dashboard theme (skipped without credentials)", async ({ page }) => {
-    // Placeholder — enabled when env credentials exist.
-    await applyTheme(page, "dark", { colorScheme: "dark" });
-    await page.goto("/login");
-    await page.getByLabel(/email/i).fill(process.env.PLAYWRIGHT_FAN_EMAIL!);
-    await page.getByLabel(/password/i).fill(process.env.PLAYWRIGHT_FAN_PASSWORD!);
-    await page.getByRole("button", { name: /sign in|log in/i }).click();
-    await page.waitForURL(/dashboard/, { timeout: 30_000 });
-    await assertResolvedTheme(page, "dark");
-  });
 });

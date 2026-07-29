@@ -1,0 +1,32 @@
+
+> frontend@0.1.0 test:e2e:browsers
+> playwright test e2e/theme-visual-smoke.spec.ts --project=firefox-critical --project=webkit-critical
+
+
+Running 14 tests using 2 workers
+
+(node:62522) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:62523) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   2 [firefox-critical] › e2e/theme-visual-smoke.spec.ts:45:11 › Theme visual smoke (public) › light · /login (23.2s)
+  ✓   1 [firefox-critical] › e2e/theme-visual-smoke.spec.ts:45:11 › Theme visual smoke (public) › light · / (29.3s)
+  ✓   3 [firefox-critical] › e2e/theme-visual-smoke.spec.ts:45:11 › Theme visual smoke (public) › dark · / (11.6s)
+  ✓   4 [firefox-critical] › e2e/theme-visual-smoke.spec.ts:45:11 › Theme visual smoke (public) › dark · /login (11.8s)
+  ✓   5 [firefox-critical] › e2e/theme-visual-smoke.spec.ts:78:7 › System theme resolution › system + OS dark → html.dark (12.1s)
+  ✓   6 [firefox-critical] › e2e/theme-visual-smoke.spec.ts:85:7 › System theme resolution › system + OS light → no html.dark (8.3s)
+(node:63429) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   7 [firefox-critical] › e2e/theme-visual-smoke.spec.ts:92:7 › System theme resolution › theme persists across reload (8.1s)
+(node:63581) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   8 [webkit-critical] › e2e/theme-visual-smoke.spec.ts:45:11 › Theme visual smoke (public) › light · / (13.5s)
+  ✓   9 [webkit-critical] › e2e/theme-visual-smoke.spec.ts:45:11 › Theme visual smoke (public) › light · /login (7.6s)
+  ✓  10 [webkit-critical] › e2e/theme-visual-smoke.spec.ts:45:11 › Theme visual smoke (public) › dark · / (5.1s)
+  ✓  11 [webkit-critical] › e2e/theme-visual-smoke.spec.ts:45:11 › Theme visual smoke (public) › dark · /login (5.5s)
+  ✓  12 [webkit-critical] › e2e/theme-visual-smoke.spec.ts:78:7 › System theme resolution › system + OS dark → html.dark (13.0s)
+  ✓  13 [webkit-critical] › e2e/theme-visual-smoke.spec.ts:85:7 › System theme resolution › system + OS light → no html.dark (19.6s)
+  ✓  14 [webkit-critical] › e2e/theme-visual-smoke.spec.ts:92:7 › System theme resolution › theme persists across reload (9.5s)
+
+  14 passed (1.7m)
+BROWSERS_EXIT:0

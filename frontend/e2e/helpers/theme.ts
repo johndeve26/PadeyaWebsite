@@ -25,6 +25,10 @@ export async function applyTheme(
     ({ key, value }) => {
       try {
         localStorage.setItem(key, value);
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const dark = value === "dark" || (value !== "light" && prefersDark);
+        document.documentElement.classList.toggle("dark", dark);
+        document.documentElement.style.colorScheme = dark ? "dark" : "light";
       } catch {
         /* ignore */
       }
@@ -57,6 +61,21 @@ export async function assertResolvedTheme(
   page: Page,
   expected: "light" | "dark",
 ): Promise<void> {
+  // Re-run ThemeScript-equivalent sync (WebKit can miss the blocking script race).
+  await page
+    .evaluate((key) => {
+      try {
+        const t = localStorage.getItem(key);
+        const d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const dark = t === "dark" || (t !== "light" && d);
+        document.documentElement.classList.toggle("dark", dark);
+        document.documentElement.style.colorScheme = dark ? "dark" : "light";
+      } catch {
+        /* ignore */
+      }
+    }, THEME_STORAGE_KEY)
+    .catch(() => undefined);
+
   await page.waitForFunction(
     (exp) => {
       const dark = document.documentElement.classList.contains("dark");

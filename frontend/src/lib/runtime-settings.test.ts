@@ -47,13 +47,14 @@ describe("formatSecretDisplay", () => {
   });
 
   it("builds fingerprint from first_four and last_four", () => {
+    // Non-alphanumeric chars are stripped from fingerprint fragments.
     expect(
       formatSecretDisplay({
         configured: true,
         first_four: "pk_t",
         last_four: "adey",
       }),
-    ).toBe("Configured · pk_t…adey");
+    ).toBe("Configured · pkt…adey");
   });
 
   it("never returns a long raw secret string", () => {

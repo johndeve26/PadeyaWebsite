@@ -1,0 +1,128 @@
+{
+  "generated_at": "2026-07-29T06:30:00Z",
+  "strategy": "layout-family representatives (not exhaustive route screenshots)",
+  "themes": ["light", "dark"],
+  "viewports": ["chromium-desktop 1440x900", "chromium-mobile 375x812"],
+  "personas": {
+    "fan": "fan1@demo.padeye.test",
+    "host": "host@demo.padeye.test",
+    "host_staff": "staff@demo.padeye.test",
+    "admin_support": "support@demo.padeye.test",
+    "admin_finance": "finance@demo.padeye.test",
+    "super_admin": "admin@demo.padeye.test"
+  },
+  "families": [
+    {
+      "family": "FAN_DASHBOARD_LAYOUT",
+      "persona": "fan",
+      "routes": ["/dashboard", "/connect", "/connect/connections", "/connect/requests", "/dashboard/support"]
+    },
+    {
+      "family": "SETTINGS_LAYOUT",
+      "persona": "fan",
+      "routes": ["/dashboard/profile", "/dashboard/settings", "/dashboard/passport/settings", "/dashboard/notifications"]
+    },
+    {
+      "family": "COMMERCE_LAYOUT",
+      "persona": "fan",
+      "routes": ["/dashboard/orders", "/dashboard/tickets"]
+    },
+    {
+      "family": "MESSAGING_LAYOUT",
+      "persona": "fan|host",
+      "routes": ["/messages", "/host/messages"]
+    },
+    {
+      "family": "HOST_DASHBOARD_LAYOUT",
+      "persona": "host",
+      "routes": ["/host", "/host/dashboard", "/host/events"]
+    },
+    {
+      "family": "FORM_EDITOR_LAYOUT",
+      "persona": "host",
+      "routes": ["/host/events/new"]
+    },
+    {
+      "family": "ANALYTICS_LAYOUT",
+      "persona": "host|super_admin",
+      "routes": ["/host/analytics", "/admin/analytics"]
+    },
+    {
+      "family": "DATA_TABLE_LAYOUT",
+      "persona": "host|super_admin",
+      "routes": [
+        "/host/audience",
+        "/host/merchandise",
+        "/host/promos",
+        "/host/ambassadors",
+        "/host/sponsorships",
+        "/host/vault",
+        "/host/earnings",
+        "/admin/users",
+        "/admin/payments",
+        "/admin/support",
+        "/admin/audit-logs"
+      ]
+    },
+    {
+      "family": "HOST_SETTINGS_LAYOUT",
+      "persona": "host",
+      "routes": ["/host/team", "/host/settings"]
+    },
+    {
+      "family": "ADMIN_DASHBOARD_LAYOUT",
+      "persona": "super_admin",
+      "routes": ["/admin"]
+    },
+    {
+      "family": "RICH_EDITOR_LAYOUT",
+      "persona": "super_admin",
+      "routes": ["/admin/blog/new"]
+    },
+    {
+      "family": "ADMIN_SETTINGS_LAYOUT",
+      "persona": "super_admin",
+      "routes": ["/admin/platform"]
+    }
+  ],
+  "role_visibility": [
+    { "persona": "admin_support", "route": "/admin/finance", "expectation": "no crash; no privileged finance write UI" },
+    { "persona": "admin_finance", "route": "/admin/payments", "expectation": "payments table shell loads" },
+    { "persona": "super_admin", "route": "/admin/platform", "expectation": "platform settings shell" },
+    { "persona": "host_staff", "route": "/host", "expectation": "host desk; not admin finance/platform" }
+  ],
+  "modal_portal_smoke": {
+    "route": "/dashboard",
+    "trigger": "Notifications button → dialog",
+    "assertion": "dialog background not pure white under html.dark"
+  },
+  "empty_state_smoke": {
+    "route": "/dashboard/notifications",
+    "persona": "fan",
+    "note": "empty or list shell acceptable"
+  },
+  "charts_tables_smoke": [
+    { "route": "/host/analytics", "persona": "host", "type": "charts" },
+    { "route": "/admin/users", "persona": "super_admin", "type": "data-table" }
+  ],
+  "screenshot_safety": {
+    "mask_selectors": [
+      "input[type=password]",
+      "input[autocomplete=current-password]",
+      "input[autocomplete=new-password]",
+      "[data-sensitive]",
+      "[data-testid=access-token]",
+      "[data-testid=api-key]"
+    ],
+    "data_policy": "demo @demo.padeye.test personas only; auth-state JSON gitignored"
+  },
+  "pack_result": {
+    "command": "npm run test:e2e:auth",
+    "passed": 38,
+    "skipped": 2,
+    "failed": 0,
+    "duration_m": 34.1,
+    "ui_p2_003": "closed",
+    "follow_up": "notification popover portal smoke verified (1 passed) replacing skipped host-invite CTA"
+  }
+}

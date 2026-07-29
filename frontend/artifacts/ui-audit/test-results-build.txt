@@ -1,0 +1,468 @@
+
+> frontend@0.1.0 build
+> next build
+
+▲ Next.js 16.2.10 (Turbopack)
+- Environments: .env.local
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 114s
+  Running TypeScript ...
+  Finished TypeScript in 36.0s ...
+  Collecting page data using 9 workers ...
+  Generating static pages using 9 workers (0/325) ...
+  Generating static pages using 9 workers (81/325) 
+  Generating static pages using 9 workers (162/325) 
+  Generating static pages using 9 workers (243/325) 
+✓ Generating static pages using 9 workers (325/325) in 25.6s
+  Finalizing page optimization ...
+
+Route (app)                                       Revalidate  Expire
+┌ ○ /                                                    ≈2m      1y
+├ ○ /_not-found
+├ ○ /about                                                1h      1y
+├ ○ /accessibility                                        1h      1y
+├ ○ /account/appeal
+├ ○ /account/suspended
+├ ○ /admin
+├ ○ /admin/ai
+├ ○ /admin/ai/features
+├ ○ /admin/ai/logs
+├ ○ /admin/ai/playground
+├ ○ /admin/ai/providers
+├ ○ /admin/ai/safety
+├ ○ /admin/ai/settings
+├ ○ /admin/ai/usage
+├ ○ /admin/ambassadors
+├ ○ /admin/ambassadors/campaigns
+├ ○ /admin/ambassadors/conversions
+├ ○ /admin/ambassadors/fraud
+├ ○ /admin/ambassadors/payouts
+├ ○ /admin/ambassadors/reports
+├ ○ /admin/analytics
+├ ○ /admin/analytics/blog
+├ ○ /admin/analytics/events
+├ ○ /admin/analytics/hosts
+├ ○ /admin/analytics/revenue
+├ ○ /admin/analytics/support
+├ ○ /admin/appeals
+├ ○ /admin/audit-logs
+├ ○ /admin/blog
+├ ƒ /admin/blog/[postId]/edit
+├ ○ /admin/blog/categories
+├ ○ /admin/blog/comments
+├ ○ /admin/blog/new
+├ ○ /admin/blog/tags
+├ ○ /admin/categories
+├ ○ /admin/cms
+├ ○ /admin/cms/banners
+├ ○ /admin/cms/blog
+├ ƒ /admin/cms/blog/[id]
+├ ○ /admin/cms/blog/new
+├ ○ /admin/cms/browse-tiles
+├ ○ /admin/cms/faqs
+├ ○ /admin/discovery/event-recommendations
+├ ○ /admin/discovery/host-recommendations
+├ ○ /admin/email/settings
+├ ○ /admin/emails
+├ ƒ /admin/emails/[id]
+├ ○ /admin/emails/settings
+├ ○ /admin/emails/templates
+├ ƒ /admin/emails/templates/[templateKey]
+├ ○ /admin/events
+├ ƒ /admin/events/[id]/analytics
+├ ƒ /admin/events/[id]/attendees
+├ ƒ /admin/events/[id]/buyers
+├ ƒ /admin/events/[id]/earnings
+├ ƒ /admin/events/[id]/exports
+├ ƒ /admin/events/[id]/review
+├ ○ /admin/events/featured
+├ ○ /admin/events/picks
+├ ○ /admin/events/review
+├ ○ /admin/fan-connect
+├ ○ /admin/fan-connect/blocks
+├ ○ /admin/fan-connect/reports
+├ ○ /admin/fan-connect/settings
+├ ƒ /admin/fan-connect/users/[userId]
+├ ○ /admin/fans
+├ ○ /admin/featured-placements
+├ ƒ /admin/featured-placements/[id]/edit
+├ ○ /admin/featured-placements/new
+├ ○ /admin/finance
+├ ○ /admin/finance/earnings
+├ ○ /admin/finance/fees
+├ ƒ /admin/finance/fees/[feeId]
+├ ○ /admin/finance/fees/new
+├ ○ /admin/finance/host-overrides
+├ ○ /admin/finance/platform-revenue
+├ ○ /admin/help
+├ ○ /admin/hosts
+├ ƒ /admin/hosts/[hostId]/earnings
+├ ƒ /admin/hosts/[hostId]/fees
+├ ○ /admin/knowledge-base
+├ ƒ /admin/knowledge-base/[articleId]/edit
+├ ○ /admin/knowledge-base/categories
+├ ○ /admin/knowledge-base/insights
+├ ○ /admin/knowledge-base/new
+├ ○ /admin/ledger
+├ ○ /admin/legacy
+├ ○ /admin/legacy/tiers
+├ ○ /admin/memories
+├ ○ /admin/merch
+├ ○ /admin/merch/categories
+├ ○ /admin/merch/orders
+├ ○ /admin/merch/reports
+├ ○ /admin/merchandise
+├ ƒ /admin/merchandise/[id]
+├ ○ /admin/merchandise/orders
+├ ○ /admin/merchandise/print-on-demand
+├ ○ /admin/merchandise/reports
+├ ○ /admin/merchandise/revenue
+├ ○ /admin/merchandise/reviews
+├ ○ /admin/message-reports
+├ ƒ /admin/message-reports/[id]
+├ ○ /admin/notifications
+├ ○ /admin/notifications/campaigns
+├ ƒ /admin/notifications/campaigns/[id]
+├ ○ /admin/notifications/campaigns/new
+├ ○ /admin/notifications/settings
+├ ○ /admin/notifications/templates
+├ ○ /admin/orders
+├ ○ /admin/payments
+├ ○ /admin/payouts
+├ ○ /admin/platform
+├ ○ /admin/platform/go-live
+├ ○ /admin/platform/maintenance
+├ ○ /admin/platform/maintenance/history
+├ ○ /admin/platform/maintenance/notifications
+├ ○ /admin/platform/readiness
+├ ○ /admin/push/settings
+├ ○ /admin/refunds
+├ ○ /admin/reviews
+├ ○ /admin/settings
+├ ƒ /admin/settings/[category]
+├ ○ /admin/settings/email
+├ ○ /admin/settings/push
+├ ○ /admin/settings/runtime
+├ ƒ /admin/settings/runtime/[category]
+├ ○ /admin/settings/runtime/audit
+├ ○ /admin/sponsor-campaigns
+├ ○ /admin/sponsors
+├ ƒ /admin/sponsors/[id]
+├ ○ /admin/sponsorship-deals
+├ ƒ /admin/sponsorship-deals/[id]
+├ ○ /admin/sponsorships
+├ ○ /admin/support
+├ ƒ /admin/support/[ticketId]
+├ ○ /admin/support/ai-summary
+├ ○ /admin/support/settings
+├ ○ /admin/taxonomy
+├ ○ /admin/taxonomy/categories
+├ ○ /admin/taxonomy/host-types
+├ ○ /admin/taxonomy/locations
+├ ○ /admin/taxonomy/tags
+├ ○ /admin/taxonomy/venue-types
+├ ○ /admin/team
+├ ƒ /admin/team/[memberId]
+├ ○ /admin/team/invite
+├ ƒ /admin/team/invites/[token]
+├ ○ /admin/team/roles
+├ ƒ /admin/team/roles/[roleId]
+├ ○ /admin/team/roles/new
+├ ○ /admin/tickets
+├ ○ /admin/users
+├ ƒ /admin/users/[userId]
+├ ƒ /admin/users/[userId]/impersonation
+├ ○ /admin/vault
+├ ○ /admin/verifications
+├ ○ /ambassador
+├ ○ /ambassador/earnings
+├ ○ /ambassadors
+├ ○ /ambassadors/events
+├ ○ /ambassadors/how-it-works
+├ ƒ /api/revalidate/blog
+├ ƒ /api/revalidate/fan
+├ ƒ /api/revalidate/help
+├ ƒ /api/revalidate/memories
+├ ○ /blog                                                 5m      1y
+├ ƒ /blog/[slug]
+├ ƒ /blog/author/[slug]
+├ ƒ /blog/category/[slug]
+├ ƒ /blog/tag/[slug]
+├ ○ /checkout/claim
+├ ○ /checkout/failed
+├ ○ /checkout/success
+├ ○ /community-guidelines                                 1h      1y
+├ ○ /connect
+├ ○ /connect/connections
+├ ○ /connect/events
+├ ○ /connect/requests
+├ ○ /connect/settings
+├ ○ /connect/suggestions
+├ ○ /contact
+├ ○ /cookies                                              1h      1y
+├ ○ /dashboard
+├ ○ /dashboard/ambassador
+├ ○ /dashboard/ambassador/earnings
+├ ○ /dashboard/ambassador/events
+├ ○ /dashboard/ambassador/leaderboard
+├ ○ /dashboard/ambassador/links
+├ ○ /dashboard/ambassador/payouts
+├ ○ /dashboard/badges
+├ ○ /dashboard/cart
+├ ○ /dashboard/connect
+├ ○ /dashboard/connect/connections
+├ ○ /dashboard/connect/events
+├ ○ /dashboard/connect/requests
+├ ○ /dashboard/connect/settings
+├ ○ /dashboard/connect/suggestions
+├ ○ /dashboard/events-for-you
+├ ○ /dashboard/following
+├ ○ /dashboard/help
+├ ○ /dashboard/hosts-for-you
+├ ○ /dashboard/merch
+├ ○ /dashboard/merchandise
+├ ƒ /dashboard/merchandise/[orderItemId]
+├ ○ /dashboard/messages
+├ ƒ /dashboard/messages/[threadId]
+├ ○ /dashboard/messages/notifications
+├ ○ /dashboard/messages/settings
+├ ○ /dashboard/notifications
+├ ○ /dashboard/orders
+├ ƒ /dashboard/orders/[id]
+├ ○ /dashboard/passport
+├ ○ /dashboard/passport/settings
+├ ○ /dashboard/profile
+├ ○ /dashboard/refunds
+├ ○ /dashboard/refunds/new
+├ ○ /dashboard/reviews
+├ ○ /dashboard/settings
+├ ○ /dashboard/settings/notifications
+├ ○ /dashboard/support
+├ ƒ /dashboard/support/[ticketId]
+├ ○ /dashboard/support/new
+├ ○ /dashboard/team
+├ ○ /dashboard/team/workspaces
+├ ○ /dashboard/tickets
+├ ƒ /dashboard/tickets/[id]
+├ ƒ /dashboard/tickets/[id]/transfer
+├ ○ /dashboard/vault
+├ ƒ /dashboard/vault/[itemId]
+├ ○ /dashboard/vault/subscriptions
+├ ƒ /demo
+├ ○ /email/preferences
+├ ○ /events                                              ≈2m      1y
+├ ƒ /events/[slug]
+├ ƒ /events/[slug]/checkout
+├ ƒ /events/[slug]/memories
+├ ƒ /events/[slug]/merch
+├ ƒ /events/[slug]/merch/[productId]
+├ ƒ /events/area/[areaSlug]
+├ ƒ /events/c/[categorySlug]
+├ ○ /events/calendar                                     ≈2m      1y
+├ ƒ /events/city/[citySlug]
+├ ƒ /events/city/[citySlug]/[categorySlug]
+├ ƒ /events/country/[countrySlug]
+├ ○ /events/free
+├ ○ /events/hybrid
+├ ○ /events/in-person
+├ ○ /events/location
+├ ○ /events/map                                          ≈2m      1y
+├ ○ /events/near-me                                      ≈2m      1y
+├ ○ /events/online
+├ ○ /events/search
+├ ƒ /events/state/[stateSlug]
+├ ƒ /events/state/[stateSlug]/[categorySlug]
+├ ○ /events/this-weekend
+├ ○ /events/today
+├ ƒ /events/under/[maxPrice]
+├ ○ /events/vip
+├ ƒ /f/[username]
+├ ○ /fans                                                 3m      1y
+├ ○ /faq                                                  1h      1y
+├ ○ /for-fans                                             1h      1y
+├ ○ /for-hosts                                            1h      1y
+├ ○ /forgot-password
+├ ○ /help                                                 5m      1y
+├ ƒ /help/[categorySlug]
+├ ƒ /help/articles/[slug]
+├ ○ /host
+├ ○ /host/access-denied
+├ ○ /host/ai
+├ ○ /host/ambassadors
+├ ƒ /host/ambassadors/[id]
+├ ○ /host/ambassadors/campaigns
+├ ƒ /host/ambassadors/campaigns/[id]
+├ ○ /host/ambassadors/campaigns/new
+├ ○ /host/ambassadors/conversions
+├ ○ /host/ambassadors/payouts
+├ ○ /host/analytics
+├ ○ /host/announcements
+├ ○ /host/announcements/new
+├ ○ /host/audience
+├ ○ /host/bank-accounts
+├ ƒ /host/bank-accounts/[id]
+├ ○ /host/dashboard
+├ ○ /host/desk
+├ ○ /host/earnings
+├ ○ /host/events
+├ ƒ /host/events/[id]
+├ ƒ /host/events/[id]/ai
+├ ƒ /host/events/[id]/ambassadors
+├ ƒ /host/events/[id]/analytics
+├ ƒ /host/events/[id]/attendees
+├ ƒ /host/events/[id]/bundles
+├ ƒ /host/events/[id]/check-in
+├ ƒ /host/events/[id]/check-in/analytics
+├ ƒ /host/events/[id]/earnings
+├ ƒ /host/events/[id]/edit
+├ ƒ /host/events/[id]/memory
+├ ƒ /host/events/[id]/memory/edit
+├ ƒ /host/events/[id]/merch
+├ ƒ /host/events/[id]/merchandise
+├ ƒ /host/events/[id]/merchandise/[merchId]/edit
+├ ƒ /host/events/[id]/merchandise/fulfillment
+├ ƒ /host/events/[id]/merchandise/new
+├ ƒ /host/events/[id]/merchandise/orders
+├ ƒ /host/events/[id]/offline-check-in
+├ ƒ /host/events/[id]/post-event-drops
+├ ƒ /host/events/[id]/preview
+├ ƒ /host/events/[id]/tables
+├ ƒ /host/events/[id]/tickets
+├ ○ /host/events/new
+├ ○ /host/followers
+├ ○ /host/help
+├ ○ /host/legacy
+├ ○ /host/legacy/content
+├ ○ /host/legacy/edit
+├ ○ /host/legacy/preview
+├ ○ /host/legacy/tier
+├ ○ /host/merchandise
+├ ƒ /host/merchandise/[id]/edit
+├ ○ /host/merchandise/discounts
+├ ○ /host/merchandise/fulfillment
+├ ○ /host/merchandise/new
+├ ○ /host/merchandise/orders
+├ ○ /host/merchandise/print-on-demand
+├ ○ /host/merchandise/revenue
+├ ○ /host/merchandise/reviews
+├ ○ /host/merchandise/shipping-zones
+├ ○ /host/merchandise/size-charts
+├ ○ /host/merchandise/stock-alerts
+├ ○ /host/messages
+├ ƒ /host/messages/[threadId]
+├ ○ /host/messages/notifications
+├ ○ /host/messages/settings
+├ ○ /host/notifications
+├ ○ /host/onboarding
+├ ○ /host/payouts
+├ ○ /host/promos
+├ ○ /host/reviews
+├ ○ /host/roadmap
+├ ○ /host/settings
+├ ○ /host/settings/notifications
+├ ○ /host/sponsorships
+├ ƒ /host/sponsorships/[id]/edit
+├ ○ /host/sponsorships/deals
+├ ƒ /host/sponsorships/deals/[id]
+├ ○ /host/sponsorships/new
+├ ○ /host/support
+├ ƒ /host/support/[ticketId]
+├ ○ /host/support/new
+├ ○ /host/team
+├ ƒ /host/team/[id]
+├ ○ /host/team/audit-log
+├ ○ /host/team/invites
+├ ○ /host/team/members
+├ ○ /host/templates
+├ ƒ /host/templates/[id]
+├ ○ /host/vault
+├ ƒ /host/vault/[id]
+├ ƒ /host/vault/[id]/edit
+├ ƒ /host/vault/[id]/preview
+├ ○ /host/vault/earnings
+├ ○ /host/vault/new
+├ ○ /host/vault/preview
+├ ○ /host/vault/subscriptions
+├ ○ /hosts                                                3m      1y
+├ ƒ /hosts/[slug]
+├ ○ /hosts/recommendations
+├ ○ /login
+├ ○ /maintenance
+├ ○ /memories                                            ≈2m      1y
+├ ○ /merch
+├ ○ /merch-guide                                          1h      1y
+├ ƒ /merch/[slug]
+├ ○ /merch/drops
+├ ƒ /merch/hosts/[username]
+├ ƒ /merch/hosts/[username]/checkout
+├ ○ /merch/vault
+├ ○ /messages
+├ ƒ /messages/[threadId]
+├ ○ /offline
+├ ƒ /passport/[username]
+├ ○ /pricing                                              5m      1y
+├ ○ /privacy                                              1h      1y
+├ ○ /refund-policy                                        1h      1y
+├ ○ /register
+├ ○ /report
+├ ○ /reset-password
+├ ○ /robots.txt
+├ ○ /safety                                               1h      1y
+├ ○ /sitemap.xml                                          5m      1y
+├ ○ /sponsor
+├ ○ /sponsor/campaigns
+├ ƒ /sponsor/campaigns/[id]
+├ ƒ /sponsor/campaigns/[id]/edit
+├ ƒ /sponsor/campaigns/[id]/reports
+├ ○ /sponsor/campaigns/new
+├ ○ /sponsor/create
+├ ○ /sponsor/deals
+├ ƒ /sponsor/deals/[id]
+├ ○ /sponsor/inquiries
+├ ○ /sponsor/opportunities
+├ ○ /sponsor/profile
+├ ○ /sponsor/reports
+├ ○ /sponsor/saved
+├ ○ /sponsor/settings
+├ ○ /sponsor/settings/team
+├ ƒ /sponsor/team/invite/[token]
+├ ○ /sponsors
+├ ƒ /sponsors/[slug]
+├ ○ /sponsors/hosts
+├ ○ /sponsorships                                         2m      1y
+├ ○ /sponsorships/hosts                                  30s      1y
+├ ƒ /staff/check-in/[eventId]
+├ ○ /support
+├ ○ /support/cases
+├ ƒ /support/cases/[id]
+├ ○ /support/cases/new
+├ ○ /support/desk
+├ ○ /support/new
+├ ○ /support/refunds
+├ ƒ /support/tickets/[ticketNumber]
+├ ○ /support/tickets/lookup
+├ ƒ /team/invite/[token]
+├ ○ /terms                                                1h      1y
+├ ○ /ticket-policy                                        1h      1y
+├ ○ /tickets/claim
+├ ƒ /u/[username]
+├ ƒ /u/[username]/memories/[eventSlug]
+├ ƒ /u/[username]/merch
+├ ƒ /u/[username]/merch/[productId]
+├ ƒ /u/[username]/shop
+├ ƒ /u/[username]/vault
+├ ƒ /u/[username]/vault/[itemSlug]
+├ ○ /unauthorized
+├ ○ /unsubscribe
+├ ○ /verify
+└ ○ /workspaces
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+BUILD_EXIT:0

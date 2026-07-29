@@ -1,0 +1,74 @@
+
+> frontend@0.1.0 test:unit
+> vitest run
+
+
+ RUN  v3.2.4 /Users/abiodun/Documents/PadeyaWebsite/frontend
+
+ ✓ src/lib/cache/revalidate-auth.test.ts (4 tests) 89ms
+ ✓ src/lib/auth/unread-poll-guard.test.ts (2 tests) 72ms
+ ✓ src/lib/api-base.test.ts (5 tests) 156ms
+ ✓ src/lib/public-loaders/entities.test.ts (3 tests) 249ms
+ ✓ src/lib/sponsor-deals-api.audit.test.ts (2 tests) 223ms
+ ✓ src/lib/sponsor-workspace.test.ts (13 tests) 138ms
+ ✓ src/lib/api-timeout-request.test.ts (3 tests) 136ms
+ ✓ src/lib/legacy-api.save.test.ts (1 test) 270ms
+ ✓ src/lib/hosts-api.workspaces.test.ts (4 tests) 83ms
+ ✓ src/lib/events/completed-event.test.ts (13 tests) 61ms
+ ✓ src/lib/api-timeouts.test.ts (4 tests) 31ms
+ ✓ src/lib/merch/marketplace-curation.test.ts (5 tests) 5ms
+ ✓ src/lib/merch-checkout-access.test.ts (3 tests) 3ms
+ ✓ src/lib/taxonomy-resolve-place.test.ts (9 tests) 118ms
+ ✓ src/lib/seo/indexability.test.ts (7 tests) 24ms
+ ✓ src/lib/seo/phase1a.test.ts (16 tests) 13ms
+ ✓ src/lib/seo/favicon.test.ts (5 tests) 23ms
+ ✓ src/lib/api-timeouts.ssr-cache.test.ts (2 tests) 32ms
+ ✓ src/lib/media/lcp-priority.test.ts (4 tests) 5ms
+ ✓ src/lib/personal-command-center.test.ts (13 tests) 7ms
+ ✓ src/lib/events/events-url-sync.test.ts (7 tests) 3ms
+ ✓ src/lib/host-affiliation.test.ts (5 tests) 2ms
+ ✓ src/lib/host-access.home-path.test.ts (11 tests) 4ms
+ ✓ src/lib/seo/phase0b.test.ts (13 tests) 11ms
+ ✓ src/lib/nav/workspace.active.test.ts (10 tests) 6ms
+ ✓ src/lib/push-pipeline.test.ts (11 tests) 8ms
+ ✓ src/lib/fee-preview.test.ts (3 tests) 20ms
+ ✓ src/lib/notification-settings-ui.test.ts (5 tests) 6ms
+ ✓ src/lib/media/logo-cls.test.ts (2 tests) 7ms
+ ✓ src/lib/seo/phase0c.test.ts (13 tests) 12ms
+ ✓ src/lib/seo/phase1c.test.ts (19 tests) 64ms
+ ✓ src/lib/breadcrumbs.test.ts (10 tests) 10ms
+ ✓ src/lib/seo/phase1b.test.ts (10 tests) 9ms
+ ✓ src/lib/nav/events-prefetch.test.ts (2 tests) 11ms
+stderr | src/lib/seo/env-policy.test.ts > isProductionSeoEnvironment / shouldIndexEnvironment > does not silent-noindex true Vercel production when APP_ENV is mis-set
+[seo/env-policy] Contradictory environment signals: VERCEL_ENV="production" with APP_ENV/NEXT_PUBLIC_APP_ENV="staging". Treating true platform production as indexable; fix APP_ENV so staging/preview stay protected.
+
+ ✓ src/lib/seo/env-policy.test.ts (22 tests) 10ms
+ ✓ src/lib/seo/legacy-redirects.test.ts (7 tests) 8ms
+ ✓ src/lib/nav/anonymous-chrome.test.ts (2 tests) 4ms
+ ✓ src/components/blog/studio/markdown-utils.test.ts (4 tests) 15ms
+ ✓ src/lib/cache/fan-passport-privacy.test.ts (5 tests) 12ms
+ ✓ src/lib/nav/admin-nav.test.ts (8 tests) 8ms
+ ✓ src/lib/events/events-mount-navigation.test.ts (3 tests) 4ms
+ ✓ src/lib/maintenance-public.test.ts (2 tests) 42ms
+ ✓ src/lib/own-fan-ctas.test.ts (10 tests) 4ms
+ ✓ src/lib/ui/suspense-cls.test.ts (2 tests) 3ms
+ ✓ src/lib/media-image.test.ts (4 tests) 3ms
+ ✓ src/components/profile/GenderBadge.test.ts (7 tests) 14ms
+ ✓ src/lib/memories/memories-product.test.ts (6 tests) 17ms
+ ✓ src/lib/location-studio.test.ts (5 tests) 4ms
+ ✓ src/lib/ui-sounds.test.ts (1 test) 4ms
+ ✓ src/lib/own-host-ctas.test.ts (5 tests) 2ms
+ ✓ src/lib/auth/email-verify-path.test.ts (5 tests) 3ms
+ ✓ src/lib/media.test.ts (4 tests) 2ms
+ ✓ src/lib/fan-connect-suggestions.test.ts (4 tests) 2ms
+ ✓ src/lib/host-desk-events.test.ts (2 tests) 4ms
+ ✓ src/lib/runtime-settings.test.ts (14 tests) 8ms
+ ✓ src/lib/media/remote-patterns.test.ts (1 test) 3ms
+ ✓ src/lib/cache/public-cache-policy.test.ts (3 tests) 4ms
+ ✓ src/lib/host-events-list.test.ts (4 tests) 5ms
+
+ Test Files  58 passed (58)
+      Tests  369 passed (369)
+   Start at  07:38:46
+   Duration  5.48s (transform 4.81s, setup 0ms, collect 10.33s, tests 2.10s, environment 30ms, prepare 10.52s)
+

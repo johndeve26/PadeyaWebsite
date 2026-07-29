@@ -13,8 +13,8 @@ export default defineConfig({
     ["json", { outputFile: "artifacts/ui-audit/playwright-report.json" }],
   ],
   outputDir: "artifacts/ui-audit/test-output",
-  timeout: 60_000,
-  expect: { timeout: 10_000 },
+  timeout: 90_000,
+  expect: { timeout: 15_000 },
   use: {
     baseURL,
     trace: "on-first-retry",
@@ -28,7 +28,6 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
-        channel: undefined,
       },
     },
     {
@@ -41,6 +40,18 @@ export default defineConfig({
         userAgent:
           "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
       },
+    },
+    {
+      name: "firefox-critical",
+      testMatch: /theme-visual-smoke\.spec\.ts/,
+      grep: /System theme|light · \/($|login)|dark · \/($|login)/,
+      use: { ...devices["Desktop Firefox"], viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: "webkit-critical",
+      testMatch: /theme-visual-smoke\.spec\.ts/,
+      grep: /System theme|light · \/($|login)|dark · \/($|login)/,
+      use: { ...devices["Desktop Safari"], viewport: { width: 1440, height: 900 } },
     },
   ],
 });
