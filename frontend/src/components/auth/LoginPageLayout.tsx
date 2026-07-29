@@ -132,7 +132,7 @@ export function LoginPageLayout({
 
         <div
           aria-hidden
-          className="pointer-events-none h-px w-full bg-gradient-to-r from-transparent via-paper/10 to-transparent"
+          className="pointer-events-none h-px w-full bg-gradient-to-r from-transparent via-paper/5 to-transparent sm:via-paper/10"
         />
         <div className="relative bg-gradient-to-b from-transparent via-paper/[0.02] to-paper/[0.04]">
           <Container className="px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
