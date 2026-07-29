@@ -104,7 +104,7 @@ export type BlogOutline = {
   sections: BlogOutlineSection[];
   conclusion_direction?: string;
   cta_placement?: string;
-  faq_section?: string | null;
+  faq_section?: boolean;
   approved?: boolean;
 };
 
@@ -389,8 +389,49 @@ export function emptyOutline(): BlogOutline {
     sections: [],
     conclusion_direction: "",
     cta_placement: "",
-    faq_section: null,
+    faq_section: true,
     approved: false,
+  };
+}
+
+/** Coerce legacy/null outline payloads to backend-compatible shape. */
+export function normalizeOutline(raw: unknown): BlogOutline {
+  const base = emptyOutline();
+  if (!raw || typeof raw !== "object") return base;
+  const o = raw as Record<string, unknown>;
+
+  let faqSection = base.faq_section ?? true;
+  if (typeof o.faq_section === "boolean") {
+    faqSection = o.faq_section;
+  } else if (typeof o.faq_section === "string") {
+    const normalized = o.faq_section.trim().toLowerCase();
+    if (normalized === "false" || normalized === "0" || normalized === "no") {
+      faqSection = false;
+    }
+  }
+
+  const sections = Array.isArray(o.sections)
+    ? o.sections
+        .filter(
+          (s): s is BlogOutlineSection =>
+            Boolean(s) && typeof s === "object" && typeof (s as BlogOutlineSection).id === "string",
+        )
+        .map((s) => ({
+          ...s,
+          level: s.level === 3 ? 3 : 2,
+        }))
+    : [];
+
+  return {
+    ...base,
+    introduction_purpose:
+      typeof o.introduction_purpose === "string" ? o.introduction_purpose : "",
+    sections,
+    conclusion_direction:
+      typeof o.conclusion_direction === "string" ? o.conclusion_direction : "",
+    cta_placement: typeof o.cta_placement === "string" ? o.cta_placement : "",
+    faq_section: faqSection,
+    approved: Boolean(o.approved),
   };
 }
 

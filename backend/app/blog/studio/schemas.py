@@ -73,6 +73,21 @@ class BlogOutline(BaseModel):
     faq_section: bool = True
     approved: bool = False
 
+    @field_validator("faq_section", mode="before")
+    @classmethod
+    def coerce_faq_section(cls, v: Any) -> bool:
+        if v is None:
+            return True
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, str):
+            normalized = v.strip().lower()
+            if normalized in {"", "false", "0", "no"}:
+                return False
+            if normalized in {"true", "1", "yes"}:
+                return True
+        return bool(v)
+
 
 class BlogGeneratedSection(BaseModel):
     id: str

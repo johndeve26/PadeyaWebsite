@@ -382,3 +382,29 @@ def test_preview_endpoint(client: TestClient, db_session: Session, assign_role):
     assert prev.status_code == 200
     assert prev.json()["status"] == "draft"
     assert prev.json()["body"] == "secret draft"
+
+
+def test_outline_accepts_null_faq_section():
+    from app.blog.studio.schemas import BlogOutline, OutlineRequest
+
+    outline = BlogOutline.model_validate(
+        {
+            "introduction_purpose": "",
+            "sections": [],
+            "faq_section": None,
+        }
+    )
+    assert outline.faq_section is True
+
+    req = OutlineRequest.model_validate(
+        {
+            "title": "Guide",
+            "outline": {
+                "introduction_purpose": "",
+                "sections": [],
+                "faq_section": None,
+            },
+        }
+    )
+    assert req.outline is not None
+    assert req.outline.faq_section is True

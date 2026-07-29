@@ -11,6 +11,7 @@ import {
 import { studioAutosave } from "@/lib/blog-studio-api";
 
 import { documentToMarkdown, isBlockDocumentMode } from "@/lib/blog-document";
+import { normalizeOutline } from "./types";
 import { useBlogStudio } from "./BlogStudioProvider";
 
 export const LOCAL_DRAFT_KEY = "padeya-blog-studio-draft";
@@ -103,7 +104,7 @@ function payloadFromStudio(studio: StudioSnapshot) {
       : null,
     admin_notes: studio.adminNotes || null,
     studio_brief: studio.brief,
-    studio_outline: studio.outline,
+    studio_outline: normalizeOutline(studio.outline),
     faqs: studio.faqs,
     hero_settings: studio.heroSettings || null,
     editor_mode: studio.editorMode || "standard",

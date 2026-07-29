@@ -28,7 +28,7 @@ import type {
   BlogWorkflowStepId,
   GenerationStage,
 } from "./types";
-import { emptyBrief, emptyOutline } from "./types";
+import { emptyBrief, emptyOutline, normalizeOutline } from "./types";
 import {
   defaultDocument,
   type BlogContentDocument,
@@ -124,7 +124,7 @@ export function initialStudioState(
     editorMode: seed?.editorMode ?? "standard",
     heroSettings: seed?.heroSettings ?? null,
     brief: seed?.brief ?? emptyBrief(),
-    outline: seed?.outline ?? emptyOutline(),
+    outline: seed?.outline ? normalizeOutline(seed.outline) : emptyOutline(),
     faqs: seed?.faqs ?? [],
     seoBrief: null,
     titleSuggestions: [],
@@ -166,7 +166,13 @@ export function BlogStudioProvider({
   const cancelRef = useRef(false);
 
   const patch = useCallback((partial: Partial<BlogStudioState>) => {
-    setState((prev) => ({ ...prev, ...partial }));
+    setState((prev) => {
+      const next = { ...prev, ...partial };
+      if (partial.outline !== undefined) {
+        next.outline = normalizeOutline(partial.outline);
+      }
+      return next;
+    });
   }, []);
 
   const markDirty = useCallback(() => {
@@ -186,11 +192,15 @@ export function BlogStudioProvider({
 
   const setOutline = useCallback(
     (outline: BlogOutline | ((o: BlogOutline) => BlogOutline)) => {
-      setState((prev) => ({
-        ...prev,
-        dirty: true,
-        outline: typeof outline === "function" ? outline(prev.outline) : outline,
-      }));
+      setState((prev) => {
+        const next =
+          typeof outline === "function" ? outline(prev.outline) : outline;
+        return {
+          ...prev,
+          dirty: true,
+          outline: normalizeOutline(next),
+        };
+      });
     },
     [],
   );

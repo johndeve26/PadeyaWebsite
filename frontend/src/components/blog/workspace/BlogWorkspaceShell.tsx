@@ -18,6 +18,7 @@ import { BlogAiDrawer } from "./BlogAiDrawer";
 import { WorkspaceDocumentProvider } from "./WorkspaceDocumentProvider";
 import type { BlogPost } from "@/lib/blog-api";
 import type { BlogContentBrief, BlogOutline, BlogFaqItem } from "@/components/blog/studio/types";
+import { normalizeOutline } from "@/components/blog/studio/types";
 import { parseContentDocument, resolveContentMode } from "@/lib/blog-document";
 
 type SeedProps = Partial<{
@@ -91,7 +92,7 @@ function buildSeed(post: BlogPost): SeedProps {
     contentVersion: p.content_version ?? 1,
     bodyHtml: post.body_html,
     brief: p.studio_brief || undefined,
-    outline: p.studio_outline || undefined,
+    outline: p.studio_outline ? normalizeOutline(p.studio_outline) : undefined,
     faqs: p.faqs || undefined,
   };
 }

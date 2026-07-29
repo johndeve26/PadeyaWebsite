@@ -98,7 +98,7 @@ import type {
   BlogWorkflowStepId,
   RewriteAction,
 } from "./types";
-import { newClientRequestId, newFaqId, newSectionId } from "./types";
+import { newClientRequestId, newFaqId, newSectionId, normalizeOutline } from "./types";
 import {
   clearLocalStudioDraft,
   readLocalStudioDraft,
@@ -1264,7 +1264,7 @@ function hydrateFromPost(
         | import("@/lib/blog-document").HeroSettings
         | undefined) ?? null,
     brief: p.studio_brief || studio.brief,
-    outline: p.studio_outline || studio.outline,
+    outline: p.studio_outline ? normalizeOutline(p.studio_outline) : studio.outline,
     faqs: p.faqs || [],
     dirty: false,
   });
@@ -1327,7 +1327,7 @@ export function BlogStudioPage({
               | import("@/lib/blog-document").HeroSettings
               | undefined) ?? null,
           brief: p.studio_brief || undefined,
-          outline: p.studio_outline || undefined,
+          outline: p.studio_outline ? normalizeOutline(p.studio_outline) : undefined,
           faqs: p.faqs || undefined,
         };
       })()
