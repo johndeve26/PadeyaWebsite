@@ -56,11 +56,13 @@ export function CreateEventCta({
   className = "",
   mobile = false,
   onNavigate,
+  buttonVariant = "primary",
 }: {
   className?: string;
   /** Text link style for the mobile drawer. */
   mobile?: boolean;
   onNavigate?: () => void;
+  buttonVariant?: "primary" | "primary-on-dark";
 }) {
   const { user, loading: authLoading } = useAuth();
   const { has } = useUserRestrictions();
@@ -139,7 +141,7 @@ export function CreateEventCta({
         onNavigate?.();
       }}
     >
-      <Button variant="primary" size="sm">
+      <Button variant={buttonVariant} size="sm">
         Create event
       </Button>
     </Link>
