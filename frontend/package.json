@@ -15,6 +15,8 @@
     "test:e2e:contrast": "playwright test e2e/contrast-public.spec.ts e2e/authenticated-visual-smoke.spec.ts --grep \"axe\" --project=chromium-desktop",
     "test:e2e:browsers": "playwright test e2e/theme-visual-smoke.spec.ts --project=firefox-critical --project=webkit-critical",
     "test:unit": "vitest run",
+    "test:e2e:workspace": "PLAYWRIGHT_SKIP_WEBSERVER=1 playwright test e2e/blog-workspace-closeout.spec.ts --project=chromium-desktop --workers=1 --reporter=list",
+    "test:e2e:workspace:dev": "playwright test e2e/blog-workspace-closeout.spec.ts --project=chromium-desktop --workers=1 --reporter=list",
     "test:checkout": "node scripts/checkout-smoke.mjs",
     "test:host-team": "node scripts/host-team-smoke.mjs",
     "test:host-command-center": "node scripts/host-command-center-smoke.mjs",

@@ -240,6 +240,7 @@ export async function createAdminBlogPost(body: Record<string, unknown>) {
   return apiRequest<BlogPost>("/admin/blog/posts", {
     method: "POST",
     body,
+    timeout: "mutation",
   });
 }
 
@@ -250,6 +251,7 @@ export async function updateAdminBlogPost(
   return apiRequest<BlogPost>(`/admin/blog/posts/${id}`, {
     method: "PATCH",
     body,
+    timeout: "mutation",
   });
 }
 

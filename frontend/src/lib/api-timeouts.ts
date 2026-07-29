@@ -13,6 +13,11 @@ export const API_TIMEOUT_MS = {
   /** Default authenticated API calls. */
   default: 15_000,
   /**
+   * Admin write operations (create, update, delete) that may hit a cold
+   * database connection. Callers opt in explicitly.
+   */
+  mutation: 30_000,
+  /**
    * Explicit long operations only (AI, payment init, large uploads).
    * Callers must opt in — never inherit blindly from public/default.
    */
