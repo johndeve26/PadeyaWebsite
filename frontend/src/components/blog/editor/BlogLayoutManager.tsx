@@ -68,20 +68,20 @@ function SortableBlock({
       style={style}
       className={`rounded-[var(--radius-md)] border ${
         selected ? "border-primary ring-1 ring-primary/30" : "border-border"
-      } bg-surface/50`}
+      } bg-card text-card-foreground shadow-[var(--shadow-soft)] dark:bg-surface-elevated`}
       onClick={onSelect}
     >
       <div className="flex items-center gap-2 border-b border-border px-2 py-1">
         <button
           type="button"
-          className="cursor-grab touch-none text-muted hover:text-foreground px-1 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+          className="cursor-grab touch-none text-muted-foreground hover:text-foreground px-1 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
           aria-label={`Drag to reorder ${block.type.replace(/_/g, " ")} block`}
           {...attributes}
           {...listeners}
         >
           ⠿
         </button>
-        <span className="text-xs text-muted capitalize flex-1">
+        <span className="text-xs text-muted-foreground capitalize flex-1">
           {block.type.replace(/_/g, " ")}
           {block.props.locked ? " 🔒" : ""}
         </span>

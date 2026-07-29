@@ -12,7 +12,7 @@ type Props = {
 export function BlogBlockSettings({ block, onChange }: Props) {
   if (!block) {
     return (
-      <p className="text-sm text-muted p-4">Select a block to edit its settings.</p>
+      <p className="text-sm text-muted-foreground p-4">Select a block to edit its settings.</p>
     );
   }
 
@@ -33,7 +33,7 @@ export function BlogBlockSettings({ block, onChange }: Props) {
       <p className="font-medium capitalize">{block.type.replace(/_/g, " ")}</p>
 
       <label className="block space-y-1">
-        <span className="text-muted">Content width</span>
+        <span className="text-muted-foreground">Content width</span>
         <select
           className="w-full rounded-[var(--radius-md)] border border-border bg-surface px-2 py-1.5"
           value={String(block.props.content_width || "standard")}
@@ -47,7 +47,7 @@ export function BlogBlockSettings({ block, onChange }: Props) {
       </label>
 
       <label className="block space-y-1">
-        <span className="text-muted">Spacing</span>
+        <span className="text-muted-foreground">Spacing</span>
         <select
           className="w-full rounded-[var(--radius-md)] border border-border bg-surface px-2 py-1.5"
           value={String(block.props.spacing || "normal")}
@@ -80,7 +80,7 @@ export function BlogBlockSettings({ block, onChange }: Props) {
 
       {block.type === "heading" ? (
         <label className="block space-y-1">
-          <span className="text-muted">Heading text</span>
+          <span className="text-muted-foreground">Heading text</span>
           <Input
             value={String(block.content.text || "")}
             onChange={(e) => updateContent("text", e.target.value)}
@@ -100,7 +100,7 @@ export function BlogBlockSettings({ block, onChange }: Props) {
             onUploaded={(url) => updateContent("url", url)}
           />
           <label className="block space-y-1">
-            <span className="text-muted">Alt text</span>
+            <span className="text-muted-foreground">Alt text</span>
             <Input
               value={String(block.content.alt || "")}
               onChange={(e) => updateContent("alt", e.target.value)}
@@ -110,13 +110,13 @@ export function BlogBlockSettings({ block, onChange }: Props) {
             <p className="text-amber-600 text-xs">Missing alt text — add for accessibility.</p>
           ) : null}
           <label className="block space-y-1">
-            <span className="text-muted">Caption</span>
+            <span className="text-muted-foreground">Caption</span>
             <Input
               value={String(block.content.caption || "")}
               onChange={(e) => updateContent("caption", e.target.value)}
             />
           </label>
-          <p className="text-xs text-muted">
+          <p className="text-xs text-muted-foreground">
             Removing this block does not delete the stored file (v1 policy).
           </p>
         </>
@@ -125,14 +125,14 @@ export function BlogBlockSettings({ block, onChange }: Props) {
       {block.type === "cta" ? (
         <>
           <label className="block space-y-1">
-            <span className="text-muted">Label</span>
+            <span className="text-muted-foreground">Label</span>
             <Input
               value={String(block.content.label || "")}
               onChange={(e) => updateContent("label", e.target.value)}
             />
           </label>
           <label className="block space-y-1">
-            <span className="text-muted">Link</span>
+            <span className="text-muted-foreground">Link</span>
             <Input
               value={String(block.content.href || "")}
               onChange={(e) => updateContent("href", e.target.value)}
@@ -143,7 +143,7 @@ export function BlogBlockSettings({ block, onChange }: Props) {
 
       {(block.type === "rich_text" || block.type === "legacy_rich_text") ? (
         <label className="block space-y-1">
-          <span className="text-muted">Markdown</span>
+          <span className="text-muted-foreground">Markdown</span>
           <Textarea
             rows={8}
             value={String(block.content.markdown || "")}

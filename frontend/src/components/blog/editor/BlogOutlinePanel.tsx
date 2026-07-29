@@ -27,7 +27,7 @@ export function BlogOutlinePanel({ document, onNavigate }: Props) {
         {outline.map((item) => (
           <li
             key={item.blockId}
-            className={item.level === 3 ? "ml-4 text-muted" : ""}
+            className={item.level === 3 ? "ml-4 text-muted-foreground" : ""}
           >
             <button
               type="button"
@@ -40,7 +40,7 @@ export function BlogOutlinePanel({ document, onNavigate }: Props) {
         ))}
       </ol>
       {outline.length === 0 ? (
-        <p className="text-muted text-xs">Headings appear here as you write.</p>
+        <p className="text-muted-foreground text-xs">Headings appear here as you write.</p>
       ) : null}
     </div>
   );

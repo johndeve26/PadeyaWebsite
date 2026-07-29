@@ -28,7 +28,15 @@ function RichContent({ block }: { block: BlogBlock }) {
       />
     );
   }
-  return <p className="text-muted text-sm italic">Empty block</p>;
+  return (
+    <div
+      className="rounded-[var(--radius-md)] border border-dashed border-border-muted bg-surface-muted/80 px-3 py-3 text-center text-sm italic text-subtle-foreground dark:bg-surface-inset/40"
+      role="status"
+      data-testid="blog-empty-block-placeholder"
+    >
+      Empty block
+    </div>
+  );
 }
 
 export function BlogBlockRenderer({ block }: Props) {
@@ -80,12 +88,12 @@ export function BlogBlockRenderer({ block }: Props) {
               className="rounded-[var(--radius-md)] w-full"
             />
           ) : (
-            <div className="h-40 bg-surface border border-border rounded-[var(--radius-md)] flex items-center justify-center text-muted text-sm">
+            <div className="h-40 bg-surface border border-border rounded-[var(--radius-md)] flex items-center justify-center text-muted-foreground text-sm">
               No image
             </div>
           )}
           {block.content.caption ? (
-            <figcaption className="text-sm text-muted mt-2">
+            <figcaption className="text-sm text-muted-foreground mt-2">
               {String(block.content.caption)}
             </figcaption>
           ) : null}
@@ -94,7 +102,7 @@ export function BlogBlockRenderer({ block }: Props) {
     case "quote":
       return (
         <blockquote
-          className={`border-l-4 border-primary pl-4 italic text-muted ${widthClass} ${spacingClass}`}
+          className={`border-l-4 border-primary pl-4 italic text-muted-foreground ${widthClass} ${spacingClass}`}
         >
           {String(block.content.text || "")}
           {block.content.attribution ? (
@@ -127,7 +135,7 @@ export function BlogBlockRenderer({ block }: Props) {
             <details key={i} className="rounded-[var(--radius-md)] border border-border p-3">
               <summary className="cursor-pointer font-medium">{item.question}</summary>
               <div
-                className="mt-2 text-sm text-muted blog-prose"
+                className="mt-2 text-sm text-muted-foreground blog-prose"
                 dangerouslySetInnerHTML={{
                   __html: simpleMarkdownToHtml(item.answer || ""),
                 }}
@@ -194,7 +202,7 @@ export function BlogBlockRenderer({ block }: Props) {
       return (
         <nav className={`${widthClass} ${spacingClass} text-sm`} aria-label="Table of contents">
           <p className="font-medium mb-2">On this page</p>
-          <p className="text-muted italic">Generated from headings when published.</p>
+          <p className="text-muted-foreground italic">Generated from headings when published.</p>
         </nav>
       );
     case "two_column_row":

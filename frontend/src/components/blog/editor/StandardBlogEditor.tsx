@@ -95,7 +95,7 @@ export function StandardBlogEditor({
           >
             <div className="flex items-start gap-2 p-2">
               <span
-                className="cursor-grab text-muted opacity-0 group-hover:opacity-100 select-none"
+                className="cursor-grab text-muted-foreground opacity-0 group-hover:opacity-100 select-none"
                 aria-hidden
               >
                 ⠿
@@ -155,7 +155,7 @@ export function StandardBlogEditor({
                 ) : null}
 
                 {block.props._layoutBound ? (
-                  <p className="text-xs text-muted">Layout section (switch to Layout Manager to rearrange columns)</p>
+                  <p className="text-xs text-muted-foreground">Layout section (switch to Layout Manager to rearrange columns)</p>
                 ) : null}
               </div>
               <BlogBlockToolbar

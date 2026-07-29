@@ -25,11 +25,21 @@ export function BlogReusableSectionsPanel({ document, onChange }: Props) {
 
   return (
     <div className="p-4 space-y-3">
-      <h3 className="font-medium text-sm">Reusable sections</h3>
-      <p className="text-xs text-muted">Inserted sections are copied — template changes won&apos;t affect this post.</p>
-      <div className="space-y-2 max-h-64 overflow-y-auto">
+      <h3 className="font-medium text-sm text-foreground">Reusable sections</h3>
+      <div
+        className="rounded-[var(--radius-md)] border border-border-muted bg-surface-muted px-3 py-2 dark:bg-surface-inset/50"
+        data-testid="reusable-sections-hint"
+      >
+        <p className="text-xs leading-relaxed text-subtle-foreground">
+          Inserted sections are copied — template changes won&apos;t affect this post.
+        </p>
+      </div>
+      <div className="space-y-2">
         {sections.map((s) => (
-          <div key={s.slug} className="border border-border rounded-[var(--radius-md)] p-2">
+          <div
+            key={s.slug}
+            className="rounded-[var(--radius-md)] border border-border bg-card p-2 text-card-foreground dark:bg-surface-elevated"
+          >
             <p className="text-sm font-medium">{s.name}</p>
             <Button
               type="button"

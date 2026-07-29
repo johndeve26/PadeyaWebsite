@@ -155,7 +155,7 @@ export function BlogEditorShell({
                 <button
                   key={tab}
                   type="button"
-                  className={`flex-1 py-2 capitalize ${leftTab === tab ? "border-b-2 border-primary" : "text-muted"}`}
+                  className={`flex-1 py-2 capitalize ${leftTab === tab ? "border-b-2 border-primary" : "text-muted-foreground"}`}
                   onClick={() => setLeftTab(tab)}
                 >
                   {tab}

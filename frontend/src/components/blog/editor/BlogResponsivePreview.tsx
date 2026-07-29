@@ -40,7 +40,7 @@ export function BlogResponsivePreview({
       </div>
       <div className="p-6 space-y-4">
         <h1 className="font-display text-2xl font-bold">{title || "Untitled"}</h1>
-        {excerpt ? <p className="text-muted">{excerpt}</p> : null}
+        {excerpt ? <p className="text-muted-foreground">{excerpt}</p> : null}
         {bodyHtml ? (
           <div
             className="blog-prose max-w-none dark:prose-invert"

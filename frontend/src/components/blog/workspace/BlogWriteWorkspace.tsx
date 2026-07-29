@@ -25,7 +25,7 @@ export function BlogWriteWorkspace({ onAiAssistant: _onAiAssistant }: Props) {
     <div className="flex min-h-0 flex-1" data-testid="blog-write-workspace">
       <aside
         className={cn(
-          "hidden border-r border-border bg-card transition-all duration-200 overflow-y-auto md:block",
+          "hidden border-r border-border bg-card transition-all duration-200 overflow-y-auto dark:bg-surface-elevated md:block",
           outlineOpen ? "w-56 shrink-0" : "w-0 overflow-hidden",
         )}
       >

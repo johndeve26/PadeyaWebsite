@@ -21,20 +21,20 @@ export function BlogTemplateLibrary({ onApply }: Props) {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p className="p-4 text-sm text-muted">Loading templates…</p>;
+  if (loading) return <p className="p-4 text-sm text-muted-foreground">Loading templates…</p>;
 
   return (
-    <div className="p-4 space-y-3">
-      <h3 className="font-medium text-sm">Templates</h3>
-      <div className="space-y-2 max-h-80 overflow-y-auto">
+    <div className="p-3 space-y-3">
+      <h3 className="font-medium text-sm text-foreground">Templates</h3>
+      <div className="space-y-2">
         {templates.map((t) => (
           <div
             key={t.slug}
-            className="rounded-[var(--radius-md)] border border-border p-3 hover:border-primary/40"
+            className="rounded-[var(--radius-md)] border border-border bg-card p-3 text-card-foreground shadow-[var(--shadow-soft)] transition-colors hover:border-primary/50 dark:bg-surface-elevated dark:hover:bg-surface-inset"
           >
-            <p className="font-medium text-sm">{t.name}</p>
+            <p className="font-medium text-sm text-foreground">{t.name}</p>
             {t.description ? (
-              <p className="text-xs text-muted mt-1">{t.description}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
             ) : null}
             <Button
               type="button"

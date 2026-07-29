@@ -21,8 +21,10 @@ export function BlogDesignWorkspace() {
 
   return (
     <div className="flex min-h-0 flex-1" data-testid="blog-design-workspace">
-      <aside className="hidden w-60 shrink-0 min-h-0 border-r border-border bg-card flex-col overflow-hidden md:flex">
-        <div className="flex border-b border-border text-xs">
+      <aside
+        className="hidden w-64 shrink-0 min-h-0 border-r border-border bg-card text-card-foreground flex-col overflow-hidden dark:bg-surface-elevated md:flex"
+      >
+        <div className="flex shrink-0 border-b border-border text-xs">
           {(["templates", "reusable"] as const).map((tab) => (
             <button
               key={tab}
@@ -37,7 +39,7 @@ export function BlogDesignWorkspace() {
             </button>
           ))}
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain">
           {leftTab === "templates" ? (
             <BlogTemplateLibrary onApply={(doc) => applyDocument(doc)} />
           ) : (
@@ -46,7 +48,10 @@ export function BlogDesignWorkspace() {
         </div>
       </aside>
 
-      <main className="flex-1 min-h-0 min-w-[min(100%,30rem)] overflow-y-auto" data-testid="blog-design-canvas">
+      <main
+        className="flex-1 min-h-0 min-w-[min(100%,30rem)] overflow-y-auto bg-background"
+        data-testid="blog-design-canvas"
+      >
         <BlogLayoutManager
           document={contentDoc}
           onChange={applyDocument}
@@ -59,7 +64,7 @@ export function BlogDesignWorkspace() {
 
       <aside
         className={cn(
-          "hidden shrink-0 min-h-0 border-l border-border bg-card flex-col overflow-y-auto lg:flex",
+          "hidden shrink-0 min-h-0 border-l border-border bg-card flex-col overflow-y-auto dark:bg-surface-elevated lg:flex",
           selectedBlock ? "w-72" : "w-56",
         )}
       >
