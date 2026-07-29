@@ -446,7 +446,7 @@ function LocationLandingInner({
               description="Verified creators with public Legacy Pages you can explore now."
               action={
                 <Link href="/hosts">
-                  <Button variant="secondary" size="md">
+                  <Button variant="primary" size="md">
                     Meet hosts
                   </Button>
                 </Link>

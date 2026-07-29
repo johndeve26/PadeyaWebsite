@@ -21,7 +21,7 @@ export function EligibleEventsGrid({
         description="When hosts enable Event Ambassadors, those events appear here for anyone with a Pàdéyá account to promote."
         action={
           <Link href="/events">
-            <Button size="sm" variant="secondary">
+            <Button size="sm" variant="primary">
               Browse all events
             </Button>
           </Link>

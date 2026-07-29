@@ -105,7 +105,7 @@ export function EventHoverPreview({
             {priceFrom(event)}
           </p>
           <Link href={`/events/${event.slug}`} tabIndex={-1}>
-            <Button size="sm" variant="secondary">
+            <Button size="sm" variant="primary">
               View event
             </Button>
           </Link>

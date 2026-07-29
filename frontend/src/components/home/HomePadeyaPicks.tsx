@@ -46,7 +46,7 @@ export function HomePadeyaPicks({
             description="Explore the full event marketplace while we feature upcoming nights."
             action={
               <Link href="/events">
-                <Button variant="secondary">Explore events</Button>
+                <Button variant="primary">Explore events</Button>
               </Link>
             }
           />

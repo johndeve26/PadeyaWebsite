@@ -19,7 +19,7 @@ export async function HomeBlogTeaser() {
             description="Event planning tips, host growth, ticketing safety, and platform updates from the Pàdéyá blog."
           />
           <Link href="/blog" className="shrink-0">
-            <Button variant="secondary" size="lg">
+            <Button variant="primary" size="lg">
               Read the blog
             </Button>
           </Link>

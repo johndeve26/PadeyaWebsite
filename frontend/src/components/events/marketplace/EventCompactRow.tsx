@@ -56,7 +56,7 @@ export function EventCompactRow({
           {place || stock || ""}
         </span>
         <Link href={`/events/${event.slug}`} prefetch={false}>
-          <Button size="sm" variant="secondary">
+          <Button size="sm" variant="primary">
             View
           </Button>
         </Link>

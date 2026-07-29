@@ -115,7 +115,7 @@ export function HomeBrowseTaxonomy() {
           description="Explore events by scene, location, budget, or schedule, with each path tailored to how you like to discover."
           action={
             <Link href="/events">
-              <Button variant="secondary" size="md">
+              <Button variant="primary" size="md">
                 View all events
               </Button>
             </Link>

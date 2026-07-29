@@ -133,7 +133,7 @@ export function MarketplaceHostShopCard({ shop, className }: Props) {
 
       <div className="mt-auto">
         <Link href={href}>
-          <Button size="sm" variant="secondary" className="w-full">
+          <Button size="sm" variant="primary" className="w-full">
             Visit shop
           </Button>
         </Link>

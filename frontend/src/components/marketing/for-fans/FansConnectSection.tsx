@@ -16,7 +16,7 @@ export function FansConnectSection() {
       description="Optional connections with privacy-safe discovery, messaging controls, and report/block tools, on your terms."
       headerAction={
         <Link href="/connect" className="hidden sm:inline-flex">
-          <Button variant="secondary" size="lg">
+          <Button variant="primary" size="lg">
             Open Fan Connect
           </Button>
         </Link>

@@ -57,7 +57,7 @@ export function HomeNearbyEventsSection({
           title={title}
           action={
             <Link href={viewAllHref} className="hidden sm:inline-flex">
-              <Button variant="secondary" size="lg">
+              <Button variant="primary" size="lg">
                 View all events
               </Button>
             </Link>
@@ -72,7 +72,7 @@ export function HomeNearbyEventsSection({
         />
         <div className="sm:hidden">
           <Link href={viewAllHref} className="block w-full">
-            <Button variant="secondary" size="lg" className="w-full">
+            <Button variant="primary" size="lg" className="w-full">
               View all events
             </Button>
           </Link>

@@ -1088,7 +1088,7 @@ export default function CheckoutPage() {
               description={error}
               action={
                 <Link href="/events">
-                  <Button variant="secondary">Browse events</Button>
+                  <Button variant="primary">Browse events</Button>
                 </Link>
               }
             />

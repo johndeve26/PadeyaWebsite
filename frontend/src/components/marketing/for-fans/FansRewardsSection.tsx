@@ -15,7 +15,7 @@ export function FansRewardsSection() {
       description="Promote nights you love with tracked links. Rewards attach only to verified paid sales, honest about what hosts enable."
       headerAction={
         <Link href="/ambassadors" className="hidden sm:inline-flex">
-          <Button variant="secondary" size="lg">
+          <Button variant="primary" size="lg">
             Learn Ambassadors
           </Button>
         </Link>

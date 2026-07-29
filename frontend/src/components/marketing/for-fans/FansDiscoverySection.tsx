@@ -37,7 +37,7 @@ export function FansDiscoverySection() {
       description="Near you, categories, followed hosts, Pàdéyá Picks, and city pages, built for browsing the night, not doom-scrolling a feed."
       headerAction={
         <Link href="/events" className="hidden sm:inline-flex">
-          <Button variant="secondary" size="lg">
+          <Button variant="primary" size="lg">
             View all events
           </Button>
         </Link>
@@ -72,7 +72,7 @@ export function FansDiscoverySection() {
       />
       <div className="sm:hidden">
         <Link href="/events" className="block w-full">
-          <Button variant="secondary" size="lg" className="w-full">
+          <Button variant="primary" size="lg" className="w-full">
             View all events
           </Button>
         </Link>

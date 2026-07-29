@@ -105,7 +105,7 @@ export function FollowedHostCards({ hosts, initialVisible = 6 }: Props) {
                 </div>
                 <div className="mt-auto pt-4">
                   <Link href={href}>
-                    <Button size="sm" variant="secondary" className="w-full">
+                    <Button size="sm" variant="primary" className="w-full">
                       View Legacy
                     </Button>
                   </Link>

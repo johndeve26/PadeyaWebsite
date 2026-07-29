@@ -74,7 +74,7 @@ export default function FollowingPage() {
       description="Following a host does not email you automatically. Turn on Notify for hosts you want event updates from."
       actions={
         <Link href="/hosts">
-          <Button variant="secondary">Find hosts</Button>
+          <Button variant="primary">Find hosts</Button>
         </Link>
       }
     >

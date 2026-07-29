@@ -122,7 +122,7 @@ export function SponsorPublicSponsoredEventCard({
         ) : null}
         {ev.host_slug ? (
           <Link href={`/u/${ev.host_slug}`}>
-            <Button variant="secondary" size="sm" className="w-full min-w-[8rem]">
+            <Button variant="primary" size="sm" className="w-full min-w-[8rem]">
               View host
             </Button>
           </Link>
@@ -166,7 +166,7 @@ export function SponsorPublicPartnerHostCard({ host: h }: { host: SponsorPublicP
       ) : null}
       {h.slug ? (
         <Link href={`/u/${h.slug}`} className="mt-auto pt-1">
-          <Button variant="secondary" size="sm">
+          <Button variant="primary" size="sm">
             View host
           </Button>
         </Link>

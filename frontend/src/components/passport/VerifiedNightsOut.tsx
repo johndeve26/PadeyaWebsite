@@ -67,7 +67,7 @@ export function VerifiedNightsOut({ events }: Props) {
               <div className="flex flex-wrap gap-2">
                 {ev.host_username ? (
                   <Link href={`/@${ev.host_username}`}>
-                    <Button size="sm" variant="secondary">
+                    <Button size="sm" variant="primary">
                       Host Legacy
                     </Button>
                   </Link>

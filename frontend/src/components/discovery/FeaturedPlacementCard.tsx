@@ -50,7 +50,7 @@ export type PadeyaPickAnalytics = FeaturedPlacementCardAnalytics;
  */
 export function FeaturedPlacementCard({
   event,
-  variant = "secondary",
+  variant = "primary",
   className = "",
   analytics,
   badgeText = "Pàdéyá Pick",
@@ -231,7 +231,7 @@ export function FeaturedPlacementCard({
           <Link href={`/events/${event.slug}`} onClick={onPickClick}>
             <Button
               size={primary ? "md" : "sm"}
-              variant="secondary"
+              variant="primary"
               className="padeya-btn-ripple"
             >
               View event
