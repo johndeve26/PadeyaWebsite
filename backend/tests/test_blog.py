@@ -107,6 +107,27 @@ def test_admin_create_draft_and_publish(
     assert published.json()["status"] == "published"
 
 
+def test_create_post_idempotent_with_client_creation_id(
+    client: TestClient, db_session: Session, assign_role
+):
+    headers = _admin(client, db_session, assign_role, "blog-idem@example.com")
+    key = str(uuid.uuid4())
+    payload = {
+        "title": "Idempotent draft",
+        "body": "Once only",
+        "client_creation_id": key,
+    }
+    first = client.post("/api/v1/admin/blog/posts", headers=headers, json=payload)
+    second = client.post("/api/v1/admin/blog/posts", headers=headers, json=payload)
+    assert first.status_code == 201, first.text
+    assert second.status_code == 201, second.text
+    assert first.json()["id"] == second.json()["id"]
+    listed = client.get("/api/v1/admin/blog/posts", headers=headers)
+    assert listed.status_code == 200
+    matches = [p for p in listed.json() if p.get("title") == "Idempotent draft"]
+    assert len(matches) == 1
+
+
 def test_category_and_tag_pages_api(
     client: TestClient, db_session: Session, assign_role
 ):

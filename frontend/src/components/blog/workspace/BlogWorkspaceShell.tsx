@@ -15,6 +15,7 @@ import { BlogSeoWorkspace } from "./BlogSeoWorkspace";
 import { BlogReviewWorkspace } from "./BlogReviewWorkspace";
 import { BlogPublishWorkspace } from "./BlogPublishWorkspace";
 import { BlogAiDrawer } from "./BlogAiDrawer";
+import { WorkspaceDocumentProvider } from "./WorkspaceDocumentProvider";
 import type { BlogPost } from "@/lib/blog-api";
 import type { BlogContentBrief, BlogOutline, BlogFaqItem } from "@/components/blog/studio/types";
 import { parseContentDocument, resolveContentMode } from "@/lib/blog-document";
@@ -126,12 +127,60 @@ function WorkspaceInner({
       />
 
       <div className="flex flex-1 min-h-0 relative">
-        {activeTab === "plan" && <BlogPlanWorkspace onNavigate={setTab} />}
-        {activeTab === "write" && <BlogWriteWorkspace onAiAssistant={() => setAiOpen(true)} />}
-        {activeTab === "design" && <BlogDesignWorkspace />}
-        {activeTab === "seo" && <BlogSeoWorkspace />}
-        {activeTab === "review" && <BlogReviewWorkspace onNavigate={setTab} />}
-        {activeTab === "publish" && <BlogPublishWorkspace />}
+        <div
+          id="blog-workspace-panel-plan"
+          role="tabpanel"
+          aria-labelledby="blog-workspace-tab-plan"
+          hidden={activeTab !== "plan"}
+          className={activeTab === "plan" ? "flex min-h-0 flex-1 w-full" : "hidden"}
+        >
+          <BlogPlanWorkspace onNavigate={setTab} />
+        </div>
+        <div
+          id="blog-workspace-panel-write"
+          role="tabpanel"
+          aria-labelledby="blog-workspace-tab-write"
+          hidden={activeTab !== "write"}
+          className={activeTab === "write" ? "flex min-h-0 flex-1 w-full" : "hidden"}
+        >
+          <BlogWriteWorkspace onAiAssistant={() => setAiOpen(true)} />
+        </div>
+        <div
+          id="blog-workspace-panel-design"
+          role="tabpanel"
+          aria-labelledby="blog-workspace-tab-design"
+          hidden={activeTab !== "design"}
+          className={activeTab === "design" ? "flex min-h-0 flex-1 w-full" : "hidden"}
+        >
+          <BlogDesignWorkspace />
+        </div>
+        <div
+          id="blog-workspace-panel-seo"
+          role="tabpanel"
+          aria-labelledby="blog-workspace-tab-seo"
+          hidden={activeTab !== "seo"}
+          className={activeTab === "seo" ? "flex min-h-0 flex-1 w-full" : "hidden"}
+        >
+          <BlogSeoWorkspace />
+        </div>
+        <div
+          id="blog-workspace-panel-review"
+          role="tabpanel"
+          aria-labelledby="blog-workspace-tab-review"
+          hidden={activeTab !== "review"}
+          className={activeTab === "review" ? "flex min-h-0 flex-1 w-full" : "hidden"}
+        >
+          <BlogReviewWorkspace onNavigate={setTab} />
+        </div>
+        <div
+          id="blog-workspace-panel-publish"
+          role="tabpanel"
+          aria-labelledby="blog-workspace-tab-publish"
+          hidden={activeTab !== "publish"}
+          className={activeTab === "publish" ? "flex min-h-0 flex-1 w-full" : "hidden"}
+        >
+          <BlogPublishWorkspace />
+        </div>
       </div>
 
       <BlogAiDrawer
@@ -156,7 +205,9 @@ export function BlogWorkspaceShell({
 
   return (
     <BlogStudioProvider initial={seed}>
-      <WorkspaceInner initialTab={initialTab} />
+      <WorkspaceDocumentProvider>
+        <WorkspaceInner initialTab={initialTab} />
+      </WorkspaceDocumentProvider>
     </BlogStudioProvider>
   );
 }

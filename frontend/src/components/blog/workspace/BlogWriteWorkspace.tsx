@@ -1,12 +1,15 @@
 "use client";
-// BlogWriteWorkspace — Write tab: outline sidebar + editor canvas + AI drawer
+// BlogWriteWorkspace — Write tab: outline sidebar + editor canvas
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useBlogStudio } from "@/components/blog/studio/BlogStudioProvider";
-import { useBlogStudioAutosave } from "@/components/blog/studio/useBlogStudioAutosave";
-import { BlogEditorShell } from "@/components/blog/editor";
+import {
+  StandardBlogEditor,
+  BlogOutlinePanel,
+} from "@/components/blog/editor";
+import { Input, Textarea } from "@/components/ui";
+import { useWorkspaceDocument } from "@/components/blog/workspace/WorkspaceDocumentProvider";
 import { cn } from "@/lib/cn";
-import type { BlogContentDocument } from "@/lib/blog-document";
 
 type Props = {
   onAiAssistant: () => void;
@@ -14,54 +17,32 @@ type Props = {
 
 export function BlogWriteWorkspace({ onAiAssistant: _onAiAssistant }: Props) {
   const studio = useBlogStudio();
+  const { document: contentDoc, applyDocument } = useWorkspaceDocument();
   const [outlineOpen, setOutlineOpen] = useState(true);
-  const { saveNow } = useBlogStudioAutosave({ enabled: true });
-
-  const handleDocumentChange = useCallback(
-    (doc: BlogContentDocument, meta: { editorMode: import("@/lib/blog-document").EditorMode }) => {
-      studio.setContentDocument(doc);
-      studio.patch({ editorMode: meta.editorMode, dirty: true });
-    },
-    [studio],
-  );
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
   return (
-    <div className="flex min-h-0 flex-1">
-      {/* Left: Outline sidebar */}
+    <div className="flex min-h-0 flex-1" data-testid="blog-write-workspace">
       <aside
         className={cn(
-          "border-r border-border bg-card transition-all duration-200 overflow-y-auto",
+          "hidden border-r border-border bg-card transition-all duration-200 overflow-y-auto md:block",
           outlineOpen ? "w-56 shrink-0" : "w-0 overflow-hidden",
         )}
       >
-        <div className="p-3 space-y-1">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-            Outline
-          </p>
-          {studio.outline.sections.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No outline sections.</p>
-          ) : (
-            <ol className="space-y-1">
-              {studio.outline.sections.map((sec, i) => (
-                <li key={sec.id}>
-                  <button
-                    type="button"
-                    className="w-full text-left text-xs py-1 px-2 rounded hover:bg-surface/70 text-muted-foreground hover:text-foreground truncate"
-                    title={sec.heading}
-                  >
-                    {i + 1}. {sec.heading}
-                  </button>
-                </li>
-              ))}
-            </ol>
-          )}
+        <div className="p-3">
+          <BlogOutlinePanel
+            document={contentDoc}
+            onNavigate={(id) => {
+              setSelectedBlockId(id);
+              document.getElementById(`block-${id}`)?.scrollIntoView({ behavior: "smooth" });
+            }}
+          />
         </div>
       </aside>
 
-      {/* Outline collapse toggle */}
       <button
         type="button"
-        className="shrink-0 w-5 self-stretch flex items-center justify-center bg-surface/50 hover:bg-surface border-r border-border text-muted-foreground"
+        className="hidden md:flex shrink-0 w-5 self-stretch items-center justify-center bg-surface/50 hover:bg-surface border-r border-border text-muted-foreground"
         onClick={() => setOutlineOpen((v) => !v)}
         title={outlineOpen ? "Collapse outline" : "Expand outline"}
       >
@@ -70,25 +51,33 @@ export function BlogWriteWorkspace({ onAiAssistant: _onAiAssistant }: Props) {
         </svg>
       </button>
 
-      {/* Center: Editor */}
-      <main className="flex-1 min-w-0 min-w-[480px] overflow-y-auto">
-        <BlogEditorShell
-          postId={studio.postId}
-          title={studio.title}
-          excerpt={studio.excerpt}
-          bodyHtml={studio.bodyHtml}
-          initialDocument={studio.contentDocument}
-          initialEditorMode={studio.editorMode}
-          initialHeroSettings={studio.heroSettings}
-          contentVersion={studio.contentVersion}
-          autosaveStatus={studio.autosaveStatus}
-          isNew={!studio.postId}
-          onDocumentChange={handleDocumentChange}
-          onManualSave={() => void saveNow()}
-          onPublish={() => {
-            // Publishing happens in Publish tab
-          }}
-        />
+      <main
+        className="flex-1 min-w-0 overflow-y-auto"
+        data-testid="blog-write-canvas"
+      >
+        <div className="mx-auto w-full max-w-4xl space-y-4 p-4 sm:p-6">
+          <Input
+            label="Title"
+            value={studio.title}
+            onChange={(e) => studio.patch({ title: e.target.value, dirty: true })}
+            placeholder="Article title"
+          />
+          <Textarea
+            label="Article summary"
+            hint="Used on cards and listings — not the same as meta description."
+            value={studio.excerpt}
+            onChange={(e) => studio.patch({ excerpt: e.target.value, dirty: true })}
+            rows={3}
+          />
+          <div className="min-w-[min(100%,30rem)]" data-testid="blog-editor-canvas">
+            <StandardBlogEditor
+              document={contentDoc}
+              onChange={applyDocument}
+              selectedBlockId={selectedBlockId}
+              onSelectBlock={setSelectedBlockId}
+            />
+          </div>
+        </div>
       </main>
     </div>
   );

@@ -2,7 +2,6 @@
 // BlogDesignWorkspace — Design tab: library panel + layout canvas + block inspector
 
 import { useState } from "react";
-import { useBlogStudio } from "@/components/blog/studio/BlogStudioProvider";
 import {
   BlogLayoutManager,
   BlogBlockSettings,
@@ -10,30 +9,19 @@ import {
   BlogReusableSectionsPanel,
 } from "@/components/blog/editor";
 import { findBlockById, updateBlockInTree } from "@/lib/blog-document";
-import { useDocumentHistory } from "@/components/blog/editor/useDocumentHistory";
-import { defaultDocument } from "@/lib/blog-document";
+import { useWorkspaceDocument } from "@/components/blog/workspace/WorkspaceDocumentProvider";
 import { cn } from "@/lib/cn";
 
 export function BlogDesignWorkspace() {
-  const studio = useBlogStudio();
+  const { document: contentDoc, applyDocument, setDragActive } = useWorkspaceDocument();
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [leftTab, setLeftTab] = useState<"blocks" | "templates" | "reusable">("templates");
-
-  const { document: contentDoc, setDocument, setDragActive } = useDocumentHistory(
-    studio.contentDocument ?? defaultDocument(),
-  );
-
-  const emitChange = (doc: typeof contentDoc) => {
-    setDocument(doc);
-    studio.setContentDocument(doc);
-  };
+  const [leftTab, setLeftTab] = useState<"templates" | "reusable">("templates");
 
   const selectedBlock = selectedBlockId ? findBlockById(contentDoc.blocks, selectedBlockId) : null;
 
   return (
-    <div className="flex min-h-0 flex-1">
-      {/* Left: Library */}
-      <aside className="w-60 shrink-0 border-r border-border bg-card flex flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-1" data-testid="blog-design-workspace">
+      <aside className="hidden w-60 shrink-0 border-r border-border bg-card flex-col overflow-hidden md:flex">
         <div className="flex border-b border-border text-xs">
           {(["templates", "reusable"] as const).map((tab) => (
             <button
@@ -51,18 +39,17 @@ export function BlogDesignWorkspace() {
         </div>
         <div className="flex-1 overflow-y-auto">
           {leftTab === "templates" ? (
-            <BlogTemplateLibrary onApply={(doc) => emitChange(doc)} />
+            <BlogTemplateLibrary onApply={(doc) => applyDocument(doc)} />
           ) : (
-            <BlogReusableSectionsPanel document={contentDoc} onChange={emitChange} />
+            <BlogReusableSectionsPanel document={contentDoc} onChange={applyDocument} />
           )}
         </div>
       </aside>
 
-      {/* Center: Layout canvas */}
-      <main className="flex-1 min-w-0 overflow-y-auto">
+      <main className="flex-1 min-w-[min(100%,30rem)] overflow-y-auto" data-testid="blog-design-canvas">
         <BlogLayoutManager
           document={contentDoc}
-          onChange={emitChange}
+          onChange={applyDocument}
           selectedBlockId={selectedBlockId}
           onSelectBlock={setSelectedBlockId}
           onDragActive={setDragActive}
@@ -70,11 +57,10 @@ export function BlogDesignWorkspace() {
         />
       </main>
 
-      {/* Right: Block inspector */}
       <aside
         className={cn(
-          "shrink-0 border-l border-border bg-card flex flex-col overflow-y-auto transition-all duration-200",
-          selectedBlock ? "w-72" : "w-72",
+          "hidden shrink-0 border-l border-border bg-card flex-col overflow-y-auto lg:flex",
+          selectedBlock ? "w-72" : "w-56",
         )}
       >
         <div className="border-b border-border p-3 text-xs font-medium text-muted-foreground">
@@ -84,7 +70,7 @@ export function BlogDesignWorkspace() {
           <BlogBlockSettings
             block={selectedBlock}
             onChange={(id, patch) =>
-              emitChange({
+              applyDocument({
                 ...contentDoc,
                 blocks: updateBlockInTree(contentDoc.blocks, id, (b) => ({
                   ...b,

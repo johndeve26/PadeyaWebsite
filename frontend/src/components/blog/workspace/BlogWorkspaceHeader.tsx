@@ -2,7 +2,7 @@
 // BlogWorkspaceHeader — sticky workspace header with tabs and actions
 
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui";
 import { useBlogStudio } from "@/components/blog/studio/BlogStudioProvider";
 import { cn } from "@/lib/cn";
@@ -24,14 +24,67 @@ type Props = {
   onPublish: () => void;
 };
 
+function tabPanelId(tab: WorkspaceTab) {
+  return `blog-workspace-panel-${tab}`;
+}
+
+function tabButtonId(tab: WorkspaceTab) {
+  return `blog-workspace-tab-${tab}`;
+}
+
 export function BlogWorkspaceHeader({ activeTab, onTabChange, onAiAssistant, onPublish }: Props) {
   const studio = useBlogStudio();
   const [editingTitle, setEditingTitle] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
+  const mobileTabsRef = useRef<HTMLDivElement>(null);
+  const desktopTabsRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useRef(false);
 
   useEffect(() => {
     if (editingTitle) titleRef.current?.focus();
   }, [editingTitle]);
+
+  useEffect(() => {
+    prefersReducedMotion.current = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+  }, []);
+
+  const scrollTabIntoView = useCallback((tab: WorkspaceTab) => {
+    const id = tabButtonId(tab);
+    const el =
+      mobileTabsRef.current?.querySelector<HTMLElement>(`#${id}`) ??
+      desktopTabsRef.current?.querySelector<HTMLElement>(`#${id}`);
+    el?.scrollIntoView({
+      block: "nearest",
+      inline: "center",
+      behavior: prefersReducedMotion.current ? "auto" : "smooth",
+    });
+  }, []);
+
+  useEffect(() => {
+    scrollTabIntoView(activeTab);
+  }, [activeTab, scrollTabIntoView]);
+
+  const onTabKeyDown = useCallback(
+    (e: React.KeyboardEvent, current: WorkspaceTab) => {
+      const idx = TABS.findIndex((t) => t.id === current);
+      if (idx < 0) return;
+      let next: WorkspaceTab | null = null;
+      if (e.key === "ArrowRight") next = TABS[(idx + 1) % TABS.length]!.id;
+      if (e.key === "ArrowLeft") next = TABS[(idx - 1 + TABS.length) % TABS.length]!.id;
+      if (e.key === "Home") next = TABS[0]!.id;
+      if (e.key === "End") next = TABS[TABS.length - 1]!.id;
+      if (next) {
+        e.preventDefault();
+        onTabChange(next);
+        requestAnimationFrame(() => {
+          document.getElementById(tabButtonId(next!))?.focus();
+        });
+      }
+    },
+    [onTabChange],
+  );
 
   const autosaveEl = (() => {
     if (studio.autosaveStatus === "saving")
@@ -47,13 +100,36 @@ export function BlogWorkspaceHeader({ activeTab, onTabChange, onAiAssistant, onP
       );
     if (studio.autosaveStatus === "failed")
       return <span className="text-xs text-danger">Save failed</span>;
+    if (studio.autosaveStatus === "conflict")
+      return <span className="text-xs text-danger">Conflict</span>;
     return null;
   })();
+
+  const renderTab = (tab: (typeof TABS)[number]) => (
+    <button
+      key={tab.id}
+      id={tabButtonId(tab.id)}
+      type="button"
+      role="tab"
+      aria-selected={activeTab === tab.id}
+      aria-controls={tabPanelId(tab.id)}
+      tabIndex={activeTab === tab.id ? 0 : -1}
+      onClick={() => onTabChange(tab.id)}
+      onKeyDown={(e) => onTabKeyDown(e, tab.id)}
+      className={cn(
+        "shrink-0 py-2 px-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2",
+        activeTab === tab.id
+          ? "text-primary border-primary"
+          : "text-muted-foreground border-transparent hover:text-foreground",
+      )}
+    >
+      {tab.label}
+    </button>
+  );
 
   return (
     <header className="sticky top-[var(--header-height,4rem)] z-30 bg-card border-b border-border">
       <div className="flex items-center gap-3 px-4 py-2 min-h-[3rem]">
-        {/* Left: back + title */}
         <div className="flex items-center gap-2 min-w-0 shrink">
           <Link
             href="/admin/blog"
@@ -87,30 +163,16 @@ export function BlogWorkspaceHeader({ activeTab, onTabChange, onAiAssistant, onP
           )}
         </div>
 
-        {/* Center: tabs */}
         <nav
+          ref={desktopTabsRef}
           className="hidden md:flex flex-1 justify-center overflow-x-auto scrollbar-none gap-1 px-2"
+          role="tablist"
           aria-label="Workspace tabs"
         >
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => onTabChange(tab.id)}
-              className={cn(
-                "shrink-0 py-2 px-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors",
-                activeTab === tab.id
-                  ? "text-primary border-primary"
-                  : "text-muted-foreground border-transparent hover:text-foreground",
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {TABS.map(renderTab)}
         </nav>
 
-        {/* Right: status + actions */}
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 ml-auto">
           {autosaveEl}
           <Button size="sm" variant="ghost" onClick={onAiAssistant}>
             AI Assistant
@@ -128,23 +190,13 @@ export function BlogWorkspaceHeader({ activeTab, onTabChange, onAiAssistant, onP
         </div>
       </div>
 
-      {/* Mobile tabs row */}
-      <div className="flex md:hidden overflow-x-auto scrollbar-none gap-1 px-4 pb-1">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => onTabChange(tab.id)}
-            className={cn(
-              "shrink-0 py-1.5 px-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors",
-              activeTab === tab.id
-                ? "text-primary border-primary"
-                : "text-muted-foreground border-transparent hover:text-foreground",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div
+        ref={mobileTabsRef}
+        className="flex md:hidden overflow-x-auto scrollbar-none gap-1 px-4 pb-1"
+        role="tablist"
+        aria-label="Workspace tabs"
+      >
+        {TABS.map(renderTab)}
       </div>
     </header>
   );

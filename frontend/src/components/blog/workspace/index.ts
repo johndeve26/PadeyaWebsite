@@ -8,3 +8,4 @@ export { BlogSeoWorkspace } from "./BlogSeoWorkspace";
 export { BlogReviewWorkspace } from "./BlogReviewWorkspace";
 export { BlogPublishWorkspace } from "./BlogPublishWorkspace";
 export { BlogAiDrawer } from "./BlogAiDrawer";
+export { WorkspaceDocumentProvider, useWorkspaceDocument } from "./WorkspaceDocumentProvider";

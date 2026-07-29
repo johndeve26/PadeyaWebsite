@@ -323,6 +323,17 @@ def _set_tags(db: Session, post: BlogPost, tag_ids: list[uuid.UUID]) -> None:
 
 def create_post(db: Session, *, user: User, payload: PostCreate) -> BlogPost:
     _require_blog_perm(user, "admin.blog.create")
+    if payload.client_creation_id is not None:
+        existing = db.scalar(
+            select(BlogPost).where(
+                BlogPost.created_by == user.id,
+                BlogPost.client_creation_id == payload.client_creation_id,
+                BlogPost.archived_at.is_(None),
+            )
+        )
+        if existing is not None:
+            return existing
+
     slug = _slugify(payload.slug or payload.title)
     if not slug_available(db, slug):
         raise HTTPException(status_code=409, detail="Slug already exists")
@@ -356,6 +367,7 @@ def create_post(db: Session, *, user: User, payload: PostCreate) -> BlogPost:
         scheduled_at=payload.scheduled_at,
         published_at=published_at,
         created_by=user.id,
+        client_creation_id=payload.client_creation_id,
         updated_by=user.id,
         studio_brief=payload.studio_brief,
         studio_outline=payload.studio_outline,

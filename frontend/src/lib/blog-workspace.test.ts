@@ -7,6 +7,7 @@ import {
   seoDescriptionScore,
   type WorkspaceTab,
 } from "./blog-workspace";
+import { cloneDocument, createBlock, defaultDocument, type BlogContentDocument } from "./blog-document";
 
 describe("validateTab", () => {
   it("returns valid tab as-is", () => {
@@ -144,5 +145,36 @@ describe("seoDescriptionScore", () => {
   it("fails for description over 160 chars", () => {
     const desc = "A".repeat(161);
     expect(seoDescriptionScore(desc).ok).toBe(false);
+  });
+});
+
+describe("shared document history contract", () => {
+  it("undo stack restores prior cloned snapshots (Write/Design shared model)", () => {
+    let current = defaultDocument();
+    const past: BlogContentDocument[] = [];
+    const apply = (next: BlogContentDocument) => {
+      past.push(cloneDocument(current));
+      current = cloneDocument(next);
+    };
+    const undo = () => {
+      const prev = past.pop();
+      if (prev) current = cloneDocument(prev);
+    };
+
+    apply({
+      ...current,
+      blocks: [createBlock("rich_text", { content: { markdown: "Paragraph A" } })],
+    });
+    apply({
+      ...current,
+      blocks: [
+        ...current.blocks,
+        createBlock("heading", { content: { text: "Heading B", level: 2 } }),
+      ],
+    });
+    expect(current.blocks).toHaveLength(2);
+    undo();
+    expect(current.blocks).toHaveLength(1);
+    expect(current.blocks[0]?.content.markdown).toBe("Paragraph A");
   });
 });

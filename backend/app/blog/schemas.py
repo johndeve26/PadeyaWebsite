@@ -110,6 +110,7 @@ class PostCreate(BaseModel):
     secondary_keywords: list[str] | None = None
     social_share_text: str | None = None
     og_title: str | None = Field(default=None, max_length=200)
+    client_creation_id: UUID | None = None
 
     @field_validator("title")
     @classmethod
