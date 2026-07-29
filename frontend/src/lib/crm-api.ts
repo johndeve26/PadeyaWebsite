@@ -106,6 +106,7 @@ export async function createAnnouncement(input: {
   return apiRequest<Announcement>("/crm/host/announcements", {
     method: "POST",
     body: input,
+    timeout: "long",
   });
 }
 
@@ -114,7 +115,7 @@ export async function dispatchAnnouncementEmail(
 ): Promise<AnnouncementDispatchResult> {
   return apiRequest<AnnouncementDispatchResult>(
     `/crm/host/announcements/${id}/dispatch-email`,
-    { method: "POST" },
+    { method: "POST", timeout: "long" },
   );
 }
 

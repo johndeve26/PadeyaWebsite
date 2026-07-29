@@ -9,6 +9,7 @@ import { HostAnnouncementAIAssist } from "@/components/host/announcements/HostAn
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Alert, Button, Card, Input, Select, Textarea } from "@/components/ui";
 import { ApiError } from "@/lib/api";
+import { errorDetail } from "@/lib/api-timeouts";
 import { createAnnouncement, dispatchAnnouncementEmail, fetchSegments } from "@/lib/crm-api";
 import { fetchMyEvents } from "@/lib/events-api";
 import type { AudienceSegment } from "@/lib/types/crm";
@@ -101,6 +102,10 @@ export default function NewAnnouncementPage() {
       );
       return;
     }
+    if (bodyEmail.trim().length < 5) {
+      setError("Email body must be at least 5 characters.");
+      return;
+    }
     setSubmitting(true);
     setSubmitAction(sendEmail ? "send" : "draft");
     try {
@@ -112,23 +117,36 @@ export default function NewAnnouncementPage() {
         segment_key: segmentKey,
       });
       if (sendEmail && canSendEmail) {
-        const result = await dispatchAnnouncementEmail(created.id);
-        const params = new URLSearchParams({
-          id: created.id,
-          emailed: String(result.emailed),
-          skipped: String(result.skipped),
-        });
-        router.push(`/host/announcements?${params.toString()}`);
-        return;
+        try {
+          const result = await dispatchAnnouncementEmail(created.id);
+          const params = new URLSearchParams({
+            id: created.id,
+            emailed: String(result.emailed),
+            skipped: String(result.skipped),
+          });
+          router.push(`/host/announcements?${params.toString()}`);
+          return;
+        } catch (dispatchErr) {
+          // Draft already exists — send failed (often email not configured or timeout).
+          const reason = errorDetail(
+            dispatchErr,
+            "Email could not be sent. Check Admin → Email settings (SMTP, not log/dev mode).",
+          );
+          setError(`Draft saved, but email was not sent: ${reason}`);
+          setSubmitting(false);
+          setSubmitAction(null);
+          return;
+        }
       }
       router.push(`/host/announcements?id=${created.id}`);
     } catch (err) {
       setError(
-        err instanceof ApiError
-          ? err.detail
-          : sendEmail
+        errorDetail(
+          err,
+          sendEmail
             ? "Could not create or send announcement"
             : "Could not create announcement",
+        ),
       );
       setSubmitting(false);
       setSubmitAction(null);
@@ -154,7 +172,14 @@ export default function NewAnnouncementPage() {
         }
       >
         {error ? (
-          <Alert tone="danger" title="Could not create announcement">
+          <Alert
+            tone="danger"
+            title={
+              error.startsWith("Draft saved")
+                ? "Announcement saved — email not sent"
+                : "Could not create announcement"
+            }
+          >
             {error}
           </Alert>
         ) : null}
