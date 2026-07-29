@@ -495,7 +495,7 @@ function LocationLandingInner({
         description="Sell tickets, build Legacy, and own your audience on Pàdéyá."
         actions={
           <Link href="/host/onboarding">
-            <Button size="lg" variant="dark">
+            <Button size="lg" variant="primary">
               Start host onboarding
             </Button>
           </Link>

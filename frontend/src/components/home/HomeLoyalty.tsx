@@ -106,7 +106,7 @@ export function HomeLoyalty() {
 
               <div className="mt-auto pt-1">
                 <Link href="/register" className="block">
-                  <Button size="md" variant="dark" className="w-full">
+                  <Button size="md" variant="primary-on-dark" className="w-full">
                     Create account
                   </Button>
                 </Link>

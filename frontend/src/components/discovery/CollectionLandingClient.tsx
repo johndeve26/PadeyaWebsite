@@ -291,7 +291,7 @@ function CollectionLandingInner({
         actions={
           <>
             <Link href="/events">
-              <Button size="lg" variant="dark">
+              <Button size="lg" variant="primary-on-dark">
                 Browse all events
               </Button>
             </Link>

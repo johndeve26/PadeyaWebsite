@@ -358,7 +358,7 @@ function CategoryLandingInner({
         actions={
           <>
             <Link href="/hosts">
-              <Button size="lg" variant="dark">
+              <Button size="lg" variant="primary-on-dark">
                 Meet hosts
               </Button>
             </Link>

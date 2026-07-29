@@ -60,7 +60,7 @@ export function HomeLegacyShowcase() {
 
           <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap">
             <Link href="/@djmaze" className="w-full sm:w-auto">
-              <Button size="lg" variant="dark" className="w-full sm:w-auto">
+              <Button size="lg" variant="primary-on-dark" className="w-full sm:w-auto">
                 View Legacy example
               </Button>
             </Link>
@@ -160,7 +160,7 @@ export function HomeLegacyShowcase() {
             </figure>
 
             <Link href="/@djmaze" className="block">
-              <Button className="w-full" variant="dark" size="lg">
+              <Button className="w-full" variant="primary-on-dark" size="lg">
                 View Legacy Page
               </Button>
             </Link>

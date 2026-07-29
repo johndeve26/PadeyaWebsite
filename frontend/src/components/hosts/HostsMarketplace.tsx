@@ -846,7 +846,7 @@ function HostsMarketplaceInner({
         description="Create events, sell tickets, collect verified reviews, and grow an audience that follows you beyond one night."
         actions={
           <Link href="/host/onboarding">
-            <Button size="lg" variant="dark">
+            <Button size="lg" variant="primary">
               Start host onboarding
             </Button>
           </Link>
