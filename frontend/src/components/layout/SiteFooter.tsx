@@ -88,10 +88,11 @@ function FooterColumn({
 }) {
   return (
     <div className="min-w-0">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-paper/60">
+      <p className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-paper">
+        <span className="h-3 w-0.5 rounded-full bg-primary" aria-hidden />
         {title}
       </p>
-      <ul className="mt-3 space-y-1">
+      <ul className="mt-4 space-y-1">
         {links.map((link) => (
           <li key={`${link.href}:${link.label}`}>
             <Link href={link.href} className={linkClass}>
@@ -120,8 +121,11 @@ function FooterAccordionSection({
       open={open}
       onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
     >
-      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 py-3 text-sm font-bold uppercase tracking-[0.14em] text-paper/80 marker:content-none [&::-webkit-details-marker]:hidden">
-        {title}
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 py-3 text-sm font-extrabold uppercase tracking-[0.16em] text-paper marker:content-none [&::-webkit-details-marker]:hidden">
+        <span className="flex items-center gap-2">
+          <span className="h-3 w-0.5 rounded-full bg-primary" aria-hidden />
+          {title}
+        </span>
         <span
           className={cn(
             "text-base font-normal text-primary transition-transform",
