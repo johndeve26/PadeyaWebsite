@@ -1,16 +1,19 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { BlogStudioPage } from "@/components/blog/studio/BlogStudioPage";
+import { BlogWorkspaceShell } from "@/components/blog/workspace";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Alert } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { fetchAdminBlogPost, type BlogPost } from "@/lib/blog-api";
+import { validateTab } from "@/lib/blog-workspace";
 
 export default function AdminBlogEditPage() {
   const { postId } = useParams<{ postId: string }>();
+  const searchParams = useSearchParams();
+  const initialTab = validateTab(searchParams.get("tab"));
   const [post, setPost] = useState<BlogPost | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,5 +50,11 @@ export default function AdminBlogEditPage() {
     );
   }
 
-  return <BlogStudioPage mode="edit" initialPost={post} />;
+  return (
+    <BlogWorkspaceShell
+      postId={postId}
+      initialPost={post}
+      initialTab={initialTab}
+    />
+  );
 }

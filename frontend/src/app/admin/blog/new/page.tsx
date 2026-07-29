@@ -1,7 +1,7 @@
 "use client";
 
-import { BlogStudioPage } from "@/components/blog/studio/BlogStudioPage";
+import { BlogCreationStart } from "@/components/blog/workspace/BlogCreationStart";
 
 export default function AdminBlogNewPage() {
-  return <BlogStudioPage mode="new" />;
+  return <BlogCreationStart />;
 }
