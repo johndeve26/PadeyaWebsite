@@ -149,7 +149,7 @@ export function LoginPageLayout({
                     Discover events, shop merch, or create an event on {brand.name}.
                   </p>
                 </div>
-                <div className="flex w-full min-w-0 flex-col gap-2.5 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+                <div className="flex w-full min-w-0 flex-col gap-2.5 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                   <Link href="/events" className="w-full sm:w-auto">
                     <Button
                       variant="outline-dark"
@@ -169,7 +169,9 @@ export function LoginPageLayout({
                     </Button>
                   </Link>
                   <CreateEventCta
-                    className="w-full sm:w-auto [&_a]:block [&_button]:w-full sm:[&_button]:min-w-[9.5rem]"
+                    className="w-full sm:w-auto"
+                    buttonVariant="primary-on-dark"
+                    buttonSize="lg"
                   />
                 </div>
               </div>
