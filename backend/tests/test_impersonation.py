@@ -1101,6 +1101,32 @@ def test_should_block_impersonation_action_matrix():
         "POST", "/api/v1/support/cases/abc/assign", full
     )
 
+    # Host CRM drafts — host_events pack; marketing dispatch stays full-pack only
+    assert should_block_impersonation_action(
+        "POST", "/api/v1/crm/host/announcements", view
+    )
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/crm/host/announcements", host
+    )
+    assert not should_block_impersonation_action(
+        "PATCH", "/api/v1/crm/host/announcements/abc", host
+    )
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/crm/host/announcements/abc/cancel", host
+    )
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/crm/host/segments", host
+    )
+    assert should_block_impersonation_action(
+        "POST", "/api/v1/crm/host/announcements/abc/dispatch-email", host
+    )
+    assert should_block_impersonation_action(
+        "POST", "/api/v1/crm/host/announcements/abc/dispatch-email", view
+    )
+    assert not should_block_impersonation_action(
+        "POST", "/api/v1/crm/host/announcements/abc/dispatch-email", full
+    )
+
 
 def test_sensitive_actions_blocked_while_impersonating(
     client: TestClient, assign_role, db_session: Session

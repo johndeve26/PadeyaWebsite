@@ -111,12 +111,17 @@ def _branded_email_document(
 
 
 def split_host_announcement_body(body: str) -> list[str]:
+    """Split host blast body into HTML/plain paragraphs.
+
+    Prefer blank-line (``\\n\\n``) breaks. If the draft only has single newlines
+    (common after AI section parsing), treat each non-empty line as a paragraph
+    so greetings and sign-offs do not collapse into one HTML ``<p>``.
+    """
     text = (body or "").strip()
     if not text:
         return [""]
-    blocks = [p.strip() for p in text.split("\n\n") if p.strip()]
-    if blocks:
-        return blocks
+    if "\n\n" in text:
+        return [p.strip() for p in text.split("\n\n") if p.strip()]
     lines = [line.strip() for line in text.split("\n") if line.strip()]
     return lines or [text]
 

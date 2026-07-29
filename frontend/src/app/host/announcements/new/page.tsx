@@ -4,18 +4,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
+import { useAuth } from "@/components/auth/AuthProvider";
 import { RequireHost } from "@/components/hosts/RequireHost";
 import { HostAnnouncementAIAssist } from "@/components/host/announcements/HostAnnouncementAIAssist";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Alert, Button, Card, Input, Select, Textarea } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { errorDetail } from "@/lib/api-timeouts";
+import {
+  hasImpersonationScope,
+  hasUnrestrictedImpersonation,
+  IMPERSONATION_SCOPE_HOST_EVENTS,
+  packLabel,
+} from "@/lib/auth/impersonation-scopes";
 import { createAnnouncement, dispatchAnnouncementEmail, fetchSegments } from "@/lib/crm-api";
 import { fetchMyEvents } from "@/lib/events-api";
 import type { AudienceSegment } from "@/lib/types/crm";
 import type { EventItem } from "@/lib/types/events";
 
 const NAME_TOKEN = "{{name}}";
+const IMPERSONATION_BLOCKED =
+  "This action is disabled during admin impersonation.";
 
 function FormSection({
   title,
@@ -47,8 +56,19 @@ function insertNameToken(text: string): string {
   return `Hi ${NAME_TOKEN},\n\n${trimmed}`;
 }
 
+function announcementErrorTitle(message: string): string {
+  if (message.startsWith("Draft saved")) {
+    return "Announcement saved — email not sent";
+  }
+  if (message.includes("impersonation")) {
+    return "Blocked during impersonation";
+  }
+  return "Could not create announcement";
+}
+
 export default function NewAnnouncementPage() {
   const router = useRouter();
+  const { isImpersonating, impersonation } = useAuth();
   const [segments, setSegments] = useState<AudienceSegment[]>([]);
   const [emailSubject, setEmailSubject] = useState("");
   const [bodyEmail, setBodyEmail] = useState("");
@@ -65,6 +85,25 @@ export default function NewAnnouncementPage() {
 
   const canSendEmail = channel === "email" || channel === "both";
   const subjectPreview = emailSubject.trim() || "Your subject will appear here";
+  // Super-admin sessions use the Full pack (scopes include credentials, pack === "full").
+  // Only treat as limited when the pack is known and is not full — never block on missing scopes.
+  const unrestrictedImpersonation = hasUnrestrictedImpersonation(
+    impersonation?.scopes,
+    impersonation?.pack,
+  );
+  const packKnown = Boolean(
+    impersonation?.pack || (impersonation?.scopes && impersonation.scopes.length > 0),
+  );
+  const canMutateCrmWhileImpersonating =
+    !isImpersonating ||
+    !packKnown ||
+    unrestrictedImpersonation ||
+    hasImpersonationScope(impersonation?.scopes, IMPERSONATION_SCOPE_HOST_EVENTS) ||
+    impersonation?.pack === "host_events";
+  /** Real inbox delivery while impersonating: Full pack (super admin) only. */
+  const canDispatchWhileImpersonating =
+    !isImpersonating || !packKnown || unrestrictedImpersonation;
+  const showSendButton = canSendEmail && canDispatchWhileImpersonating;
 
   useEffect(() => {
     let active = true;
@@ -87,11 +126,6 @@ export default function NewAnnouncementPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!personalizeWithName) return;
-    setBodyEmail((prev) => insertNameToken(prev));
-  }, [personalizeWithName]);
-
   async function handleCreate(sendEmail: boolean) {
     setError(null);
     if (!emailSubject.trim()) {
@@ -104,6 +138,18 @@ export default function NewAnnouncementPage() {
     }
     if (bodyEmail.trim().length < 5) {
       setError("Email body must be at least 5 characters.");
+      return;
+    }
+    if (isImpersonating && !canMutateCrmWhileImpersonating) {
+      setError(
+        `${IMPERSONATION_BLOCKED} Use a View + host events (or Full) impersonation pack to create drafts.`,
+      );
+      return;
+    }
+    if (sendEmail && isImpersonating && !canDispatchWhileImpersonating) {
+      setError(
+        `${IMPERSONATION_BLOCKED} Sending marketing email requires the Full impersonation pack. You can still create a draft.`,
+      );
       return;
     }
     setSubmitting(true);
@@ -127,7 +173,6 @@ export default function NewAnnouncementPage() {
           router.push(`/host/announcements?${params.toString()}`);
           return;
         } catch (dispatchErr) {
-          // Draft already exists — send failed (often email not configured or timeout).
           const reason = errorDetail(
             dispatchErr,
             "Email could not be sent. Check Admin → Email settings (SMTP, not log/dev mode).",
@@ -171,15 +216,21 @@ export default function NewAnnouncementPage() {
           </Link>
         }
       >
-        {error ? (
+        {isImpersonating ? (
           <Alert
-            tone="danger"
-            title={
-              error.startsWith("Draft saved")
-                ? "Announcement saved — email not sent"
-                : "Could not create announcement"
-            }
+            tone="warning"
+            title={`Impersonation — ${packLabel(impersonation?.pack)}`}
           >
+            {unrestrictedImpersonation
+              ? "Full pack: draft and send are allowed and audited."
+              : canMutateCrmWhileImpersonating
+                ? "You can create drafts. Sending marketing email requires the Full impersonation pack (so fans are not emailed from a support session)."
+                : "Creating announcements is blocked on a view-only pack. Restart impersonation with View + host events (or Full)."}
+          </Alert>
+        ) : null}
+
+        {error ? (
+          <Alert tone="danger" title={announcementErrorTitle(error)}>
             {error}
           </Alert>
         ) : null}
@@ -353,10 +404,10 @@ export default function NewAnnouncementPage() {
             </FormSection>
 
             <div className="sticky bottom-0 -mx-5 flex flex-col gap-3 border-t border-border bg-card/95 px-5 py-4 backdrop-blur-sm sm:-mx-6 sm:flex-row sm:flex-wrap sm:items-center sm:px-6">
-              {canSendEmail ? (
+              {showSendButton ? (
                 <Button
                   type="button"
-                  disabled={submitting}
+                  disabled={submitting || !canMutateCrmWhileImpersonating}
                   className="w-full sm:order-2 sm:w-auto"
                   onClick={() => void handleCreate(true)}
                 >
@@ -367,8 +418,8 @@ export default function NewAnnouncementPage() {
               ) : null}
               <Button
                 type="submit"
-                variant={canSendEmail ? "secondary" : "primary"}
-                disabled={submitting}
+                variant={showSendButton ? "secondary" : "primary"}
+                disabled={submitting || !canMutateCrmWhileImpersonating}
                 className="w-full sm:order-1 sm:w-auto"
               >
                 {submitting && submitAction === "draft"
@@ -377,9 +428,9 @@ export default function NewAnnouncementPage() {
               </Button>
               {canSendEmail ? (
                 <p className="text-xs text-muted-foreground sm:order-3 sm:basis-full">
-                  Send uses marketing opt-in only. Fans who opt in after this
-                  page still count when you dispatch. Subject and body are
-                  personalized per recipient when you use {NAME_TOKEN}.
+                  {isImpersonating && !canDispatchWhileImpersonating
+                    ? "Send is hidden during this impersonation pack. Create a draft here, or restart with Full pack to dispatch."
+                    : `Send uses marketing opt-in only. Fans who opt in after this page still count when you dispatch. Subject and body are personalized per recipient when you use ${NAME_TOKEN}.`}
                 </p>
               ) : null}
             </div>

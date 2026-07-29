@@ -86,6 +86,35 @@ def test_host_announcement_renders_branded_html():
     assert "View DJ Maze on Pàdéyá" in html
     assert "/hosts/dj-maze" in html
     assert "Unsubscribe from marketing" in html
+    assert html.count("<p style=") >= 2
+
+
+def test_host_announcement_splits_single_newline_paragraphs():
+    """Bodies without blank lines (AI apply path) must not collapse to one <p>."""
+    from app.email.renderer import split_host_announcement_body
+
+    body = (
+        "Hi Tolu,\n"
+        "We're excited to invite you to Mainland After Dark.\n"
+        "Looking forward to seeing you there!\n"
+        "Best,\n"
+        "DJ Maze"
+    )
+    parts = split_host_announcement_body(body)
+    assert len(parts) == 5
+    assert parts[0] == "Hi Tolu,"
+    assert parts[-1] == "DJ Maze"
+
+    _, _, html = render_host_announcement(
+        title="Mainland After Dark",
+        body=body,
+        host_name="DJ Maze",
+        host_slug="dj-maze",
+    )
+    assert ">Hi Tolu,<" in html
+    assert ">Best,<" in html
+    assert ">DJ Maze<" in html
+    assert html.count("<p style=") >= 5
 
 
 def test_host_announcement_personalizes_name_tokens():

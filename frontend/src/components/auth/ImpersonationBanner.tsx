@@ -99,7 +99,10 @@ export function ImpersonationBanner() {
     .toLowerCase()
     .endsWith("@demo.padeye.test");
 
-  const unrestricted = hasUnrestrictedImpersonation(impersonation?.scopes);
+  const unrestricted = hasUnrestrictedImpersonation(
+    impersonation?.scopes,
+    impersonation?.pack,
+  );
 
   return (
     <div

@@ -9,7 +9,8 @@ metrics (see ``order_excluded_from_public_metrics``).
 Capability packs (scopes) further restrict what is allowed:
 
 - ``view`` — GET / navigation only (plus exit)
-- ``host_events``  — host studio mutations (events / media / ticket tiers / legacy)
+- ``host_events`` — host studio mutations (events / media / ticket tiers / legacy /
+  CRM drafts). Marketing email *dispatch* stays full-pack only.
 - ``credentials`` — full pack: unrestricted audited mutations (finance, privacy, …)
   plus password / email / phone recovery. Admin APIs stay blocked.
 
@@ -66,7 +67,14 @@ _HOST_EVENTS = re.compile(
     r"|/host/events(?:/|$)"
     r"|/host/legacy(?:/|$)"
     r"|/legacy/me(?:/|$)"
+    r"|/crm/host(?:/|$)"
     r")",
+    re.IGNORECASE,
+)
+
+# Real marketing delivery — full pack only (even when CRM drafts are allowed).
+_HOST_CRM_DISPATCH = re.compile(
+    r"/crm/host/announcements/[^/]+/dispatch-email$",
     re.IGNORECASE,
 )
 
@@ -176,6 +184,9 @@ def is_credential_impersonation_path(path: str) -> bool:
 
 def is_host_event_impersonation_path(path: str) -> bool:
     path_n = _normalize_path(path)
+    if _HOST_CRM_DISPATCH.search(path_n):
+        # Dispatch is gated separately (full pack only).
+        return False
     if _HOST_EVENTS.search(path_n):
         return True
     if _HOST_EVENT_DELETE_ALLOWED.search(path_n):
@@ -250,13 +261,20 @@ def should_block_impersonation_action(
     if "reward-status" in lowered or lowered.endswith("/reverse"):
         return True
 
+    # Marketing blast send — never with view / host_events (fans would get real mail).
+    if _HOST_CRM_DISPATCH.search(path_n):
+        return True
+
     # Credential recovery — credentials pack only.
     if is_credential_impersonation_path(path_n):
         return not has_scope(have, SCOPE_CREDENTIALS)
 
-    # Host event studio — host_events pack only.
+    # Host event studio / CRM drafts — host_events pack only.
     if method_u == "DELETE":
         if _HOST_EVENT_DELETE_ALLOWED.search(path_n):
+            return not has_scope(have, SCOPE_HOST_EVENTS)
+        # CRM host resource deletes (segments, etc.) — same pack as drafts.
+        if re.search(r"/crm/host(?:/|$)", path_n, re.IGNORECASE):
             return not has_scope(have, SCOPE_HOST_EVENTS)
         return True
 

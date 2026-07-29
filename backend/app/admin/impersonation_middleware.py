@@ -19,7 +19,7 @@ from app.admin.impersonation_guards import (
     is_impersonation_exit_path,
     should_block_impersonation_action,
 )
-from app.admin.impersonation_scopes import normalize_scopes
+from app.admin.impersonation_scopes import SCOPE_VIEW, normalize_scopes
 from app.core import database as database_module
 from app.core.security import decode_access_token
 
@@ -113,9 +113,16 @@ def _resolve_scopes_for_guard(
     db,
     *,
     impersonation_id: UUID,
+    actor_admin_id: UUID,
     jwt_scopes: list[str],
 ) -> list[str]:
-    """Prefer DB session scopes when the row is available."""
+    """Prefer DB session scopes when the row is available.
+
+    Super-admin / ``admin.full_access`` actors always get their current full pack
+    when stored/JWT scopes are missing or incomplete — they must not be stuck on
+    view-only denials mid-session.
+    """
+    scopes: list[str] = []
     try:
         from app.admin.impersonation_store import get_impersonation_session
 
@@ -123,10 +130,29 @@ def _resolve_scopes_for_guard(
         if row is not None:
             db_scopes = normalize_scopes(getattr(row, "scopes", None))
             if db_scopes:
-                return db_scopes
+                scopes = db_scopes
     except Exception:
         logger.exception("Failed to load impersonation scopes from DB")
-    return jwt_scopes or ["view"]
+    if not scopes:
+        scopes = normalize_scopes(jwt_scopes) or [SCOPE_VIEW]
+
+    try:
+        from app.admin.impersonation_scopes import (
+            SCOPE_CREDENTIALS,
+            resolve_impersonation_scopes,
+        )
+        from app.users.models import User
+
+        if SCOPE_CREDENTIALS not in scopes:
+            admin = db.get(User, actor_admin_id)
+            if admin is not None:
+                actor_scopes = resolve_impersonation_scopes(admin)
+                if SCOPE_CREDENTIALS in actor_scopes:
+                    return actor_scopes
+    except Exception:
+        logger.exception("Failed to upgrade impersonation scopes for actor admin")
+
+    return scopes
 
 
 class ImpersonationAuditMiddleware(BaseHTTPMiddleware):
@@ -150,6 +176,7 @@ class ImpersonationAuditMiddleware(BaseHTTPMiddleware):
                 scopes = _resolve_scopes_for_guard(
                     db,
                     impersonation_id=impersonation_id,
+                    actor_admin_id=actor_admin_id,
                     jwt_scopes=jwt_scopes,
                 )
                 if should_block_impersonation_action(

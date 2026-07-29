@@ -98,7 +98,8 @@ export default function PassportSettingsPage() {
   const toast = useToast();
   const { isImpersonating, impersonation, user, refreshUser } = useAuth();
   const impersonationLocked =
-    isImpersonating && !hasUnrestrictedImpersonation(impersonation?.scopes);
+    isImpersonating &&
+    !hasUnrestrictedImpersonation(impersonation?.scopes, impersonation?.pack);
   const [settings, setSettings] = useState<PassportSettings | null>(null);
   const [draft, setDraft] = useState<PassportSettings | null>(null);
   const [gender, setGender] = useState<Gender | null>(null);

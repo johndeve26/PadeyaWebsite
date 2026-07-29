@@ -853,6 +853,24 @@ def _assert_announcement_safe(text: str) -> str:
     return cleaned
 
 
+def _join_announcement_section_lines(lines: list[str]) -> str:
+    """Rebuild section text, keeping blank lines as paragraph breaks."""
+    if not lines:
+        return ""
+    paragraphs: list[str] = []
+    current: list[str] = []
+    for line in lines:
+        if line:
+            current.append(line)
+            continue
+        if current:
+            paragraphs.append("\n".join(current))
+            current = []
+    if current:
+        paragraphs.append("\n".join(current))
+    return "\n\n".join(paragraphs).strip()
+
+
 def validate_host_announcement_draft(text: str) -> dict[str, str]:
     """Parse SUBJECT / EMAIL_BODY / WHATSAPP sections from model output."""
     cleaned = _assert_announcement_safe(text)
@@ -882,13 +900,14 @@ def validate_host_announcement_draft(text: str) -> dict[str, str]:
             if rest:
                 wa_lines.append(rest)
             continue
-        if section == "email" and stripped:
+        if section == "email":
+            # Keep blank lines so EMAIL_BODY paragraphs survive apply/send.
             email_lines.append(stripped)
-        elif section == "whatsapp" and stripped:
+        elif section == "whatsapp":
             wa_lines.append(stripped)
 
-    email_body = _assert_announcement_safe("\n".join(email_lines).strip())
-    whatsapp = _assert_announcement_safe("\n".join(wa_lines).strip()) if wa_lines else ""
+    email_body = _assert_announcement_safe(_join_announcement_section_lines(email_lines))
+    whatsapp = _assert_announcement_safe(_join_announcement_section_lines(wa_lines))
 
     if not subject or len(subject) < 3:
         # Fallback: first non-empty line as subject, rest as body

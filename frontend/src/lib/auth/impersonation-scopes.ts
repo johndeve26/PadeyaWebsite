@@ -39,7 +39,9 @@ export function hasImpersonationScope(
 /** Full pack (super admin): finance, privacy, and other mutations are allowed. */
 export function hasUnrestrictedImpersonation(
   scopes: string[] | null | undefined,
+  pack?: string | null,
 ): boolean {
+  if (pack === "full") return true;
   return hasImpersonationScope(scopes, IMPERSONATION_SCOPE_CREDENTIALS);
 }
 
