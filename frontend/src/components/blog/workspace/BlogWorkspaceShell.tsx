@@ -118,7 +118,7 @@ function WorkspaceInner({
   const handlePublishTab = useCallback(() => setTab("publish"), [setTab]);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <BlogWorkspaceHeader
         activeTab={activeTab}
         onTabChange={setTab}

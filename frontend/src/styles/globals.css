@@ -103,6 +103,7 @@
 
   /* Sticky marketing header height (h-16 / sm:h-[4.25rem]) */
   --site-header-height: 4rem;
+  --header-height: var(--site-header-height);
 
   /*
    * Legacy token aliases → semantic tokens

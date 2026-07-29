@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 
 import { Container } from "@/components/ui";
 import type { NavGroup, NavItem } from "@/lib/nav/workspace";
@@ -9,6 +10,11 @@ import { DashboardSidebar } from "./DashboardSidebar";
 import { DashboardTopbar } from "./DashboardTopbar";
 import { HostWorkspaceMobileBottomNav } from "./HostWorkspaceMobileBottomNav";
 import { WorkspaceBreadcrumbs } from "./WorkspaceBreadcrumbs";
+
+/** Blog workspace routes use a fixed-height shell so tab panels scroll internally. */
+function isBlogImmersiveWorkspace(pathname: string): boolean {
+  return /^\/admin\/blog\/(new|[\w-]+\/edit)(\/|$)/.test(pathname);
+}
 
 /**
  * Shared chrome for Personal (`/dashboard`), Host (`/host`), Admin, and Support.
@@ -37,6 +43,9 @@ export function WorkspaceShell({
   toolbar?: ReactNode;
   children: ReactNode;
 }) {
+  const pathname = usePathname() || "";
+  const blogImmersive = isBlogImmersiveWorkspace(pathname);
+
   return (
     <div className="min-h-[70vh] min-w-0 overflow-x-clip bg-background">
       <DashboardTopbar
@@ -57,11 +66,21 @@ export function WorkspaceShell({
           homeHref={homeHref}
           toolbar={toolbar}
         />
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip">
+        <div
+          className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip ${
+            blogImmersive ? "md:h-[calc(100dvh-var(--site-header-height))]" : ""
+          }`}
+        >
           <div className="sticky top-0 z-20 shrink-0 px-4 sm:px-6 lg:px-8" data-workspace-breadcrumbs>
             <WorkspaceBreadcrumbs homeLabel={title} homeHref={homeHref} />
           </div>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div
+            className={
+              blogImmersive
+                ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+                : "flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden"
+            }
+          >
             {children}
           </div>
           {hostMobileNav ? (

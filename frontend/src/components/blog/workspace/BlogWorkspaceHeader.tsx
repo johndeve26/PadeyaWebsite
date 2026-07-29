@@ -128,7 +128,7 @@ export function BlogWorkspaceHeader({ activeTab, onTabChange, onAiAssistant, onP
   );
 
   return (
-    <header className="sticky top-[var(--header-height,4rem)] z-30 bg-card border-b border-border">
+    <header className="z-30 shrink-0 bg-card border-b border-border">
       <div className="flex items-center gap-3 px-4 py-2 min-h-[3rem]">
         <div className="flex items-center gap-2 min-w-0 shrink">
           <Link
