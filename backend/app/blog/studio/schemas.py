@@ -318,6 +318,9 @@ class StudioAutosaveRequest(BaseModel):
     social_share_text: str | None = None
     og_title: str | None = None
     expected_content_version: int
+    content_document: dict[str, Any] | None = None
+    hero_settings: dict[str, Any] | None = None
+    editor_mode: str | None = None
 
 
 class CheckpointRequest(BaseModel):

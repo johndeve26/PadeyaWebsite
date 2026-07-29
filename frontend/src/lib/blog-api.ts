@@ -58,6 +58,10 @@ export type BlogPost = BlogPostListItem & {
   related?: BlogPostListItem[];
   admin_notes?: string | null;
   content_version?: number;
+  content_document?: Record<string, unknown> | null;
+  content_document_version?: number;
+  editor_mode?: string | null;
+  hero_settings?: Record<string, unknown> | null;
   studio_brief?: Record<string, unknown> | null;
   studio_outline?: Record<string, unknown> | null;
   faqs?: Array<{ id: string; question: string; answer: string }> | null;

@@ -29,6 +29,12 @@ import type {
   GenerationStage,
 } from "./types";
 import { emptyBrief, emptyOutline } from "./types";
+import {
+  defaultDocument,
+  type BlogContentDocument,
+  type EditorMode,
+  type HeroSettings,
+} from "@/lib/blog-document";
 
 export type BlogStudioState = BlogStudioPostFields & {
   brief: BlogContentBrief;
@@ -61,6 +67,9 @@ export type BlogStudioActions = {
   setBrief: (brief: BlogContentBrief | ((b: BlogContentBrief) => BlogContentBrief)) => void;
   setOutline: (outline: BlogOutline | ((o: BlogOutline) => BlogOutline)) => void;
   setBody: (body: string | ((b: string) => string)) => void;
+  setContentDocument: (
+    doc: BlogContentDocument | ((d: BlogContentDocument) => BlogContentDocument),
+  ) => void;
   setFaqs: (faqs: BlogFaqItem[] | ((f: BlogFaqItem[]) => BlogFaqItem[])) => void;
   markDirty: () => void;
   beginGeneration: (stage: GenerationStage, message?: string) => void;
@@ -110,6 +119,10 @@ export function initialStudioState(
     status: seed?.status ?? "draft",
     contentVersion: seed?.contentVersion ?? 1,
     bodyHtml: seed?.bodyHtml ?? null,
+    contentDocument: seed?.contentDocument ?? defaultDocument(),
+    contentMode: seed?.contentMode ?? null,
+    editorMode: seed?.editorMode ?? "standard",
+    heroSettings: seed?.heroSettings ?? null,
     brief: seed?.brief ?? emptyBrief(),
     outline: seed?.outline ?? emptyOutline(),
     faqs: seed?.faqs ?? [],
@@ -190,6 +203,20 @@ export function BlogStudioProvider({
     }));
   }, []);
 
+  const setContentDocument = useCallback(
+    (doc: BlogContentDocument | ((d: BlogContentDocument) => BlogContentDocument)) => {
+      setState((prev) => ({
+        ...prev,
+        dirty: true,
+        contentDocument:
+          typeof doc === "function"
+            ? doc(prev.contentDocument || defaultDocument())
+            : doc,
+      }));
+    },
+    [],
+  );
+
   const setFaqs = useCallback(
     (faqs: BlogFaqItem[] | ((f: BlogFaqItem[]) => BlogFaqItem[])) => {
       setState((prev) => ({
@@ -263,6 +290,7 @@ export function BlogStudioProvider({
       setBrief,
       setOutline,
       setBody,
+      setContentDocument,
       setFaqs,
       markDirty,
       beginGeneration,
@@ -279,6 +307,7 @@ export function BlogStudioProvider({
       setBrief,
       setOutline,
       setBody,
+      setContentDocument,
       setFaqs,
       markDirty,
       beginGeneration,

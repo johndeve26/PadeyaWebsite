@@ -274,6 +274,9 @@ export type StudioAutosaveRequest = {
   studio_brief?: BlogContentBrief | null;
   studio_outline?: BlogOutline | null;
   faqs?: BlogFaqItem[] | null;
+  content_document?: Record<string, unknown> | null;
+  hero_settings?: Record<string, unknown> | null;
+  editor_mode?: string | null;
   expected_content_version?: number;
 };
 
@@ -353,6 +356,10 @@ export type BlogStudioPostFields = {
   status: string;
   contentVersion: number;
   bodyHtml?: string | null;
+  contentDocument?: import("@/lib/blog-document").BlogContentDocument | null;
+  contentMode?: import("@/lib/blog-document").ContentMode | null;
+  editorMode?: import("@/lib/blog-document").EditorMode | null;
+  heroSettings?: import("@/lib/blog-document").HeroSettings | null;
 };
 
 export function emptyBrief(): BlogContentBrief {

@@ -76,6 +76,11 @@ class PostAdmin(PostPublic):
     studio_outline: dict[str, Any] | None = None
     faqs: list[Any] | None = None
     content_version: int = 1
+    content_document: dict[str, Any] | None = None
+    content_document_version: int = 1
+    editor_mode: str | None = None
+    hero_settings: dict[str, Any] | None = None
+    content_mode: str | None = None
     focus_keyword: str | None = None
     secondary_keywords: list[str] | None = None
     social_share_text: str | None = None
@@ -137,6 +142,10 @@ class PostUpdate(BaseModel):
     social_share_text: str | None = None
     og_title: str | None = None
     content_version: int | None = None
+    content_document: dict[str, Any] | None = None
+    content_document_version: int | None = None
+    editor_mode: str | None = None
+    hero_settings: dict[str, Any] | None = None
 
 
 class CategoryCreate(BaseModel):

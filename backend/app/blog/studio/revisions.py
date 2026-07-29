@@ -37,6 +37,8 @@ def create_revision(
         faqs=post.faqs,
         studio_outline=post.studio_outline,
         studio_brief=post.studio_brief,
+        content_document=getattr(post, "content_document", None),
+        hero_settings=getattr(post, "hero_settings", None),
         content_version=int(post.content_version or 1),
         actor_user_id=actor.id if actor else None,
         source=source,
@@ -109,6 +111,10 @@ def restore_revision(
     post.faqs = rev.faqs
     post.studio_outline = rev.studio_outline
     post.studio_brief = rev.studio_brief
+    if getattr(rev, "content_document", None) is not None:
+        post.content_document = rev.content_document
+    if getattr(rev, "hero_settings", None) is not None:
+        post.hero_settings = rev.hero_settings
     post.content_version = int(post.content_version or 1) + 1
     post.updated_by = user.id
     create_revision(
@@ -137,6 +143,8 @@ def serialize_revision(row: BlogRevision) -> dict[str, Any]:
         "faqs": row.faqs,
         "studio_outline": row.studio_outline,
         "studio_brief": row.studio_brief,
+        "content_document": getattr(row, "content_document", None),
+        "hero_settings": getattr(row, "hero_settings", None),
         "content_version": row.content_version,
         "actor_user_id": row.actor_user_id,
         "source": row.source,

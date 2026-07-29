@@ -77,7 +77,7 @@ export function ForgotPasswordForm() {
             {error}
           </Alert>
         ) : null}
-        <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+        <Button type="submit" variant="primary-on-dark" className="w-full" size="lg" disabled={submitting}>
           {submitting ? "Sending…" : "Email reset code"}
         </Button>
       </form>

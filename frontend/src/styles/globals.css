@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./tailwind-theme.css";
+@import "./blog-blocks.css";
 
 :root {
   /* ── Fixed ink/paper (never theme-flipped: heroes, footer, true-black CTAs) ── */
@@ -78,6 +79,9 @@
   --backdrop: rgb(255 255 255 / 0.72);
   --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--brand-green) 35%, transparent),
     0 12px 40px color-mix(in srgb, var(--brand-green) 18%, transparent);
+  /* Primary CTA hover on fixed ink heroes (login/register) when site theme is light. */
+  --shadow-glow-on-dark: 0 0 0 1px color-mix(in srgb, var(--brand-green) 45%, transparent),
+    0 10px 28px rgb(0 0 0 / 0.45);
 
   /* ── Charts / analytics ── */
   --chart-1: #0a0a0a;
@@ -204,6 +208,8 @@ html[data-header-mode="transparent"] [data-header-surface="dark"] {
   --backdrop: rgb(10 10 10 / 0.78);
   --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--brand-green) 40%, transparent),
     0 14px 44px color-mix(in srgb, var(--brand-green) 14%, transparent);
+  --shadow-glow-on-dark: 0 0 0 1px color-mix(in srgb, var(--brand-green) 50%, transparent),
+    0 12px 32px rgb(0 0 0 / 0.55);
 
   /* Charts */
   --chart-1: #f4f4f4;

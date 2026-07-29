@@ -150,7 +150,7 @@ export function LoginForm() {
             {error}
           </Alert>
         ) : null}
-        <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+        <Button type="submit" variant="primary-on-dark" className="w-full" size="lg" disabled={submitting}>
           {submitting ? "Signing in…" : "Log in"}
         </Button>
       </form>

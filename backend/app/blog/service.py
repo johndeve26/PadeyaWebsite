@@ -69,8 +69,21 @@ def apply_due_schedules(db: Session) -> None:
         db.commit()
 
 
-def render_body_html(body: str) -> str:
+def render_body_html(body: str, *, content_document: dict[str, Any] | None = None) -> str:
+    if content_document:
+        from app.blog.document.render import document_to_html
+
+        return document_to_html(content_document)
     return sanitize_html(markdown_to_html(body or ""))
+
+
+def render_post_body_html(row: BlogPost) -> str:
+    doc = getattr(row, "content_document", None)
+    if doc:
+        from app.blog.document.render import document_to_html
+
+        return document_to_html(doc)
+    return render_body_html(row.body or "")
 
 
 def serialize_post(row: BlogPost, *, admin: bool = False, related: list[BlogPost] | None = None) -> dict[str, Any]:
@@ -80,7 +93,7 @@ def serialize_post(row: BlogPost, *, admin: bool = False, related: list[BlogPost
         "slug": row.slug,
         "excerpt": row.excerpt,
         "body": row.body,
-        "body_html": render_body_html(row.body),
+        "body_html": render_post_body_html(row),
         "cover_url": row.cover_url,
         "status": row.status,
         "is_featured": row.is_featured,
@@ -127,6 +140,15 @@ def serialize_post(row: BlogPost, *, admin: bool = False, related: list[BlogPost
         data["studio_outline"] = row.studio_outline
         data["faqs"] = row.faqs
         data["content_version"] = int(getattr(row, "content_version", None) or 1)
+        data["content_document"] = getattr(row, "content_document", None)
+        data["content_document_version"] = int(
+            getattr(row, "content_document_version", None) or 1
+        )
+        data["editor_mode"] = getattr(row, "editor_mode", None)
+        data["hero_settings"] = getattr(row, "hero_settings", None)
+        from app.blog.document.sync import resolve_content_mode
+
+        data["content_mode"] = resolve_content_mode(row)
         data["focus_keyword"] = row.focus_keyword
         data["secondary_keywords"] = row.secondary_keywords
         data["social_share_text"] = row.social_share_text

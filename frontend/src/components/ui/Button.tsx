@@ -4,6 +4,7 @@ import { cn } from "@/lib/cn";
 
 type Variant =
   | "primary"
+  | "primary-on-dark"
   | "secondary"
   | "ghost"
   | "ghost-dark"
@@ -20,6 +21,8 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 const variantClasses: Record<Variant, string> = {
   primary:
     "bg-primary text-primary-foreground shadow-[var(--shadow-soft)] hover:bg-primary-hover hover:shadow-[var(--shadow-glow)] active:translate-y-px focus-visible:ring-focus-ring",
+  "primary-on-dark":
+    "bg-primary text-primary-foreground shadow-[var(--shadow-soft)] hover:bg-primary-hover hover:shadow-[var(--shadow-glow-on-dark)] active:translate-y-px focus-visible:ring-focus-ring focus-visible:ring-offset-ink",
   secondary:
     "bg-surface-elevated text-foreground border border-border shadow-[var(--shadow-soft)] hover:border-border-strong/50 hover:bg-surface-muted active:bg-surface-muted focus-visible:ring-focus-ring",
   ghost:

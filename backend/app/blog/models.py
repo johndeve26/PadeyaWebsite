@@ -107,6 +107,13 @@ class BlogPost(Base):
     studio_outline: Mapped[dict[str, Any] | None] = mapped_column(JSON_TYPE, nullable=True)
     faqs: Mapped[list[Any] | None] = mapped_column(JSON_TYPE, nullable=True)
     content_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    # Block editor structured document (canonical when present)
+    content_document: Mapped[dict[str, Any] | None] = mapped_column(JSON_TYPE, nullable=True)
+    content_document_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1
+    )
+    editor_mode: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    hero_settings: Mapped[dict[str, Any] | None] = mapped_column(JSON_TYPE, nullable=True)
     focus_keyword: Mapped[str | None] = mapped_column(String(120), nullable=True)
     secondary_keywords: Mapped[list[Any] | None] = mapped_column(JSON_TYPE, nullable=True)
     social_share_text: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -286,6 +293,8 @@ class BlogRevision(Base):
     faqs: Mapped[list[Any] | None] = mapped_column(JSON_TYPE, nullable=True)
     studio_outline: Mapped[dict[str, Any] | None] = mapped_column(JSON_TYPE, nullable=True)
     studio_brief: Mapped[dict[str, Any] | None] = mapped_column(JSON_TYPE, nullable=True)
+    content_document: Mapped[dict[str, Any] | None] = mapped_column(JSON_TYPE, nullable=True)
+    hero_settings: Mapped[dict[str, Any] | None] = mapped_column(JSON_TYPE, nullable=True)
     content_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     # Metadata
     actor_user_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -338,3 +347,60 @@ class BlogAiOperation(Base):
     )
 
     post = relationship("BlogPost", back_populates="ai_operations")
+
+
+class BlogLayoutTemplate(Base):
+    """Article layout templates — built-in or admin-created."""
+
+    __tablename__ = "blog_layout_templates"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    slug: Mapped[str] = mapped_column(String(180), unique=True, nullable=False, index=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    category: Mapped[str] = mapped_column(String(64), nullable=False, default="general")
+    document: Mapped[dict[str, Any]] = mapped_column(JSON_TYPE, nullable=False)
+    hero_settings: Mapped[dict[str, Any] | None] = mapped_column(JSON_TYPE, nullable=True)
+    is_builtin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
+class BlogReusableSection(Base):
+    """Saved reusable section blocks — copied on insert."""
+
+    __tablename__ = "blog_reusable_sections"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    slug: Mapped[str] = mapped_column(String(180), unique=True, nullable=False, index=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    section: Mapped[dict[str, Any]] = mapped_column(JSON_TYPE, nullable=False)
+    is_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )

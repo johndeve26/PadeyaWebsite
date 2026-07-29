@@ -266,6 +266,7 @@ export function RegisterForm() {
         ) : null}
         <Button
           type="submit"
+          variant="primary-on-dark"
           className="w-full"
           size="lg"
           disabled={submitting || !acceptedTerms || !gender}

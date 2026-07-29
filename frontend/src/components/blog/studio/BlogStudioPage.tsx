@@ -10,7 +10,13 @@ import {
   useState,
 } from "react";
 
+import { BlogEditorShell } from "@/components/blog/editor";
 import { DashboardShell } from "@/components/layout/DashboardShell";
+import {
+  isBlockDocumentMode,
+  parseContentDocument,
+  resolveContentMode,
+} from "@/lib/blog-document";
 import { Alert, Badge, Button, Input, Textarea, useToast } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import {
@@ -233,6 +239,11 @@ function BlogStudioInner({
   const sections = useMemo(
     () => parseMarkdownH2Sections(studio.body),
     [studio.body],
+  );
+
+  const blockDocumentMode = isBlockDocumentMode(
+    studio.contentDocument,
+    studio.contentMode,
   );
 
   const completed = useMemo(
@@ -767,17 +778,33 @@ function BlogStudioInner({
               busy={studio.generating}
               onAction={(action) => void handleInlineRewrite(action)}
             />
-            <Textarea
-              label="Article (markdown)"
-              rows={18}
-              value={studio.body}
-              onChange={(e) => studio.setBody(e.target.value)}
-              onSelect={(e) => {
-                const t = e.currentTarget;
-                setSelectionRange({
-                  start: t.selectionStart,
-                  end: t.selectionEnd,
+            <BlogEditorShell
+              postId={studio.postId}
+              title={studio.title}
+              excerpt={studio.excerpt}
+              bodyHtml={studio.bodyHtml}
+              initialDocument={studio.contentDocument}
+              initialEditorMode={studio.editorMode}
+              initialHeroSettings={studio.heroSettings}
+              contentVersion={studio.contentVersion}
+              autosaveStatus={studio.autosaveStatus}
+              isNew={mode === "new" && !studio.postId}
+              onDocumentChange={(doc, meta) => {
+                studio.setContentDocument(doc);
+                studio.patch({ editorMode: meta.editorMode, dirty: true });
+              }}
+              onManualSave={() => void saveNow()}
+              onPublish={() => void handlePublish()}
+              onAiBlock={() => {
+                toast.push({
+                  tone: "info",
+                  title: "Use the AI assistant panel for optional help.",
                 });
+              }}
+              onCreationStarted={(choice) => {
+                if (choice === "ai") {
+                  studio.patch({ workflowStep: "brief" });
+                }
               }}
             />
             <AiSuggestionDiff
@@ -787,8 +814,9 @@ function BlogStudioInner({
               onReplace={() => applySuggestion("replace")}
               onDiscard={() => studio.setSuggestion(null)}
             />
+            {!blockDocumentMode ? (
             <div className="space-y-2 rounded-[var(--radius-md)] border border-border bg-surface px-3 py-3">
-              <p className="text-sm font-semibold">Section controls</p>
+              <p className="text-sm font-semibold">Section controls (legacy markdown)</p>
               <BlogSectionToolbar
                 sections={sections}
                 lockedHeadings={studio.lockedSectionHeadings}
@@ -812,6 +840,7 @@ function BlogStudioInner({
                 onToggleLock={(heading) => studio.toggleSectionLock(heading)}
               />
             </div>
+            ) : null}
             <BlogOutlineEditor
               outline={studio.outline}
               busy={studio.generating}
@@ -1214,6 +1243,26 @@ function hydrateFromPost(
     status: post.status,
     contentVersion: p.content_version ?? 1,
     bodyHtml: post.body_html,
+    contentDocument: parseContentDocument(
+      (p as { content_document?: Record<string, unknown> }).content_document,
+      post.body,
+    ),
+    contentMode: resolveContentMode(
+      parseContentDocument(
+        (p as { content_document?: Record<string, unknown> }).content_document,
+        post.body,
+      ),
+      (p as { content_mode?: string }).content_mode as
+        | import("@/lib/blog-document").ContentMode
+        | undefined,
+    ),
+    editorMode:
+      ((p as { editor_mode?: string }).editor_mode as "standard" | "layout") ||
+      "standard",
+    heroSettings:
+      ((p as { hero_settings?: Record<string, unknown> }).hero_settings as
+        | import("@/lib/blog-document").HeroSettings
+        | undefined) ?? null,
     brief: p.studio_brief || studio.brief,
     outline: p.studio_outline || studio.outline,
     faqs: p.faqs || [],
@@ -1266,6 +1315,17 @@ export function BlogStudioPage({
           status: initialPost.status,
           contentVersion: p.content_version ?? 1,
           bodyHtml: initialPost.body_html,
+          contentDocument: parseContentDocument(
+            (p as { content_document?: Record<string, unknown> }).content_document,
+            initialPost.body,
+          ),
+          editorMode:
+            ((p as { editor_mode?: string }).editor_mode as "standard" | "layout") ||
+            "standard",
+          heroSettings:
+            ((p as { hero_settings?: Record<string, unknown> }).hero_settings as
+              | import("@/lib/blog-document").HeroSettings
+              | undefined) ?? null,
           brief: p.studio_brief || undefined,
           outline: p.studio_outline || undefined,
           faqs: p.faqs || undefined,

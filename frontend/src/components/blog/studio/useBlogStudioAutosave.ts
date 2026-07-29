@@ -10,6 +10,7 @@ import {
 } from "@/lib/blog-api";
 import { studioAutosave } from "@/lib/blog-studio-api";
 
+import { documentToMarkdown, isBlockDocumentMode } from "@/lib/blog-document";
 import { useBlogStudio } from "./BlogStudioProvider";
 
 export const LOCAL_DRAFT_KEY = "padeya-blog-studio-draft";
@@ -74,11 +75,14 @@ export function clearLocalStudioDraft() {
 }
 
 function payloadFromStudio(studio: StudioSnapshot) {
-  return {
+  const blockMode = isBlockDocumentMode(
+    studio.contentDocument,
+    studio.contentMode,
+  );
+  const base = {
     title: studio.title.trim() || "Untitled draft",
     slug: studio.slug || undefined,
     excerpt: studio.excerpt,
-    body: studio.body,
     cover_url: studio.coverUrl || null,
     seo_title: studio.seoTitle || null,
     seo_description: studio.seoDescription || null,
@@ -101,6 +105,21 @@ function payloadFromStudio(studio: StudioSnapshot) {
     studio_brief: studio.brief,
     studio_outline: studio.outline,
     faqs: studio.faqs,
+    hero_settings: studio.heroSettings || null,
+    editor_mode: studio.editorMode || "standard",
+  };
+
+  if (blockMode) {
+    // Block mode: document is authoritative — do not send parallel body.
+    return {
+      ...base,
+      content_document: studio.contentDocument || null,
+    };
+  }
+
+  return {
+    ...base,
+    body: studio.body,
   };
 }
 
@@ -228,6 +247,9 @@ export function useBlogStudioAutosave(opts?: {
     studio.slug,
     studio.excerpt,
     studio.body,
+    studio.contentDocument,
+    studio.editorMode,
+    studio.heroSettings,
     studio.coverUrl,
     studio.seoTitle,
     studio.seoDescription,

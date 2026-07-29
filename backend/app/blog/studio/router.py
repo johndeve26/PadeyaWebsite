@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import CurrentUser, require_permission
 from app.blog import service as blog_service
+from app.blog.document.sync import apply_autosave_content
 from app.blog.models import BlogPost
 from app.blog.schemas import PostAdmin
 from app.blog.studio import operations as ops
@@ -301,11 +302,13 @@ def autosave_post(
         post.title = payload.title.strip()
     if payload.excerpt is not None:
         post.excerpt = payload.excerpt
-    if payload.body is not None:
-        post.body = payload.body
-        from app.blog.markdown import estimate_reading_minutes
 
-        post.reading_time_minutes = estimate_reading_minutes(payload.body)
+    apply_autosave_content(
+        post,
+        body=payload.body,
+        content_document=payload.content_document,
+    )
+
     if payload.seo_title is not None:
         post.seo_title = payload.seo_title
     if payload.seo_description is not None:
@@ -324,6 +327,16 @@ def autosave_post(
         post.social_share_text = payload.social_share_text
     if payload.og_title is not None:
         post.og_title = payload.og_title
+    if payload.hero_settings is not None:
+        from app.blog.document.validation import validate_hero_settings, DocumentValidationError
+        from fastapi import HTTPException
+
+        try:
+            post.hero_settings = validate_hero_settings(payload.hero_settings)
+        except DocumentValidationError as exc:
+            raise HTTPException(status_code=422, detail=exc.message) from exc
+    if payload.editor_mode is not None:
+        post.editor_mode = payload.editor_mode
     post.content_version = int(post.content_version or 1) + 1
     post.updated_by = user.id
     # Never change status via autosave

@@ -79,7 +79,7 @@ def test_templates_and_routes_seeded(db_session: Session):
         assert row["routing_editable"] is False
         assert row["enabled"] is False
 
-    assert len(ADMIN_CONTROL_FEATURES) == 24
+    assert len(ADMIN_CONTROL_FEATURES) == 34
 
 
 def test_provider_profiles_exist(db_session: Session):
