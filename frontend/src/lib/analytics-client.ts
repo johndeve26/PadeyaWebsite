@@ -228,6 +228,11 @@ export const SERVER_ONLY_ACTIONS = new Set([
   "fan_connect_reported",
   "fan_fan_message_thread_created",
   "fan_fan_message_sent",
+  "blog_post_published",
+  "blog_post_unpublished",
+  "blog_post_archived",
+  "blog_ai_operation",
+  "blog_comment_created",
 ]);
 
 export function assertClientActionAllowed(action: string): void {

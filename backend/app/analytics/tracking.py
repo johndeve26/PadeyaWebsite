@@ -37,6 +37,7 @@ from app.analytics.utils import is_likely_bot
 from app.core.config import get_settings
 from app.events.models import Event
 from app.users.models import User
+from app.users.service import user_has_permission
 
 
 def _find_by_request_id(db: Session, request_id: str | None) -> AnalyticsEvent | None:
@@ -138,7 +139,17 @@ def record_analytics_event(
 
     action = (payload.tracked_action or payload.event_name or "").strip().lower()
     _reject_server_only(action)
-    target_id = payload.target_event_id or payload.entity_id
+    entity_type = (payload.entity_type or "").strip().lower() or None
+    is_blog_entity = entity_type == "blog_post"
+    # Never put non-event UUIDs into target_event_id (FK → events.id).
+    if is_blog_entity:
+        target_id = payload.target_event_id
+        entity_id = payload.entity_id
+    else:
+        target_id = payload.target_event_id or payload.entity_id
+        entity_id = target_id or payload.entity_id
+        if entity_type is None and target_id is not None:
+            entity_type = "event"
     from app.runtime_settings import get_runtime_setting
 
     settings = get_settings()
@@ -155,6 +166,56 @@ def record_analytics_event(
         or settings.analytics_checkout_start_dedupe_seconds
     )
     user_id = user.id if user else None
+
+    if action == TrackedAction.BLOG_POST_VIEW and entity_id is not None:
+        if not claim_windowed(
+            db,
+            scope="blog_post_view",
+            window_seconds=detail_dedupe,
+            session_id=payload.session_id,
+            anonymous_id=payload.anonymous_id,
+            user_id=user_id,
+            request_id=payload.request_id,
+            extra=str(entity_id),
+        ):
+            last = db.scalar(
+                select(AnalyticsEvent)
+                .where(
+                    AnalyticsEvent.entity_type == "blog_post",
+                    AnalyticsEvent.entity_id == entity_id,
+                    AnalyticsEvent.event_name == action,
+                )
+                .order_by(AnalyticsEvent.created_at.desc())
+                .limit(1)
+            )
+            if last is not None:
+                return last
+
+    if action == TrackedAction.BLOG_CARD_IMPRESSION and entity_id is not None:
+        list_ctx = _list_context(payload) or "blog_index"
+        if not claim_windowed(
+            db,
+            scope="blog_card_impression",
+            window_seconds=impression_dedupe,
+            session_id=payload.session_id,
+            anonymous_id=payload.anonymous_id,
+            user_id=user_id,
+            list_context=list_ctx,
+            request_id=payload.request_id,
+            extra=str(entity_id),
+        ):
+            last = db.scalar(
+                select(AnalyticsEvent)
+                .where(
+                    AnalyticsEvent.entity_type == "blog_post",
+                    AnalyticsEvent.entity_id == entity_id,
+                    AnalyticsEvent.event_name == action,
+                )
+                .order_by(AnalyticsEvent.created_at.desc())
+                .limit(1)
+            )
+            if last is not None:
+                return last
 
     if action == TrackedAction.EVENT_DETAIL_VIEW and target_id is not None:
         if not claim_windowed(
@@ -282,6 +343,14 @@ def record_analytics_event(
     ctx = _list_context(payload)
     if ctx:
         extra["list_context"] = ctx
+    if is_blog_entity and entity_id is not None:
+        extra["blog_post_id"] = str(entity_id)
+    if user is not None and (
+        user_has_permission(user, "admin.blog.view")
+        or user_has_permission(user, "admin.full_access")
+        or user_has_permission(user, "analytics.view_platform")
+    ):
+        extra["traffic_segment"] = "internal_admin"
 
     dims = _dims_from_payload(
         payload,
@@ -291,8 +360,8 @@ def record_analytics_event(
     )
     row = AnalyticsEvent(
         event_name=action.strip().lower()[:64],
-        entity_type=payload.entity_type or ("event" if target_id else None),
-        entity_id=target_id,
+        entity_type=entity_type or ("event" if target_id else None),
+        entity_id=entity_id,
         host_id=payload.host_id,
         user_id=user_id,
         session_id=payload.session_id,

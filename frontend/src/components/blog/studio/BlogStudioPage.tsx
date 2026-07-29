@@ -62,6 +62,7 @@ import { BlogInlineAiMenu } from "./BlogInlineAiMenu";
 import { BlogInternalLinksPanel } from "./BlogInternalLinksPanel";
 import { BlogOutlineEditor } from "./BlogOutlineEditor";
 import { BlogPublishPanel } from "./BlogPublishPanel";
+import { BlogPostAnalyticsPanel } from "./BlogPostAnalyticsPanel";
 import { BlogQualityReviewPanel } from "./BlogQualityReviewPanel";
 import { BlogSectionToolbar } from "./BlogSectionToolbar";
 import {
@@ -1165,6 +1166,7 @@ function BlogStudioInner({
                 })()
               }
             />
+            <BlogPostAnalyticsPanel postId={studio.postId} />
           </>
         }
       />

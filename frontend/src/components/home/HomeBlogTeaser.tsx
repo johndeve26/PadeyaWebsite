@@ -31,8 +31,13 @@ export async function HomeBlogTeaser() {
             desktopGridClassName="lg:grid-cols-3"
             slideClassName="w-[min(82vw,19.5rem)] sm:w-[min(46vw,21rem)]"
           >
-            {posts.map((post) => (
-              <BlogCard key={post.id} post={post} />
+            {posts.map((post, i) => (
+              <BlogCard
+                key={post.id}
+                post={post}
+                listContext="homepage_blog"
+                cardPosition={i}
+              />
             ))}
           </HomeCardCarousel>
         ) : (

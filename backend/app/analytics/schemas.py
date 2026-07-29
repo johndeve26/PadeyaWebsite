@@ -175,7 +175,17 @@ class TrackEventRequest(AnalyticsDimensions):
         object.__setattr__(self, "analytics_event_name", resolved)
         object.__setattr__(self, "event_name", resolved)
 
-        target = self.target_event_id or self.event_listing_id or self.entity_id
+        target = self.target_event_id or self.event_listing_id
+        entity_type = (self.entity_type or "").strip().lower() or None
+        # Blog / non-event entities must not be coerced into target_event_id (FK → events).
+        if entity_type and entity_type not in {"event", "events"}:
+            if self.entity_id is None and target is not None:
+                object.__setattr__(self, "entity_id", target)
+            object.__setattr__(self, "entity_type", entity_type)
+            object.__setattr__(self, "target_event_id", self.target_event_id)
+            return self
+
+        target = target or self.entity_id
         if target is not None:
             object.__setattr__(self, "target_event_id", target)
             if self.entity_id is None:
@@ -494,3 +504,31 @@ class AdminSupportSummary(BaseModel):
     escalated_refunds: int
     note: str
     fraud_signals: list[dict[str, Any]]
+
+
+class AdminBlogAnalyticsSummary(BaseModel):
+    range_start: str
+    range_end: str
+    include_internal: bool = False
+    totals: dict[str, Any]
+    funnel: dict[str, Any]
+    top_posts: list[dict[str, Any]]
+    publishing: dict[str, Any]
+    ai_studio: dict[str, Any]
+    timeseries: list[dict[str, Any]]
+
+
+class AdminBlogPostAnalytics(BaseModel):
+    post: dict[str, Any]
+    range_start: str
+    range_end: str
+    include_internal: bool = False
+    totals: dict[str, Any]
+    rates: dict[str, Any]
+    sources: list[dict[str, Any]]
+    devices: list[dict[str, Any]]
+    share_channels: list[dict[str, Any]]
+    cta_breakdown: list[dict[str, Any]]
+    publishing: dict[str, Any]
+    ai_studio: dict[str, Any]
+    timeseries: list[dict[str, Any]]

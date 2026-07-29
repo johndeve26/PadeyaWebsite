@@ -65,11 +65,11 @@ export default function AdminTeamInvitePage() {
         admin_role_id: roleId || undefined,
       });
       toast.push({
-        title: result.status === "provisioned" ? "Member added" : "Invite created",
+        title: result.status === "provisioned" ? "Member added" : "Invite sent",
         description:
           result.status === "provisioned"
-            ? "Existing account provisioned with the selected role."
-            : `Pending invite for ${result.email_hint}`,
+            ? "Existing account provisioned — invite email sent."
+            : `Invite email sent to ${result.email_hint}`,
         tone: "success",
       });
       setDoneHref(
@@ -87,7 +87,10 @@ export default function AdminTeamInvitePage() {
   if (doneHref) {
     return (
       <DashboardShell tone="soft" eyebrow="Admin · Team" title="Invite sent">
-        <Alert tone="success">Invite processed successfully.</Alert>
+        <Alert tone="success">
+          Invite email sent. They can accept from their inbox (or sign in if
+          they already have an account).
+        </Alert>
         <div className="mt-4">
           <Link href={doneHref}>
             <Button>Continue</Button>

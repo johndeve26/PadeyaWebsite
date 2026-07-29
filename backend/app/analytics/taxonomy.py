@@ -29,6 +29,7 @@ FunnelGroup = Literal[
     "commerce",
     "admin_finance",
     "legacy_compat",
+    "blog",
 ]
 
 
@@ -202,6 +203,25 @@ class TrackedAction:
     AMBASSADOR_SALE = "ambassador_sale"
     PAYOUT_COMPLETED = "payout_completed"
 
+    # Blog / editorial (client engagement + trusted ops)
+    BLOG_INDEX_VIEW = "blog_index_view"
+    BLOG_POST_VIEW = "blog_post_view"
+    BLOG_CARD_IMPRESSION = "blog_card_impression"
+    BLOG_CARD_CLICK = "blog_card_click"
+    BLOG_SCROLL_MILESTONE = "blog_scroll_milestone"
+    BLOG_SHARE_CLICK = "blog_share_click"
+    BLOG_RELATED_CLICK = "blog_related_click"
+    BLOG_CTA_CLICK = "blog_cta_click"
+    BLOG_FILTER_USED = "blog_filter_used"
+    BLOG_CATEGORY_PAGE_VIEW = "blog_category_page_view"
+    BLOG_TAG_PAGE_VIEW = "blog_tag_page_view"
+    BLOG_AUTHOR_PAGE_VIEW = "blog_author_page_view"
+    BLOG_POST_PUBLISHED = "blog_post_published"
+    BLOG_POST_UNPUBLISHED = "blog_post_unpublished"
+    BLOG_POST_ARCHIVED = "blog_post_archived"
+    BLOG_AI_OPERATION = "blog_ai_operation"
+    BLOG_COMMENT_CREATED = "blog_comment_created"
+
 
 # Metadata: funnel group + who may emit the signal.
 TRACKED_ACTION_META: Final[dict[str, tuple[FunnelGroup, TrustLevel]]] = {
@@ -352,6 +372,24 @@ TRACKED_ACTION_META: Final[dict[str, tuple[FunnelGroup, TrustLevel]]] = {
     TrackedAction.PROMO_REDEMPTION: ("commerce", "trusted"),
     TrackedAction.AMBASSADOR_SALE: ("commerce", "trusted"),
     TrackedAction.PAYOUT_COMPLETED: ("admin_finance", "trusted"),
+    # Blog
+    TrackedAction.BLOG_INDEX_VIEW: ("blog", "client"),
+    TrackedAction.BLOG_POST_VIEW: ("blog", "client"),
+    TrackedAction.BLOG_CARD_IMPRESSION: ("blog", "client"),
+    TrackedAction.BLOG_CARD_CLICK: ("blog", "client"),
+    TrackedAction.BLOG_SCROLL_MILESTONE: ("blog", "client"),
+    TrackedAction.BLOG_SHARE_CLICK: ("blog", "client"),
+    TrackedAction.BLOG_RELATED_CLICK: ("blog", "client"),
+    TrackedAction.BLOG_CTA_CLICK: ("blog", "client"),
+    TrackedAction.BLOG_FILTER_USED: ("blog", "client"),
+    TrackedAction.BLOG_CATEGORY_PAGE_VIEW: ("blog", "client"),
+    TrackedAction.BLOG_TAG_PAGE_VIEW: ("blog", "client"),
+    TrackedAction.BLOG_AUTHOR_PAGE_VIEW: ("blog", "client"),
+    TrackedAction.BLOG_POST_PUBLISHED: ("blog", "trusted"),
+    TrackedAction.BLOG_POST_UNPUBLISHED: ("blog", "trusted"),
+    TrackedAction.BLOG_POST_ARCHIVED: ("blog", "trusted"),
+    TrackedAction.BLOG_AI_OPERATION: ("blog", "trusted"),
+    TrackedAction.BLOG_COMMENT_CREATED: ("blog", "trusted"),
 }
 
 TRACKED_ACTIONS: Final[frozenset[str]] = frozenset(TRACKED_ACTION_META.keys())
@@ -461,12 +499,22 @@ def normalize_tracked_action(raw: str | None, *, path: str | None = None) -> str
     if name == "page_view":
         if path:
             cleaned = path.split("?", 1)[0].rstrip("/") or "/"
+            parts = [p for p in cleaned.split("/") if p]
             if cleaned == "/events" or cleaned.startswith("/events/"):
                 # /events/{slug} → detail; bare /events → list
-                parts = [p for p in cleaned.split("/") if p]
                 if len(parts) >= 2 and parts[0] == "events":
                     return TrackedAction.EVENT_DETAIL_VIEW
                 return TrackedAction.EVENT_LIST_VIEW
+            if cleaned == "/blog" or cleaned.startswith("/blog/"):
+                if len(parts) >= 2 and parts[0] == "blog":
+                    if parts[1] == "category":
+                        return TrackedAction.BLOG_CATEGORY_PAGE_VIEW
+                    if parts[1] == "tag":
+                        return TrackedAction.BLOG_TAG_PAGE_VIEW
+                    if parts[1] == "author":
+                        return TrackedAction.BLOG_AUTHOR_PAGE_VIEW
+                    return TrackedAction.BLOG_POST_VIEW
+                return TrackedAction.BLOG_INDEX_VIEW
         return TrackedAction.EVENT_LIST_VIEW
 
     if name in LEGACY_ACTION_ALIASES:
@@ -533,6 +581,11 @@ SERVER_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         TrackedAction.FAN_CONNECT_REPORTED,
         TrackedAction.FAN_FAN_MESSAGE_THREAD_CREATED,
         TrackedAction.FAN_FAN_MESSAGE_SENT,
+        TrackedAction.BLOG_POST_PUBLISHED,
+        TrackedAction.BLOG_POST_UNPUBLISHED,
+        TrackedAction.BLOG_POST_ARCHIVED,
+        TrackedAction.BLOG_AI_OPERATION,
+        TrackedAction.BLOG_COMMENT_CREATED,
     }
 )
 

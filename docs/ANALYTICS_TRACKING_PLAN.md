@@ -48,6 +48,10 @@ Frontend mirror: `frontend/src/lib/analytics-taxonomy.ts`.
 | **Vault / Legacy** | `vault_page_view`, `vault_item_impression`, `vault_item_click`, `vault_item_view`, `vault_unlock_click`, `vault_unlock_success`, `vault_unlock_failed`, `vault_follow_unlock`, `vault_ticket_unlock`, `vault_media_open`, `vault_download_click`, `vault_preview_click_from_event`, `legacy_page_view_from_event`, `host_followed_from_event` | Client / either (`vault_unlock_success` either; `vault_purchase` trusted only) |
 | **Sponsorship** | `sponsor_slot_click_from_event`, `sponsor_inquiry_from_event` | Client / either |
 | **Commerce / finance** | `refund_approved`, `vault_purchase`, `promo_redemption`, `ambassador_sale`, `payout_completed` | **Server only** |
+| **Blog (client)** | `blog_index_view`, `blog_post_view`, `blog_card_impression`, `blog_card_click`, `blog_scroll_milestone`, `blog_share_click`, `blog_related_click`, `blog_cta_click`, `blog_filter_used`, `blog_category_page_view`, `blog_tag_page_view`, `blog_author_page_view` | Client |
+| **Blog (trusted)** | `blog_post_published`, `blog_post_unpublished`, `blog_post_archived`, `blog_ai_operation`, `blog_comment_created` | **Server only** |
+
+Blog engagement uses `entity_type=blog_post` + `entity_id` (never `target_event_id` / events FK). Metadata allowlist excludes article body, titles, and AI prompts. Admin dashboards: `/admin/analytics/blog` and per-post panel in Blog AI Studio. Aggregates exclude `is_bot` and `traffic_segment=internal_admin` by default.
 
 ### Location & placement discovery signals
 

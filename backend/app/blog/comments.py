@@ -370,6 +370,15 @@ def create_comment(
         resource_id=str(row.id),
         details={"post_id": str(post.id), "is_guest": user is None, "depth": 0},
     )
+    from app.blog.analytics_emit import emit_blog_comment_created
+
+    emit_blog_comment_created(
+        db,
+        post_id=post.id,
+        actor_user_id=user.id if user else None,
+        depth=0,
+        comment_id=row.id,
+    )
     db.commit()
     db.refresh(row)
     return row
@@ -504,6 +513,15 @@ def create_reply(
             "is_staff": staff,
             "depth": 1,
         },
+    )
+    from app.blog.analytics_emit import emit_blog_comment_created
+
+    emit_blog_comment_created(
+        db,
+        post_id=root.post_id,
+        actor_user_id=user.id if user else None,
+        depth=1,
+        comment_id=row.id,
     )
     db.commit()
     db.refresh(row)

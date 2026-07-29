@@ -16,6 +16,8 @@ from app.analytics.schemas import (
     AdminPlatformSummary,
     AdminRevenueSummary,
     AdminSupportSummary,
+    AdminBlogAnalyticsSummary,
+    AdminBlogPostAnalytics,
     EventAnalyticsSummary,
     HostAnalyticsSummary,
     TrackAccepted,
@@ -30,6 +32,8 @@ from app.analytics.schemas import (
 from app.analytics.service import (
     export_admin_analytics_csv,
     export_host_analytics_csv,
+    get_admin_blog_analytics,
+    get_admin_blog_post_analytics,
     get_admin_events,
     get_admin_hosts,
     get_admin_revenue,
@@ -319,6 +323,64 @@ def api_admin_support(
     ],
 ) -> AdminSupportSummary:
     return AdminSupportSummary.model_validate(get_admin_support(db, user=user))
+
+
+@router.get("/admin/blog", response_model=AdminBlogAnalyticsSummary)
+def api_admin_blog_analytics(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[
+        User,
+        Depends(
+            require_permission(
+                "analytics.view_platform",
+                "admin.blog.view",
+                "admin.full_access",
+            )
+        ),
+    ],
+    range_start: datetime | None = None,
+    range_end: datetime | None = None,
+    include_internal: bool = False,
+) -> AdminBlogAnalyticsSummary:
+    return AdminBlogAnalyticsSummary.model_validate(
+        get_admin_blog_analytics(
+            db,
+            user=user,
+            range_start=range_start,
+            range_end=range_end,
+            include_internal=include_internal,
+        )
+    )
+
+
+@router.get("/admin/blog/posts/{post_id}", response_model=AdminBlogPostAnalytics)
+def api_admin_blog_post_analytics(
+    post_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[
+        User,
+        Depends(
+            require_permission(
+                "analytics.view_platform",
+                "admin.blog.view",
+                "admin.full_access",
+            )
+        ),
+    ],
+    range_start: datetime | None = None,
+    range_end: datetime | None = None,
+    include_internal: bool = False,
+) -> AdminBlogPostAnalytics:
+    return AdminBlogPostAnalytics.model_validate(
+        get_admin_blog_post_analytics(
+            db,
+            user=user,
+            post_id=post_id,
+            range_start=range_start,
+            range_end=range_end,
+            include_internal=include_internal,
+        )
+    )
 
 
 @router.get("/admin/export.csv")

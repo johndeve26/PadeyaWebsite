@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui";
+import { trackBlogShareClick } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { publicShareOrigin } from "@/lib/seo/site";
 
@@ -17,10 +18,14 @@ export function BlogShare({
   title,
   path,
   compact = false,
+  postId,
+  slug,
 }: {
   title: string;
   path: string;
   compact?: boolean;
+  postId?: string;
+  slug?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const [url, setUrl] = useState(() => {
@@ -28,7 +33,6 @@ export function BlogShare({
     return `https://padeya.com${safePath}`;
   });
 
-  // Resolve share origin after mount to avoid SSR/client hydration mismatch.
   useEffect(() => {
     const safePath = path.startsWith("/") ? path : `/${path}`;
     setUrl(`${publicShareOrigin()}${safePath}`);
@@ -37,10 +41,15 @@ export function BlogShare({
   const encoded = encodeURIComponent(url);
   const text = encodeURIComponent(title);
 
+  function trackShare(channel: string) {
+    trackBlogShareClick({ postId, slug, channel });
+  }
+
   async function copy() {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      trackShare("copy");
       setTimeout(() => setCopied(false), 2000);
     } catch {
       /* ignore */
@@ -63,6 +72,7 @@ export function BlogShare({
         href={`https://twitter.com/intent/tweet?url=${encoded}&text=${text}`}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackShare("twitter")}
       >
         X / Twitter
       </a>
@@ -71,6 +81,7 @@ export function BlogShare({
         href={`https://www.facebook.com/sharer/sharer.php?u=${encoded}`}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackShare("facebook")}
       >
         Facebook
       </a>
@@ -79,6 +90,7 @@ export function BlogShare({
         href={`https://wa.me/?text=${text}%20${encoded}`}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackShare("whatsapp")}
       >
         WhatsApp
       </a>

@@ -56,11 +56,25 @@ def log_operation(
         client_request_id=(client_request_id or "")[:120] or None,
     )
     db.add(row)
+    db.flush()
+    try:
+        from app.blog.analytics_emit import emit_blog_ai_operation
+
+        emit_blog_ai_operation(
+            db,
+            post_id=post_id,
+            actor=actor,
+            operation=operation,
+            feature_key=feature_key,
+            success=success,
+            duration_ms=duration_ms,
+            client_request_id=client_request_id,
+        )
+    except Exception:
+        pass
     if commit:
         db.commit()
         db.refresh(row)
-    else:
-        db.flush()
     return row
 
 

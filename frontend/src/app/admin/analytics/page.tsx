@@ -26,6 +26,7 @@ const ANALYTICS_NAV = [
   { href: "/admin/analytics/revenue", label: "Revenue" },
   { href: "/admin/analytics/events", label: "Events" },
   { href: "/admin/analytics/hosts", label: "Hosts" },
+  { href: "/admin/analytics/blog", label: "Blog" },
   { href: "/admin/analytics/support", label: "Support" },
 ] as const;
 

@@ -1,6 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 
 import type { BlogPostListItem } from "@/lib/blog-api";
+import {
+  trackBlogCardClick,
+  trackBlogCardImpression,
+} from "@/lib/analytics";
 import {
   blogCategoryGradient,
   blogCoverAlt,
@@ -24,9 +31,13 @@ function formatDate(iso?: string | null) {
 export function BlogCard({
   post,
   featured = false,
+  listContext = "blog_index",
+  cardPosition,
 }: {
   post: BlogPostListItem;
   featured?: boolean;
+  listContext?: string;
+  cardPosition?: number;
 }) {
   const date = formatDate(post.published_at);
   const { src, isPlaceholder } = resolveBlogCoverUrl(
@@ -34,16 +45,53 @@ export function BlogCard({
     post.category,
   );
   const alt = blogCoverAlt(post.title, post.category);
+  const rootRef = useRef<HTMLElement | null>(null);
+  const impressed = useRef(false);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el || impressed.current) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const hit = entries.some(
+          (e) => e.isIntersecting && e.intersectionRatio >= 0.5,
+        );
+        if (!hit || impressed.current) return;
+        impressed.current = true;
+        trackBlogCardImpression({
+          postId: post.id,
+          slug: post.slug,
+          listContext,
+          cardPosition,
+        });
+        obs.disconnect();
+      },
+      { threshold: 0.5 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [post.id, post.slug, listContext, cardPosition]);
 
   return (
     <article
+      ref={rootRef}
       className={
         featured
           ? "group relative overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card shadow-[var(--shadow-soft)]"
           : "group flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card transition duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[var(--shadow)]"
       }
     >
-      <Link href={`/blog/${post.slug}`} className="flex h-full flex-col">
+      <Link
+        href={`/blog/${post.slug}`}
+        className="flex h-full flex-col"
+        onClick={() =>
+          trackBlogCardClick({
+            postId: post.id,
+            slug: post.slug,
+            listContext,
+          })
+        }
+      >
         <div
           className={
             featured

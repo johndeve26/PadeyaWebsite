@@ -71,6 +71,7 @@ from app.admin_notifications.router import router as admin_notifications_router
 from app.admin_notifications import models as admin_notifications_models  # noqa: F401
 from app.admin_notifications.settings_service import ensure_default_settings
 from app.admin_team.router import router as admin_team_router
+from app.admin_team.invite_router import router as admin_team_invite_router
 from app.admin_team import models as admin_team_models  # noqa: F401
 from app.admin_team.service import ensure_system_admin_roles
 from app.runtime_settings.router import router as runtime_settings_router
@@ -315,6 +316,7 @@ app.include_router(push_router, prefix=api)
 app.include_router(push_admin_router, prefix=api)
 app.include_router(admin_notifications_router, prefix=api)
 app.include_router(admin_team_router, prefix=api)
+app.include_router(admin_team_invite_router, prefix=api)
 app.include_router(users_router, prefix=api)
 app.include_router(appeals_router, prefix=api)
 app.include_router(me_workspaces_router, prefix=api)

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
@@ -38,6 +39,15 @@ export default function AdminLayoutClient({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname() || "";
+  // Pending invitees are not admins yet — skip panel roles and allow
+  // unauthenticated preview (sign-in CTAs live on the accept page).
+  const isInviteAccept = pathname.startsWith("/admin/team/invites/");
+
+  if (isInviteAccept) {
+    return <>{children}</>;
+  }
+
   return (
     <RequireAuth
       roles={[...ADMIN_PANEL_ROLES]}

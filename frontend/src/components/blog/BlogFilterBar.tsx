@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 
 import type { BlogCategory } from "@/lib/blog-api";
+import { trackBlogFilterUsed } from "@/lib/analytics";
 
 export function BlogFilterBar({
   categories,
@@ -14,6 +17,9 @@ export function BlogFilterBar({
       <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <Link
           href="/blog"
+          onClick={() =>
+            trackBlogFilterUsed({ filterType: "category", filterValue: "all" })
+          }
           className={
             !activeSlug
               ? "shrink-0 rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-primary-foreground"
@@ -26,6 +32,12 @@ export function BlogFilterBar({
           <Link
             key={c.id}
             href={`/blog/category/${c.slug}`}
+            onClick={() =>
+              trackBlogFilterUsed({
+                filterType: "category",
+                filterValue: c.slug,
+              })
+            }
             className={
               activeSlug === c.slug
                 ? "shrink-0 rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-primary-foreground"

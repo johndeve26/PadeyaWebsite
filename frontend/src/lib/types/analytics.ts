@@ -374,3 +374,110 @@ export type AdminSupportSummary = {
   note: string;
   fraud_signals: { code: string; label: string; severity: number }[];
 };
+
+export type AdminBlogAnalyticsSummary = {
+  range_start: string;
+  range_end: string;
+  include_internal: boolean;
+  totals: {
+    index_views: number;
+    card_impressions: number;
+    card_clicks: number;
+    post_views: number;
+    unique_visitors: number;
+    scroll_50: number;
+    scroll_100: number;
+    shares: number;
+    related_clicks: number;
+    cta_clicks: number;
+    filter_uses: number;
+    comments: number;
+    publishes: number;
+    bot_events: number;
+    internal_admin_events: number;
+  };
+  funnel: {
+    index_views: number;
+    card_impressions: number;
+    card_clicks: number;
+    post_views: number;
+    scroll_50: number;
+    engaged: number;
+    click_through_rate: number;
+    view_from_click_rate: number;
+    read_50_rate: number;
+    share_rate: number;
+    cta_rate: number;
+  };
+  top_posts: {
+    post_id: string;
+    title: string;
+    slug: string | null;
+    views: number;
+    shares: number;
+    cta_clicks: number;
+    scroll_50: number;
+    comments: number;
+  }[];
+  publishing: {
+    posts_published: number;
+    cadence: { date: string; published: number }[];
+    avg_draft_age_hours: number | null;
+    draft_age_samples: number;
+  };
+  ai_studio: {
+    operations: number;
+    successes: number;
+    success_rate: number;
+    by_operation: { operation: string; count: number }[];
+  };
+  timeseries: {
+    date: string;
+    post_views: number;
+    shares: number;
+    cta_clicks: number;
+    card_clicks: number;
+  }[];
+};
+
+export type AdminBlogPostAnalytics = {
+  post: {
+    id: string;
+    title: string;
+    slug: string;
+    status: string;
+    published_at: string | null;
+    created_at: string | null;
+  };
+  range_start: string;
+  range_end: string;
+  include_internal: boolean;
+  totals: {
+    post_views: number;
+    unique_visitors: number;
+    scroll_milestones: Record<string, number>;
+    shares: number;
+    related_clicks: number;
+    cta_clicks: number;
+    comments: number;
+    bot_events: number;
+    internal_admin_events: number;
+  };
+  rates: {
+    read_50_rate: number;
+    read_100_rate: number;
+    share_rate: number;
+    cta_rate: number;
+  };
+  sources: { source: string; views: number }[];
+  devices: { device: string; views: number }[];
+  share_channels: { channel: string; count: number }[];
+  cta_breakdown: { cta: string; count: number }[];
+  publishing: { draft_age_hours: number | null; status: string };
+  ai_studio: {
+    operations: number;
+    successes: number;
+    recent: Record<string, unknown>[];
+  };
+  timeseries: AdminBlogAnalyticsSummary["timeseries"];
+};

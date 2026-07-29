@@ -47,8 +47,10 @@ MEMBER_STATUS_DISABLED = "disabled"
 MEMBER_STATUS_REMOVED = "removed"
 
 ACTION_INVITE = "admin_team.invite"
+ACTION_INVITE_ACCEPT = "admin_team.invite_accept"
 ACTION_ROLE_CREATE = "admin_team.role_create"
 ACTION_ROLE_UPDATE = "admin_team.role_update"
+ACTION_ROLE_ARCHIVE = "admin_team.role_archive"
 ACTION_MEMBER_UPDATE = "admin_team.member_update"
 ACTION_MEMBER_DISABLE = "admin_team.member_disable"
 ACTION_MEMBER_REMOVE = "admin_team.member_remove"
@@ -584,6 +586,37 @@ def update_custom_role(
     return _serialize_role(role)
 
 
+def archive_custom_role(
+    db: Session,
+    *,
+    actor: User,
+    role_id: uuid.UUID,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
+) -> dict[str, Any]:
+    """Soft-archive a custom role so it cannot be assigned to new members."""
+    if not user_has_permission(actor, "admin.team.manage_roles"):
+        raise HTTPException(status_code=403, detail="Insufficient permission")
+    role = get_role_or_404(db, role_id)
+    _assert_can_edit_role(actor, role)
+    if role.archived_at is not None:
+        return _serialize_role(role)
+    from datetime import UTC, datetime
+
+    role.archived_at = datetime.now(UTC)
+    write_admin_team_audit(
+        db,
+        action=ACTION_ROLE_ARCHIVE,
+        actor_user_id=actor.id,
+        entity_type="admin_role",
+        entity_id=str(role.id),
+        details={"name": role.name},
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+    return _serialize_role(role)
+
+
 def list_members(
     db: Session, *, status: str | None = None
 ) -> list[dict[str, Any]]:
@@ -678,6 +711,11 @@ def invite_member(
             ip_address=ip_address,
             user_agent=user_agent,
         )
+        from app.admin_team import notify as admin_team_notify
+
+        admin_team_notify.enqueue_admin_team_provisioned_email(
+            db, user=existing_user, member=member, role=role
+        )
         return {
             "invite_id": None,
             "status": "provisioned",
@@ -729,14 +767,17 @@ def invite_member(
         ip_address=ip_address,
         user_agent=user_agent,
     )
-    # Token returned once for ops/testing — never stored in audit.
+    from app.admin_team import notify as admin_team_notify
+
+    admin_team_notify.enqueue_admin_team_invite_email(
+        db, invite=invite, role=role, raw_token=raw
+    )
     return {
         "invite_id": str(invite.id),
         "status": "pending",
         "email_hint": _email_hint(normalized),
         "member": None,
         "expires_at": invite.expires_at.isoformat(),
-        "invite_token": raw,
     }
 
 
@@ -1015,3 +1056,120 @@ def list_pending_invites(db: Session) -> list[dict[str, Any]]:
         }
         for r in rows
     ]
+
+
+def _find_invite_by_token(db: Session, token: str) -> AdminInvite:
+    token_hash = _hash_token(token.strip())
+    invite = db.scalar(
+        select(AdminInvite)
+        .where(AdminInvite.token_hash == token_hash)
+        .options(selectinload(AdminInvite.admin_role))
+    )
+    if invite is None:
+        raise HTTPException(status_code=404, detail="Invite not found")
+    return invite
+
+
+def _expire_invite_if_needed(db: Session, invite: AdminInvite) -> AdminInvite:
+    if invite.status != "pending":
+        return invite
+    expires = invite.expires_at
+    if expires is not None and expires.tzinfo is None:
+        expires = expires.replace(tzinfo=UTC)
+    if expires is not None and expires <= _now():
+        invite.status = "expired"
+        db.flush()
+    return invite
+
+
+def preview_admin_invite(db: Session, *, token: str) -> dict[str, Any]:
+    invite = _expire_invite_if_needed(db, _find_invite_by_token(db, token))
+    if invite.status == "expired":
+        db.commit()
+    role = invite.admin_role
+    return {
+        "email_hint": _email_hint(invite.email),
+        "role_name": role.name if role else None,
+        "role_label": role.name if role else None,
+        "system_key": role.system_key if role else None,
+        "expires_at": invite.expires_at.isoformat() if invite.expires_at else None,
+        "status": invite.status,
+        "already_accepted": invite.status == "accepted",
+    }
+
+
+def accept_admin_invite(
+    db: Session,
+    *,
+    user: User,
+    token: str,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
+) -> dict[str, Any]:
+    invite = _expire_invite_if_needed(db, _find_invite_by_token(db, token))
+
+    if invite.status == "accepted":
+        existing = db.scalar(
+            select(AdminTeamMember).where(
+                AdminTeamMember.user_id == user.id,
+                AdminTeamMember.status == MEMBER_STATUS_ACTIVE,
+            )
+        )
+        if existing is not None:
+            return _serialize_member(db, existing)
+        raise HTTPException(status_code=400, detail="Invite was already accepted")
+
+    if invite.status == "expired":
+        db.commit()
+        raise HTTPException(status_code=400, detail="Invite has expired")
+    if invite.status != "pending":
+        raise HTTPException(status_code=400, detail="Invite is no longer available")
+
+    from app.auth.verified_email import assert_verified_email
+
+    assert_verified_email(user)
+
+    if (invite.email or "").strip().lower() != (user.email or "").strip().lower():
+        raise HTTPException(
+            status_code=403,
+            detail="Sign in with the invited email address to accept this admin team invite",
+        )
+
+    role = invite.admin_role
+    if role is None:
+        raise HTTPException(status_code=400, detail="Invite role is missing")
+
+    existing_member = db.scalar(
+        select(AdminTeamMember).where(AdminTeamMember.user_id == user.id)
+    )
+    member = _activate_or_create_member(
+        db,
+        user=user,
+        admin_role=role,
+        invited_by=invite.invited_by_user_id,
+        existing=existing_member,
+    )
+    invite.status = "accepted"
+    invite.accepted_at = _now()
+    invite.accepted_user_id = user.id
+    db.flush()
+
+    write_admin_team_audit(
+        db,
+        action=ACTION_INVITE_ACCEPT,
+        actor_user_id=user.id,
+        target_user_id=user.id,
+        target_member_id=member.id,
+        entity_type="admin_invite",
+        entity_id=str(invite.id),
+        details={
+            "email_hint": _email_hint(invite.email),
+            "role_id": str(role.id),
+            "role_name": role.name,
+            "system_key": role.system_key,
+        },
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+    db.commit()
+    return _serialize_member(db, member)

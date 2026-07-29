@@ -63,6 +63,8 @@ def track_server_event(
     order_id: UUID | None = None,
     request_id: str | None = None,
     environment: str | None = None,
+    entity_type: str | None = None,
+    entity_id: UUID | None = None,
 ) -> AnalyticsEvent | None:
     """Trusted server-side analytics write.
 
@@ -84,6 +86,8 @@ def track_server_event(
             "vault_purchase_id",
             "payout_request_id",
             "promo_code_id",
+            "blog_post_id",
+            "ai_operation",
         ):
             if metadata.get(key):
                 rid = f"trusted:{action}:{key}:{metadata[key]}"
@@ -98,6 +102,7 @@ def track_server_event(
         anonymous_id=anonymous_id,
         user_id=user_id,
         order_id=order_id,
+        extra=str(entity_id) if entity_id else None,
     )
     if key and not claim_dedupe_key(
         db,
@@ -111,12 +116,28 @@ def track_server_event(
     ):
         return None
 
+    resolved_entity_type = (entity_type or "").strip().lower() or None
+    resolved_entity_id = entity_id
+    if resolved_entity_type in {None, "", "event", "events"}:
+        if target_event_id is not None:
+            resolved_entity_type = "event"
+            resolved_entity_id = resolved_entity_id or target_event_id
+        elif order_id is not None:
+            resolved_entity_type = resolved_entity_type or "commerce"
+    elif resolved_entity_id is None and target_event_id is not None:
+        resolved_entity_id = target_event_id
+
     meta = scrub_metadata(
         {
             **(metadata or {}),
             "tracked_action": action,
             "trusted": True,
             "target_event_id": str(target_event_id) if target_event_id else None,
+            "blog_post_id": (
+                str(resolved_entity_id)
+                if resolved_entity_type == "blog_post" and resolved_entity_id
+                else None
+            ),
         },
         strict_allowlist=True,
     )
@@ -141,8 +162,8 @@ def track_server_event(
         with db.begin_nested():
             row = AnalyticsEvent(
                 event_name=action,
-                entity_type="event" if target_event_id else "commerce",
-                entity_id=target_event_id,
+                entity_type=resolved_entity_type,
+                entity_id=resolved_entity_id,
                 host_id=host_id,
                 user_id=user_id,
                 session_id=session_id,
@@ -199,6 +220,8 @@ def emit_trusted_action(
     request_id: str | None = None,
     environment: str | None = None,
     currency: str | None = None,
+    entity_type: str | None = None,
+    entity_id: UUID | None = None,
 ) -> AnalyticsEvent | None:
     """Back-compat alias for ``track_server_event``."""
     return track_server_event(
@@ -215,6 +238,8 @@ def emit_trusted_action(
         order_id=order_id,
         request_id=request_id,
         environment=environment,
+        entity_type=entity_type,
+        entity_id=entity_id,
     )
 
 

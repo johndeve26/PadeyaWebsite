@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { BlogCard } from "@/components/blog/BlogCard";
+import { BlogIndexViewTracker } from "@/components/blog/BlogAnalyticsTrackers";
 import { BlogFilterBar } from "@/components/blog/BlogFilterBar";
 import { BlogRecoveryCtas } from "@/components/blog/BlogRecoveryCtas";
 import { Container, EmptyState } from "@/components/ui";
@@ -27,6 +28,7 @@ export default async function BlogIndexPage() {
 
   return (
     <main className="bg-background pb-20 pt-10 text-foreground">
+      <BlogIndexViewTracker />
       <Container>
         <header className="max-w-2xl">
           <p

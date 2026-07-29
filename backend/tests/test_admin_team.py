@@ -5,11 +5,13 @@ from __future__ import annotations
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.admin.impersonation_service import can_start_impersonation
-from app.admin_team.models import AdminAuditLog
+from app.admin_team.models import AdminAuditLog, AdminInvite
 from app.admin_team.service import ensure_system_admin_roles
+from app.email.models import EmailEvent
 from app.users.seed import seed_roles_and_permissions
 from app.users.service import get_user_by_email, user_has_permission
 
@@ -48,6 +50,18 @@ def test_super_admin_invite_support(
     assert body["status"] == "provisioned"
     assert body["member"]["status"] == "active"
     assert body["member"]["role"]["system_key"] == "support"
+    assert "invite_token" not in body
+
+    email_row = db_session.scalar(
+        select(EmailEvent)
+        .where(
+            EmailEvent.template == "admin_team_invite",
+            EmailEvent.recipient_email == target_email,
+        )
+        .order_by(EmailEvent.created_at.desc())
+    )
+    assert email_row is not None
+    assert (email_row.context_json or {}).get("provisioned") is True
 
     target = get_user_by_email(db_session, target_email)
     assert target is not None
@@ -67,6 +81,87 @@ def test_super_admin_invite_support(
         and "password" not in str(a.details or {}).lower()
         for a in audits
     )
+
+
+def test_pending_admin_invite_emails_and_accept(
+    client: TestClient, db_session: Session, assign_role
+):
+    seed_roles_and_permissions(db_session)
+    ensure_system_admin_roles(db_session)
+    db_session.commit()
+
+    admin_headers, admin_email = _register(client, prefix="sa-pend", name="Super Admin")
+    assign_role(admin_email, "super_admin")
+
+    pending_email = f"pending-{uuid4().hex[:8]}@example.com"
+    invited = client.post(
+        "/api/v1/admin/team/invite",
+        headers=admin_headers,
+        json={"email": pending_email, "system_key": "support"},
+    )
+    assert invited.status_code == 201, invited.text
+    body = invited.json()
+    assert body["status"] == "pending"
+    assert body["invite_id"]
+    assert "invite_token" not in body
+
+    email_row = db_session.scalar(
+        select(EmailEvent)
+        .where(
+            EmailEvent.template == "admin_team_invite",
+            EmailEvent.recipient_email == pending_email,
+        )
+        .order_by(EmailEvent.created_at.desc())
+    )
+    assert email_row is not None
+    path = (email_row.context_json or {}).get("invite_path", "")
+    assert path.startswith("/admin/team/invites/")
+    token = path.rsplit("/", 1)[-1]
+    assert token and len(token) >= 16
+
+    invite_row = db_session.scalar(
+        select(AdminInvite).where(AdminInvite.email == pending_email)
+    )
+    assert invite_row is not None
+    assert invite_row.token_hash != token
+
+    preview = client.get(f"/api/v1/admin/team/invites/{token}")
+    assert preview.status_code == 200, preview.text
+    assert preview.json()["status"] == "pending"
+    assert "***" in preview.json()["email_hint"]
+    assert pending_email not in preview.json()["email_hint"]
+
+    reg = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": pending_email,
+            "password": "Password123!",
+            "full_name": "Invitee",
+        },
+    )
+    assert reg.status_code == 201, reg.text
+    invitee_headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
+
+    wrong_headers, _ = _register(client, prefix="wrong-admin", name="Wrong")
+    denied = client.post(
+        f"/api/v1/admin/team/invites/{token}/accept",
+        headers=wrong_headers,
+    )
+    assert denied.status_code == 403
+
+    accepted = client.post(
+        f"/api/v1/admin/team/invites/{token}/accept",
+        headers=invitee_headers,
+    )
+    assert accepted.status_code == 200, accepted.text
+    assert accepted.json()["status"] == "active"
+    assert accepted.json()["role"]["system_key"] == "support"
+
+    target = get_user_by_email(db_session, pending_email)
+    assert target is not None
+    db_session.refresh(target)
+    assert user_has_permission(target, "support.reply")
+
 
 
 def test_admin_without_permission_cannot_invite(
@@ -114,6 +209,74 @@ def test_custom_role_can_be_created(
     assert "support.reply" in role["permission_codes"]
     assert "payments.view" not in role["permission_codes"]
     assert role["is_system"] is False
+
+
+def test_custom_role_permissions_can_be_toggled_and_archived(
+    client: TestClient, db_session: Session, assign_role
+):
+    seed_roles_and_permissions(db_session)
+    ensure_system_admin_roles(db_session)
+    db_session.commit()
+
+    headers, email = _register(client, prefix="role-edit", name="Role Editor")
+    assign_role(email, "super_admin")
+
+    created = client.post(
+        "/api/v1/admin/team/roles",
+        headers=headers,
+        json={
+            "name": "Toggle Desk",
+            "permission_codes": ["admin.users.view", "support.reply"],
+        },
+    )
+    assert created.status_code == 201, created.text
+    role_id = created.json()["id"]
+
+    updated = client.patch(
+        f"/api/v1/admin/team/roles/{role_id}",
+        headers=headers,
+        json={
+            "permission_codes": [
+                "admin.users.view",
+                "support.reply",
+                "events.review",
+            ],
+        },
+    )
+    assert updated.status_code == 200, updated.text
+    codes = updated.json()["permission_codes"]
+    assert "events.review" in codes
+    assert "payments.view" not in codes
+
+    # Untick support.reply
+    trimmed = client.patch(
+        f"/api/v1/admin/team/roles/{role_id}",
+        headers=headers,
+        json={"permission_codes": ["admin.users.view", "events.review"]},
+    )
+    assert trimmed.status_code == 200, trimmed.text
+    assert "support.reply" not in trimmed.json()["permission_codes"]
+
+    # System roles cannot be edited
+    roles = client.get("/api/v1/admin/team/roles", headers=headers)
+    support = next(r for r in roles.json()["roles"] if r["system_key"] == "support")
+    blocked = client.patch(
+        f"/api/v1/admin/team/roles/{support['id']}",
+        headers=headers,
+        json={"permission_codes": ["admin.users.view"]},
+    )
+    assert blocked.status_code == 403
+
+    archived = client.post(
+        f"/api/v1/admin/team/roles/{role_id}/archive",
+        headers=headers,
+    )
+    assert archived.status_code == 200, archived.text
+    assert archived.json()["archived_at"] is not None
+
+    listed = client.get("/api/v1/admin/team/roles", headers=headers)
+    assert listed.status_code == 200
+    assert all(r["id"] != role_id for r in listed.json()["roles"])
 
 
 def test_permissions_enforced_and_support_cannot_access_finance(

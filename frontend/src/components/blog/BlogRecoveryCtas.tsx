@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 
 import { Button } from "@/components/ui";
+import { trackBlogCtaClick } from "@/lib/analytics";
 import { brand } from "@/lib/brand";
 
 type CtaColumn = {
@@ -10,6 +13,7 @@ type CtaColumn = {
   href: string;
   label: string;
   primary?: boolean;
+  ctaId: string;
 };
 
 function columnsForCategory(categorySlug?: string | null): CtaColumn[] {
@@ -20,6 +24,7 @@ function columnsForCategory(categorySlug?: string | null): CtaColumn[] {
     href: "/events",
     label: "Explore events",
     primary: true,
+    ctaId: "discover_events",
   };
   const host: CtaColumn = {
     eyebrow: "Host",
@@ -27,6 +32,7 @@ function columnsForCategory(categorySlug?: string | null): CtaColumn[] {
     body: "Sell tickets, run check-in, and grow your Legacy.",
     href: "/host/onboarding",
     label: "Start hosting",
+    ctaId: "start_hosting",
   };
   const merch: CtaColumn = {
     eyebrow: "Shop",
@@ -34,52 +40,36 @@ function columnsForCategory(categorySlug?: string | null): CtaColumn[] {
     body: "Official drops from hosts you already trust.",
     href: "/merch",
     label: "Browse shop",
+    ctaId: "browse_merch",
   };
   const vault: CtaColumn = {
     eyebrow: "Vault",
     title: "Explore Vault",
-    body: "Unlock exclusive drops from hosts you follow.",
-    href: "/for-fans",
-    label: "For fans",
-  };
-  const safety: CtaColumn = {
-    eyebrow: "Safety",
-    title: "Stay safe on Pàdéyá",
-    body: "Buy on-platform, use signed tickets, and report issues fast.",
-    href: "/safety",
-    label: "Safety Center",
+    body: "Exclusive media from hosts after you unlock access.",
+    href: "/hosts",
+    label: "Find hosts",
+    ctaId: "explore_vault",
   };
 
-  switch (categorySlug) {
-    case "host-growth":
-    case "event-planning":
-      return [
-        {
-          ...host,
-          primary: true,
-          href: "/host/events/new",
-          label: "Create event",
-          title: `Host on ${brand.name}`,
-        },
-        discover,
-        merch,
-      ];
-    case "safety":
-      return [safety, discover, host];
-    case "fans":
-      return [discover, vault, merch];
-    case "product":
-      return [discover, merch, host];
-    case "discovery":
-    default:
-      return [discover, host, merch];
+  const slug = (categorySlug || "").toLowerCase();
+  if (slug.includes("host") || slug.includes("growth")) {
+    return [host, discover, merch];
   }
+  if (slug.includes("merch") || slug.includes("shop")) {
+    return [merch, discover, host];
+  }
+  if (slug.includes("vault")) {
+    return [vault, discover, host];
+  }
+  return [discover, host, merch];
 }
 
 export function BlogRecoveryCtas({
   categorySlug,
+  postId,
 }: {
   categorySlug?: string | null;
+  postId?: string;
 }) {
   const cols = columnsForCategory(categorySlug);
 
@@ -118,7 +108,16 @@ export function BlogRecoveryCtas({
               {col.title}
             </h2>
             <p className="text-sm leading-relaxed text-paper/70">{col.body}</p>
-            <Link href={col.href}>
+            <Link
+              href={col.href}
+              onClick={() =>
+                trackBlogCtaClick({
+                  postId,
+                  ctaId: col.ctaId,
+                  ctaPath: col.href,
+                })
+              }
+            >
               <Button
                 size="md"
                 variant={col.primary ? "primary" : "outline-dark"}

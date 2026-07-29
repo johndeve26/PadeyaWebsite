@@ -66,6 +66,7 @@ No `/dashboard/host`, `/personal`, or `/workspace/personal` trees. Privacy: Pers
 | `/admin/blog/comments` | Moderate / edit blog comments | Admin (`admin.blog.comments.*` / `admin.blog.edit`) |
 | `/admin/blog/categories` | Blog categories | Admin |
 | `/admin/blog/tags` | Blog tags | Admin |
+| `/admin/analytics/blog` | Blog engagement + editorial analytics | Admin (`analytics.view_platform` / `admin.blog.view`) |
 | `/admin/cms/blog*` | Legacy redirect → `/admin/blog*` | Implemented |
 | `/events/near-me` | Near-me placeholder | Implemented |
 | `/admin/featured-placements` | Featured Placement Slots list | Implemented |
@@ -201,6 +202,7 @@ No `/dashboard/host`, `/personal`, or `/workspace/personal` trees. Privacy: Pers
 | `/admin/analytics/revenue` | Revenue analytics | Admin |
 | `/admin/analytics/events` | Event leaderboard / compare / channels | Admin |
 | `/admin/analytics/hosts` | Host rankings | Admin |
+| `/admin/analytics/blog` | Blog funnel, top posts, publishing cadence, AI Studio usage | Admin (`analytics.view_platform` / `admin.blog.view`) |
 | `/admin/analytics/support` | Support proxy + fraud placeholders | Admin |
 | `/admin/events/[id]/analytics` | Per-event analytics (any event) | Admin |
 | `/admin/events/[id]/buyers` | Event buyers list + audited export modal (modes/filters/reason) | Admin (`admin.events.view` + `admin.events.export_buyers`) |

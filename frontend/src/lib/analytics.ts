@@ -32,6 +32,9 @@ export type ListContext =
   | "demo_page"
   | "related_events"
   | "event_detail"
+  | "blog_index"
+  | "homepage_blog"
+  | "related_posts"
   | (string & {});
 
 const UTM_STORAGE_KEY = "padeya_utm_attribution";
@@ -50,6 +53,8 @@ export type QueuedEvent = {
   targetEventId?: string;
   eventListingId?: string;
   hostId?: string;
+  entityType?: string;
+  entityId?: string;
   metadata?: AnalyticsEventMetadata;
   dimensions?: AnalyticsDimensions;
   attempts: number;
@@ -218,6 +223,8 @@ async function flushQueue(): Promise<void> {
           trackedAction: item.trackedAction,
           targetEventId: item.targetEventId,
           hostId: item.hostId,
+          entityType: item.entityType,
+          entityId: item.entityId,
           properties: item.metadata as Record<string, unknown> | undefined,
           dimensions: baseDimensions({
             ...item.dimensions,
@@ -278,6 +285,8 @@ export type TrackOptions = {
   targetEventId?: string;
   eventListingId?: string;
   hostId?: string;
+  entityType?: string;
+  entityId?: string;
   metadata?: AnalyticsEventMetadata;
   dimensions?: AnalyticsDimensions;
   /** When true, send immediately (still never throws). */
@@ -304,11 +313,11 @@ export function track(
     };
 
     const dedupeKey = generateDedupeKey(options.dedupeScope ?? normalized, {
-      targetEventId: options.targetEventId,
+      targetEventId: options.targetEventId ?? options.entityId,
       sessionId: getOrCreateSessionId(),
       anonymousId: getOrCreateAnonymousId(),
       listContext: options.listContext ?? metadata.list_context,
-      extra: options.eventListingId,
+      extra: options.eventListingId ?? options.entityId,
     });
     if (
       options.dedupeTtlMs &&
@@ -323,6 +332,8 @@ export function track(
       targetEventId: options.targetEventId,
       eventListingId: options.eventListingId ?? options.targetEventId,
       hostId: options.hostId,
+      entityType: options.entityType,
+      entityId: options.entityId,
       metadata,
       dimensions: baseDimensions(options.dimensions),
       attempts: 0,
@@ -351,6 +362,8 @@ async function flushOne(item: QueuedEvent): Promise<void> {
         trackedAction: item.trackedAction,
         targetEventId: item.targetEventId,
         hostId: item.hostId,
+        entityType: item.entityType,
+        entityId: item.entityId,
         properties: item.metadata as Record<string, unknown> | undefined,
         dimensions: baseDimensions({
           ...item.dimensions,
@@ -1553,6 +1566,218 @@ export function trackHostMessageFanClicked(): void {
   track(TrackedAction.HOST_MESSAGE_FAN_CLICKED, {
     immediate: true,
     metadata: { click_target: "message_fan" },
+  });
+}
+
+/* ---------- Blog ---------- */
+
+export function trackBlogIndexView(opts?: { path?: string }): void {
+  const path =
+    opts?.path ??
+    (typeof window !== "undefined" ? window.location.pathname : "/blog");
+  track(TrackedAction.BLOG_INDEX_VIEW, {
+    immediate: true,
+    dedupeScope: "blog_index_view",
+    dedupeTtlMs: 60_000,
+    dimensions: { path, currentPath: path },
+    metadata: { path, surface: "blog_index" },
+  });
+}
+
+export function trackBlogPostView(opts: {
+  postId: string;
+  slug: string;
+  categorySlug?: string | null;
+}): void {
+  const path =
+    typeof window !== "undefined"
+      ? window.location.pathname
+      : `/blog/${opts.slug}`;
+  track(TrackedAction.BLOG_POST_VIEW, {
+    entityType: "blog_post",
+    entityId: opts.postId,
+    immediate: true,
+    dedupeScope: `blog_post_view:${opts.postId}`,
+    dedupeTtlMs: 30 * 60_000,
+    dimensions: { path, currentPath: path },
+    metadata: {
+      blog_post_id: opts.postId,
+      blog_slug: opts.slug,
+      category_slug: opts.categorySlug || undefined,
+      path,
+      surface: "blog_post",
+    },
+  });
+}
+
+export function trackBlogCardImpression(opts: {
+  postId: string;
+  slug: string;
+  listContext?: string;
+  cardPosition?: number;
+}): void {
+  track(TrackedAction.BLOG_CARD_IMPRESSION, {
+    entityType: "blog_post",
+    entityId: opts.postId,
+    listContext: (opts.listContext || "blog_index") as ListContext,
+    dedupeScope: `blog_card_impression:${opts.postId}`,
+    dedupeTtlMs: 5 * 60_000,
+    metadata: {
+      blog_post_id: opts.postId,
+      blog_slug: opts.slug,
+      list_context: opts.listContext || "blog_index",
+      card_position: opts.cardPosition,
+      surface: "blog_card",
+    },
+  });
+}
+
+export function trackBlogCardClick(opts: {
+  postId: string;
+  slug: string;
+  listContext?: string;
+}): void {
+  track(TrackedAction.BLOG_CARD_CLICK, {
+    entityType: "blog_post",
+    entityId: opts.postId,
+    immediate: true,
+    dedupeScope: `blog_card_click:${opts.postId}`,
+    dedupeTtlMs: 2_000,
+    metadata: {
+      blog_post_id: opts.postId,
+      blog_slug: opts.slug,
+      list_context: opts.listContext || "blog_index",
+      click_target: "blog_card",
+    },
+  });
+}
+
+export function trackBlogScrollMilestone(opts: {
+  postId: string;
+  slug: string;
+  milestone: 25 | 50 | 75 | 100;
+}): void {
+  track(TrackedAction.BLOG_SCROLL_MILESTONE, {
+    entityType: "blog_post",
+    entityId: opts.postId,
+    immediate: true,
+    dedupeScope: `blog_scroll:${opts.postId}:${opts.milestone}`,
+    dedupeTtlMs: 60 * 60_000,
+    metadata: {
+      blog_post_id: opts.postId,
+      blog_slug: opts.slug,
+      read_milestone: opts.milestone,
+      scroll_pct: opts.milestone,
+      surface: "blog_post",
+    },
+  });
+}
+
+export function trackBlogShareClick(opts: {
+  postId?: string;
+  slug?: string;
+  channel: string;
+}): void {
+  track(TrackedAction.BLOG_SHARE_CLICK, {
+    entityType: opts.postId ? "blog_post" : undefined,
+    entityId: opts.postId,
+    immediate: true,
+    dedupeScope: `blog_share:${opts.postId || "unknown"}:${opts.channel}`,
+    dedupeTtlMs: 5_000,
+    metadata: {
+      blog_post_id: opts.postId,
+      blog_slug: opts.slug,
+      share_channel: opts.channel,
+      click_target: "share",
+    },
+  });
+}
+
+export function trackBlogRelatedClick(opts: {
+  postId: string;
+  relatedPostId: string;
+  relatedSlug: string;
+}): void {
+  track(TrackedAction.BLOG_RELATED_CLICK, {
+    entityType: "blog_post",
+    entityId: opts.postId,
+    immediate: true,
+    dedupeScope: `blog_related:${opts.postId}:${opts.relatedPostId}`,
+    dedupeTtlMs: 5_000,
+    metadata: {
+      blog_post_id: opts.postId,
+      related_post_id: opts.relatedPostId,
+      related_slug: opts.relatedSlug,
+      click_target: "related_post",
+    },
+  });
+}
+
+export function trackBlogCtaClick(opts: {
+  postId?: string;
+  ctaId: string;
+  ctaPath: string;
+}): void {
+  const path = opts.ctaPath.startsWith("/")
+    ? opts.ctaPath.split("?")[0].slice(0, 160)
+    : `/${opts.ctaPath}`.split("?")[0].slice(0, 160);
+  track(TrackedAction.BLOG_CTA_CLICK, {
+    entityType: opts.postId ? "blog_post" : undefined,
+    entityId: opts.postId,
+    immediate: true,
+    dedupeScope: `blog_cta:${opts.postId || "index"}:${opts.ctaId}`,
+    dedupeTtlMs: 5_000,
+    metadata: {
+      blog_post_id: opts.postId,
+      cta_id: opts.ctaId,
+      cta_path: path,
+      click_target: "blog_cta",
+    },
+  });
+}
+
+export function trackBlogFilterUsed(opts: {
+  filterType: string;
+  filterValue: string;
+}): void {
+  track(TrackedAction.BLOG_FILTER_USED, {
+    immediate: true,
+    dedupeScope: `blog_filter:${opts.filterType}:${opts.filterValue}`,
+    dedupeTtlMs: 10_000,
+    metadata: {
+      filter_type: opts.filterType,
+      filter_value: opts.filterValue.slice(0, 80),
+      surface: "blog_index",
+    },
+  });
+}
+
+export function trackBlogHubView(
+  kind: "category" | "tag" | "author",
+  opts: { slug: string },
+): void {
+  const action =
+    kind === "category"
+      ? TrackedAction.BLOG_CATEGORY_PAGE_VIEW
+      : kind === "tag"
+        ? TrackedAction.BLOG_TAG_PAGE_VIEW
+        : TrackedAction.BLOG_AUTHOR_PAGE_VIEW;
+  const path =
+    typeof window !== "undefined"
+      ? window.location.pathname
+      : `/blog/${kind}/${opts.slug}`;
+  track(action, {
+    immediate: true,
+    dedupeScope: `blog_hub:${kind}:${opts.slug}`,
+    dedupeTtlMs: 60_000,
+    dimensions: { path, currentPath: path },
+    metadata: {
+      path,
+      category_slug: kind === "category" ? opts.slug : undefined,
+      tag_slug: kind === "tag" ? opts.slug : undefined,
+      author_slug: kind === "author" ? opts.slug : undefined,
+      surface: `blog_${kind}`,
+    },
   });
 }
 

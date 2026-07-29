@@ -7,11 +7,14 @@ import {
   blogArticleHtmlWithIds,
 } from "@/components/blog/BlogArticleBody";
 import { BlogArticleSidebar } from "@/components/blog/BlogArticleSidebar";
-import { BlogCard } from "@/components/blog/BlogCard";
+import {
+  BlogPostViewTracker,
+} from "@/components/blog/BlogAnalyticsTrackers";
 import { BlogComments } from "@/components/blog/BlogComments";
 import { BlogRecoveryCtas } from "@/components/blog/BlogRecoveryCtas";
 import { BlogShare } from "@/components/blog/BlogShare";
 import { Container } from "@/components/ui";
+import { RelatedBlogCard } from "@/components/blog/RelatedBlogCard";
 import { fetchBlogPostServer } from "@/lib/blog-api";
 import {
   blogCategoryGradient,
@@ -78,6 +81,11 @@ export default async function BlogPostPage({ params }: Props) {
 
   return (
     <main className="relative overflow-hidden bg-background pb-20 pt-8 text-foreground sm:pt-12">
+      <BlogPostViewTracker
+        postId={post.id}
+        slug={post.slug}
+        categorySlug={post.category?.slug}
+      />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] bg-[radial-gradient(ellipse_80%_55%_at_50%_-10%,color-mix(in_srgb,var(--primary)_14%,transparent),transparent_60%)]"
@@ -179,7 +187,12 @@ export default async function BlogPostPage({ params }: Props) {
                 </p>
               </div>
             </div>
-            <BlogShare title={post.title} path={`/blog/${post.slug}`} />
+            <BlogShare
+              title={post.title}
+              path={`/blog/${post.slug}`}
+              postId={post.id}
+              slug={post.slug}
+            />
           </div>
         </header>
 
@@ -218,7 +231,12 @@ export default async function BlogPostPage({ params }: Props) {
             <BlogArticleBody html={post.body_html} />
 
             <div className="flex flex-col gap-5 border-t border-border pt-8 sm:flex-row sm:items-center sm:justify-between">
-              <BlogShare title={post.title} path={`/blog/${post.slug}`} />
+              <BlogShare
+                title={post.title}
+                path={`/blog/${post.slug}`}
+                postId={post.id}
+                slug={post.slug}
+              />
               {post.tags?.length ? (
                 <div className="flex flex-wrap gap-2" aria-label="Tags">
                   {post.tags.map((t) => (
@@ -244,6 +262,8 @@ export default async function BlogPostPage({ params }: Props) {
               path={`/blog/${post.slug}`}
               category={post.category}
               related={post.related}
+              postId={post.id}
+              slug={post.slug}
             />
           </div>
         </div>
@@ -284,13 +304,20 @@ export default async function BlogPostPage({ params }: Props) {
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((r) => (
-                <BlogCard key={r.id} post={r} />
+                <RelatedBlogCard
+                  key={r.id}
+                  post={r}
+                  fromPostId={post.id}
+                />
               ))}
             </div>
           </section>
         ) : null}
 
-        <BlogRecoveryCtas categorySlug={post.category?.slug} />
+        <BlogRecoveryCtas
+          categorySlug={post.category?.slug}
+          postId={post.id}
+        />
       </Container>
     </main>
   );

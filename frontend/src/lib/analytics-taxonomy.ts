@@ -191,6 +191,25 @@ export const TrackedAction = {
   PROMO_REDEMPTION: "promo_redemption",
   AMBASSADOR_SALE: "ambassador_sale",
   PAYOUT_COMPLETED: "payout_completed",
+
+  // Blog / editorial
+  BLOG_INDEX_VIEW: "blog_index_view",
+  BLOG_POST_VIEW: "blog_post_view",
+  BLOG_CARD_IMPRESSION: "blog_card_impression",
+  BLOG_CARD_CLICK: "blog_card_click",
+  BLOG_SCROLL_MILESTONE: "blog_scroll_milestone",
+  BLOG_SHARE_CLICK: "blog_share_click",
+  BLOG_RELATED_CLICK: "blog_related_click",
+  BLOG_CTA_CLICK: "blog_cta_click",
+  BLOG_FILTER_USED: "blog_filter_used",
+  BLOG_CATEGORY_PAGE_VIEW: "blog_category_page_view",
+  BLOG_TAG_PAGE_VIEW: "blog_tag_page_view",
+  BLOG_AUTHOR_PAGE_VIEW: "blog_author_page_view",
+  BLOG_POST_PUBLISHED: "blog_post_published",
+  BLOG_POST_UNPUBLISHED: "blog_post_unpublished",
+  BLOG_POST_ARCHIVED: "blog_post_archived",
+  BLOG_AI_OPERATION: "blog_ai_operation",
+  BLOG_COMMENT_CREATED: "blog_comment_created",
 } as const;
 
 export type TrackedActionName =
@@ -205,7 +224,8 @@ export type FunnelGroup =
   | "vault_legacy"
   | "sponsorship"
   | "commerce"
-  | "admin_finance";
+  | "admin_finance"
+  | "blog";
 
 /** Client may emit these; trusted ones should be written by the backend. */
 export type TrustLevel = "client" | "trusted" | "either";
@@ -382,6 +402,23 @@ export const TRACKED_ACTION_META: Record<
   [TrackedAction.PROMO_REDEMPTION]: { group: "commerce", trust: "trusted" },
   [TrackedAction.AMBASSADOR_SALE]: { group: "commerce", trust: "trusted" },
   [TrackedAction.PAYOUT_COMPLETED]: { group: "admin_finance", trust: "trusted" },
+  [TrackedAction.BLOG_INDEX_VIEW]: { group: "blog", trust: "client" },
+  [TrackedAction.BLOG_POST_VIEW]: { group: "blog", trust: "client" },
+  [TrackedAction.BLOG_CARD_IMPRESSION]: { group: "blog", trust: "client" },
+  [TrackedAction.BLOG_CARD_CLICK]: { group: "blog", trust: "client" },
+  [TrackedAction.BLOG_SCROLL_MILESTONE]: { group: "blog", trust: "client" },
+  [TrackedAction.BLOG_SHARE_CLICK]: { group: "blog", trust: "client" },
+  [TrackedAction.BLOG_RELATED_CLICK]: { group: "blog", trust: "client" },
+  [TrackedAction.BLOG_CTA_CLICK]: { group: "blog", trust: "client" },
+  [TrackedAction.BLOG_FILTER_USED]: { group: "blog", trust: "client" },
+  [TrackedAction.BLOG_CATEGORY_PAGE_VIEW]: { group: "blog", trust: "client" },
+  [TrackedAction.BLOG_TAG_PAGE_VIEW]: { group: "blog", trust: "client" },
+  [TrackedAction.BLOG_AUTHOR_PAGE_VIEW]: { group: "blog", trust: "client" },
+  [TrackedAction.BLOG_POST_PUBLISHED]: { group: "blog", trust: "trusted" },
+  [TrackedAction.BLOG_POST_UNPUBLISHED]: { group: "blog", trust: "trusted" },
+  [TrackedAction.BLOG_POST_ARCHIVED]: { group: "blog", trust: "trusted" },
+  [TrackedAction.BLOG_AI_OPERATION]: { group: "blog", trust: "trusted" },
+  [TrackedAction.BLOG_COMMENT_CREATED]: { group: "blog", trust: "trusted" },
 };
 
 export type AnalyticsDimensions = {

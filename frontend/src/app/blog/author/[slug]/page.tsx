@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { BlogCard } from "@/components/blog/BlogCard";
+import { BlogIndexViewTracker } from "@/components/blog/BlogAnalyticsTrackers";
 import { BlogRecoveryCtas } from "@/components/blog/BlogRecoveryCtas";
 import { Container, EmptyState } from "@/components/ui";
 import type { BlogAuthor } from "@/lib/blog-api";
@@ -40,6 +41,7 @@ export default async function BlogAuthorPage({ params }: Props) {
 
   return (
     <main className="bg-background pb-20 pt-10">
+      <BlogIndexViewTracker kind="author" slug={slug} />
       <Container>
         <div className="flex items-start gap-4">
           {author.avatar_url ? (

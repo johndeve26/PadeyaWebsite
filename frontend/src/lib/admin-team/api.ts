@@ -40,7 +40,16 @@ export type AdminTeamInviteResult = {
   email_hint: string;
   member: AdminTeamMember | null;
   expires_at: string | null;
-  invite_token?: string;
+};
+
+export type AdminTeamInvitePreview = {
+  email_hint: string;
+  role_name: string | null;
+  role_label: string | null;
+  system_key: string | null;
+  expires_at: string | null;
+  status: string;
+  already_accepted: boolean;
 };
 
 export type AdminPendingInvite = {
@@ -92,6 +101,19 @@ export function inviteAdminTeamMember(body: {
   });
 }
 
+export function previewAdminTeamInvite(token: string) {
+  return apiRequest<AdminTeamInvitePreview>(
+    `/admin/team/invites/${encodeURIComponent(token)}`,
+  );
+}
+
+export function acceptAdminTeamInvite(token: string) {
+  return apiRequest<AdminTeamMember>(
+    `/admin/team/invites/${encodeURIComponent(token)}/accept`,
+    { method: "POST" },
+  );
+}
+
 export function fetchAdminTeamRoles() {
   return apiRequest<{
     roles: AdminTeamRole[];
@@ -121,6 +143,13 @@ export function updateAdminTeamRole(
   return apiRequest<AdminTeamRole>(`/admin/team/roles/${roleId}`, {
     method: "PATCH",
     body,
+  });
+}
+
+export function archiveAdminTeamRole(roleId: string) {
+  return apiRequest<AdminTeamRole>(`/admin/team/roles/${roleId}/archive`, {
+    method: "POST",
+    body: {},
   });
 }
 

@@ -449,6 +449,9 @@ def publish_post(db: Session, *, user: User, post_id: uuid.UUID) -> BlogPost:
         resource_type="blog_post",
         resource_id=str(row.id),
     )
+    from app.blog.analytics_emit import emit_blog_post_published
+
+    emit_blog_post_published(db, post=row, actor=user)
     db.commit()
     try:
         from app.core.cache_invalidation import invalidate_blog_caches
@@ -474,6 +477,9 @@ def unpublish_post(db: Session, *, user: User, post_id: uuid.UUID) -> BlogPost:
         resource_type="blog_post",
         resource_id=str(row.id),
     )
+    from app.blog.analytics_emit import emit_blog_post_unpublished
+
+    emit_blog_post_unpublished(db, post=row, actor=user)
     db.commit()
     try:
         from app.core.cache_invalidation import invalidate_blog_caches
@@ -501,6 +507,9 @@ def delete_post(db: Session, *, user: User, post_id: uuid.UUID) -> None:
         resource_type="blog_post",
         resource_id=str(row.id),
     )
+    from app.blog.analytics_emit import emit_blog_post_archived
+
+    emit_blog_post_archived(db, post=row, actor=user)
     db.commit()
 
 

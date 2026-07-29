@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { AdminRolePermissionPicker } from "@/components/admin/AdminRolePermissionPicker";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import {
   Alert,
@@ -55,17 +56,6 @@ export default function AdminTeamNewRolePage() {
     };
   }, []);
 
-  const selectedCount = useMemo(() => selected.size, [selected]);
-
-  function toggle(code: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(code)) next.delete(code);
-      else next.add(code);
-      return next;
-    });
-  }
-
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setSubmitting(true);
@@ -81,7 +71,7 @@ export default function AdminTeamNewRolePage() {
         description: role.name,
         tone: "success",
       });
-      router.push("/admin/team/roles");
+      router.push(`/admin/team/roles/${role.id}`);
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : "Could not create role";
@@ -97,7 +87,7 @@ export default function AdminTeamNewRolePage() {
       tone="soft"
       eyebrow="Admin · Team"
       title="New custom role"
-      description="Name the role and select permissions with checkboxes."
+      description="Name the role, then tick the individual features this team should have."
       actions={
         <Link href="/admin/team/roles">
           <Button variant="secondary" size="sm">
@@ -127,43 +117,11 @@ export default function AdminTeamNewRolePage() {
             />
           </div>
 
-          <div className="space-y-6">
-            <p className="text-sm text-muted-foreground">
-              {selectedCount} permission{selectedCount === 1 ? "" : "s"} selected
-            </p>
-            {catalog.map((group) => (
-              <fieldset key={group.group} className="space-y-3">
-                <legend className="font-semibold text-heading">{group.group}</legend>
-                <ul className="space-y-2">
-                  {group.permissions.map((perm) => (
-                    <li key={perm.code}>
-                      <label className="flex cursor-pointer items-start gap-3 text-sm">
-                        <input
-                          type="checkbox"
-                          className="mt-1"
-                          checked={selected.has(perm.code)}
-                          onChange={() => toggle(perm.code)}
-                        />
-                        <span>
-                          <span className="font-medium text-heading">
-                            {perm.code}
-                          </span>
-                          {perm.high_level ? (
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              (super admin only)
-                            </span>
-                          ) : null}
-                          <span className="block text-muted-foreground">
-                            {perm.description}
-                          </span>
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </fieldset>
-            ))}
-          </div>
+          <AdminRolePermissionPicker
+            catalog={catalog}
+            selected={selected}
+            onChange={setSelected}
+          />
 
           <Button type="submit" disabled={submitting || name.trim().length < 2}>
             {submitting ? "Creating…" : "Create role"}

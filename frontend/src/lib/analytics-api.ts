@@ -23,6 +23,8 @@ import type {
   AdminPlatformSummary,
   AdminRevenueSummary,
   AdminSupportSummary,
+  AdminBlogAnalyticsSummary,
+  AdminBlogPostAnalytics,
   EventAnalyticsAmbassadors,
   EventAnalyticsAudience,
   EventAnalyticsFunnel,
@@ -316,6 +318,39 @@ export async function fetchAdminSupportAnalytics(): Promise<AdminSupportSummary>
   return apiRequest<AdminSupportSummary>("/analytics/admin/support");
 }
 
+export async function fetchAdminBlogAnalytics(opts?: {
+  rangeStart?: string;
+  rangeEnd?: string;
+  includeInternal?: boolean;
+}): Promise<AdminBlogAnalyticsSummary> {
+  const params = new URLSearchParams();
+  if (opts?.rangeStart) params.set("range_start", opts.rangeStart);
+  if (opts?.rangeEnd) params.set("range_end", opts.rangeEnd);
+  if (opts?.includeInternal) params.set("include_internal", "true");
+  const q = params.toString();
+  return apiRequest<AdminBlogAnalyticsSummary>(
+    `/analytics/admin/blog${q ? `?${q}` : ""}`,
+  );
+}
+
+export async function fetchAdminBlogPostAnalytics(
+  postId: string,
+  opts?: {
+    rangeStart?: string;
+    rangeEnd?: string;
+    includeInternal?: boolean;
+  },
+): Promise<AdminBlogPostAnalytics> {
+  const params = new URLSearchParams();
+  if (opts?.rangeStart) params.set("range_start", opts.rangeStart);
+  if (opts?.rangeEnd) params.set("range_end", opts.rangeEnd);
+  if (opts?.includeInternal) params.set("include_internal", "true");
+  const q = params.toString();
+  return apiRequest<AdminBlogPostAnalytics>(
+    `/analytics/admin/blog/posts/${encodeURIComponent(postId)}${q ? `?${q}` : ""}`,
+  );
+}
+
 /** Generic taxonomy write — prefer this for new instrumentation. */
 export async function trackAction(payload: {
   trackedAction: TrackedActionName | string;
@@ -373,6 +408,8 @@ export async function trackBatch(
     trackedAction: TrackedActionName | string;
     targetEventId?: string;
     hostId?: string;
+    entityType?: string;
+    entityId?: string;
     properties?: Record<string, unknown>;
     dimensions?: AnalyticsDimensions;
   }>,
@@ -387,6 +424,8 @@ export async function trackBatch(
         tracked_action: action,
         target_event_id: item.targetEventId,
         host_id: item.hostId,
+        entity_type: item.entityType,
+        entity_id: item.entityId,
         metadata: item.properties ?? item.dimensions?.metadata,
         require_known_action: true,
         ...dimensionsToApiBody(clientIdentity(item.dimensions ?? dimensions)),

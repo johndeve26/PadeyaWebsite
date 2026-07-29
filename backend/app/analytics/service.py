@@ -417,6 +417,67 @@ def get_admin_support(db: Session, *, user: User) -> dict:
     return build_admin_support(db)
 
 
+def _can_view_blog_analytics(user: User) -> bool:
+    return (
+        _can_view_platform_analytics(user)
+        or user_has_permission(user, "admin.blog.view")
+    )
+
+
+def get_admin_blog_analytics(
+    db: Session,
+    *,
+    user: User,
+    range_start: datetime | None = None,
+    range_end: datetime | None = None,
+    include_internal: bool = False,
+) -> dict:
+    if not _can_view_blog_analytics(user):
+        raise HTTPException(status_code=403, detail="Not allowed to view blog analytics")
+    from app.analytics.blog_reports import build_admin_blog_summary, resolve_blog_range
+
+    start, end = resolve_blog_range(range_start=range_start, range_end=range_end)
+    if include_internal and not _can_view_platform_analytics(user):
+        include_internal = False
+    return build_admin_blog_summary(
+        db,
+        range_start=start,
+        range_end=end,
+        include_internal=include_internal,
+    )
+
+
+def get_admin_blog_post_analytics(
+    db: Session,
+    *,
+    user: User,
+    post_id: UUID,
+    range_start: datetime | None = None,
+    range_end: datetime | None = None,
+    include_internal: bool = False,
+) -> dict:
+    if not _can_view_blog_analytics(user):
+        raise HTTPException(status_code=403, detail="Not allowed to view blog analytics")
+    from app.analytics.blog_reports import (
+        build_admin_blog_post_analytics,
+        resolve_blog_range,
+    )
+
+    start, end = resolve_blog_range(range_start=range_start, range_end=range_end)
+    if include_internal and not _can_view_platform_analytics(user):
+        include_internal = False
+    data = build_admin_blog_post_analytics(
+        db,
+        post_id=post_id,
+        range_start=start,
+        range_end=end,
+        include_internal=include_internal,
+    )
+    if data is None:
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    return data
+
+
 def _parse_event_filters(
     *,
     user: User,

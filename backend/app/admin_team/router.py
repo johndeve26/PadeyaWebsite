@@ -139,6 +139,29 @@ def admin_update_role(
     return result
 
 
+@router.post("/roles/{role_id}/archive")
+def admin_archive_role(
+    role_id: UUID,
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[
+        User,
+        Depends(require_permission("admin.team.manage_roles", "admin.full_access")),
+    ],
+) -> dict[str, Any]:
+    team_service.assert_admin_access_allowed(db, user)
+    ip, ua = _client_meta(request)
+    result = team_service.archive_custom_role(
+        db,
+        actor=user,
+        role_id=role_id,
+        ip_address=ip,
+        user_agent=ua,
+    )
+    db.commit()
+    return result
+
+
 @router.get("/members/{member_id}")
 def admin_get_member(
     member_id: UUID,

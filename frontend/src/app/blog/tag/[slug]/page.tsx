@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { BlogCard } from "@/components/blog/BlogCard";
+import { BlogIndexViewTracker } from "@/components/blog/BlogAnalyticsTrackers";
 import { BlogRecoveryCtas } from "@/components/blog/BlogRecoveryCtas";
 import { Container, EmptyState } from "@/components/ui";
 import type { BlogTag } from "@/lib/blog-api";
@@ -34,6 +35,7 @@ export default async function BlogTagPage({ params }: Props) {
 
   return (
     <main className="bg-background pb-20 pt-10">
+      <BlogIndexViewTracker kind="tag" slug={slug} />
       <Container>
         <h1 className="font-display text-3xl font-extrabold tracking-tight">
           #{tag.name}

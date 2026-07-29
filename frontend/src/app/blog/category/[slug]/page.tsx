@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { BlogCard } from "@/components/blog/BlogCard";
+import { BlogIndexViewTracker } from "@/components/blog/BlogAnalyticsTrackers";
 import { BlogFilterBar } from "@/components/blog/BlogFilterBar";
 import { BlogRecoveryCtas } from "@/components/blog/BlogRecoveryCtas";
 import { Container, EmptyState } from "@/components/ui";
@@ -45,6 +46,7 @@ export default async function BlogCategoryPage({ params }: Props) {
 
   return (
     <main className="bg-background pb-20 pt-10">
+      <BlogIndexViewTracker kind="category" slug={slug} />
       <Container>
         <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
           {category.name}
