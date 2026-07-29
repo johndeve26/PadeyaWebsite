@@ -113,9 +113,7 @@ export function HeaderMobileDrawer({
           Site menu
         </p>
         <div className="flex items-center gap-2">
-          <div className="[&_button]:border-paper/20 [&_button]:text-paper">
-            <ThemeToggle compact />
-          </div>
+          <ThemeToggle compact tone="onDark" />
           <button
             type="button"
             data-mobile-close
