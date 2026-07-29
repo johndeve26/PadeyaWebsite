@@ -84,7 +84,7 @@ export function SponsorBrandDirectory() {
               <option value="all">All categories</option>
               {categories.map((c) => (
                 <option key={c} value={c}>
-                  {c.replace(/_/g, " ")}
+                  {(c.replace(/_/g, " ").charAt(0).toUpperCase() + c.replace(/_/g, " ").slice(1))}
                 </option>
               ))}
             </select>

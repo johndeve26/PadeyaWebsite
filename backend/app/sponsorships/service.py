@@ -103,7 +103,10 @@ def serialize_slot(db: Session, slot: SponsorshipSlot) -> dict:
         "host_id": slot.host_id,
         "event_id": slot.event_id,
         "slot_type": slot.slot_type,
-        "slot_type_label": SLOT_TYPE_LABELS.get(slot.slot_type, slot.slot_type),
+        "slot_type_label": SLOT_TYPE_LABELS.get(
+                slot.slot_type,
+                slot.slot_type.replace("_", " ").title(),
+            ),
         "title": slot.title,
         "description": slot.description,
         "price": slot.price,

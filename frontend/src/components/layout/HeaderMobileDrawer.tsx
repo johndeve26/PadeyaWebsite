@@ -112,18 +112,23 @@ export function HeaderMobileDrawer({
         <p id={titleId} className="sr-only">
           Site menu
         </p>
-        <button
-          type="button"
-          data-mobile-close
-          className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-sm)] border border-paper/20 text-paper transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          aria-label="Close menu"
-          onClick={onClose}
-        >
-          <span className="relative block h-3.5 w-4" aria-hidden>
-            <span className="absolute left-0 top-1.5 h-0.5 w-4 rotate-45 bg-current" />
-            <span className="absolute left-0 top-1.5 h-0.5 w-4 -rotate-45 bg-current" />
-          </span>
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="[&_button]:border-paper/20 [&_button]:text-paper">
+            <ThemeToggle compact />
+          </div>
+          <button
+            type="button"
+            data-mobile-close
+            className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-sm)] border border-paper/20 text-paper transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            aria-label="Close menu"
+            onClick={onClose}
+          >
+            <span className="relative block h-3.5 w-4" aria-hidden>
+              <span className="absolute left-0 top-1.5 h-0.5 w-4 rotate-45 bg-current" />
+              <span className="absolute left-0 top-1.5 h-0.5 w-4 -rotate-45 bg-current" />
+            </span>
+          </button>
+        </div>
       </div>
 
       <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-4">
@@ -231,16 +236,17 @@ export function HeaderMobileDrawer({
               </Link>
             </>
           ) : authInitialized && pathname !== "/login" ? (
-            <Link href="/login" className={linkClass(false)} onClick={onClose}>
+            <Link
+              href="/login"
+              className="mt-1 block rounded-[var(--radius-sm)] bg-paper px-3 py-3.5 text-center text-base font-bold text-ink transition-colors hover:bg-paper/90"
+              onClick={onClose}
+            >
               Log in
             </Link>
           ) : null}
         </div>
 
         <div className="mt-auto space-y-3 border-t border-paper/10 px-1 pb-6 pt-5">
-          <div className="px-2 [&_button]:border-paper/20 [&_button]:text-paper">
-            <ThemeToggle className="w-full" />
-          </div>
           <CreateEventCta
             mobile
             className="block rounded-[var(--radius-sm)] bg-primary px-3 py-3.5 text-center text-base font-bold text-primary-foreground"

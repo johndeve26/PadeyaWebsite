@@ -531,7 +531,7 @@ function HostsMarketplaceInner({
             className="space-y-4 border border-border bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_8%,transparent),transparent_55%)]"
           >
             <form
-              className="flex flex-col gap-3 sm:flex-row sm:items-end"
+              className="flex flex-col gap-3 sm:flex-row sm:items-start"
               onSubmit={onLookup}
             >
               <div className="min-w-0 flex-1">
@@ -547,7 +547,7 @@ function HostsMarketplaceInner({
               <Button
                 type="submit"
                 size="lg"
-                className="w-full sm:mb-0.5 sm:w-auto"
+                className="mt-[1.375rem] w-full sm:w-auto"
               >
                 Open Legacy
               </Button>

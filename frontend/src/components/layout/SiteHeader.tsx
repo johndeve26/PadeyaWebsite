@@ -98,18 +98,23 @@ export function SiteHeader() {
     >
       <Container
         width={containerWidth}
-        className="flex h-16 min-w-0 items-center justify-between gap-3 sm:h-[4.25rem] sm:gap-4"
+        className="relative flex h-16 min-w-0 items-center sm:h-[4.25rem]"
       >
-        <div className="flex min-w-0 items-center gap-3 xl:gap-8">
+        {/* Logo — pinned left */}
+        <div className="flex shrink-0 items-center">
           <Logo
             variant={onDark ? "dark" : "auto"}
             height={32}
             className="shrink-0"
           />
-          <nav
-            className="hidden items-center gap-0.5 xl:flex"
-            aria-label="Primary"
-          >
+        </div>
+
+        {/* Nav — centred absolutely on desktop */}
+        <nav
+          className="pointer-events-none absolute inset-0 hidden items-center justify-center gap-0.5 xl:flex"
+          aria-label="Primary"
+        >
+          <div className="pointer-events-auto flex items-center gap-0.5">
             {PUBLIC_NAV.map((item) => {
               const active = isPublicNavActive(item.href, pathname);
               return (
@@ -129,10 +134,11 @@ export function SiteHeader() {
               );
             })}
             <HeaderResourcesDropdown tone={onDark ? "onDark" : "default"} />
-          </nav>
-        </div>
+          </div>
+        </nav>
 
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        {/* Actions — pinned right */}
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
           <HeaderHostScanButton tone={onDark ? "onDark" : "default"} />
           <ThemeToggle compact tone={onDark ? "onDark" : "default"} />
 
@@ -157,7 +163,7 @@ export function SiteHeader() {
           ) : null}
 
           <span className="hidden xl:inline-flex">
-            <CreateEventCta />
+            <CreateEventCta buttonVariant={onDark ? "primary-on-dark" : "primary"} />
           </span>
 
           {authInitialized && user ? (

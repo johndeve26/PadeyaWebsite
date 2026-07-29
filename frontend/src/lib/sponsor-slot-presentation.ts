@@ -104,6 +104,13 @@ export function uniqueSlotCategories(slots: EnrichedSponsorshipSlot[]): string[]
   ).sort((a, b) => a.localeCompare(b));
 }
 
+/** Convert a snake_case slot type key to a human-readable label. */
+export function formatSlotTypeLabel(raw: string): string {
+  return raw
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export function uniqueSlotTypes(slots: EnrichedSponsorshipSlot[]): {
   value: string;
   label: string;
@@ -111,7 +118,10 @@ export function uniqueSlotTypes(slots: EnrichedSponsorshipSlot[]): {
   const seen = new Map<string, string>();
   for (const slot of slots) {
     if (!seen.has(slot.slot_type)) {
-      seen.set(slot.slot_type, slot.slot_type_label || slot.slot_type);
+      const label = slot.slot_type_label?.trim()
+        ? slot.slot_type_label
+        : formatSlotTypeLabel(slot.slot_type);
+      seen.set(slot.slot_type, label);
     }
   }
   return Array.from(seen.entries())

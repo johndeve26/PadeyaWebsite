@@ -57,7 +57,7 @@ export function SponsorFilterBar({
           <option value="all">All categories</option>
           {categories.map((c) => (
             <option key={c} value={c}>
-              {c}
+              {c.charAt(0).toUpperCase() + c.slice(1)}
             </option>
           ))}
         </Select>

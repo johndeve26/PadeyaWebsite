@@ -71,15 +71,6 @@ export function SponsorHowItWorks({
               >
                 {index + 1}
               </span>
-              <span
-                aria-hidden
-                className={cn(
-                  "text-sm",
-                  dark ? "text-accent" : "text-muted-foreground",
-                )}
-              >
-                {step.mark || "·"}
-              </span>
             </div>
             <h3
               className={cn(
