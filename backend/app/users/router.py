@@ -4,7 +4,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import CurrentUser, require_permission, require_role
@@ -54,6 +54,26 @@ class UserProfileUpdate(BaseModel):
     username: str | None = Field(default=None, min_length=3, max_length=32)
     avatar_url: str | None = Field(default=None, max_length=500)
     clear_avatar: bool = False
+    gender: str | None = Field(default=None, max_length=32)
+    gender_visibility: str | None = Field(default=None, max_length=32)
+
+    @field_validator("gender")
+    @classmethod
+    def valid_gender(cls, value: object) -> str | None:
+        from app.users.gender import parse_gender
+
+        if value is None:
+            return None
+        return parse_gender(value)
+
+    @field_validator("gender_visibility")
+    @classmethod
+    def valid_visibility(cls, value: object) -> str | None:
+        from app.users.gender import parse_gender_visibility
+
+        if value is None:
+            return None
+        return parse_gender_visibility(value)
 
 
 @router.get("/health")
@@ -90,6 +110,10 @@ def patch_me(
         username=data.get("username"),
         avatar_url=None if clear_avatar else avatar_url,
         clear_avatar=clear_avatar,
+        gender=data["gender"] if "gender" in data else None,
+        gender_set="gender" in data,
+        gender_visibility=data.get("gender_visibility"),
+        gender_visibility_set="gender_visibility" in data,
     )
     return UserPublic.model_validate(build_user_public(updated, db=db))
 

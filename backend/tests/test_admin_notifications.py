@@ -27,7 +27,7 @@ def _admin_headers(client: TestClient, db_session: Session, assign_role) -> dict
             "email": email,
             "password": "Password123!",
             "full_name": "Notif Admin",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201, reg.text
     assign_role(email, "super_admin")
@@ -90,7 +90,7 @@ def test_custom_campaign_sends_to_selected_users(
             "email": target_email,
             "password": "Password123!",
             "full_name": "Target User",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert target.status_code == 201, target.text
     me = client.get(
@@ -204,6 +204,7 @@ def test_unauthorized_cannot_send_notifications(client: TestClient):
             "email": f"fan-{uuid4().hex[:8]}@example.com",
             "password": "Password123!",
             "full_name": "Fan",
+            "gender": "prefer_not_to_say",
         },
     )
     assert reg.status_code == 201

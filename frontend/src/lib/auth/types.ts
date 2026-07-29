@@ -43,6 +43,12 @@ export type User = {
   full_name: string;
   username?: string | null;
   avatar_url?: string | null;
+  /** Owner view — null when unset (legacy accounts). */
+  gender?: string | null;
+  gender_short?: string | null;
+  gender_label?: string | null;
+  gender_visible?: boolean;
+  gender_visibility?: string;
   is_active: boolean;
   is_verified: boolean;
   roles: string[];

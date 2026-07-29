@@ -292,7 +292,7 @@ def test_tier_downgrade_when_thresholds_rise(
             "email": "legacy-admin@example.com",
             "password": "securepass1",
             "full_name": "Legacy Admin",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assign_role("legacy-admin@example.com", "finance_admin")
     login = client.post(
@@ -335,7 +335,7 @@ def test_admin_threshold_update_and_recalc_all(
     email = "legacy-ops@example.com"
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": "Ops"},
+        json={"email": email, "password": "securepass1", "full_name": "Ops", "gender": "prefer_not_to_say"},
     )
     assign_role(email, "finance_admin")
     login = client.post(

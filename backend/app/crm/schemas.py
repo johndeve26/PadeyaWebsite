@@ -43,6 +43,10 @@ class AudienceMemberPublic(BaseModel):
     tickets_purchased: int = 0
     last_order_at: datetime | None = None
     tags: list[str] = []
+    gender: str | None = None
+    gender_short: str | None = None
+    gender_label: str | None = None
+    gender_visible: bool = False
 
 
 class AudienceStatsPublic(BaseModel):

@@ -349,7 +349,7 @@ def test_location_kind_slug_resolve_and_filter(
             "email": "loc-filter-host@example.com",
             "password": "securepass1",
             "full_name": "Loc Host",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assign_role("loc-filter-host@example.com", "host")
     login = client.post(
@@ -439,7 +439,7 @@ def test_location_kind_slug_resolve_and_filter(
 def _host_headers(client: TestClient, assign_role, email: str) -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": "Host User"},
+        json={"email": email, "password": "securepass1", "full_name": "Host User", "gender": "prefer_not_to_say"},
     )
     assign_role(email, "host")
     login = client.post(
@@ -825,7 +825,7 @@ def test_listing_padeya_pick_rejects_unpublished(client: TestClient, assign_role
             "email": "draft-host@example.com",
             "password": "securepass1",
             "full_name": "Draft Host",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assign_role("draft-host@example.com", "host")
     login = client.post(

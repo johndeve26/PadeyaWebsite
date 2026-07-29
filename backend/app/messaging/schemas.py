@@ -206,6 +206,10 @@ class ParticipantPublic(BaseModel):
     legacy_path: str | None = None
     passport_path: str | None = None
     avatar_url: str | None = None
+    gender: str | None = None
+    gender_short: str | None = None
+    gender_label: str | None = None
+    gender_visible: bool = False
 
 
 class StarredMessagePublic(BaseModel):

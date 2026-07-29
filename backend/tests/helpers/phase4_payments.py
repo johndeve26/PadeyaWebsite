@@ -21,7 +21,7 @@ from app.users.service import get_role_by_name
 def register_and_login(client: TestClient, email: str) -> dict[str, str]:
     reg = client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": "Buyer User"},
+        json={"email": email, "password": "securepass1", "full_name": "Buyer User", "gender": "prefer_not_to_say"},
     )
     assert reg.status_code in {200, 201, 409}, reg.text
     login = client.post(

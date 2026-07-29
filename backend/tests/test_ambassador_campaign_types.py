@@ -167,7 +167,7 @@ def test_join_and_attribute_by_campaign_type(
             "email": "ctype-fan@example.com",
             "password": "securepass1",
             "full_name": "CType Fan",
-        },
+        "gender": "prefer_not_to_say"},
     )
     fan = _login(client, "ctype-fan@example.com")
 

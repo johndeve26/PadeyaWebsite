@@ -285,4 +285,9 @@ export type Host = {
   created_at: string;
   profile: HostProfile | null;
   taxonomy?: HostTaxonomy | null;
+  gender?: string | null;
+  gender_short?: string | null;
+  gender_label?: string | null;
+  gender_visible?: boolean;
+  shows_personal_gender?: boolean;
 };

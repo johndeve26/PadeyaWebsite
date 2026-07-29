@@ -21,7 +21,7 @@ def _tiny_png() -> bytes:
 def _auth_headers(client: TestClient, email: str) -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": "Uploader"},
+        json={"email": email, "password": "securepass1", "full_name": "Uploader", "gender": "prefer_not_to_say"},
     )
     login = client.post(
         "/api/v1/auth/login",

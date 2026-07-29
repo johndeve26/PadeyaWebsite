@@ -201,6 +201,11 @@ export type LegacyPage = {
   sponsor_packages?: LegacySponsorPackageCard[];
   reviews_block_hidden?: boolean;
   trust_note?: string | null;
+  shows_personal_gender?: boolean;
+  gender?: string | null;
+  gender_short?: string | null;
+  gender_label?: string | null;
+  gender_visible?: boolean;
 };
 
 export type RequirementItem = {

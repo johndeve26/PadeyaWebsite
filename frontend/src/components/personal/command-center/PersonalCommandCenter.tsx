@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner";
+import { GenderPromptBanner } from "@/components/profile/GenderPromptBanner";
 import { useHostWorkspace } from "@/components/hosts/HostWorkspaceProvider";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { AmbassadorSection } from "@/components/personal/command-center/AmbassadorSection";
@@ -245,6 +246,7 @@ export function PersonalCommandCenter() {
     >
       <div className="min-w-0 space-y-5 sm:space-y-6">
         <EmailVerificationBanner />
+        <GenderPromptBanner />
         <PersonalWorkspaceRoutingCard />
 
         {!quietHome && statusBits.length > 0 ? (

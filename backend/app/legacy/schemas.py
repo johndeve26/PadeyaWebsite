@@ -180,6 +180,11 @@ class LegacyPagePublic(BaseModel):
     tier: LegacyTierPublic | None = None
     composite_score: Decimal | None = None
     profile: HostProfilePublic | None
+    shows_personal_gender: bool = False
+    gender: str | None = None
+    gender_short: str | None = None
+    gender_label: str | None = None
+    gender_visible: bool = False
     stats: LegacyStatsPublic
     about: str | None
     upcoming_events: list[LegacyEventCard]

@@ -29,7 +29,7 @@ def test_normalize_order_reference():
 def _register_and_login(client: TestClient, email: str) -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": "Buyer User"},
+        json={"email": email, "password": "securepass1", "full_name": "Buyer User", "gender": "prefer_not_to_say"},
     )
     login = client.post(
         "/api/v1/auth/login",

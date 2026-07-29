@@ -121,6 +121,30 @@ def split_host_announcement_body(body: str) -> list[str]:
     return lines or [text]
 
 
+# Host CRM merge tokens — substituted per recipient at send time (never invent names).
+ANNOUNCEMENT_NAME_TOKENS = ("{{name}}", "{{first_name}}")
+
+
+def recipient_greeting_name(display_name: str | None) -> str:
+    """First name from profile/settings display name; fallback for empty."""
+    source = (display_name or "").strip()
+    if not source:
+        return "there"
+    # CRM may store "First L." — first token is still the given name.
+    return source.split()[0]
+
+
+def apply_announcement_merge_tokens(text: str, *, recipient_name: str | None) -> str:
+    """Replace {{name}} / {{first_name}} with the recipient's settings name."""
+    if not text:
+        return text
+    name = recipient_greeting_name(recipient_name)
+    out = text
+    for token in ANNOUNCEMENT_NAME_TOKENS:
+        out = out.replace(token, name)
+    return out
+
+
 def resolve_cta(template: TemplateDef, context: dict[str, Any], base_url: str) -> tuple[str | None, str | None]:
     label = context.get("cta_label") or template.cta_label
     path = context.get("cta_path") or template.cta_path
@@ -198,12 +222,22 @@ def render_host_announcement(
     host_name: str,
     host_slug: str,
     db=None,
+    recipient_name: str | None = None,
 ) -> tuple[str, str, str]:
-    """Branded host CRM blast — subject, plain text, HTML."""
+    """Branded host CRM blast — subject, plain text, HTML.
+
+    ``title`` is the email subject line. Optional ``recipient_name`` substitutes
+    ``{{name}}`` / ``{{first_name}}`` in subject and body from the fan's profile.
+    """
     cfg = email_runtime(db=db)
     base = cfg.app_base_url.rstrip("/")
-    subject = title.strip()
-    paragraphs = split_host_announcement_body(body)
+    subject = apply_announcement_merge_tokens(
+        title.strip(), recipient_name=recipient_name
+    )
+    personalized_body = apply_announcement_merge_tokens(
+        body, recipient_name=recipient_name
+    )
+    paragraphs = split_host_announcement_body(personalized_body)
     host_path = f"/hosts/{host_slug.strip('/')}"
     host_url = f"{base}{host_path}"
     cta_label = f"View {host_name} on {BRAND_NAME}"

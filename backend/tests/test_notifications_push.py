@@ -33,7 +33,7 @@ def test_notify_user_creates_in_app(
             "email": "notif-user@example.com",
             "password": "Password123!",
             "full_name": "Notif User",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
@@ -92,7 +92,7 @@ def test_non_admin_cannot_access_push_settings(client: TestClient):
             "email": "push-buyer@example.com",
             "password": "Password123!",
             "full_name": "Push Buyer",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
@@ -109,7 +109,7 @@ def test_admin_vapid_settings_encrypted(
             "email": "push-admin@example.com",
             "password": "Password123!",
             "full_name": "Push Admin",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     assign_role("push-admin@example.com", "super_admin")
@@ -149,7 +149,7 @@ def test_push_subscribe_requires_enabled_settings(
             "email": "sub-user@example.com",
             "password": "Password123!",
             "full_name": "Sub User",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
@@ -210,7 +210,7 @@ def test_admin_provider_log_and_deliveries(
             "email": "push-log-admin@example.com",
             "password": "Password123!",
             "full_name": "Push Log Admin",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     assign_role("push-log-admin@example.com", "super_admin")
@@ -304,7 +304,7 @@ def test_admin_can_disable_push_globally(
             "email": "push-off-admin@example.com",
             "password": "Password123!",
             "full_name": "Push Off Admin",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     assign_role("push-off-admin@example.com", "super_admin")
@@ -337,7 +337,7 @@ def test_multi_device_subscriptions_and_remove(
             "email": "multi-device@example.com",
             "password": "Password123!",
             "full_name": "Multi Device",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     assign_role("multi-device@example.com", "super_admin")
@@ -419,7 +419,7 @@ def test_push_outbox_enqueue_dedupe_and_skip(
             "email": "push-outbox@example.com",
             "password": "Password123!",
             "full_name": "Outbox User",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     user = db_session.scalar(
@@ -531,7 +531,7 @@ def test_push_preference_rules(db_session: Session, client: TestClient, monkeypa
             "email": "push-prefs@example.com",
             "password": "Password123!",
             "full_name": "Push Prefs",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}

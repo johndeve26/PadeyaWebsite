@@ -6,8 +6,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import CurrentUser, require_permission
+from app.auth.dependencies import CurrentUser, get_current_user_optional, require_permission
 from app.core.database import get_db
+from app.users.models import User
 from app.passport.directory_service import (
     admin_hide_fan,
     admin_restore_fan,
@@ -148,18 +149,32 @@ def fan_directory(
 def public_passport(
     username: str,
     db: Annotated[Session, Depends(get_db)],
+    viewer: Annotated[User | None, Depends(get_current_user_optional)] = None,
 ) -> FanPassportPublicPage:
     from app.core.cache import CacheTTL, cache_get, cache_key, cache_set
+    from app.users.gender import gender_display_payload
 
     key = cache_key("passport", "public", username)
     hit = cache_get(key)
     if hit is not None:
-        return FanPassportPublicPage.model_validate(hit)
+        payload = FanPassportPublicPage.model_validate(hit)
+    else:
+        payload = FanPassportPublicPage.model_validate(
+            build_public_passport_page(db, username, viewer=None)
+        )
+        cache_set(key, payload.model_dump(mode="json"), CacheTTL.profile)
 
-    payload = FanPassportPublicPage.model_validate(
-        build_public_passport_page(db, username)
-    )
-    cache_set(key, payload.model_dump(mode="json"), CacheTTL.profile)
+    # Overlay viewer-specific gender without polluting the public cache.
+    if viewer is not None:
+        owner = db.get(User, payload.user_id)
+        if owner is not None:
+            gender = gender_display_payload(
+                db,
+                viewer=viewer,
+                profile_owner=owner,
+                relationship_context="profile",
+            )
+            return payload.model_copy(update=gender)
     return payload
 
 

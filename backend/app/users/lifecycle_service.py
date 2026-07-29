@@ -27,7 +27,16 @@ def update_my_profile(
     username: str | None = None,
     avatar_url: str | None = None,
     clear_avatar: bool = False,
+    gender: str | None = None,
+    gender_set: bool = False,
+    gender_visibility: str | None = None,
+    gender_visibility_set: bool = False,
 ) -> User:
+    from app.users.gender import (
+        DEFAULT_GENDER_VISIBILITY,
+        parse_gender,
+        parse_gender_visibility,
+    )
     from app.users.unified_profile import (
         apply_unified_avatar,
         apply_unified_display_name,
@@ -47,6 +56,31 @@ def update_my_profile(
     elif avatar_url is not None:
         applied_avatar = apply_unified_avatar(db, user, avatar_url)
         details["avatar_url"] = applied_avatar or ""
+
+    gender_changed = False
+    if gender_set:
+        try:
+            parsed = parse_gender(gender)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=str(exc),
+            ) from exc
+        user.gender = parsed
+        details["gender"] = parsed or ""
+        gender_changed = True
+    if gender_visibility_set:
+        try:
+            vis = parse_gender_visibility(gender_visibility)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=str(exc),
+            ) from exc
+        user.gender_visibility = vis or DEFAULT_GENDER_VISIBILITY
+        details["gender_visibility"] = user.gender_visibility
+        gender_changed = True
+
     write_audit_log(
         db,
         action="users.profile_update",
@@ -57,6 +91,23 @@ def update_my_profile(
     )
     db.commit()
     db.refresh(user)
+
+    if gender_changed:
+        from app.core.cache_invalidation import (
+            invalidate_fan_public_caches,
+            invalidate_host_public_caches,
+        )
+        from app.hosts.models import Host
+        from app.passport.models import FanPassport
+        from sqlalchemy import select
+
+        passport = db.scalar(select(FanPassport).where(FanPassport.user_id == user.id))
+        if passport and passport.username:
+            invalidate_fan_public_caches(username=passport.username)
+        host = db.scalar(select(Host).where(Host.user_id == user.id))
+        if host is not None:
+            invalidate_host_public_caches(host_id=host.id, username=host.slug)
+
     return user
 
 

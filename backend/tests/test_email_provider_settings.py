@@ -131,7 +131,7 @@ def test_admin_test_endpoint_uses_saved_settings(
             "email": "test-smtp@example.com",
             "password": "Password123!",
             "full_name": "Test SMTP",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     assign_role("test-smtp@example.com", "super_admin")

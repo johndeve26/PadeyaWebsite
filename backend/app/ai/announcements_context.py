@@ -30,6 +30,8 @@ ANNOUNCEMENT_SAFE_KEYS = frozenset(
         "merch_title",
         "vault_label",
         "location_visibility",
+        "personalize_with_name",
+        "name_merge_token",
     }
 )
 
@@ -75,12 +77,31 @@ def build_host_announcement_context(
         "merch_title": "",
         "vault_label": "",
         "location_visibility": "full_public",
+        "personalize_with_name": "no",
+        "name_merge_token": "{{name}}",
     }
     if extra:
         for key in ANNOUNCEMENT_SAFE_KEYS:
             if key in extra and extra[key] is not None:
                 raw[key] = extra[key]
         # Drop any non-allowlisted keys silently (scrubber will also drop forbidden)
+
+    personalize = str(raw.get("personalize_with_name") or "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    raw["personalize_with_name"] = "yes" if personalize else "no"
+    if personalize:
+        note = (
+            "PERSONALIZATION REQUIRED: Greet each recipient with the literal merge "
+            "token {{name}} (e.g. Hi {{name}},). Never invent real names. "
+            "Pàdéyá substitutes {{name}} from each fan's profile settings at send time. "
+            "You may also use {{name}} in the SUBJECT line."
+        )
+        existing = str(raw.get("host_notes") or "").strip()
+        raw["host_notes"] = f"{existing}\n\n{note}".strip() if existing else note
 
     if event_id is not None:
         event = db.get(Event, event_id)
@@ -108,6 +129,9 @@ def build_host_announcement_context(
         allowlist=ANNOUNCEMENT_SAFE_KEYS,
     )
     scrubbed["host_name"] = host.display_name or ""
+    # Always restore merge-token literal (scrubbers must not strip braces).
+    scrubbed["name_merge_token"] = "{{name}}"
+    scrubbed["personalize_with_name"] = "yes" if personalize else "no"
     return HostAnnouncementContextResult(
         scrubbed_context=scrubbed,
         host_id=host.id,

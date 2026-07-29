@@ -79,6 +79,10 @@ export type FanDirectoryCard = {
   city_label?: string | null;
   favorite_scene?: string | null;
   top_badges: { slug: string; name: string }[];
+  gender?: string | null;
+  gender_short?: string | null;
+  gender_label?: string | null;
+  gender_visible?: boolean;
   events_attended: number;
   hosts_followed: number;
   reviews_written: number;
@@ -123,6 +127,11 @@ export type FanPassport = {
   bio?: string | null;
   visibility: PassportVisibility;
   share_path?: string | null;
+  gender?: string | null;
+  gender_short?: string | null;
+  gender_label?: string | null;
+  gender_visible?: boolean;
+  gender_visibility?: string;
   tickets_bought: number;
   events_attended: number;
   hosts_followed: number;
@@ -160,6 +169,10 @@ export type FanPassportPublicPage = {
   bio?: string | null;
   visibility: PassportVisibility;
   is_superfan: boolean;
+  gender?: string | null;
+  gender_short?: string | null;
+  gender_label?: string | null;
+  gender_visible?: boolean;
   events_attended: number;
   hosts_followed: number;
   badges_earned_count: number;

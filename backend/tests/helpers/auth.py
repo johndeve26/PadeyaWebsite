@@ -17,6 +17,7 @@ def register_json(
     email: str,
     password: str = "securepass1",
     full_name: str = "Test User",
+    gender: str = "prefer_not_to_say",
     **extra: object,
 ) -> dict[str, object]:
     """Build a register payload with an explicit unique username."""
@@ -25,6 +26,7 @@ def register_json(
         "password": password,
         "full_name": full_name,
         "username": username_from_email(email),
+        "gender": gender,
     }
     payload.update(extra)
     return payload

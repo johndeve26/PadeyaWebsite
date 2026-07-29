@@ -531,7 +531,10 @@ def create_announcement(
                 announcement_id=announcement.id,
                 user_id=member["user_id"],
                 email=member["email"],
-                display_name=member["display_name"],
+                # Prefer greeting_name (settings given name) for {{name}} merge.
+                display_name=str(
+                    member.get("greeting_name") or member["display_name"] or "there"
+                ),
                 channel=payload.channel,
                 status=recipient_status,
                 skip_reason=skip_reason,
@@ -686,6 +689,16 @@ def dispatch_announcement_email(
             continue
         try:
             from app.email.renderer import render_host_announcement
+            from app.users.models import User as UserModel
+
+            fan = db.get(UserModel, recipient.user_id)
+            greeting = (
+                (fan.full_name or "").strip().split()[0]
+                if fan and (fan.full_name or "").strip()
+                else (recipient.display_name or "").strip().split()[0]
+                if (recipient.display_name or "").strip()
+                else "there"
+            )
 
             try:
                 subject, text_body, html_body = render_host_announcement(
@@ -694,6 +707,7 @@ def dispatch_announcement_email(
                     host_name=host.display_name,
                     host_slug=host.slug,
                     db=db,
+                    recipient_name=greeting,
                 )
             except ValueError as exc:
                 raise HTTPException(

@@ -5,6 +5,10 @@ export type MessageParticipant = {
   legacy_path?: string | null;
   passport_path?: string | null;
   avatar_url?: string | null;
+  gender?: string | null;
+  gender_short?: string | null;
+  gender_label?: string | null;
+  gender_visible?: boolean;
 };
 
 export type RelatedEventChip = {

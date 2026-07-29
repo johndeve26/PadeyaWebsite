@@ -32,7 +32,7 @@ def test_notification_center_list_filter_and_read(
             "email": "center-user@example.com",
             "password": "Password123!",
             "full_name": "Center User",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}

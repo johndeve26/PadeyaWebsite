@@ -47,7 +47,7 @@ def _login(client: TestClient, email: str) -> dict[str, str]:
 def _register(client: TestClient, email: str, name: str = "User") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": name},
+        json={"email": email, "password": "securepass1", "full_name": name, "gender": "prefer_not_to_say"},
     )
     return _login(client, email)
 
@@ -1228,7 +1228,7 @@ def test_impersonation_cannot_checkout_own_host(
             "email": "sa-imp-admin@example.com",
             "password": "securepass1",
             "full_name": "Imp Admin",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert admin_reg.status_code in {200, 201}, admin_reg.text
     assign_role("sa-imp-admin@example.com", "super_admin")

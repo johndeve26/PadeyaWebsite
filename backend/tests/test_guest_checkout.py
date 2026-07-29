@@ -270,7 +270,7 @@ def test_guest_claim_after_login(client: TestClient, db_session: Session):
             "email": "claim.guest@example.com",
             "password": "securepass1",
             "full_name": "Claim Guest",
-        },
+        "gender": "prefer_not_to_say"},
     )
     login = client.post(
         "/api/v1/auth/login",
@@ -354,7 +354,7 @@ def test_guest_claim_start_account_checkout_returns_on_account(
             "email": "account.buyer@example.com",
             "password": "securepass1",
             "full_name": "Account Buyer",
-        },
+        "gender": "prefer_not_to_say"},
     )
     login = client.post(
         "/api/v1/auth/login",

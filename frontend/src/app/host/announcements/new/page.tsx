@@ -14,6 +14,8 @@ import { fetchMyEvents } from "@/lib/events-api";
 import type { AudienceSegment } from "@/lib/types/crm";
 import type { EventItem } from "@/lib/types/events";
 
+const NAME_TOKEN = "{{name}}";
+
 function FormSection({
   title,
   description,
@@ -37,10 +39,17 @@ function FormSection({
   );
 }
 
+function insertNameToken(text: string): string {
+  if (text.includes(NAME_TOKEN)) return text;
+  const trimmed = text.trim();
+  if (!trimmed) return `Hi ${NAME_TOKEN},\n\n`;
+  return `Hi ${NAME_TOKEN},\n\n${trimmed}`;
+}
+
 export default function NewAnnouncementPage() {
   const router = useRouter();
   const [segments, setSegments] = useState<AudienceSegment[]>([]);
-  const [title, setTitle] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
   const [bodyEmail, setBodyEmail] = useState("");
   const [bodyWhatsapp, setBodyWhatsapp] = useState("");
   const [channel, setChannel] = useState("both");
@@ -48,11 +57,13 @@ export default function NewAnnouncementPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [contextEventId, setContextEventId] = useState("");
   const [aiNotes, setAiNotes] = useState("");
+  const [personalizeWithName, setPersonalizeWithName] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitAction, setSubmitAction] = useState<"draft" | "send" | null>(null);
 
   const canSendEmail = channel === "email" || channel === "both";
+  const subjectPreview = emailSubject.trim() || "Your subject will appear here";
 
   useEffect(() => {
     let active = true;
@@ -75,13 +86,26 @@ export default function NewAnnouncementPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!personalizeWithName) return;
+    setBodyEmail((prev) => insertNameToken(prev));
+  }, [personalizeWithName]);
+
   async function handleCreate(sendEmail: boolean) {
     setError(null);
+    if (!emailSubject.trim()) {
+      setError(
+        canSendEmail
+          ? "Add an email subject — recipients see this in their inbox."
+          : "Add a title for this announcement.",
+      );
+      return;
+    }
     setSubmitting(true);
     setSubmitAction(sendEmail ? "send" : "draft");
     try {
       const created = await createAnnouncement({
-        title,
+        title: emailSubject.trim(),
         body_email: bodyEmail,
         body_whatsapp: bodyWhatsapp || null,
         channel,
@@ -137,14 +161,40 @@ export default function NewAnnouncementPage() {
 
         <Card className="max-w-2xl">
           <form className="space-y-8" onSubmit={onSubmitDraft}>
-            <FormSection title="Basics" description="Internal title for your broadcast history.">
+            <FormSection
+              title="Email subject"
+              description={
+                canSendEmail
+                  ? "This is the subject line fans see in their inbox — not an internal label."
+                  : "Used as the announcement title in your history (WhatsApp has no subject)."
+              }
+            >
               <Input
-                label="Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                hint="Not shown to recipients — for your records."
+                label={canSendEmail ? "Email subject" : "Title"}
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                hint={
+                  canSendEmail
+                    ? "Shown as the email subject. You can include {{name}} to personalize."
+                    : "For your records and WhatsApp export heading."
+                }
+                placeholder={
+                  canSendEmail
+                    ? "e.g. This Saturday — doors at 8"
+                    : "e.g. Weekend reminder"
+                }
                 required
               />
+              {canSendEmail ? (
+                <div className="rounded-[var(--radius-lg)] border border-border bg-surface-muted/50 px-3 py-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Inbox preview
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-foreground">
+                    {subjectPreview}
+                  </p>
+                </div>
+              ) : null}
             </FormSection>
 
             <FormSection
@@ -182,8 +232,29 @@ export default function NewAnnouncementPage() {
               title="Message content"
               description="Write channel-specific copy. Email requires at least 5 characters."
             >
+              <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-lg)] border border-border bg-card/50 p-3">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={personalizeWithName}
+                  onChange={(e) => setPersonalizeWithName(e.target.checked)}
+                />
+                <span className="min-w-0 space-y-1">
+                  <span className="block text-sm font-semibold text-foreground">
+                    Address each fan by name
+                  </span>
+                  <span className="block text-xs leading-relaxed text-muted-foreground">
+                    Uses the given name from their Pàdéyá profile settings. Inserts{" "}
+                    <code className="rounded bg-surface-muted px-1 py-0.5 text-[11px]">
+                      {NAME_TOKEN}
+                    </code>{" "}
+                    — replaced for each recipient when you send. Never invents names.
+                  </span>
+                </span>
+              </label>
+
               <HostAnnouncementAIAssist
-                title={title}
+                title={emailSubject}
                 bodyEmail={bodyEmail}
                 bodyWhatsapp={bodyWhatsapp}
                 channel={channel}
@@ -194,9 +265,14 @@ export default function NewAnnouncementPage() {
                 }
                 eventId={contextEventId}
                 hostNotes={aiNotes}
+                personalizeWithName={personalizeWithName}
                 onApply={(patch) => {
-                  if (patch.title) setTitle(patch.title);
-                  setBodyEmail(patch.bodyEmail);
+                  if (patch.title) setEmailSubject(patch.title);
+                  setBodyEmail(
+                    personalizeWithName
+                      ? insertNameToken(patch.bodyEmail)
+                      : patch.bodyEmail,
+                  );
                   if (patch.bodyWhatsapp !== undefined) {
                     setBodyWhatsapp(patch.bodyWhatsapp);
                   }
@@ -222,20 +298,30 @@ export default function NewAnnouncementPage() {
                 hint="Tone, promo angle, or reminders — not recipient details."
                 className="min-h-[80px]"
               />
-              <Textarea
-                label="Email body"
-                value={bodyEmail}
-                onChange={(e) => setBodyEmail(e.target.value)}
-                hint="Sent to marketing opt-in recipients when dispatched — wrapped in Pàdéyá branding with your host profile link."
-                className="min-h-[140px]"
-                required
-                minLength={5}
-              />
+              <div className="space-y-2">
+                <Textarea
+                  label="Email body"
+                  value={bodyEmail}
+                  onChange={(e) => setBodyEmail(e.target.value)}
+                  hint="Sent to marketing opt-in recipients when dispatched — wrapped in Pàdéyá branding with your host profile link."
+                  className="min-h-[140px]"
+                  required
+                  minLength={5}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setBodyEmail((prev) => insertNameToken(prev))}
+                >
+                  Insert {NAME_TOKEN} greeting
+                </Button>
+              </div>
               <Textarea
                 label="WhatsApp body (optional)"
                 value={bodyWhatsapp}
                 onChange={(e) => setBodyWhatsapp(e.target.value)}
-                hint="Short copy for manual WhatsApp broadcast."
+                hint="Short copy for manual WhatsApp broadcast. Name tokens work if you paste them here for export."
                 className="min-h-[100px]"
                 placeholder="Short copy for manual WhatsApp broadcast"
               />
@@ -267,7 +353,8 @@ export default function NewAnnouncementPage() {
               {canSendEmail ? (
                 <p className="text-xs text-muted-foreground sm:order-3 sm:basis-full">
                   Send uses marketing opt-in only. Fans who opt in after this
-                  page still count when you dispatch.
+                  page still count when you dispatch. Subject and body are
+                  personalized per recipient when you use {NAME_TOKEN}.
                 </p>
               ) : null}
             </div>

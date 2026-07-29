@@ -35,7 +35,7 @@ def _login(client: TestClient, email: str) -> dict[str, str]:
 def _register(client: TestClient, email: str, name: str) -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": name},
+        json={"email": email, "password": "securepass1", "full_name": name, "gender": "prefer_not_to_say"},
     )
     return _login(client, email)
 
@@ -549,7 +549,7 @@ def test_platform_campaign_rewards_admin_only(
             "email": "rew-admin@example.com",
             "password": "securepass1",
             "full_name": "Admin",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assign_role("rew-admin@example.com", "super_admin")
     admin_h = _login(client, "rew-admin@example.com")

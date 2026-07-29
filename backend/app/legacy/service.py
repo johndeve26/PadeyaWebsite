@@ -449,6 +449,23 @@ def build_legacy_page(
     merch_counts = host_merch_proof_counts(db, host.id)
     merch_summaries = host_merch_proof_summaries(db, host.id)
 
+    from app.taxonomy import service as taxonomy_service
+    from app.users.gender import (
+        HIDDEN_GENDER_PAYLOAD,
+        host_shows_personal_gender,
+        public_cache_safe_gender_payload,
+    )
+    from app.users.models import User as UserModel
+
+    tax = taxonomy_service.get_host_taxonomy(db, host.id)
+    type_slugs = tax.get("host_type_slugs") or []
+    shows_personal = host_shows_personal_gender(type_slugs)
+    owner = db.get(UserModel, host.user_id)
+    if not shows_personal or owner is None:
+        gender_payload = dict(HIDDEN_GENDER_PAYLOAD)
+    else:
+        gender_payload = public_cache_safe_gender_payload(owner)
+
     return {
         "host_id": host.id,
         "display_name": host.display_name,
@@ -459,6 +476,8 @@ def build_legacy_page(
         "tier": _serialize_tier(tier),
         "composite_score": score.composite_score,
         "profile": profile,
+        "shows_personal_gender": shows_personal,
+        **gender_payload,
         "stats": {
             "events_hosted": score.events_hosted,
             "tickets_sold": score.tickets_sold,

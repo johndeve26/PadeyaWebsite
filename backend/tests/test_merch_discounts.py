@@ -109,7 +109,12 @@ def _register_buyer(client: TestClient, email: str) -> dict[str, str]:
     local_part = email.split("@")[0]
     res = client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": f"Buyer {local_part}"},
+        json={
+            "email": email,
+            "password": "securepass1",
+            "full_name": f"Buyer {local_part}",
+            "gender": "prefer_not_to_say",
+        },
     )
     assert res.status_code == 201, res.text
     return _login(client, email)

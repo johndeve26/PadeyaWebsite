@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { DeclineRequestModal } from "@/components/fan-connect/DeclineRequestModal";
 import { SharedContextChips } from "@/components/fan-connect/SharedContextChips";
+import { GenderBadge } from "@/components/profile/GenderBadge";
 import {
   Alert,
   Button,
@@ -120,7 +121,20 @@ export function ConnectRequestList({ box }: Props) {
           <li key={row.id} className="space-y-3 px-4 py-4 sm:px-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="font-semibold text-heading">{name}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-semibold text-heading">{name}</p>
+                  {row.counterpart.gender_visible &&
+                  row.counterpart.gender_short ? (
+                    <GenderBadge
+                      value={{
+                        gender: row.counterpart.gender ?? null,
+                        gender_short: row.counterpart.gender_short,
+                        gender_label: row.counterpart.gender_label ?? null,
+                        gender_visible: row.counterpart.gender_visible,
+                      }}
+                    />
+                  ) : null}
+                </div>
                 {uname ? (
                   <Link
                     href={`/f/${uname}`}

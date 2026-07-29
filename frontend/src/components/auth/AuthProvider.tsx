@@ -53,6 +53,7 @@ type AuthContextValue = {
     email: string;
     password: string;
     username: string;
+    gender: string;
   }) => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -163,7 +164,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (input: { email: string; password: string; username: string }) => {
+    async (input: {
+      email: string;
+      password: string;
+      username: string;
+      gender: string;
+    }) => {
       clearImpersonationStash();
       const tokens = await registerRequest(input);
       setTokens(tokens);

@@ -183,7 +183,7 @@ def test_notify_admins_report_emails_and_in_app(
             "email": "admin-report@example.com",
             "password": "Password123!",
             "full_name": "Admin Report",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     assign_role("admin-report@example.com", "super_admin")
@@ -270,7 +270,7 @@ def test_register_notifies_admins_in_app(
             "password": "Password123!",
             "full_name": "Ops Admin",
             "username": "opsadminreg",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert admin_reg.status_code == 201
     assign_role("ops-admin-reg@example.com", "super_admin")
@@ -312,7 +312,7 @@ def test_register_notifies_admins_in_app(
             "password": "Password123!",
             "full_name": "New Fan",
             "username": "newfannotify",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert fan.status_code == 201, fan.text
     fan_user = db_session.scalar(
@@ -351,7 +351,7 @@ def test_notify_admins_user_registered_dedupes(
             "password": "Password123!",
             "full_name": "Dedupe Admin",
             "username": "dedupeadmin",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     assign_role("dedupe-admin@example.com", "super_admin")
@@ -402,7 +402,7 @@ def test_notify_admins_ticket_sale_creates_in_app(
             "password": "Password123!",
             "full_name": "Finance Admin",
             "username": "financeadminsale",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     assign_role("finance-admin-sale@example.com", "super_admin")
@@ -471,7 +471,7 @@ def test_checkout_init_does_not_notify_admins_ticket_sale(
             "password": "Password123!",
             "full_name": "Checkout Admin",
             "username": "checkoutadmin",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert admin_reg.status_code == 201
     assign_role("checkout-admin@example.com", "super_admin")

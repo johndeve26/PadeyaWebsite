@@ -177,6 +177,8 @@ export async function updateMyProfile(body: {
   username?: string;
   avatar_url?: string | null;
   clear_avatar?: boolean;
+  gender?: string;
+  gender_visibility?: string;
 }): Promise<UserPublic> {
   return apiRequest<UserPublic>("/users/me", { method: "PATCH", body });
 }

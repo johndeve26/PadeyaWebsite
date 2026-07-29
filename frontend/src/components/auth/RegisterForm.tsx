@@ -11,11 +11,13 @@ import {
   ProfileLocationTaxonomyFields,
   type ProfileLocationLabels,
 } from "@/components/discovery/ProfileLocationTaxonomyFields";
+import { GenderFields } from "@/components/profile/GenderFields";
 import { Alert, Button, Input } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { emailVerifyPath } from "@/lib/auth/email-verify-path";
 import { writeRegisterLocationSeed } from "@/lib/auth/register-location";
 import { safeNextPath } from "@/lib/auth/safe-next";
+import type { Gender } from "@/lib/gender";
 import {
   normalizePassportUsername,
   PASSPORT_USERNAME_PATTERN,
@@ -40,6 +42,7 @@ export function RegisterForm() {
   const [email, setEmail] = useState(() => initial.email);
   const [emailFromClaim, setEmailFromClaim] = useState(Boolean(initial.email));
   const [password, setPassword] = useState("");
+  const [gender, setGender] = useState<Gender | null>(null);
   const [location, setLocation] = useState<ProfileLocationLabels>({
     country: "",
     state: "",
@@ -100,6 +103,10 @@ export function RegisterForm() {
       setError("Password must be at least 8 characters.");
       return;
     }
+    if (!gender) {
+      setError("Select your gender to continue.");
+      return;
+    }
     if (!acceptedTerms) {
       setError("Accept the Terms of Service to create your account.");
       return;
@@ -110,6 +117,7 @@ export function RegisterForm() {
         email,
         password,
         username: normalizedUsername,
+        gender,
       });
       writeRegisterLocationSeed(location);
       const next = searchParams.get("next");
@@ -208,6 +216,16 @@ export function RegisterForm() {
           value={password}
           onChange={setPassword}
         />
+        <GenderFields
+          gender={gender}
+          onGenderChange={(value) => {
+            setGender(value);
+            setError(null);
+          }}
+          showVisibility={false}
+          required
+          surface="onDark"
+        />
         <ProfileLocationTaxonomyFields
           value={location}
           onChange={setLocation}
@@ -250,7 +268,7 @@ export function RegisterForm() {
           type="submit"
           className="w-full"
           size="lg"
-          disabled={submitting || !acceptedTerms}
+          disabled={submitting || !acceptedTerms || !gender}
         >
           {submitting ? "Creating account…" : "Create account"}
         </Button>

@@ -24,12 +24,19 @@ def _aware(dt: datetime) -> datetime:
 
 
 def _display_name(full_name: str) -> str:
+    """Privacy-safe list label (First L.). Prefer full given name for greetings elsewhere."""
     parts = (full_name or "").strip().split()
     if not parts:
         return "Attendee"
     if len(parts) == 1:
         return parts[0]
     return f"{parts[0]} {parts[-1][0]}."
+
+
+def _greeting_name(full_name: str) -> str:
+    """Given name from account settings for announcement personalization."""
+    parts = (full_name or "").strip().split()
+    return parts[0] if parts else "there"
 
 
 def _host_event_ids(db: Session, host_id: UUID) -> list[UUID]:
@@ -68,15 +75,21 @@ def _member(
     last_order_at: datetime | None = None,
     tags: list[str] | None = None,
 ) -> dict:
+    from app.users.gender import public_cache_safe_gender_payload
+
+    gender = public_cache_safe_gender_payload(user)
     return {
         "user_id": user.id,
         "display_name": _display_name(user.full_name),
+        # Given name from account settings — used for {{name}} in announcements.
+        "greeting_name": _greeting_name(user.full_name),
         "email": user.email,
         "marketing_opt_in": marketing_opt_in,
         "events_attended": events_attended,
         "tickets_purchased": tickets_purchased,
         "last_order_at": last_order_at,
         "tags": tags or [],
+        **gender,
     }
 
 

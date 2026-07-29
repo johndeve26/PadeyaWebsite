@@ -91,7 +91,7 @@ def _admin_headers(client: TestClient, assign_role, email: str = "adm-amb@exampl
             "email": email,
             "password": "securepass1",
             "full_name": "Amb Admin",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assign_role(email, "super_admin")
     return _login(client, email)
@@ -178,7 +178,7 @@ def test_admin_block_reverse_and_reward(
             "email": "adm-fan@example.com",
             "password": "securepass1",
             "full_name": "Adm Fan",
-        },
+        "gender": "prefer_not_to_say"},
     )
     fan = _login(client, "adm-fan@example.com")
     joined = client.post(

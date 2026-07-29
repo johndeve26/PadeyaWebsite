@@ -26,6 +26,7 @@ import {
   type ThreadSearchFilter,
 } from "@/components/messaging/ThreadSearch";
 import { ThreadListItem } from "@/components/messaging/ThreadListItem";
+import { GenderBadge } from "@/components/profile/GenderBadge";
 import {
   Alert,
   Badge,
@@ -1007,6 +1008,19 @@ export function MessagesInbox({
                     <h2 className="text-lg font-extrabold text-heading">
                       {activeDetail.counterpart.display_name}
                     </h2>
+                    {activeDetail.counterpart.gender_visible &&
+                    activeDetail.counterpart.gender_short ? (
+                      <GenderBadge
+                        value={{
+                          gender: activeDetail.counterpart.gender ?? null,
+                          gender_short: activeDetail.counterpart.gender_short,
+                          gender_label:
+                            activeDetail.counterpart.gender_label ?? null,
+                          gender_visible:
+                            activeDetail.counterpart.gender_visible,
+                        }}
+                      />
+                    ) : null}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {activeDetail.thread_type === "fan_fan" ||

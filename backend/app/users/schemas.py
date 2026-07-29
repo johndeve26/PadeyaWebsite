@@ -35,6 +35,12 @@ class UserPublic(BaseModel):
     full_name: str
     username: str | None = None
     avatar_url: str | None = None
+    # Owner/settings: always present for /me; may be null when unset.
+    gender: str | None = None
+    gender_short: str | None = None
+    gender_label: str | None = None
+    gender_visible: bool = True
+    gender_visibility: str = "connections_only"
     is_active: bool
     is_verified: bool
     ambassadors_blocked: bool = False
@@ -93,6 +99,10 @@ class AdminUserProfileSection(BaseModel):
     ambassador_profile_status: str | None = None
     ambassadors_program_blocked: bool = False
     campaigns_joined: int = 0
+    gender: str | None = None
+    gender_label: str | None = None
+    gender_visibility: str | None = None
+    gender_unset: bool = True
 
 
 class AdminUserAccountSection(BaseModel):

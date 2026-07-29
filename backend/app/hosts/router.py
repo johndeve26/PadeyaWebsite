@@ -45,8 +45,16 @@ def _client_meta(request: Request) -> tuple[str | None, str | None]:
     return ip, ua
 
 
-def _serialize_host(db: Session, host) -> HostPublic:
+def _serialize_host(
+    db: Session, host, *, viewer: User | None = None
+) -> HostPublic:
     from app.taxonomy import service as taxonomy_service
+    from app.users.gender import (
+        HIDDEN_GENDER_PAYLOAD,
+        gender_display_payload,
+        host_shows_personal_gender,
+        owner_gender_settings_payload,
+    )
 
     public = HostPublic.model_validate(host)
     tax = taxonomy_service.get_host_taxonomy(db, host.id)
@@ -54,14 +62,33 @@ def _serialize_host(db: Session, host) -> HostPublic:
     if host.profile and host.profile.social_links:
         raw = host.profile.social_links.get("niche_positioning")
         niche = raw if isinstance(raw, str) else None
+    type_slugs = tax.get("host_type_slugs") or []
     public.taxonomy = HostTaxonomyPublic(
-        host_type_slugs=tax.get("host_type_slugs") or [],
+        host_type_slugs=type_slugs,
         category_slugs=tax.get("category_slugs") or [],
         audience_slugs=tax.get("audience_slugs") or [],
         primary_city_slug=tax.get("primary_city_slug"),
         service_area_slugs=tax.get("service_area_slugs") or [],
         niche_positioning=niche,
     )
+    shows = host_shows_personal_gender(type_slugs)
+    public.shows_personal_gender = shows
+    owner = db.get(User, host.user_id)
+    if not shows or owner is None:
+        gender = dict(HIDDEN_GENDER_PAYLOAD)
+    elif viewer is not None and viewer.id == owner.id:
+        gender = owner_gender_settings_payload(owner)
+    else:
+        gender = gender_display_payload(
+            db,
+            viewer=viewer,
+            profile_owner=owner,
+            relationship_context="profile",
+        )
+    public.gender = gender.get("gender")
+    public.gender_short = gender.get("gender_short")
+    public.gender_label = gender.get("gender_label")
+    public.gender_visible = bool(gender.get("gender_visible"))
     return public
 
 
@@ -86,7 +113,7 @@ def onboard(
         ip_address=ip,
         user_agent=ua,
     )
-    return _serialize_host(db, host)
+    return _serialize_host(db, host, viewer=user)
 
 
 @router.get("/me", response_model=HostPublic)
@@ -97,7 +124,7 @@ def read_my_host(
     host = get_host_by_user_id(db, user.id)
     if host is None:
         raise HTTPException(status_code=404, detail="Host profile not found")
-    return _serialize_host(db, host)
+    return _serialize_host(db, host, viewer=user)
 
 
 @router.patch("/me", response_model=HostPublic)
@@ -107,7 +134,7 @@ def patch_my_host(
     user: CurrentUser,
 ) -> HostPublic:
     host = update_host_profile(db, user=user, payload=payload)
-    return _serialize_host(db, host)
+    return _serialize_host(db, host, viewer=user)
 
 
 # --- Workspaces (owner + team + event staff) ---

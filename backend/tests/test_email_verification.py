@@ -14,7 +14,7 @@ from app.users.models import User
 def _register(client, *, email: str, username: str, password: str = "securepass1"):
     return client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "username": username},
+        json={"email": email, "password": password, "username": username, "gender": "prefer_not_to_say"},
     )
 
 

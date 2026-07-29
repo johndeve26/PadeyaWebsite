@@ -154,7 +154,7 @@ def test_admin_approval_rejection(client: TestClient, assign_role):
             "email": "super@example.com",
             "password": "securepass1",
             "full_name": "Super Admin",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assign_role("super@example.com", "super_admin")
     login = client.post(

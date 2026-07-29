@@ -61,7 +61,7 @@ def test_user_can_register_and_unregister_push_subscription(
             "email": "checklist-sub@example.com",
             "password": "Password123!",
             "full_name": "Checklist Sub",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
@@ -111,7 +111,7 @@ def test_push_enqueued_for_ticket_confirmed_after_payment(
             "email": "push-ticket-buyer@example.com",
             "password": "securepass1",
             "full_name": "Push Ticket Buyer",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
@@ -204,7 +204,7 @@ def test_marketing_push_respects_opt_in(db_session: Session, client: TestClient)
             "email": "mkt-push@example.com",
             "password": "Password123!",
             "full_name": "Mkt Push",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     user = db_session.scalar(select(User).where(User.email == "mkt-push@example.com"))
@@ -235,7 +235,7 @@ def test_disabled_push_preference_skips_send(db_session: Session, client: TestCl
             "email": "pref-off@example.com",
             "password": "Password123!",
             "full_name": "Pref Off",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     user = db_session.scalar(select(User).where(User.email == "pref-off@example.com"))
@@ -267,7 +267,7 @@ def test_web_push_provider_sends_with_active_subscription(
             "email": "webpush-user@example.com",
             "password": "Password123!",
             "full_name": "WebPush User",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     user = db_session.scalar(
@@ -335,7 +335,7 @@ def test_expired_subscription_is_deactivated(db_session: Session, client: TestCl
             "email": "expire-sub@example.com",
             "password": "Password123!",
             "full_name": "Expire Sub",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     user = db_session.scalar(select(User).where(User.email == "expire-sub@example.com"))
@@ -397,7 +397,7 @@ def test_admin_can_send_test_push_non_admin_cannot(
             "email": "no-admin-push@example.com",
             "password": "Password123!",
             "full_name": "No Admin",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert buyer.status_code == 201
     buyer_h = {"Authorization": f"Bearer {buyer.json()['access_token']}"}
@@ -413,7 +413,7 @@ def test_admin_can_send_test_push_non_admin_cannot(
             "email": "yes-admin-push@example.com",
             "password": "Password123!",
             "full_name": "Yes Admin",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert admin.status_code == 201
     assign_role("yes-admin-push@example.com", "super_admin")
@@ -449,7 +449,7 @@ def test_user_can_send_test_push_to_self(
             "email": "user-self-push@example.com",
             "password": "Password123!",
             "full_name": "Self Push",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
@@ -503,7 +503,7 @@ def test_multi_device_subscriptions_are_independent(
             "email": "multi-device-push@example.com",
             "password": "Password123!",
             "full_name": "Multi Device",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
@@ -558,7 +558,7 @@ def test_web_push_test_send_reports_stale_cleanup(
             "email": "stale-push@example.com",
             "password": "Password123!",
             "full_name": "Stale Push",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
@@ -618,7 +618,7 @@ def test_vapid_private_key_encrypted(
             "email": "vapid-check@example.com",
             "password": "Password123!",
             "full_name": "Vapid Check",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     assign_role("vapid-check@example.com", "super_admin")
@@ -646,7 +646,7 @@ def test_worker_processes_pending_events(db_session: Session, client: TestClient
             "email": "worker-drain@example.com",
             "password": "Password123!",
             "full_name": "Worker Drain",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     user = db_session.scalar(

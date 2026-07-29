@@ -22,7 +22,7 @@ def _register(
     email = f"{prefix}-{uuid4().hex[:8]}@example.com"
     reg = client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "Password123!", "full_name": name},
+        json={"email": email, "password": "Password123!", "full_name": name, "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201, reg.text
     return {"Authorization": f"Bearer {reg.json()['access_token']}"}, email
@@ -137,7 +137,7 @@ def test_pending_admin_invite_emails_and_accept(
             "email": pending_email,
             "password": "Password123!",
             "full_name": "Invitee",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201, reg.text
     invitee_headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}

@@ -24,7 +24,7 @@ from app.users.service import get_role_by_name
 def _register(client: TestClient, email: str, name: str = "User") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": name},
+        json={"email": email, "password": "securepass1", "full_name": name, "gender": "prefer_not_to_say"},
     )
     return _login(client, email)
 

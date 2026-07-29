@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { FanPassportBioAIAssist } from "@/components/passport/FanPassportBioAIAssist";
 import { ImageUrlOrUploadField } from "@/components/media/ImageUrlOrUploadField";
+import { GenderFields } from "@/components/profile/GenderFields";
 import {
   Alert,
   Button,
@@ -21,7 +22,15 @@ import {
   trackFanDirectoryOptOut,
 } from "@/lib/analytics";
 import { ApiError } from "@/lib/api";
+import { updateMyProfile } from "@/lib/admin-lifecycle-api";
 import { hasUnrestrictedImpersonation } from "@/lib/auth/impersonation-scopes";
+import {
+  DEFAULT_GENDER_VISIBILITY,
+  isGender,
+  isGenderVisibility,
+  type Gender,
+  type GenderVisibility,
+} from "@/lib/gender";
 import { useUnsavedChanges } from "@/lib/hooks/useUnsavedChanges";
 import {
   fetchPassportSettings,
@@ -87,19 +96,29 @@ const TOGGLES: { key: BoolKey; label: string; hint: string }[] = [
 
 export default function PassportSettingsPage() {
   const toast = useToast();
-  const { isImpersonating, impersonation } = useAuth();
+  const { isImpersonating, impersonation, user, refreshUser } = useAuth();
   const impersonationLocked =
     isImpersonating && !hasUnrestrictedImpersonation(impersonation?.scopes);
   const [settings, setSettings] = useState<PassportSettings | null>(null);
   const [draft, setDraft] = useState<PassportSettings | null>(null);
+  const [gender, setGender] = useState<Gender | null>(null);
+  const [genderVisibility, setGenderVisibility] = useState<GenderVisibility>(
+    DEFAULT_GENDER_VISIBILITY,
+  );
+  const [savedGender, setSavedGender] = useState<Gender | null>(null);
+  const [savedGenderVisibility, setSavedGenderVisibility] =
+    useState<GenderVisibility>(DEFAULT_GENDER_VISIBILITY);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [aiNotes, setAiNotes] = useState("");
 
+  const genderDirty =
+    gender !== savedGender || genderVisibility !== savedGenderVisibility;
   const dirty =
-    !!settings &&
-    !!draft &&
-    JSON.stringify(settings) !== JSON.stringify(draft);
+    (!!settings &&
+      !!draft &&
+      JSON.stringify(settings) !== JSON.stringify(draft)) ||
+    genderDirty;
   useUnsavedChanges(dirty && !impersonationLocked);
 
   useEffect(() => {
@@ -123,12 +142,36 @@ export default function PassportSettingsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const nextGender = isGender(user?.gender) ? user.gender : null;
+    const nextVisibility = isGenderVisibility(user?.gender_visibility)
+      ? user.gender_visibility
+      : DEFAULT_GENDER_VISIBILITY;
+    setGender(nextGender);
+    setGenderVisibility(nextVisibility);
+    setSavedGender(nextGender);
+    setSavedGenderVisibility(nextVisibility);
+  }, [user?.gender, user?.gender_visibility]);
+
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
     if (!draft || impersonationLocked) return;
+    if (genderDirty && !gender) {
+      setError("Select your gender to save.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
+      if (genderDirty && gender) {
+        await updateMyProfile({
+          gender,
+          gender_visibility: genderVisibility,
+        });
+        await refreshUser();
+        setSavedGender(gender);
+        setSavedGenderVisibility(genderVisibility);
+      }
       const prevDir = settings?.appear_in_directory;
       const saved = await updatePassportSettings({
         username: draft.username,
@@ -217,6 +260,13 @@ export default function PassportSettingsPage() {
               {" "}
               — you can leave the directory anytime.
             </p>
+            <GenderFields
+              gender={gender}
+              onGenderChange={setGender}
+              genderVisibility={genderVisibility}
+              onVisibilityChange={setGenderVisibility}
+              disabled={impersonationLocked}
+            />
             <Select
               label="Profile visibility"
               value={draft.visibility}

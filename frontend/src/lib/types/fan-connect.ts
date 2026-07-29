@@ -66,6 +66,10 @@ export type FanConnectCounterpart = {
   username?: string | null;
   avatar_url?: string | null;
   tagline?: string | null;
+  gender?: string | null;
+  gender_short?: string | null;
+  gender_label?: string | null;
+  gender_visible?: boolean;
 };
 
 export type FanConnection = {

@@ -11,7 +11,9 @@ import {
 import { RequireHost } from "@/components/hosts/RequireHost";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { ImageUrlOrUploadField } from "@/components/media/ImageUrlOrUploadField";
+import { GenderFields } from "@/components/profile/GenderFields";
 import { ThemeAppearanceCard } from "@/components/theme/ThemeAppearanceCard";
+import { useAuth } from "@/components/auth/AuthProvider";
 import {
   Alert,
   Button,
@@ -23,7 +25,15 @@ import {
   useToast,
   type WorkspaceNavItem,
 } from "@/components/ui";
+import { updateMyProfile } from "@/lib/admin-lifecycle-api";
 import { ApiError } from "@/lib/api";
+import {
+  DEFAULT_GENDER_VISIBILITY,
+  isGender,
+  isGenderVisibility,
+  type Gender,
+  type GenderVisibility,
+} from "@/lib/gender";
 import { useUnsavedChanges } from "@/lib/hooks/useUnsavedChanges";
 import { fetchMyHost, updateMyHost } from "@/lib/hosts-api";
 import type { Host } from "@/lib/types/events";
@@ -63,6 +73,7 @@ const settingsNav: WorkspaceNavItem[] = [
 
 export default function HostSettingsPage() {
   const toast = useToast();
+  const { user, refreshUser } = useAuth();
   const [host, setHost] = useState<Host | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -72,10 +83,21 @@ export default function HostSettingsPage() {
   const [state, setState] = useState("");
   const [country, setCountry] = useState("");
   const [taxonomy, setTaxonomy] = useState<HostTaxonomyState>(emptyHostTaxonomy());
+  const [gender, setGender] = useState<Gender | null>(null);
+  const [genderVisibility, setGenderVisibility] = useState<GenderVisibility>(
+    DEFAULT_GENDER_VISIBILITY,
+  );
+  const [savedGender, setSavedGender] = useState<Gender | null>(null);
+  const [savedGenderVisibility, setSavedGenderVisibility] =
+    useState<GenderVisibility>(DEFAULT_GENDER_VISIBILITY);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [baseline, setBaseline] = useState("");
 
+  const showPersonalGender = Boolean(host?.shows_personal_gender);
+  const genderDirty =
+    showPersonalGender &&
+    (gender !== savedGender || genderVisibility !== savedGenderVisibility);
   const snapshot = JSON.stringify({
     displayName,
     avatarUrl,
@@ -86,8 +108,19 @@ export default function HostSettingsPage() {
     country,
     taxonomy,
   });
-  const dirty = Boolean(baseline) && snapshot !== baseline;
+  const dirty = (Boolean(baseline) && snapshot !== baseline) || genderDirty;
   useUnsavedChanges(dirty);
+
+  useEffect(() => {
+    const nextGender = isGender(user?.gender) ? user.gender : null;
+    const nextVisibility = isGenderVisibility(user?.gender_visibility)
+      ? user.gender_visibility
+      : DEFAULT_GENDER_VISIBILITY;
+    setGender(nextGender);
+    setGenderVisibility(nextVisibility);
+    setSavedGender(nextGender);
+    setSavedGenderVisibility(nextVisibility);
+  }, [user?.gender, user?.gender_visibility]);
 
   useEffect(() => {
     let active = true;
@@ -136,9 +169,22 @@ export default function HostSettingsPage() {
 
   async function onSave(e: FormEvent) {
     e.preventDefault();
+    if (genderDirty && !gender) {
+      setError("Select your gender to save.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
+      if (genderDirty && gender) {
+        await updateMyProfile({
+          gender,
+          gender_visibility: genderVisibility,
+        });
+        await refreshUser();
+        setSavedGender(gender);
+        setSavedGenderVisibility(genderVisibility);
+      }
       const updated = await updateMyHost({
         display_name: displayName.trim(),
         avatar_url: avatarUrl.trim() || null,
@@ -232,6 +278,16 @@ export default function HostSettingsPage() {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
             />
+            {showPersonalGender ? (
+              <div className="sm:col-span-2">
+                <GenderFields
+                  gender={gender}
+                  onGenderChange={setGender}
+                  genderVisibility={genderVisibility}
+                  onVisibilityChange={setGenderVisibility}
+                />
+              </div>
+            ) : null}
             <Textarea
               className="sm:col-span-2"
               label="Bio"

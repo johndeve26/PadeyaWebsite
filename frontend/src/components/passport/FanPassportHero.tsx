@@ -6,6 +6,7 @@ import { ConnectButton } from "@/components/fan-connect/ConnectButton";
 import { headerDarkSurfaceProps } from "@/components/layout/headerSurface";
 import { FanFollowButton } from "@/components/passport/FanFollowButton";
 import { FanPassportSafetyMenu } from "@/components/passport/FanPassportSafetyMenu";
+import { GenderBadge } from "@/components/profile/GenderBadge";
 import { Badge, Button, Container, Media } from "@/components/ui";
 import { fanPageCtas } from "@/lib/own-fan-ctas";
 import { fanAvatarAlt } from "@/lib/seo/image-alt";
@@ -86,9 +87,22 @@ export function FanPassportHero({
                 <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-[2.75rem]">
                   {page.display_name}
                 </h1>
-                <p className="text-sm font-semibold text-paper/65">
-                  @{page.username}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-semibold text-paper/65">
+                    @{page.username}
+                  </p>
+                  {page.gender_visible && page.gender_short ? (
+                    <GenderBadge
+                      value={{
+                        gender: page.gender ?? null,
+                        gender_short: page.gender_short,
+                        gender_label: page.gender_label ?? null,
+                        gender_visible: page.gender_visible,
+                      }}
+                      className="border-paper/25 bg-paper/10 text-paper"
+                    />
+                  ) : null}
+                </div>
                 <p className="max-w-xl text-base leading-relaxed text-paper/75">
                   {page.tagline?.trim() ||
                     "Verified event history, badges, reviews, and host support on Pàdéyá."}

@@ -17,7 +17,7 @@ def _register(client: TestClient, email: str, full_name: str = "Commenter") -> d
             "email": email,
             "password": "Password123!",
             "full_name": full_name,
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert res.status_code == 201, res.text
     return {"Authorization": f"Bearer {res.json()['access_token']}"}

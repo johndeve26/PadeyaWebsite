@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { MessagesMobileHomeLink } from "@/components/messaging/MessagesMobileHomeLink";
 import { ParticipantAvatar } from "@/components/messaging/ParticipantAvatar";
+import { GenderBadge } from "@/components/profile/GenderBadge";
 import { Badge, Button, Drawer } from "@/components/ui";
 import { formatDateTime } from "@/lib/format";
 import type { ThreadDetail } from "@/lib/types/messaging";
@@ -59,9 +60,22 @@ export function ThreadMobileHeaderBar({
           size="sm"
         />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-extrabold text-heading">
-            {detail.counterpart.display_name}
-          </p>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <p className="truncate text-sm font-extrabold text-heading">
+              {detail.counterpart.display_name}
+            </p>
+            {detail.counterpart.gender_visible &&
+            detail.counterpart.gender_short ? (
+              <GenderBadge
+                value={{
+                  gender: detail.counterpart.gender ?? null,
+                  gender_short: detail.counterpart.gender_short,
+                  gender_label: detail.counterpart.gender_label ?? null,
+                  gender_visible: detail.counterpart.gender_visible,
+                }}
+              />
+            ) : null}
+          </div>
           {subtitle ? (
             <p className="truncate text-[11px] text-muted-foreground">{subtitle}</p>
           ) : null}

@@ -545,7 +545,9 @@ SYSTEM_HOST_ANNOUNCEMENT_SAFE = (
     "Output is draft-only — never imply the message was sent, scheduled, or delivered. "
     "Never include recipient emails, phone numbers, or private addresses. "
     "Do not promise refunds, discounts, guaranteed entry, attendance, or sales. "
-    "Do not invent urgency or false scarcity. Host must review and send manually."
+    "Do not invent urgency or false scarcity. Host must review and send manually. "
+    "When personalization is requested, use the literal token {{name}} for the fan's "
+    "given name from their profile — never invent names."
 )
 
 SYSTEM_HOST_SPONSORSHIP_SAFE = (

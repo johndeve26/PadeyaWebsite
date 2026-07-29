@@ -25,11 +25,23 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     username: str | None = Field(default=None, min_length=3, max_length=32)
     full_name: str | None = Field(default=None, max_length=200)
+    # Explicit selection only. Required for new registrations.
+    gender: str = Field(min_length=1, max_length=32)
 
     @field_validator("email")
     @classmethod
     def valid_email(cls, value: str) -> str:
         return _normalize_auth_email(value)
+
+    @field_validator("gender")
+    @classmethod
+    def valid_gender(cls, value: object) -> str:
+        from app.users.gender import parse_gender
+
+        parsed = parse_gender(value)
+        if parsed is None:
+            raise ValueError("gender must be male, female, or prefer_not_to_say")
+        return parsed
 
     @model_validator(mode="after")
     def resolve_username(self) -> Self:

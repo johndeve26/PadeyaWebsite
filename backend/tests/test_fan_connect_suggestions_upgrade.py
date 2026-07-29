@@ -135,7 +135,7 @@ def test_safe_reasons_include_fof_and_never_gps():
 def _auth(client: TestClient, email: str, name: str = "Fan") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": name},
+        json={"email": email, "password": "securepass1", "full_name": name, "gender": "prefer_not_to_say"},
     )
     login = client.post(
         "/api/v1/auth/login",

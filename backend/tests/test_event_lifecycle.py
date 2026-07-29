@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 def _auth_headers(client: TestClient, email: str, password: str = "securepass1") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "full_name": "Lifecycle Host"},
+        json={"email": email, "password": password, "full_name": "Lifecycle Host", "gender": "prefer_not_to_say"},
     )
     login = client.post(
         "/api/v1/auth/login",
@@ -70,7 +70,7 @@ def _create_and_publish(client: TestClient, headers: dict[str, str], assign_role
     admin_email = f"admin-{title.replace(' ', '').lower()}@example.com"
     client.post(
         "/api/v1/auth/register",
-        json={"email": admin_email, "password": "securepass1", "full_name": "Admin"},
+        json={"email": admin_email, "password": "securepass1", "full_name": "Admin", "gender": "prefer_not_to_say"},
     )
     assign_role(admin_email, "super_admin")
     login = client.post(

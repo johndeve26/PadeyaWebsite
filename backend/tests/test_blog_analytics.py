@@ -24,7 +24,7 @@ def _register(client: TestClient, *, prefix: str) -> tuple[dict, str]:
             "email": email,
             "password": "Password123!",
             "full_name": "Blog Analytics",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201, reg.text
     return {"Authorization": f"Bearer {reg.json()['access_token']}"}, email

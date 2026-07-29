@@ -88,6 +88,36 @@ def test_host_announcement_renders_branded_html():
     assert "Unsubscribe from marketing" in html
 
 
+def test_host_announcement_personalizes_name_tokens():
+    from app.email.renderer import (
+        apply_announcement_merge_tokens,
+        recipient_greeting_name,
+    )
+
+    assert recipient_greeting_name("Tolu Afro") == "Tolu"
+    assert recipient_greeting_name("Tolu A.") == "Tolu"
+    assert recipient_greeting_name("") == "there"
+    assert (
+        apply_announcement_merge_tokens(
+            "Hi {{name}}, see you", recipient_name="Ada Lovelace"
+        )
+        == "Hi Ada, see you"
+    )
+
+    subject, text, html = render_host_announcement(
+        title="{{name}} — this weekend",
+        body="Hi {{first_name}},\n\nDoors at 8.",
+        host_name="DJ Maze",
+        host_slug="dj-maze",
+        recipient_name="Chidi Okeke",
+    )
+    assert subject == "Chidi — this weekend"
+    assert "Hi Chidi," in text
+    assert "{{name}}" not in text
+    assert "{{first_name}}" not in html
+    assert "Hi Chidi," in html
+
+
 def test_host_announcement_allows_ascii_brand_in_host_copy():
     _, _, html = render_host_announcement(
         title="Show",
@@ -253,7 +283,7 @@ def test_prefs_api_and_unsubscribe(client: TestClient, db_session: Session):
             "email": "prefs@example.com",
             "password": "Password123!",
             "full_name": "Prefs User",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201, reg.text
     headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
@@ -291,7 +321,7 @@ def test_admin_email_list(client: TestClient, db_session: Session, assign_role):
             "email": "admin-mail@example.com",
             "password": "Password123!",
             "full_name": "Admin Mail",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201, reg.text
     assign_role("admin-mail@example.com", "super_admin")
@@ -318,7 +348,7 @@ def test_admin_email_notification_settings_route(client: TestClient, assign_role
             "email": "admin-notif-mail@example.com",
             "password": "Password123!",
             "full_name": "Admin Notif",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201, reg.text
     assign_role("admin-notif-mail@example.com", "super_admin")
@@ -405,7 +435,7 @@ def test_webhook_enqueues_ticket_email_without_reference_leak(
             "email": "email-buyer@example.com",
             "password": "securepass1",
             "full_name": "Buyer User",
-        },
+        "gender": "prefer_not_to_say"},
     )
     login = client.post(
         "/api/v1/auth/login",
@@ -531,7 +561,7 @@ def test_admin_email_provider_settings_masked(
             "email": "smtp-admin@example.com",
             "password": "Password123!",
             "full_name": "SMTP Admin",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201, reg.text
     assign_role("smtp-admin@example.com", "super_admin")
@@ -603,7 +633,7 @@ def test_admin_email_provider_settings_masked(
             "email": "smtp-user@example.com",
             "password": "Password123!",
             "full_name": "SMTP User",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg2.status_code == 201
     forbidden = client.get(

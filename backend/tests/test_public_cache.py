@@ -20,7 +20,7 @@ from app.core.cache_invalidation import invalidate_event_caches
 def _auth_headers(client: TestClient, email: str, password: str = "securepass1") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "full_name": "Cache User"},
+        json={"email": email, "password": password, "full_name": "Cache User", "gender": "prefer_not_to_say"},
     )
     login = client.post(
         "/api/v1/auth/login",

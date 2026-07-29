@@ -114,7 +114,7 @@ def test_code_unique_per_campaign_and_readable_display(
             "email": "ref-fan@example.com",
             "password": "securepass1",
             "full_name": "Tolu Afro",
-        },
+        "gender": "prefer_not_to_say"},
     )
     fan = _login(client, "ref-fan@example.com")
     ticket = client.post(
@@ -161,7 +161,7 @@ def test_explicit_attribution_not_overwritten_by_link(
             "email": "ref-a@example.com",
             "password": "securepass1",
             "full_name": "Alpha Ref",
-        },
+        "gender": "prefer_not_to_say"},
     )
     client.post(
         "/api/v1/auth/register",
@@ -169,7 +169,7 @@ def test_explicit_attribution_not_overwritten_by_link(
             "email": "ref-b@example.com",
             "password": "securepass1",
             "full_name": "Beta Ref",
-        },
+        "gender": "prefer_not_to_say"},
     )
     a = _login(client, "ref-a@example.com")
     b = _login(client, "ref-b@example.com")

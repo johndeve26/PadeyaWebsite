@@ -25,7 +25,7 @@ from app.passport.service import ensure_passport
 def _auth(client: TestClient, email: str, name: str = "Fan") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": name},
+        json={"email": email, "password": "securepass1", "full_name": name, "gender": "prefer_not_to_say"},
     )
     login = client.post(
         "/api/v1/auth/login",

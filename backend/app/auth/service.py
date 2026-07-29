@@ -39,6 +39,7 @@ def register_user(
     email: str,
     password: str,
     username: str,
+    gender: str,
     ip_address: str | None = None,
     user_agent: str | None = None,
 ) -> tuple[User, dict[str, str]]:
@@ -46,6 +47,7 @@ def register_user(
         assert_username_available_for_registration,
         display_name_from_username,
     )
+    from app.users.gender import DEFAULT_GENDER_VISIBILITY, parse_gender
 
     normalized = email.lower().strip()
     if get_user_by_email(db, normalized):
@@ -55,6 +57,19 @@ def register_user(
         )
 
     assert_username_available_for_registration(db, username)
+
+    try:
+        gender_value = parse_gender(gender)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+    if gender_value is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="gender must be male, female, or prefer_not_to_say",
+        )
 
     display = display_name_from_username(username)
 
@@ -69,6 +84,8 @@ def register_user(
         email=normalized,
         password_hash=hash_password(password),
         full_name=display,
+        gender=gender_value,
+        gender_visibility=DEFAULT_GENDER_VISIBILITY,
         roles=[role],
     )
     db.add(user)

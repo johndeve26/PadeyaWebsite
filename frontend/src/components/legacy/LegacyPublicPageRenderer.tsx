@@ -7,6 +7,7 @@ import { HostFollowControls } from "@/components/hosts/HostFollowControls";
 import { StartMessageButton } from "@/components/messaging/StartMessageButton";
 import { LegacyEventCard } from "@/components/legacy/LegacyEventCard";
 import { LegacySocialIcon } from "@/components/legacy/LegacySocialIcon";
+import { GenderBadge } from "@/components/profile/GenderBadge";
 import {
   Badge,
   Button,
@@ -926,12 +927,27 @@ export function LegacyPublicPageRenderer({ page }: { page: LegacyPage }) {
               <h1 className="text-balance break-words text-4xl font-extrabold tracking-tight [text-shadow:0_2px_28px_rgb(0_0_0_/_0.55)] sm:text-5xl md:text-6xl lg:text-[4rem] lg:leading-[1.05]">
                 {page.display_name}
               </h1>
-              <p className="text-base font-medium text-paper/75 sm:text-lg">
-                @{page.username}
-                {page.composite_score != null
-                  ? ` · Legacy score ${Number(page.composite_score).toFixed(1)}`
-                  : ""}
-              </p>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <p className="text-base font-medium text-paper/75 sm:text-lg">
+                  @{page.username}
+                  {page.composite_score != null
+                    ? ` · Legacy score ${Number(page.composite_score).toFixed(1)}`
+                    : ""}
+                </p>
+                {page.shows_personal_gender &&
+                page.gender_visible &&
+                page.gender_short ? (
+                  <GenderBadge
+                    value={{
+                      gender: page.gender ?? null,
+                      gender_short: page.gender_short,
+                      gender_label: page.gender_label ?? null,
+                      gender_visible: page.gender_visible,
+                    }}
+                    className="border-paper/25 bg-paper/10 text-paper"
+                  />
+                ) : null}
+              </div>
               <p className="mx-auto max-w-2xl text-base leading-relaxed text-paper/75 sm:text-lg">
                 {tagline || (bio.length > 160 ? `${bio.slice(0, 160).trim()}…` : bio)}
               </p>

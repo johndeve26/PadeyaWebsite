@@ -40,7 +40,7 @@ def test_web_push_provider_accepts_stored_pem_private_key(
             "email": "pem-vapid@example.com",
             "password": "Password123!",
             "full_name": "PEM Vapid",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     user = db_session.scalar(select(User).where(User.email == "pem-vapid@example.com"))

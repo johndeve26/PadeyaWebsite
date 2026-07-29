@@ -15,7 +15,7 @@ from app.support.sanitize import sanitize_support_text
 def _register(client: TestClient, email: str, name: str = "User") -> dict[str, str]:
     res = client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "Password123!", "full_name": name},
+        json={"email": email, "password": "Password123!", "full_name": name, "gender": "prefer_not_to_say"},
     )
     assert res.status_code == 201, res.text
     return {"Authorization": f"Bearer {res.json()['access_token']}"}

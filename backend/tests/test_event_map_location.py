@@ -13,7 +13,7 @@ from app.events.models import Event
 def _auth_headers(client: TestClient, email: str) -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": "Map Host"},
+        json={"email": email, "password": "securepass1", "full_name": "Map Host", "gender": "prefer_not_to_say"},
     )
     login = client.post(
         "/api/v1/auth/login",
@@ -82,7 +82,7 @@ def _publish(client: TestClient, headers: dict[str, str], assign_role, event_id:
     assert client.post(f"/api/v1/events/by-id/{event_id}/submit", headers=headers).status_code == 200
     client.post(
         "/api/v1/auth/register",
-        json={"email": admin_email, "password": "securepass1", "full_name": "Admin"},
+        json={"email": admin_email, "password": "securepass1", "full_name": "Admin", "gender": "prefer_not_to_say"},
     )
     assign_role(admin_email, "super_admin")
     token = client.post(

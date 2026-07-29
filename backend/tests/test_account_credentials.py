@@ -22,7 +22,7 @@ def _register_and_login(
             "email": email,
             "password": password,
             "username": username,
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201, reg.text
     mark_user_email_verified(db_session, email=email)

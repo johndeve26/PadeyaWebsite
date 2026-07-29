@@ -76,6 +76,12 @@ def serialize_directory_card(db: Session, passport: FanPassport) -> dict:
     )
     top_badges = [{"slug": b["slug"], "name": b["name"]} for b in badges[:3]]
     latest = badges[0] if badges else None
+    owner = db.get(User, passport.user_id)
+    from app.users.gender import HIDDEN_GENDER_PAYLOAD, public_cache_safe_gender_payload
+
+    gender_payload = (
+        public_cache_safe_gender_payload(owner) if owner else dict(HIDDEN_GENDER_PAYLOAD)
+    )
     return {
         "username": passport.username,
         "user_id": passport.user_id,
@@ -85,6 +91,7 @@ def serialize_directory_card(db: Session, passport: FanPassport) -> dict:
         "city_label": cities[0] if cities else None,
         "favorite_scene": categories[0] if categories else None,
         "top_badges": top_badges,
+        **gender_payload,
         "events_attended": (
             passport.events_attended if passport.show_attended_events else 0
         ),

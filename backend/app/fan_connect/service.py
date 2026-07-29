@@ -47,16 +47,35 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-def _counterpart_chip(db: Session, user_id: UUID) -> dict:
+def _counterpart_chip(
+    db: Session,
+    user_id: UUID,
+    *,
+    viewer: User | None = None,
+    relationship_context: str = "profile",
+) -> dict:
     passport = db.scalar(select(FanPassport).where(FanPassport.user_id == user_id))
+    user = db.get(User, user_id)
+    from app.users.gender import HIDDEN_GENDER_PAYLOAD, gender_display_payload
+
+    gender = (
+        gender_display_payload(
+            db,
+            viewer=viewer,
+            profile_owner=user,
+            relationship_context=relationship_context,
+        )
+        if user is not None
+        else dict(HIDDEN_GENDER_PAYLOAD)
+    )
     if passport is None:
-        user = db.get(User, user_id)
         return {
             "user_id": str(user_id),
             "display_name": (user.full_name if user else "Fan") or "Fan",
             "username": None,
             "avatar_url": None,
             "tagline": None,
+            **gender,
         }
     return {
         "user_id": str(user_id),
@@ -64,6 +83,7 @@ def _counterpart_chip(db: Session, user_id: UUID) -> dict:
         "username": passport.username,
         "avatar_url": passport.avatar_url,
         "tagline": passport.tagline,
+        **gender,
     }
 
 
@@ -405,11 +425,23 @@ def serialize_connection(db: Session, conn: FanConnection, viewer: User) -> dict
         )
         shared = public_shared_context(raw)
 
+    from app.fan_connect import constants as FC
+
+    # Pending connect requests use the explicit connect_request visibility rule.
+    # Accepted connections use standard connections_only / public / private rules.
+    rel_ctx = (
+        "connect_request"
+        if conn.status == FC.STATUS_REQUEST_SENT
+        else "profile"
+    )
+
     return {
         "id": conn.id,
         "status": viewer_status(conn, viewer.id) or conn.status,
         "direction": direction,
-        "counterpart": _counterpart_chip(db, other_id),
+        "counterpart": _counterpart_chip(
+            db, other_id, viewer=viewer, relationship_context=rel_ctx
+        ),
         "message": conn.request_message,
         "score": conn.score,
         "reasons": _public_reasons(conn.reasons_json),

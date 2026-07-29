@@ -536,6 +536,7 @@ def _template_draft(user_prompt: str) -> str:
 
     if "draft a host crm announcement" in lower:
         notes = ""
+        personalize = "personalize with name: yes" in lower
         for ln in lines:
             if ln.lower().startswith("host notes:"):
                 notes = ln.split(":", 1)[-1].strip()
@@ -547,10 +548,21 @@ def _template_draft(user_prompt: str) -> str:
                 break
         place = city or place or "your city"
         hook = notes or f"Something special is coming to {place} on Pàdéyá."
+        # Strip injected PERSONALIZATION REQUIRED block from hook if present.
+        if "PERSONALIZATION REQUIRED" in hook:
+            hook = (
+                notes.split("PERSONALIZATION REQUIRED", 1)[0].strip()
+                if notes
+                else f"Something special is coming to {place} on Pàdéyá."
+            ) or f"Something special is coming to {place} on Pàdéyá."
+        greeting = "Hi {{name}}," if personalize else "Hi there,"
+        subject = base or "Update from your host on Pàdéyá"
+        if personalize and "{{name}}" not in subject:
+            subject = f"{{{{name}}}} — {subject}"
         return (
-            f"SUBJECT: {base or 'Update from your host on Pàdéyá'}\n\n"
+            f"SUBJECT: {subject}\n\n"
             f"EMAIL_BODY:\n"
-            f"Hi there,\n\n"
+            f"{greeting}\n\n"
             f"{hook}\n\n"
             f"We will share full details on Pàdéyá soon — this is a draft for you to edit "
             f"before you create or send anything.\n\n"

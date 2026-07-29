@@ -133,6 +133,11 @@ class FanPassportPublic(BaseModel):
     bio: str | None = None
     visibility: str = "private"
     share_path: str | None = None
+    gender: str | None = None
+    gender_short: str | None = None
+    gender_label: str | None = None
+    gender_visible: bool = False
+    gender_visibility: str = "connections_only"
     tickets_bought: int
     events_attended: int
     hosts_followed: int
@@ -170,6 +175,10 @@ class FanPassportPublicPage(BaseModel):
     bio: str | None = None
     visibility: str
     is_superfan: bool = False
+    gender: str | None = None
+    gender_short: str | None = None
+    gender_label: str | None = None
+    gender_visible: bool = False
     events_attended: int = 0
     hosts_followed: int = 0
     badges_earned_count: int = 0
@@ -217,6 +226,10 @@ class FanDirectoryCardPublic(BaseModel):
     city_label: str | None = None
     favorite_scene: str | None = None
     top_badges: list[FanDirectoryBadgeChip] = []
+    gender: str | None = None
+    gender_short: str | None = None
+    gender_label: str | None = None
+    gender_visible: bool = False
     events_attended: int = 0
     hosts_followed: int = 0
     reviews_written: int = 0

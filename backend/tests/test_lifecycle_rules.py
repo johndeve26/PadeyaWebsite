@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 def _auth(client: TestClient, email: str, name: str = "User") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": name},
+        json={"email": email, "password": "securepass1", "full_name": name, "gender": "prefer_not_to_say"},
     )
     login = client.post(
         "/api/v1/auth/login",
@@ -66,7 +66,7 @@ def test_event_archive_completed(client: TestClient, assign_role):
     admin_email = "arch-admin@example.com"
     client.post(
         "/api/v1/auth/register",
-        json={"email": admin_email, "password": "securepass1", "full_name": "Admin"},
+        json={"email": admin_email, "password": "securepass1", "full_name": "Admin", "gender": "prefer_not_to_say"},
     )
     assign_role(admin_email, "super_admin")
     admin = _auth(client, admin_email, "Admin")
@@ -112,7 +112,7 @@ def test_support_case_lifecycle(client: TestClient, assign_role):
             "email": support_email,
             "password": "securepass1",
             "full_name": "Support",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assign_role(support_email, "support_agent")
     login = client.post(
@@ -153,7 +153,7 @@ def test_ai_admin_template_deactivate(client: TestClient, assign_role):
     email = "ai-admin@example.com"
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": "AI Admin"},
+        json={"email": email, "password": "securepass1", "full_name": "AI Admin", "gender": "prefer_not_to_say"},
     )
     assign_role(email, "super_admin")
     login = client.post(

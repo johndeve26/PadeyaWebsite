@@ -413,6 +413,7 @@ export async function registerRequest(input: {
   email: string;
   password: string;
   username: string;
+  gender: string;
 }): Promise<AuthTokens> {
   return apiRequest<AuthTokens>("/auth/register", {
     method: "POST",

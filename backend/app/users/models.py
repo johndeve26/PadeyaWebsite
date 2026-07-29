@@ -26,6 +26,11 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    # Explicit selection only — never inferred. Null = unset (legacy users OK).
+    gender: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    gender_visibility: Mapped[str] = mapped_column(
+        String(32), default="connections_only", nullable=False
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     ambassadors_blocked: Mapped[bool] = mapped_column(

@@ -32,6 +32,7 @@ export type HostAnnouncementAIProps = {
   segmentLabel: string;
   eventId: string;
   hostNotes: string;
+  personalizeWithName?: boolean;
   onApply: (patch: {
     title?: string;
     bodyEmail: string;
@@ -48,6 +49,7 @@ export function HostAnnouncementAIAssist({
   segmentLabel,
   eventId,
   hostNotes,
+  personalizeWithName = false,
   onApply,
 }: HostAnnouncementAIProps) {
   const [busy, setBusy] = useState(false);
@@ -67,6 +69,7 @@ export function HostAnnouncementAIAssist({
           announcement_type: channel,
           audience_label: segmentLabel || segmentKey,
           host_notes: hostNotes || "",
+          personalize_with_name: personalizeWithName ? "yes" : "no",
         },
       });
       setResult(suggestion);
@@ -76,7 +79,14 @@ export function HostAnnouncementAIAssist({
     } finally {
       setBusy(false);
     }
-  }, [channel, eventId, hostNotes, segmentKey, segmentLabel]);
+  }, [
+    channel,
+    eventId,
+    hostNotes,
+    personalizeWithName,
+    segmentKey,
+    segmentLabel,
+  ]);
 
   function applyDraft() {
     if (!result) return;
@@ -130,7 +140,11 @@ export function HostAnnouncementAIAssist({
       <div className="space-y-1">
         <h3 className="text-sm font-extrabold">Generate with AI</h3>
         <p className="text-xs text-muted-foreground">
-          Draft-only — review before creating or dispatching. Send stays manual.
+          Draft-only — review subject and body before creating or dispatching.
+          Send stays manual.
+          {personalizeWithName
+            ? " Personalization is on: drafts should use {{name}}."
+            : null}
         </p>
       </div>
 
@@ -161,12 +175,15 @@ export function HostAnnouncementAIAssist({
           {result.disclaimer ? (
             <p className="text-xs text-muted-foreground">{result.disclaimer}</p>
           ) : null}
-          {result.announcement_subject ? (
-            <p>
-              <span className="font-semibold">Subject: </span>
-              {result.announcement_subject}
+          <div className="rounded-md border border-border bg-surface-muted/40 px-3 py-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Email subject
             </p>
-          ) : null}
+            <p className="mt-1 font-semibold text-foreground">
+              {result.announcement_subject?.trim() ||
+                "(No subject returned — edit the subject field after apply)"}
+            </p>
+          </div>
           <p className="whitespace-pre-wrap text-muted-foreground">
             {result.announcement_email_body || result.suggestion}
           </p>
@@ -178,7 +195,7 @@ export function HostAnnouncementAIAssist({
           ) : null}
           <div className="flex flex-wrap gap-2">
             <Button type="button" size="sm" onClick={applyDraft}>
-              Apply to draft
+              Apply subject + body
             </Button>
             <Button type="button" size="sm" variant="secondary" onClick={() => void copyDraft()}>
               Copy

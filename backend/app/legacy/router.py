@@ -6,9 +6,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import CurrentUser, require_permission
+from app.auth.dependencies import CurrentUser, get_current_user_optional, require_permission
 from app.core.database import get_db
 from app.hosts.schemas import HostProfileUpdate
+from app.users.models import User
 from app.legacy.discover import list_discover_hosts
 from app.legacy.schemas import (
     HostDiscoveryPublic,
@@ -33,7 +34,33 @@ from app.legacy.service import (
     update_tier,
 )
 from app.legacy.studio import get_public_legacy_by_username, update_legacy_studio
-from app.users.models import User
+
+
+def _overlay_legacy_gender(
+    db: Session,
+    payload: LegacyPagePublic,
+    *,
+    viewer: User | None,
+) -> LegacyPagePublic:
+    if viewer is None or not payload.shows_personal_gender:
+        return payload
+    from app.hosts.models import Host
+    from app.users.gender import gender_display_payload
+
+    host = db.get(Host, payload.host_id)
+    if host is None:
+        return payload
+    owner = db.get(User, host.user_id)
+    if owner is None:
+        return payload
+    gender = gender_display_payload(
+        db,
+        viewer=viewer,
+        profile_owner=owner,
+        relationship_context="profile",
+    )
+    return payload.model_copy(update=gender)
+
 
 router = APIRouter(prefix="/legacy", tags=["legacy"])
 public_u_router = APIRouter(prefix="/u", tags=["legacy-public"])
@@ -265,13 +292,17 @@ def admin_host_history(
 def public_legacy_page(
     username: str,
     db: Annotated[Session, Depends(get_db)],
+    viewer: Annotated[User | None, Depends(get_current_user_optional)] = None,
 ) -> LegacyPagePublic:
-    return LegacyPagePublic.model_validate(get_public_legacy_by_username(db, username))
+    payload = LegacyPagePublic.model_validate(get_public_legacy_by_username(db, username))
+    return _overlay_legacy_gender(db, payload, viewer=viewer)
 
 
 @public_u_router.get("/{username}/legacy", response_model=LegacyPagePublic)
 def public_u_legacy_page(
     username: str,
     db: Annotated[Session, Depends(get_db)],
+    viewer: Annotated[User | None, Depends(get_current_user_optional)] = None,
 ) -> LegacyPagePublic:
-    return LegacyPagePublic.model_validate(get_public_legacy_by_username(db, username))
+    payload = LegacyPagePublic.model_validate(get_public_legacy_by_username(db, username))
+    return _overlay_legacy_gender(db, payload, viewer=viewer)

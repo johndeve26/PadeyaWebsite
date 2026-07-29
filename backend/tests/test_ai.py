@@ -297,7 +297,7 @@ def test_team_member_announcement_ai_uses_active_workspace(
             "email": "ai-team-member@example.com",
             "password": "securepass1",
             "full_name": "Team Marketer",
-        },
+        "gender": "prefer_not_to_say"},
     )
     member = db_session.query(User).filter_by(email="ai-team-member@example.com").one()
     perms = permissions_for_role("viewer")

@@ -78,6 +78,7 @@ def register(
         email=payload.email,
         password=payload.password,
         username=payload.username,
+        gender=payload.gender,
         ip_address=ip,
         user_agent=ua,
     )

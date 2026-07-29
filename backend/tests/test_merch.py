@@ -115,6 +115,7 @@ def _register_buyer(client: TestClient, email: str) -> dict[str, str]:
             "email": email,
             "password": "securepass1",
             "full_name": f"Merch Buyer {local_part}",
+            "gender": "prefer_not_to_say",
         },
     )
     assert res.status_code == 201, res.text
@@ -1397,7 +1398,7 @@ def test_host_staff_can_fulfill_but_not_edit_catalog(
             "email": "merchdesk@example.com",
             "password": "securepass1",
             "full_name": "Desk Staff",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assign = client.post(
         f"/api/v1/checkins/events/{event.id}/staff",

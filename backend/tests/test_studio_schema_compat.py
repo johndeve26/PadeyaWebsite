@@ -26,7 +26,7 @@ from app.taxonomy.service import seed_taxonomy_vocab
 def _auth_headers(client: TestClient, email: str) -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "securepass1", "full_name": "Studio Host"},
+        json={"email": email, "password": "securepass1", "full_name": "Studio Host", "gender": "prefer_not_to_say"},
     )
     login = client.post(
         "/api/v1/auth/login",

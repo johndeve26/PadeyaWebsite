@@ -171,7 +171,9 @@ def update_passport_settings(db: Session, user: User, payload) -> FanPassport:
     return passport
 
 
-def completion_score(passport: FanPassport, *, reviews: int, badges: int) -> int:
+def completion_score(
+    passport: FanPassport, *, reviews: int, badges: int, gender_set: bool = False
+) -> int:
     checks = [
         bool(passport.username),
         bool(passport.display_name),
@@ -183,6 +185,8 @@ def completion_score(passport: FanPassport, *, reviews: int, badges: int) -> int
         reviews > 0,
         passport.vault_unlocks > 0,
         passport.visibility in {"public", "unlisted"},
+        # Optional demographic — prefer_not_to_say counts; unset does not tank readiness.
+        gender_set,
     ]
     return int(round(100 * sum(1 for c in checks if c) / len(checks)))
 
@@ -519,6 +523,9 @@ def _serialize_passport(db: Session, user: User, passport: FanPassport) -> dict:
     favorite_cities = favorite_cities_for_user(db, user.id)
     reviews_count = reviews_written_count(db, user.id)
     categories = list(passport.favorite_categories or [])
+    from app.users.gender import GENDER_VALUES, owner_gender_settings_payload
+
+    gender_payload = owner_gender_settings_payload(user)
 
     return {
         "id": passport.id,
@@ -530,6 +537,7 @@ def _serialize_passport(db: Session, user: User, passport: FanPassport) -> dict:
         "bio": passport.bio,
         "visibility": passport.visibility,
         "share_path": f"/f/{passport.username}" if passport.username else None,
+        **gender_payload,
         "tickets_bought": passport.tickets_bought,
         "events_attended": passport.events_attended,
         "hosts_followed": passport.hosts_followed,
@@ -542,7 +550,10 @@ def _serialize_passport(db: Session, user: User, passport: FanPassport) -> dict:
         "cities_explored": len(favorite_cities),
         "categories_explored": len(categories),
         "completion_score": completion_score(
-            passport, reviews=reviews_count, badges=len(badges_earned)
+            passport,
+            reviews=reviews_count,
+            badges=len(badges_earned),
+            gender_set=getattr(user, "gender", None) in GENDER_VALUES,
         ),
         "badges_earned": badges_earned,
         "loyalty": loyalty,

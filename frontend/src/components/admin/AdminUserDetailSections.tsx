@@ -25,6 +25,12 @@ import {
   type AccountStatus,
 } from "@/lib/account-status";
 import { formatDateTime } from "@/lib/format";
+import {
+  GENDER_LABELS,
+  GENDER_VISIBILITY_LABELS,
+  isGender,
+  isGenderVisibility,
+} from "@/lib/gender";
 import type { AdminUserDetail } from "@/lib/types/lifecycle";
 import {
   USER_FLAG_TYPE_LABELS,
@@ -185,6 +191,18 @@ export function AdminUserDetailSections({
             </Field>
             <Field label="Fan Connect">
               {statusLabel(profile.fan_connect_status)}
+            </Field>
+            <Field label="Gender">
+              {profile.gender_unset
+                ? "Unset"
+                : isGender(profile.gender)
+                  ? GENDER_LABELS[profile.gender]
+                  : profile.gender_label || profile.gender || "—"}
+            </Field>
+            <Field label="Gender visibility">
+              {isGenderVisibility(profile.gender_visibility)
+                ? GENDER_VISIBILITY_LABELS[profile.gender_visibility]
+                : profile.gender_visibility || "—"}
             </Field>
             <Field label="Ambassador">
               {profile.ambassadors_program_blocked

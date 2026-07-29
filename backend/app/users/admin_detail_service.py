@@ -271,6 +271,9 @@ def get_admin_user_detail(
         ).all()
     )
 
+    from app.users.gender import DEFAULT_GENDER_VISIBILITY, GENDER_VALUES, gender_label
+
+    raw_gender = getattr(user, "gender", None)
     payload = {
         "id": user.id,
         "email": user.email,
@@ -306,6 +309,13 @@ def get_admin_user_detail(
             "ambassador_profile_status": amb_status,
             "ambassadors_program_blocked": bool(user.ambassadors_blocked),
             "campaigns_joined": campaigns_joined,
+            "gender": raw_gender if raw_gender in GENDER_VALUES else None,
+            "gender_label": gender_label(raw_gender)
+            if raw_gender in GENDER_VALUES
+            else None,
+            "gender_visibility": getattr(user, "gender_visibility", None)
+            or DEFAULT_GENDER_VISIBILITY,
+            "gender_unset": raw_gender not in GENDER_VALUES,
         },
         "account": {
             "email_verified": user.is_verified,

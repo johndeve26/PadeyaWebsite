@@ -300,7 +300,7 @@ TEMPLATES: list[dict[str, str]] = [
         "user_template": (
             "Task: Draft a host CRM announcement (draft only — not sent).\n"
             "Format exactly:\n"
-            "SUBJECT: <internal/recipient-facing subject line>\n"
+            "SUBJECT: <email subject line recipients will see in their inbox>\n"
             "EMAIL_BODY:\n<email body, plain text, warm and clear>\n"
             "WHATSAPP:\n<optional short WhatsApp copy under 500 chars, or leave blank>\n"
             "Host: {host_name}\n"
@@ -313,7 +313,11 @@ TEMPLATES: list[dict[str, str]] = [
             "Audience segment (label only): {audience_label}\n"
             "Merch title (label only): {merch_title}\n"
             "Vault label (no locked content): {vault_label}\n"
+            "Personalize with name: {personalize_with_name}\n"
             "Host notes: {host_notes}\n"
+            "If Personalize with name is yes: open EMAIL_BODY with Hi {name_merge_token}, "
+            "and optionally use {name_merge_token} in SUBJECT. "
+            "Never invent a real person's name.\n"
             "Never imply the message was already sent. Never include recipient contact details."
         ),
     },
@@ -762,4 +766,18 @@ def seed_ai_prompt_templates(db: Session) -> None:
                 is_active=True,
             )
         )
+    # Refresh host announcement draft prompt (name personalization + subject clarity).
+    announcement = db.scalar(
+        select(AIPromptTemplate).where(
+            AIPromptTemplate.slug == FEATURE_HOST_ANNOUNCEMENTS_DRAFT
+        )
+    )
+    if announcement is not None:
+        for item in TEMPLATES:
+            if item["slug"] != FEATURE_HOST_ANNOUNCEMENTS_DRAFT:
+                continue
+            announcement.system_prompt = item["system_prompt"]
+            announcement.user_template = item["user_template"]
+            announcement.name = item["name"]
+            break
     db.commit()

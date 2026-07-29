@@ -100,6 +100,11 @@ export type UserPublic = {
   full_name: string;
   username?: string | null;
   avatar_url?: string | null;
+  gender?: string | null;
+  gender_short?: string | null;
+  gender_label?: string | null;
+  gender_visible?: boolean;
+  gender_visibility?: string;
   is_active: boolean;
   is_verified: boolean;
   ambassadors_blocked?: boolean;
@@ -164,6 +169,10 @@ export type AdminUserProfileSection = {
   ambassador_profile_status: string | null;
   ambassadors_program_blocked: boolean;
   campaigns_joined: number;
+  gender?: string | null;
+  gender_label?: string | null;
+  gender_visibility?: string | null;
+  gender_unset?: boolean;
 };
 
 export type AdminUserAccountSection = {

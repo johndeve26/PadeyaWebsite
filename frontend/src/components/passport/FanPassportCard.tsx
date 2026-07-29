@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 import { ConnectButton } from "@/components/fan-connect/ConnectButton";
 import { FanFollowButton } from "@/components/passport/FanFollowButton";
 import { FanPassportSafetyMenu } from "@/components/passport/FanPassportSafetyMenu";
+import { GenderBadge } from "@/components/profile/GenderBadge";
 import { Badge, Button } from "@/components/ui";
 import { trackFanCardClick, trackFanCardImpression } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
@@ -125,6 +126,17 @@ export function FanPassportCard({
                 <h3 className="truncate text-lg font-extrabold tracking-tight text-paper">
                   {fan.display_name}
                 </h3>
+                {fan.gender_visible && fan.gender_short ? (
+                  <GenderBadge
+                    value={{
+                      gender: fan.gender ?? null,
+                      gender_short: fan.gender_short,
+                      gender_label: fan.gender_label ?? null,
+                      gender_visible: fan.gender_visible,
+                    }}
+                    className="border-paper/25 bg-paper/10 text-paper"
+                  />
+                ) : null}
                 {fan.is_superfan ? (
                   <Badge tone="accent" size="sm">
                     Superfan

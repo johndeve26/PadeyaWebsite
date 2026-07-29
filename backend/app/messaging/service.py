@@ -630,12 +630,38 @@ def _fan_by_username(db: Session, username: str) -> User | None:
     return db.get(User, passport.user_id)
 
 
-def _participant_for_host(db: Session, host: Host) -> dict:
+def _participant_for_host(
+    db: Session, host: Host, *, viewer: User | None = None
+) -> dict:
     avatar = None
     profile = host.profile
     if profile is not None:
         avatar = profile.avatar_url
     uname = host.slug
+    from app.users.gender import (
+        HIDDEN_GENDER_PAYLOAD,
+        gender_display_payload,
+        host_shows_personal_gender,
+    )
+
+    gender = dict(HIDDEN_GENDER_PAYLOAD)
+    owner = db.get(User, host.user_id)
+    if owner is not None:
+        # Taxonomy-based individual vs org determination (never from host name).
+        from app.taxonomy import service as taxonomy_service
+
+        try:
+            tax = taxonomy_service.get_host_taxonomy(db, host.id)
+            type_slugs = list((tax or {}).get("host_type_slugs") or [])
+        except Exception:  # noqa: BLE001
+            type_slugs = []
+        if host_shows_personal_gender(type_slugs):
+            gender = gender_display_payload(
+                db,
+                viewer=viewer,
+                profile_owner=owner,
+                relationship_context="messaging",
+            )
     return {
         "display_name": host.display_name,
         "username": uname,
@@ -643,16 +669,27 @@ def _participant_for_host(db: Session, host: Host) -> dict:
         "legacy_path": f"/@{uname}" if uname else None,
         "passport_path": None,
         "avatar_url": avatar,
+        **gender,
     }
 
 
-def _participant_for_fan(db: Session, fan: User) -> dict:
+def _participant_for_fan(
+    db: Session, fan: User, *, viewer: User | None = None
+) -> dict:
     passport = db.scalar(select(FanPassport).where(FanPassport.user_id == fan.id))
     username = passport.username if passport else None
     public = bool(passport and passport.visibility == "public")
     unlisted = bool(passport and passport.visibility == "unlisted")
     # Messaging shows avatar when set — thread participants already share a conversation.
     avatar = passport.avatar_url if passport else None
+    from app.users.gender import gender_display_payload
+
+    gender = gender_display_payload(
+        db,
+        viewer=viewer,
+        profile_owner=fan,
+        relationship_context="messaging",
+    )
     return {
         "display_name": (passport.display_name if passport else None)
         or fan.full_name
@@ -662,6 +699,7 @@ def _participant_for_fan(db: Session, fan: User) -> dict:
         "legacy_path": None,
         "passport_path": f"/f/{username}" if username and (public or unlisted) else None,
         "avatar_url": avatar,
+        **gender,
     }
 
 
@@ -927,7 +965,9 @@ def serialize_thread_list_item(
         )
         other = db.get(User, other_id) if other_id else None
         counterpart = (
-            _participant_for_fan(db, other) if other else {"display_name": "Fan", "role": "fan"}
+            _participant_for_fan(db, other, viewer=viewer)
+            if other
+            else {"display_name": "Fan", "role": "fan"}
         )
         # Canonical low UUID uses fan_* read/archive columns; high uses host_*.
         as_low = thread.fan_user_id == viewer.id
@@ -962,7 +1002,9 @@ def serialize_thread_list_item(
     fan = db.get(User, thread.fan_user_id)
     host = db.get(Host, thread.host_id) if thread.host_id else None
     counterpart = (
-        _participant_for_fan(db, fan) if as_host and fan else _participant_for_host(db, host)  # type: ignore[arg-type]
+        _participant_for_fan(db, fan, viewer=viewer)
+        if as_host and fan
+        else _participant_for_host(db, host, viewer=viewer)  # type: ignore[arg-type]
     )
     other_id = thread.fan_user_id if as_host else thread.host_user_id
     archived = bool(
@@ -1307,7 +1349,7 @@ def get_thread_detail(db: Session, user: User, thread_id: UUID) -> dict:
         )
         other = db.get(User, other_id) if other_id else None
         counterpart = (
-            _participant_for_fan(db, other)
+            _participant_for_fan(db, other, viewer=user)
             if other
             else {"display_name": "Fan", "role": "fan"}
         )
@@ -1352,9 +1394,9 @@ def get_thread_detail(db: Session, user: User, thread_id: UUID) -> dict:
     fan = db.get(User, thread.fan_user_id)
     host = db.get(Host, thread.host_id) if thread.host_id else None
     counterpart = (
-        _participant_for_fan(db, fan)
+        _participant_for_fan(db, fan, viewer=user)
         if as_host and fan
-        else _participant_for_host(db, host)  # type: ignore[arg-type]
+        else _participant_for_host(db, host, viewer=user)  # type: ignore[arg-type]
     )
     other_id = thread.host_user_id if not as_host else thread.fan_user_id
     blocked = thread.status == C.THREAD_STATUS_BLOCKED or is_blocked(

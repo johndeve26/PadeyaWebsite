@@ -134,6 +134,9 @@ def serialize_user(user: User, db: Session | None = None) -> dict:
         "restriction_keys": list(restriction_keys),
         "suspension": None,
     }
+    from app.users.gender import owner_gender_settings_payload
+
+    data.update(owner_gender_settings_payload(user))
     if data["account_status"] == "suspended" and session is not None:
         from app.appeals.service import get_active_suspension, serialize_suspension_public
 

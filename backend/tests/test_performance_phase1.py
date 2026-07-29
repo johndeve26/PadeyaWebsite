@@ -26,7 +26,7 @@ from app.users.service import get_user_by_id
 def _auth_headers(client: TestClient, email: str, password: str = "securepass1") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "full_name": "Perf User"},
+        json={"email": email, "password": password, "full_name": "Perf User", "gender": "prefer_not_to_say"},
     )
     login = client.post(
         "/api/v1/auth/login",

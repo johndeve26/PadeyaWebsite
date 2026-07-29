@@ -66,3 +66,8 @@ class HostPublic(BaseModel):
     created_at: datetime
     profile: HostProfilePublic | None = None
     taxonomy: HostTaxonomyPublic | None = None
+    gender: str | None = None
+    gender_short: str | None = None
+    gender_label: str | None = None
+    gender_visible: bool = False
+    shows_personal_gender: bool = False

@@ -319,8 +319,10 @@ def count_fan_connections(db: Session, user_id: UUID) -> int:
     )
 
 
-def build_public_passport_page(db: Session, username: str) -> dict:
-    passport, _user = require_reachable_passport(db, username)
+def build_public_passport_page(
+    db: Session, username: str, *, viewer: User | None = None
+) -> dict:
+    passport, owner = require_reachable_passport(db, username)
     badges = public_badges(db, passport)
     attended = public_attended_events(db, passport)
     followed = public_followed_hosts(db, passport)
@@ -339,6 +341,19 @@ def build_public_passport_page(db: Session, username: str) -> dict:
     merch_proof = (
         fan_merch_proof_summaries(db, passport.user_id) if passport.show_badges else []
     )
+    from app.users.gender import (
+        gender_display_payload,
+        public_cache_safe_gender_payload,
+    )
+
+    # Anonymous/public cache: only visibility=public gender. Authenticated
+    # viewers get a live overlay (connections_only) that must not be cached.
+    gender_payload = public_cache_safe_gender_payload(owner)
+    if viewer is not None:
+        gender_payload = gender_display_payload(
+            db, viewer=viewer, profile_owner=owner, relationship_context="profile"
+        )
+
     return {
         "username": passport.username,
         "user_id": passport.user_id,
@@ -348,6 +363,7 @@ def build_public_passport_page(db: Session, username: str) -> dict:
         "bio": passport.bio,
         "visibility": passport.visibility,
         "is_superfan": passport.is_superfan,
+        **gender_payload,
         "events_attended": len(attended) if passport.show_attended_events else 0,
         "hosts_followed": len(followed) if passport.show_followed_hosts else 0,
         "badges_earned_count": len(badges) if passport.show_badges else 0,

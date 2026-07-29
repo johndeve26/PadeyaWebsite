@@ -21,7 +21,7 @@ def _register(
 ):
     return client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "full_name": full_name},
+        json={"email": email, "password": password, "full_name": full_name, "gender": "prefer_not_to_say"},
     )
 
 
@@ -42,7 +42,7 @@ def test_registration_with_username(client: TestClient, db_session: Session):
             "email": "tolu@example.com",
             "password": "securepass1",
             "username": "tolu_afro",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert response.status_code == 201
     user = db_session.scalar(select(User).where(User.email == "tolu@example.com"))
@@ -65,7 +65,7 @@ def test_host_onboard_uses_passport_username_as_slug(
             "email": "host@example.com",
             "password": "securepass1",
             "username": "tolu_afro",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert reg.status_code == 201
     token = reg.json()["access_token"]
@@ -86,7 +86,7 @@ def test_registration_duplicate_username(client: TestClient):
             "email": "a@example.com",
             "password": "securepass1",
             "username": "same_handle",
-        },
+        "gender": "prefer_not_to_say"},
     )
     again = client.post(
         "/api/v1/auth/register",
@@ -94,7 +94,7 @@ def test_registration_duplicate_username(client: TestClient):
             "email": "b@example.com",
             "password": "securepass1",
             "username": "same_handle",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert again.status_code == 409
 
@@ -113,7 +113,7 @@ def test_registration_duplicate_username_message(client: TestClient):
             "email": "first@example.com",
             "password": "securepass1",
             "username": "dup_msg_user",
-        },
+        "gender": "prefer_not_to_say"},
     )
     again = client.post(
         "/api/v1/auth/register",
@@ -121,7 +121,7 @@ def test_registration_duplicate_username_message(client: TestClient):
             "email": "second@example.com",
             "password": "securepass1",
             "username": "dup_msg_user",
-        },
+        "gender": "prefer_not_to_say"},
     )
     assert again.status_code == 409
     assert "username" in again.json()["detail"].lower()
@@ -225,7 +225,7 @@ def test_login_with_username(client: TestClient):
             "email": "uname-login@example.com",
             "password": "securepass1",
             "username": "uname_login",
-        },
+        "gender": "prefer_not_to_say"},
     )
     response = client.post(
         "/api/v1/auth/login",
