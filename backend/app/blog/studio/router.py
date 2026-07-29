@@ -8,7 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import CurrentUser, require_permission
+from app.auth.dependencies import require_permission
 from app.blog import service as blog_service
 from app.blog.document.sync import apply_autosave_content
 from app.blog.models import BlogPost
@@ -16,6 +16,7 @@ from app.blog.schemas import PostAdmin
 from app.blog.studio import operations as ops
 from app.blog.studio import revisions as rev
 from app.blog.studio import service as studio
+from app.blog.document.validation import validate_new_content_document_or_http
 from app.blog.studio.rate_limit import assert_body_limit
 from app.blog.studio.schemas import (
     BlogAiOperationPublic,
@@ -63,7 +64,7 @@ router = APIRouter(tags=["blog-ai-studio"])
 def ai_seo_brief(
     payload: SeoBriefRequest,
     db: Annotated[Session, Depends(get_db)],
-    user: CurrentUser,
+    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
 ) -> BlogSeoBrief:
     return studio.generate_seo_brief(db, user=user, payload=payload)
 
@@ -72,7 +73,7 @@ def ai_seo_brief(
 def ai_titles(
     payload: TitlesRequest,
     db: Annotated[Session, Depends(get_db)],
-    user: CurrentUser,
+    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
 ) -> TitlesResponse:
     return studio.generate_titles(db, user=user, payload=payload)
 
@@ -81,7 +82,7 @@ def ai_titles(
 def ai_outline(
     payload: OutlineRequest,
     db: Annotated[Session, Depends(get_db)],
-    user: CurrentUser,
+    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
 ) -> BlogOutline:
     return studio.generate_outline(db, user=user, payload=payload)
 
@@ -90,7 +91,7 @@ def ai_outline(
 def ai_outline_section(
     payload: OutlineSectionRequest,
     db: Annotated[Session, Depends(get_db)],
-    user: CurrentUser,
+    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
 ) -> BlogOutlineSection:
     return studio.regenerate_outline_section(db, user=user, payload=payload)
 
@@ -99,7 +100,7 @@ def ai_outline_section(
 def ai_section(
     payload: SectionRequest,
     db: Annotated[Session, Depends(get_db)],
-    user: CurrentUser,
+    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
 ) -> BlogGeneratedSection:
     return studio.generate_section(db, user=user, payload=payload)
 
@@ -108,7 +109,7 @@ def ai_section(
 def ai_full_draft(
     payload: FullDraftRequest,
     db: Annotated[Session, Depends(get_db)],
-    user: CurrentUser,
+    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
 ) -> FullDraftProgressResponse:
     result = studio.generate_full_draft(db, user=user, payload=payload)
     # Invariant: never publish
@@ -121,7 +122,7 @@ def ai_full_draft(
 def ai_rewrite(
     payload: RewriteRequest,
     db: Annotated[Session, Depends(get_db)],
-    user: CurrentUser,
+    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
 ) -> RewriteResponse:
     return studio.rewrite_selection(db, user=user, payload=payload)
 
@@ -130,7 +131,7 @@ def ai_rewrite(
 def ai_review(
     payload: ReviewRequest,
     db: Annotated[Session, Depends(get_db)],
-    user: CurrentUser,
+    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
 ) -> BlogQualityReview:
     return studio.review_article(db, user=user, payload=payload)
 
@@ -139,7 +140,7 @@ def ai_review(
 def ai_similarity(
     payload: SimilarityRequest,
     db: Annotated[Session, Depends(get_db)],
-    user: CurrentUser,
+    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
 ) -> BlogSimilarityReview:
     return studio.similarity_review(db, user=user, payload=payload)
 
@@ -148,7 +149,7 @@ def ai_similarity(
 def ai_faqs(
     payload: FaqsRequest,
     db: Annotated[Session, Depends(get_db)],
-    user: CurrentUser,
+    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
 ) -> FaqsResponse:
     return studio.generate_faqs(db, user=user, payload=payload)
 
@@ -157,7 +158,7 @@ def ai_faqs(
 def ai_image_prompt(
     payload: ImagePromptRequest,
     db: Annotated[Session, Depends(get_db)],
-    user: CurrentUser,
+    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
 ) -> BlogImagePrompt:
     return studio.generate_image_prompt(db, user=user, payload=payload)
 
@@ -166,7 +167,7 @@ def ai_image_prompt(
 def ai_internal_links(
     payload: InternalLinksRequest,
     db: Annotated[Session, Depends(get_db)],
-    user: CurrentUser,
+    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
 ) -> InternalLinksResponse:
     return studio.suggest_internal_links_op(db, user=user, payload=payload)
 
@@ -175,7 +176,7 @@ def ai_internal_links(
 def ai_fact_review(
     payload: FactReviewRequest,
     db: Annotated[Session, Depends(get_db)],
-    user: CurrentUser,
+    user: Annotated[User, Depends(require_permission("admin.blog.view"))],
 ) -> FactReviewResponse:
     return studio.fact_review(db, user=user, payload=payload)
 

@@ -73,9 +73,11 @@ def apply_autosave_content(
 
     if content_document is not None:
         # New or updated document always wins; ignore client body.
-        from app.blog.document.validation import validate_document
+        # Use strict new-content validation so unsupported block types cannot
+        # be persisted via autosave.
+        from app.blog.document.validation import validate_new_content_document
 
-        doc = validate_document(content_document)
+        doc = validate_new_content_document(content_document)
         apply_content_document(post, doc)
         return
 
