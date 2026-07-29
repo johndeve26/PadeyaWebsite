@@ -23,6 +23,7 @@ from app.blog.document.constants import (
     MAX_COLUMNS_PER_ROW,
     MAX_DOCUMENT_BYTES,
     MAX_NESTING_DEPTH,
+    NEW_CONTENT_ALLOWED_TYPES,
     SAFE_URL_SCHEMES,
     SPACING_PRESETS,
 )
@@ -378,6 +379,33 @@ def validate_document(doc: Any, *, strict: bool = True) -> dict[str, Any]:
 def validate_document_or_http(doc: Any) -> dict[str, Any]:
     try:
         return validate_document(doc)
+    except DocumentValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.message) from exc
+
+
+def _check_new_content_types(blocks: list[dict]) -> None:
+    """Recursively ensure no block type unsupported by public renderers is submitted as new content."""
+    for block in blocks:
+        btype = block.get("type")
+        if btype not in NEW_CONTENT_ALLOWED_TYPES:
+            raise DocumentValidationError(
+                f"Block type '{btype}' is not supported for new content (no public renderer)."
+            )
+        children = block.get("children") or []
+        if children:
+            _check_new_content_types(children)
+
+
+def validate_new_content_document(doc: Any) -> dict[str, Any]:
+    """Validate a document submitted via PATCH/create — enforces NEW_CONTENT_ALLOWED_TYPES."""
+    validated = validate_document(doc)
+    _check_new_content_types(validated.get("blocks", []))
+    return validated
+
+
+def validate_new_content_document_or_http(doc: Any) -> dict[str, Any]:
+    try:
+        return validate_new_content_document(doc)
     except DocumentValidationError as exc:
         raise HTTPException(status_code=422, detail=exc.message) from exc
 

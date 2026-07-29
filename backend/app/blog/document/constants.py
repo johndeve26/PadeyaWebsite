@@ -80,6 +80,64 @@ LAYOUT_BLOCKS = frozenset(
 
 ALLOWED_BLOCK_TYPES = CONTENT_BLOCKS | EDITORIAL_BLOCKS | MARKETING_BLOCKS | LAYOUT_BLOCKS
 
+# Block types that have a complete public renderer.
+# AI_GENERATABLE_TYPES and template/insertion types must be subsets of this.
+PUBLIC_RENDERED_TYPES = frozenset(
+    {
+        "rich_text",
+        "legacy_rich_text",
+        "heading",
+        "image",
+        "quote",
+        "list",
+        "table",
+        "faq",
+        "cta",
+        "divider",
+        "spacer",
+        "tip",
+        "warning",
+        "key_takeaway",
+        "important_note",
+        "author_note",
+        "table_of_contents",
+        "two_column_row",
+        "three_column_row",
+        "standard_section",
+        "full_width_section",
+        "narrow_section",
+        "section",
+        "column",
+    }
+)
+
+# Block types that may appear in newly-created / patched documents (subset of PUBLIC_RENDERED_TYPES).
+# Historical documents may still contain other validated types for read/render.
+NEW_CONTENT_ALLOWED_TYPES = PUBLIC_RENDERED_TYPES - {"legacy_rich_text"}
+
+# Block types the AI studio may generate.
+AI_GENERATABLE_TYPES = frozenset(
+    {
+        "rich_text",
+        "heading",
+        "image",
+        "quote",
+        "list",
+        "table",
+        "faq",
+        "cta",
+        "tip",
+        "warning",
+        "key_takeaway",
+        "important_note",
+        "author_note",
+        "table_of_contents",
+    }
+)
+
+# Block types allowed inside saved templates / reusable sections.
+TEMPLATE_ALLOWED_TYPES = NEW_CONTENT_ALLOWED_TYPES
+
 LAYOUT_CONTAINER_TYPES = frozenset(
     {
         "section",

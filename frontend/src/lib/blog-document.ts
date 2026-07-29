@@ -85,6 +85,37 @@ export type PreviewTheme = "light" | "dark" | "system";
 
 export type ContentMode = "legacy" | "block_document";
 
+/**
+ * Block types that have a complete public renderer.
+ * EDITOR_INSERTABLE_TYPES and AI_GENERATABLE_TYPES must be subsets of this.
+ */
+export const PUBLIC_RENDERED_TYPES = [
+  "rich_text",
+  "legacy_rich_text",
+  "heading",
+  "image",
+  "quote",
+  "list",
+  "table",
+  "faq",
+  "cta",
+  "divider",
+  "spacer",
+  "tip",
+  "warning",
+  "key_takeaway",
+  "important_note",
+  "author_note",
+  "table_of_contents",
+  "two_column_row",
+  "three_column_row",
+  "standard_section",
+  "full_width_section",
+  "narrow_section",
+  "section",
+  "column",
+] as const;
+
 /** Block types with full public renderer + editor support. */
 export const INSERTABLE_BLOCK_TYPES = [
   "rich_text",
@@ -150,10 +181,10 @@ export const BLOCK_CATEGORIES = {
   ),
 } as const;
 
+// image_gallery and video_embed are excluded — no complete public renderer yet
 export const SLASH_COMMANDS = [
   { command: "heading", label: "Heading", type: "heading" },
   { command: "image", label: "Image", type: "image" },
-  { command: "gallery", label: "Gallery", type: "image_gallery" },
   { command: "quote", label: "Quote", type: "quote" },
   { command: "callout", label: "Tip callout", type: "tip" },
   { command: "cta", label: "CTA", type: "cta" },
@@ -161,7 +192,6 @@ export const SLASH_COMMANDS = [
   { command: "table", label: "Table", type: "table" },
   { command: "faq", label: "FAQ", type: "faq" },
   { command: "divider", label: "Divider", type: "divider" },
-  { command: "embed", label: "Embed", type: "video_embed" },
   { command: "toc", label: "Table of contents", type: "table_of_contents" },
 ] as const;
 

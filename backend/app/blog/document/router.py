@@ -28,6 +28,7 @@ from app.blog.document.validation import (
     validate_document,
     validate_document_or_http,
     validate_hero_settings,
+    validate_new_content_document_or_http,
 )
 from app.blog.markdown import estimate_reading_minutes
 from app.blog.models import BlogLayoutTemplate, BlogPost, BlogReusableSection
@@ -159,7 +160,7 @@ def patch_post_document(
         raise_not_found()
     rev.assert_version_match(post, payload.expected_content_version)
 
-    doc = validate_document_or_http(payload.content_document)
+    doc = validate_new_content_document_or_http(payload.content_document)
     hero = None
     if payload.hero_settings is not None:
         try:
@@ -291,7 +292,7 @@ def create_layout_template(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[User, Depends(require_permission("admin.blog.edit"))],
 ) -> LayoutTemplatePublic:
-    doc = validate_document_or_http(payload.document)
+    doc = validate_new_content_document_or_http(payload.document)
     slug = payload.slug or blog_service._slugify(payload.name)  # noqa: SLF001
     existing = db.scalar(select(BlogLayoutTemplate).where(BlogLayoutTemplate.slug == slug))
     if existing:
