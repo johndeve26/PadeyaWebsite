@@ -255,7 +255,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }>("/memories/albums?limit=48", SITEMAP_FETCH_TIMEOUT_MS),
   ]);
 
-  for (const post of blogPosts) {
+  const blogPostsSafe = blogPosts ?? [];
+  const blogCategoriesSafe = blogCategories ?? [];
+  const blogTagsSafe = blogTags ?? [];
+  const blogAuthorsSafe = blogAuthors ?? [];
+  const helpArticlesSafe = helpArticles ?? [];
+  const helpCategoriesSafe = helpCategories ?? [];
+
+  for (const post of blogPostsSafe) {
     if (!isPublishedBlogPost(post)) continue;
     pushEntry(entries, `${origin}/blog/${post.slug}`, {
       lastModified: sitemapLastModified(post.updated_at, post.published_at),
@@ -264,22 +271,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  const blogHubs = collectNonEmptyBlogHubSlugs(blogPosts);
-  for (const cat of blogCategories) {
+  const blogHubs = collectNonEmptyBlogHubSlugs(blogPostsSafe);
+  for (const cat of blogCategoriesSafe) {
     if (!blogHubs.categories.has(cat.slug)) continue;
     pushEntry(entries, `${origin}/blog/category/${encodeURIComponent(cat.slug)}`, {
       changeFrequency: "weekly",
       priority: 0.55,
     });
   }
-  for (const tag of blogTags) {
+  for (const tag of blogTagsSafe) {
     if (!blogHubs.tags.has(tag.slug)) continue;
     pushEntry(entries, `${origin}/blog/tag/${encodeURIComponent(tag.slug)}`, {
       changeFrequency: "weekly",
       priority: 0.5,
     });
   }
-  for (const author of blogAuthors) {
+  for (const author of blogAuthorsSafe) {
     if (!blogHubs.authors.has(author.slug)) continue;
     pushEntry(entries, `${origin}/blog/author/${encodeURIComponent(author.slug)}`, {
       changeFrequency: "weekly",
@@ -287,7 +294,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  for (const article of helpArticles) {
+  for (const article of helpArticlesSafe) {
     if (article.status !== "published") continue;
     pushEntry(entries, `${origin}/help/articles/${article.slug}`, {
       lastModified: sitemapLastModified(article.updated_at, article.published_at),
@@ -296,7 +303,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  for (const cat of helpCategories) {
+  for (const cat of helpCategoriesSafe) {
     pushEntry(entries, `${origin}/help/${cat.slug}`, {
       lastModified: now,
       changeFrequency: "weekly",
