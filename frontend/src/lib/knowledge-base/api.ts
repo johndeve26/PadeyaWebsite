@@ -4,6 +4,8 @@ import { cache } from "react";
 
 import { apiRequest } from "@/lib/api";
 import { getApiBaseUrl, getApiPrefix } from "@/lib/api-base";
+import { API_TIMEOUT_MS } from "@/lib/api-timeouts";
+import { fetchPublicJson } from "@/lib/cache/public-api";
 
 export type HelpCategory = {
   id: string;
@@ -250,20 +252,18 @@ export async function fetchHelpArticlesServer(params?: {
   q?: string;
   limit?: number;
 }): Promise<HelpArticleListItem[]> {
-  try {
-    const qs = new URLSearchParams();
-    if (params?.category) qs.set("category", params.category);
-    if (params?.audience) qs.set("audience", params.audience);
-    if (params?.featured) qs.set("featured", "true");
-    if (params?.popular) qs.set("popular", "true");
-    if (params?.q) qs.set("q", params.q);
-    qs.set("limit", String(params?.limit ?? 50));
-    const res = await fetch(`${apiRoot()}/help/articles?${qs}`, HELP_FETCH);
-    if (!res.ok) return [];
-    return (await res.json()) as HelpArticleListItem[];
-  } catch {
-    return [];
-  }
+  const qs = new URLSearchParams();
+  if (params?.category) qs.set("category", params.category);
+  if (params?.audience) qs.set("audience", params.audience);
+  if (params?.featured) qs.set("featured", "true");
+  if (params?.popular) qs.set("popular", "true");
+  if (params?.q) qs.set("q", params.q);
+  qs.set("limit", String(params?.limit ?? 50));
+  const rows = await fetchPublicJson<HelpArticleListItem[]>(
+    `/help/articles?${qs}`,
+    { next: HELP_FETCH.next, timeoutMs: API_TIMEOUT_MS.public },
+  );
+  return rows ?? [];
 }
 
 export const fetchHelpArticleServer = cache(async (
@@ -283,13 +283,11 @@ export const fetchHelpArticleServer = cache(async (
 });
 
 export async function fetchHelpCategoriesServer(): Promise<HelpCategory[]> {
-  try {
-    const res = await fetch(`${apiRoot()}/help/categories`, HELP_FETCH);
-    if (!res.ok) return [];
-    return (await res.json()) as HelpCategory[];
-  } catch {
-    return [];
-  }
+  const rows = await fetchPublicJson<HelpCategory[]>("/help/categories", {
+    next: HELP_FETCH.next,
+    timeoutMs: API_TIMEOUT_MS.public,
+  });
+  return rows ?? [];
 }
 
 export async function fetchHelpCategoryServer(

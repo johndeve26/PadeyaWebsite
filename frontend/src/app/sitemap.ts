@@ -1,12 +1,16 @@
 import type { MetadataRoute } from "next";
 
-import { getApiBaseUrl, getApiPrefix } from "@/lib/api-base";
+import { API_TIMEOUT_MS } from "@/lib/api-timeouts";
 import {
   fetchBlogAuthorsServer,
   fetchBlogCategoriesServer,
   fetchBlogPostsServer,
   fetchBlogTagsServer,
 } from "@/lib/blog-api";
+import {
+  fetchPublicJson,
+  isNextProductionBuild,
+} from "@/lib/cache/public-api";
 import {
   fetchHelpArticlesServer,
   fetchHelpCategoriesServer,
@@ -32,10 +36,10 @@ import {
   SPONSORSHIP_MARKETPLACE_PATH,
 } from "@/lib/sponsor-marketplace-paths";
 
-function apiRoot(): string {
-  const base = getApiBaseUrl() || "http://127.0.0.1:8000";
-  return `${base}${getApiPrefix()}`;
-}
+const SITEMAP_FETCH = {
+  next: { revalidate: 300 },
+  timeoutMs: API_TIMEOUT_MS.public,
+} as const;
 
 type PublicEvent = {
   slug: string;
@@ -70,28 +74,19 @@ type FanDirectoryList = {
 };
 type SponsorDirectoryCard = { slug: string; verified?: boolean };
 
-async function safeJson<T>(path: string): Promise<T | null> {
-  try {
-    const res = await fetch(`${apiRoot()}${path}`, {
-      next: { revalidate: 300 },
-    });
-    if (!res.ok) return null;
-    return (await res.json()) as T;
-  } catch {
-    return null;
-  }
-}
-
 /** Paginate public Fan directory (max 48/page) — public+directory-eligible only. */
 async function fetchAllDirectoryFans(): Promise<FanDirectoryCard[]> {
   const out: FanDirectoryCard[] = [];
   const limit = 48;
+  // During `next build`, cap pages so SSG stays under staticPageGenerationTimeout.
+  const maxPages = isNextProductionBuild() ? 2 : 50;
   let page = 1;
   let total = Infinity;
 
-  while (out.length < total && page <= 50) {
-    const data = await safeJson<FanDirectoryList>(
+  while (out.length < total && page <= maxPages) {
+    const data = await fetchPublicJson<FanDirectoryList>(
       `/fans?page=${page}&limit=${limit}&sort=recently_active`,
+      SITEMAP_FETCH,
     );
     if (!data?.items?.length) break;
     out.push(...data.items);
@@ -207,16 +202,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     sponsors,
     memoryAlbums,
   ] = await Promise.all([
-    safeJson<PublicEvent[]>("/events"),
-    safeJson<Category[]>("/events/categories"),
-    safeJson<TaxonomyLocation[]>("/taxonomy/locations"),
+    fetchPublicJson<PublicEvent[]>("/events", SITEMAP_FETCH),
+    fetchPublicJson<Category[]>("/events/categories", SITEMAP_FETCH),
+    fetchPublicJson<TaxonomyLocation[]>("/taxonomy/locations", SITEMAP_FETCH),
     fetchBlogPostsServer({ limit: 100 }),
     fetchBlogCategoriesServer(),
     fetchBlogTagsServer(),
     fetchBlogAuthorsServer(),
     fetchHelpArticlesServer({ limit: 100 }),
     fetchHelpCategoriesServer(),
-    safeJson<{
+    fetchPublicJson<{
       items?: Array<{
         slug: string;
         host_slug?: string | null;
@@ -227,13 +222,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         is_vault_exclusive?: boolean;
         updated_at?: string;
       }>;
-    }>("/merch?limit=100&sort=newest"),
-    safeJson<DiscoverHost[]>("/legacy/discover/hosts"),
+    }>("/merch?limit=100&sort=newest", SITEMAP_FETCH),
+    fetchPublicJson<DiscoverHost[]>("/legacy/discover/hosts", SITEMAP_FETCH),
     fetchAllDirectoryFans(),
-    safeJson<SponsorDirectoryCard[]>("/sponsors/public/directory"),
-    safeJson<{
+    fetchPublicJson<SponsorDirectoryCard[]>(
+      "/sponsors/public/directory",
+      SITEMAP_FETCH,
+    ),
+    fetchPublicJson<{
       items?: Array<{ event_slug: string; memories_path?: string }>;
-    }>("/memories/albums?limit=48"),
+    }>("/memories/albums?limit=48", SITEMAP_FETCH),
   ]);
 
   for (const post of blogPosts) {
