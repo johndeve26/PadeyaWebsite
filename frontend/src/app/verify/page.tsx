@@ -124,12 +124,12 @@ function VerifyEmailForm() {
     >
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
         {linkToken ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-paper/70">
             Your link could not be confirmed automatically. Tap verify below to try again.
           </p>
         ) : (
           <>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-paper/70">
               Enter the 6-character code from your verification email, or open the
               link we sent you.
             </p>
@@ -141,12 +141,14 @@ function VerifyEmailForm() {
               inputMode="text"
               maxLength={8}
               required={!linkToken}
+              surface="onDark"
             />
           </>
         )}
 
         <Button
           type="submit"
+          variant="primary-on-dark"
           className="w-full"
           disabled={submitting || (!linkToken && normalizedCode.length !== 6)}
         >
@@ -155,7 +157,7 @@ function VerifyEmailForm() {
 
         <Button
           type="button"
-          variant="ghost"
+          variant="ghost-dark"
           className="w-full"
           disabled={resending}
           onClick={() => void onResend()}
@@ -164,10 +166,10 @@ function VerifyEmailForm() {
         </Button>
 
         {!user ? (
-          <p className="text-center text-xs text-muted-foreground">
+          <p className="text-center text-xs text-paper/65">
             <Link
               href={`/login?next=${encodeURIComponent(emailVerifyPath(afterVerifyPath))}`}
-              className="font-semibold underline-offset-2 hover:underline"
+              className="font-semibold text-paper underline-offset-2 hover:text-[#8EF012] hover:underline"
             >
               Log in
             </Link>{" "}
