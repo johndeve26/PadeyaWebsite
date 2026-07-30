@@ -837,7 +837,7 @@ export function EventDiscoveryView({
 
   return (
     <main className="bg-background pb-20 sm:pb-0">
-      <MarketplaceBreadcrumbs items={crumbs} />
+      {/* Hero before breadcrumbs so transparent header underlay stays full-bleed. */}
       {heroProps ? (
         <DiscoveryHubHero
           {...heroProps}
@@ -877,6 +877,7 @@ export function EventDiscoveryView({
       ) : (
         hero
       )}
+      <MarketplaceBreadcrumbs items={crumbs} />
 
       {childBrowseItems.length > 0 ? (
         <DiscoveryBrowseSection

@@ -327,7 +327,7 @@ function LocationLandingInner({
       {pageViewKind ? (
         <LocationPageViewTracker kind={pageViewKind} {...locationMeta} />
       ) : null}
-      <MarketplaceBreadcrumbs items={crumbs} />
+      {/* Hero before breadcrumbs so transparent header underlay stays full-bleed. */}
       <LocationLandingHero
         kind={kind}
         slug={slug}
@@ -339,6 +339,7 @@ function LocationLandingInner({
         focalX={focalX}
         focalY={focalY}
       />
+      <MarketplaceBreadcrumbs items={crumbs} />
 
       {introContent?.trim() ? (
         <Container className="pt-6 sm:pt-8">

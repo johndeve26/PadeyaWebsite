@@ -221,7 +221,7 @@ function CategoryLandingInner({
 
   return (
     <main className="min-w-0 overflow-x-clip bg-background">
-      <MarketplaceBreadcrumbs items={crumbs} />
+      {/* Hero before breadcrumbs so transparent header underlay stays full-bleed. */}
       <CategoryLandingHero
         slug={categorySlug}
         name={categoryName}
@@ -237,6 +237,7 @@ function CategoryLandingInner({
         focalX={focalX}
         focalY={focalY}
       />
+      <MarketplaceBreadcrumbs items={crumbs} />
 
       <Container className="space-y-14 py-10 sm:py-14">
         <section className="space-y-4 sm:space-y-5" aria-label="Jump in">

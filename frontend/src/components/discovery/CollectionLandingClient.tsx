@@ -161,7 +161,7 @@ function CollectionLandingInner({
 
   return (
     <main className="min-w-0 overflow-x-clip bg-background">
-      <MarketplaceBreadcrumbs items={crumbs} />
+      {/* Hero before breadcrumbs so transparent header underlay stays full-bleed. */}
       <DiscoveryHubHero
         eyebrow={copy.eyebrow}
         title={copy.title}
@@ -172,6 +172,7 @@ function CollectionLandingInner({
         secondaryCtaHref="/events"
         backgroundSrc={copy.heroImage || brand.heroImage}
       />
+      <MarketplaceBreadcrumbs items={crumbs} />
 
       <Container className="space-y-14 py-10 sm:py-14">
         <section className="space-y-6" aria-label="Jump in">
