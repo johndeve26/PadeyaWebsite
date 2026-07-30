@@ -85,11 +85,20 @@ describe("browse-images taxonomy visuals", () => {
       ),
     ).toBe("Crowd at night");
     expect(
-      taxonomyHeroAlt(
-        { primary_image_alt: "City skyline" },
-        "Lagos",
-      ),
+      taxonomyHeroAlt({ primary_image_alt: "City skyline" }, "Lagos"),
     ).toBe("City skyline");
     expect(taxonomyHeroAlt(null, "Lagos")).toBe("Lagos");
+  });
+
+  it("uses hero image for cards when primary is unset", () => {
+    const visuals = categoryBrowseVisuals("music", "Music", {
+      hero_image_url: "https://cdn.example.com/hero.png",
+      hero_image_alt: "Hero crowd",
+      hero_image_focal_x: 0.2,
+      hero_image_focal_y: 0.8,
+    });
+    expect(visuals.imageUrl).toBe("https://cdn.example.com/hero.png");
+    expect(visuals.imageAlt).toBe("Hero crowd");
+    expect(visuals.focalX).toBe(0.2);
   });
 });

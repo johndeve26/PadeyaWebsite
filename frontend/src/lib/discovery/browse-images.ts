@@ -95,12 +95,29 @@ export function categoryBrowseVisuals(
   name: string,
   term?: TaxonomyImageFields | null,
 ): BrowseCardVisuals {
-  const adminUrl = term?.image_url ?? term?.primary_image_url;
+  // Cards prefer primary; if only a hero was uploaded, still show it.
+  const adminUrl =
+    term?.image_url ??
+    term?.primary_image_url ??
+    term?.hero_image_url ??
+    null;
   return {
     imageUrl: categoryBrowseImage(slug, adminUrl),
-    imageAlt: term?.image_alt ?? term?.primary_image_alt ?? name,
-    focalX: term?.image_focal_x ?? term?.primary_image_focal_x ?? 0.5,
-    focalY: term?.image_focal_y ?? term?.primary_image_focal_y ?? 0.5,
+    imageAlt:
+      term?.image_alt ??
+      term?.primary_image_alt ??
+      term?.hero_image_alt ??
+      name,
+    focalX:
+      term?.image_focal_x ??
+      term?.primary_image_focal_x ??
+      term?.hero_image_focal_x ??
+      0.5,
+    focalY:
+      term?.image_focal_y ??
+      term?.primary_image_focal_y ??
+      term?.hero_image_focal_y ??
+      0.5,
   };
 }
 
@@ -110,12 +127,28 @@ export function cityBrowseVisuals(
   name: string,
   loc?: TaxonomyImageFields | null,
 ): BrowseCardVisuals {
-  const adminUrl = loc?.image_url ?? loc?.primary_image_url;
+  const adminUrl =
+    loc?.image_url ??
+    loc?.primary_image_url ??
+    loc?.hero_image_url ??
+    null;
   return {
     imageUrl: cityBrowseImage(slug, adminUrl),
-    imageAlt: loc?.image_alt ?? loc?.primary_image_alt ?? name,
-    focalX: loc?.image_focal_x ?? loc?.primary_image_focal_x ?? 0.5,
-    focalY: loc?.image_focal_y ?? loc?.primary_image_focal_y ?? 0.5,
+    imageAlt:
+      loc?.image_alt ??
+      loc?.primary_image_alt ??
+      loc?.hero_image_alt ??
+      name,
+    focalX:
+      loc?.image_focal_x ??
+      loc?.primary_image_focal_x ??
+      loc?.hero_image_focal_x ??
+      0.5,
+    focalY:
+      loc?.image_focal_y ??
+      loc?.primary_image_focal_y ??
+      loc?.hero_image_focal_y ??
+      0.5,
   };
 }
 

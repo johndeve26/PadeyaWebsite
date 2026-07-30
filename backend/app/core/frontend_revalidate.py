@@ -101,3 +101,39 @@ def notify_memories_frontend_revalidate(*, slug: str | None) -> bool:
         logger.exception("memories frontend revalidate request failed")
         return False
     return False
+
+
+def notify_taxonomy_frontend_revalidate() -> bool:
+    """POST /api/revalidate/taxonomy — bust events + category/city hub ISR."""
+    settings = get_settings()
+    secret = (settings.revalidate_secret or "").strip()
+    frontend = (settings.frontend_url or "").rstrip("/")
+    if not secret or not frontend:
+        logger.warning(
+            "taxonomy frontend revalidate skipped "
+            "(REVALIDATE_SECRET or FRONTEND_URL unset)"
+        )
+        return False
+
+    url = urljoin(frontend + "/", "api/revalidate/taxonomy")
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            res = client.post(
+                url,
+                json={},
+                headers={
+                    "Authorization": f"Bearer {secret}",
+                    "Content-Type": "application/json",
+                },
+            )
+        if 200 <= res.status_code < 300:
+            return True
+        logger.error(
+            "taxonomy frontend revalidate failed status=%s body=%s",
+            res.status_code,
+            (res.text or "")[:200],
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception("taxonomy frontend revalidate request failed")
+        return False
+    return False

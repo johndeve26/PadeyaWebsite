@@ -56,6 +56,8 @@ type RequestOptions = {
   /** Named budget or explicit milliseconds. */
   timeout?: ApiTimeoutBudget | number;
   signal?: AbortSignal;
+  /** Browser fetch cache mode (e.g. no-store for taxonomy after admin edits). */
+  cache?: RequestCache;
 };
 
 const CHROME_PATH_PREFIXES = [
@@ -182,6 +184,7 @@ export async function apiRequest<T>(
       method,
       headers,
       signal,
+      cache: options.cache,
       // Callers may pass an object (preferred) or a pre-stringified JSON body.
       body:
         options.body === undefined || options.body === null

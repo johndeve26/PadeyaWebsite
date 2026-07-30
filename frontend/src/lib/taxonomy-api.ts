@@ -61,6 +61,7 @@ export type TaxonomyCategory = {
 export async function fetchTaxonomyCategories(): Promise<TaxonomyCategory[]> {
   return apiRequest<TaxonomyCategory[]>("/taxonomy/categories", {
     auth: false,
+    cache: "no-store",
   });
 }
 
@@ -74,7 +75,7 @@ export async function fetchTaxonomyLocations(opts?: {
   const qs = params.toString();
   return apiRequest<TaxonomyLocation[]>(
     `/taxonomy/locations${qs ? `?${qs}` : ""}`,
-    { auth: false },
+    { auth: false, cache: "no-store" },
   );
 }
 

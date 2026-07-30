@@ -67,9 +67,20 @@ def invalidate_cms_caches() -> None:
 
 
 def invalidate_taxonomy_caches() -> None:
+    # Exact public list keys (SCAN patterns can miss in some Redis configs).
+    from app.core.cache import cache_key
+
+    cache_delete(cache_key("taxonomy", "categories"))
+    cache_delete(cache_key("taxonomy", "locations"))
     cache_delete_pattern(f"{CACHE_PREFIX}taxonomy*")
     # Event categories often mirror taxonomy for discovery filters
     cache_delete_pattern(f"{CACHE_PREFIX}events:categories*")
+    try:
+        from app.core.frontend_revalidate import notify_taxonomy_frontend_revalidate
+
+        notify_taxonomy_frontend_revalidate()
+    except Exception:  # noqa: BLE001
+        logger.exception("frontend taxonomy revalidate notify failed")
 
 
 def invalidate_sponsorship_public_caches() -> None:

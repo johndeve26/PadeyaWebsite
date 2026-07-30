@@ -199,7 +199,11 @@ export function TaxonomyVisualsEditor({
         <h3 className="text-sm font-bold tracking-tight">Visuals</h3>
         <p className="mt-1 text-xs text-muted-foreground">
           JPEG, PNG, WebP, or GIF · max {MAX_MB}MB · SVG rejected. Unique object
-          keys on every upload (CDN-safe replace).
+          keys on every upload (CDN-safe replace).{" "}
+          <strong className="font-semibold text-foreground">Primary</strong> shows
+          on category/city cards;{" "}
+          <strong className="font-semibold text-foreground">Hero</strong> is for
+          hub headers (falls back to primary when empty).
         </p>
       </div>
 
