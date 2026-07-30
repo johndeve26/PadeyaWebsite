@@ -107,6 +107,16 @@ export const PRODUCT_PATH_REDIRECTS: readonly PathRedirect[] = [
   },
   { source: "/guides", destination: "/blog", permanent: true },
   { source: "/guides/:path*", destination: "/blog/:path*", permanent: true },
+  {
+    source: "/events/c/art-culture",
+    destination: "/events/c/arts-culture",
+    permanent: true,
+  },
+  {
+    source: "/events/city/:city/art-culture",
+    destination: "/events/city/:city/arts-culture",
+    permanent: true,
+  },
 ] as const;
 
 /**

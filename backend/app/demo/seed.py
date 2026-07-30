@@ -561,7 +561,7 @@ def _event_specs() -> list[dict[str, Any]]:
         ("pending-gospel-choir", "Choir Night Review", "praiseexperience", "gospel", "pending_review"),
         ("cancelled-beach-bash", "Beach Bash Cancelled", "mainlandvibes", "lifestyle", "cancelled"),
         ("rejected-stadium-show", "Stadium Show Rejected", "djmaze", "music", "rejected"),
-        ("art-walk-lagos", "Art Walk Lagos", "lagoscomedyhub", "art-culture", "published"),
+        ("art-walk-lagos", "Art Walk Lagos", "lagoscomedyhub", "arts-culture", "published"),
         ("sports-sunday", "Sports Sunday Kickoff", "mainlandvibes", "sports", "published"),
     ]
     for i, (key, title, host, cat, status) in enumerate(extras):

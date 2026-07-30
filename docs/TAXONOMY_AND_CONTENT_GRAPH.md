@@ -395,5 +395,6 @@ Metadata: `country`, `state`, `city`, `area`, `category`, `placement_context`, `
 - Public host directory facets (category, host type, city, sponsor-ready).
 - Graph scoring job + editorial overrides (`recommended_next`, `trending_in_city`).
 - Sitemap index split when URL count grows.
-- Dedupe near-duplicate legacy categories (`arts-culture` / `art-culture`) via admin merge, not silent delete.
+- Dedupe near-duplicate legacy categories (`arts-culture` / `art-culture`) via
+  merge into canonical `arts-culture` (Arts & Culture); redirect old URLs.
 - Wave 6 location cutover (see Dual-write): drop free-text `city` as discovery source of truth.

@@ -291,7 +291,7 @@ def _event_blueprints(now: datetime) -> list[dict[str, Any]]:
             "location_visibility": "hidden_until_payment",
             "reveal_timing": "after_payment",
             "public_location_label": "Ikeja, Lagos — exact venue after purchase.",
-            "category": "art-culture",
+            "category": "arts-culture",
             "vibe": "Gallery walk",
             "banner_key": "art-walk-lagos",
             "start": now + timedelta(days=28, hours=16),

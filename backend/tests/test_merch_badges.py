@@ -234,10 +234,10 @@ def test_refund_revokes_first_merch_buy(client: TestClient, db_session: Session)
 def test_culture_fest_and_founder_mode_criteria(
     client: TestClient, db_session: Session
 ):
-    art = db_session.query(EventCategory).filter_by(slug="art-culture").first()
+    art = db_session.query(EventCategory).filter_by(slug="arts-culture").first()
     if art is None:
         art = EventCategory(
-            name="Art & Culture", slug="art-culture", description="Culture"
+            name="Arts & Culture", slug="arts-culture", description="Culture"
         )
         db_session.add(art)
         db_session.flush()

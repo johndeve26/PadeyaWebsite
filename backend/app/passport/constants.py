@@ -21,7 +21,7 @@ MERCH_COLLECTOR_THRESHOLD = 3
 CULTURE_FEST_COLLECTOR_THRESHOLD = 1
 
 # Category slugs that count toward Culture Fest Collector
-CULTURE_FEST_CATEGORY_SLUGS = frozenset({"art-culture", "arts-culture", "culture"})
+CULTURE_FEST_CATEGORY_SLUGS = frozenset({"arts-culture", "art-culture", "culture"})
 
 # Category slugs that count toward Founder Mode Gear (with founders/tech events)
 FOUNDER_MODE_CATEGORY_SLUGS = frozenset({"tech", "business"})

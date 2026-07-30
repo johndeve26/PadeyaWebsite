@@ -73,6 +73,7 @@ export function CategoryGlyph({
         </svg>
       );
     case "arts-culture":
+    case "art-culture":
     case "lifestyle":
       return (
         <svg viewBox="0 0 24 24" fill="none" className={common} aria-hidden>

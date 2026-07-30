@@ -468,7 +468,6 @@ DEMO_CATEGORY_EXTRAS: list[tuple[str, str, str]] = [
     ("Campus", "campus", "Student and campus community events"),
     ("Lifestyle", "lifestyle", "Games nights, socials, and lifestyle experiences"),
     ("Sports", "sports", "Sports watch parties and tournaments"),
-    ("Art & Culture", "art-culture", "Art walks, exhibitions, and culture nights"),
 ]
 
 PROMO_CODES: list[dict] = [

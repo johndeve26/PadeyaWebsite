@@ -123,7 +123,7 @@ DEMO_HOST_TAXONOMY: dict[str, dict[str, object]] = {
     },
     "mainlandvibes": {
         "host_types": ["lifestyle-brand", "promoter"],
-        "categories": ["lifestyle", "art-culture"],
+        "categories": ["lifestyle", "arts-culture"],
         "tags": ["outdoor", "free-entry"],
         "vibes": ["community", "high-energy"],
         "audience": ["students", "adults-18"],
@@ -180,7 +180,7 @@ DEMO_CATEGORY_TAXONOMY: dict[str, dict[str, list[str]]] = {
         "vibes": ["chill", "community"],
         "audience": ["adults-18"],
     },
-    "art-culture": {
+    "arts-culture": {
         "tags": ["outdoor"],
         "vibes": ["chill", "community"],
         "audience": ["adults-18", "families"],
