@@ -93,13 +93,13 @@ export function FanPassportHero({
                   </p>
                   {page.gender_visible && page.gender_short ? (
                     <GenderBadge
+                      surface="onDark"
                       value={{
                         gender: page.gender ?? null,
                         gender_short: page.gender_short,
                         gender_label: page.gender_label ?? null,
                         gender_visible: page.gender_visible,
                       }}
-                      className="border-paper/25 bg-paper/10 text-paper"
                     />
                   ) : null}
                 </div>

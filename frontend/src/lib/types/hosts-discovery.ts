@@ -30,6 +30,11 @@ export type HostDiscovery = {
   followers_count: number;
   vault_items_count: number;
   sponsor_ready: boolean;
+  gender?: string | null;
+  gender_short?: string | null;
+  gender_label?: string | null;
+  gender_visible?: boolean;
+  shows_personal_gender?: boolean;
   next_upcoming_event?: HostDiscoveryNextEvent | null;
   share_path: string;
 };

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { HostFollowControls } from "@/components/hosts/HostFollowControls";
+import { GenderBadge } from "@/components/profile/GenderBadge";
 import { Badge, Button, Card, LegacyTierBadge, Media } from "@/components/ui";
 import { useHostAffiliation } from "@/hooks/useHostAffiliation";
 import {
@@ -249,6 +250,18 @@ export function HostMarketplaceCard({
                   >
                     <VerifiedCheckIcon />
                   </span>
+                ) : null}
+                {host.shows_personal_gender &&
+                host.gender_visible &&
+                host.gender_short ? (
+                  <GenderBadge
+                    value={{
+                      gender: host.gender ?? null,
+                      gender_short: host.gender_short,
+                      gender_label: host.gender_label ?? null,
+                      gender_visible: host.gender_visible,
+                    }}
+                  />
                 ) : null}
               </div>
               <p className="text-sm leading-snug text-muted-foreground">

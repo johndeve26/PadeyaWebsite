@@ -40,13 +40,13 @@ export const GENDER_VISIBILITY_LABELS: Record<GenderVisibility, string> = {
 
 /** Product brief privacy copy — include connect-request exception for connections_only. */
 export const GENDER_VISIBILITY_HINTS: Record<GenderVisibility, string> = {
-  public: "Anyone viewing your profile can see it.",
+  public: "Shown on your profile and directories by default. Anyone can see it.",
   connections_only:
     "Only accepted connections and people involved in a direct connect request can see it.",
   private: "Gender remains private.",
 };
 
-export const DEFAULT_GENDER_VISIBILITY: GenderVisibility = "connections_only";
+export const DEFAULT_GENDER_VISIBILITY: GenderVisibility = "public";
 
 export const GENDER_PROMPT_DISMISS_KEY = "padeya.gender-prompt.dismissed";
 

@@ -40,7 +40,7 @@ class UserPublic(BaseModel):
     gender_short: str | None = None
     gender_label: str | None = None
     gender_visible: bool = True
-    gender_visibility: str = "connections_only"
+    gender_visibility: str = "public"
     is_active: bool
     is_verified: bool
     ambassadors_blocked: bool = False

@@ -51,6 +51,7 @@ def test_register_male_female_prefer(client: TestClient, db_session: Session):
         assert body["gender"] == gender
         assert body["gender_visibility"] == DEFAULT_GENDER_VISIBILITY
         assert body["gender_visible"] is True
+        assert DEFAULT_GENDER_VISIBILITY == "public"
 
 
 @pytest.mark.parametrize(
@@ -129,12 +130,12 @@ def test_visibility_matrix(client: TestClient, db_session: Session):
     viewer = db_session.get(User, UUID(b["id"]))
     assert owner and viewer
 
-    # default connections_only — unrelated cannot see
+    # default public — anyone can see
     payload = gender_display_payload(
         db_session, viewer=viewer, profile_owner=owner, relationship_context="profile"
     )
-    assert payload["gender_visible"] is False
-    assert payload["gender"] is None
+    assert payload["gender_visible"] is True
+    assert payload["gender"] == "male"
 
     # owner always sees
     own = gender_display_payload(
@@ -142,6 +143,15 @@ def test_visibility_matrix(client: TestClient, db_session: Session):
     )
     assert own["gender"] == "male"
     assert own["gender_visible"] is True
+
+    # connections_only — unrelated cannot see
+    owner.gender_visibility = "connections_only"
+    db_session.commit()
+    payload = gender_display_payload(
+        db_session, viewer=viewer, profile_owner=owner, relationship_context="profile"
+    )
+    assert payload["gender_visible"] is False
+    assert payload["gender"] is None
 
     # public
     owner.gender_visibility = "public"
@@ -267,16 +277,16 @@ def test_passport_owner_sees_gender_settings(client: TestClient):
     body = res.json()
     assert body["gender"] == "female"
     assert body["gender_short"] == "F"
-    assert body["gender_visibility"] == "connections_only"
+    assert body["gender_visibility"] == "public"
 
 
-def test_mass_assignment_visibility_on_register_ignored(client: TestClient, db_session: Session):
+def test_mass_assignment_visibility_on_register_ignored(client: TestClient):
     email = f"mass-{uuid4().hex[:8]}@example.com"
     res = client.post(
         "/api/v1/auth/register",
         json={
             **register_json(email=email, gender="male"),
-            "gender_visibility": "public",
+            "gender_visibility": "private",
         },
     )
     assert res.status_code == 201
@@ -284,4 +294,4 @@ def test_mass_assignment_visibility_on_register_ignored(client: TestClient, db_s
         "/api/v1/users/me",
         headers={"Authorization": f"Bearer {res.json()['access_token']}"},
     ).json()
-    assert me["gender_visibility"] == "connections_only"
+    assert me["gender_visibility"] == "public"

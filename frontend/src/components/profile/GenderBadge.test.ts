@@ -47,8 +47,19 @@ describe("GenderBadge", () => {
     );
     expect(html).toContain(">M<");
     expect(html).toContain("Male");
+    expect(html).toContain("bg-ink");
+    expect(html).toContain("text-primary");
     expect(html).not.toContain("pink");
     expect(html).not.toContain("blue");
+  });
+
+  it("uses onDark surface for ink passport bands", () => {
+    const html = renderToStaticMarkup(
+      createElement(GenderBadge, { value: "female", surface: "onDark" }),
+    );
+    expect(html).toContain(">F<");
+    expect(html).toContain("bg-primary");
+    expect(html).toContain("text-ink");
   });
 
   it("renders F for female display payload when visible", () => {
@@ -97,7 +108,7 @@ describe("GenderFields", () => {
     expect(html).toContain('value="prefer_not_to_say"');
   });
 
-  it("marks the chosen gender and includes connect-request visibility hint", () => {
+  it("marks the chosen gender and includes default public visibility hint", () => {
     const html = renderToStaticMarkup(
       createElement(GenderFields, {
         gender: "female",
@@ -108,7 +119,7 @@ describe("GenderFields", () => {
       }),
     );
     expect(html).toContain("Female");
-    expect(html).toContain(GENDER_VISIBILITY_HINTS.connections_only);
-    expect(html).toContain("direct connect request");
+    expect(html).toContain(GENDER_VISIBILITY_HINTS.public);
+    expect(html).toContain("Everyone");
   });
 });

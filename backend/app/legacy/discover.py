@@ -13,6 +13,13 @@ from app.hosts.models import Host
 from app.legacy.models import HostLegacyPage, HostLegacyScore, LegacyTier
 from app.sponsorships.models import HostSponsorshipSettings
 from app.sponsorships.service import host_is_verified
+from app.taxonomy import service as taxonomy_service
+from app.users.gender import (
+    HIDDEN_GENDER_PAYLOAD,
+    host_shows_personal_gender,
+    public_cache_safe_gender_payload,
+)
+from app.users.models import User
 from app.vault.models import VaultItem
 
 # Location labels safe to show on discovery cards (never street/venue secrets).
@@ -99,6 +106,17 @@ def list_discover_hosts(db: Session, *, limit: int = 60) -> list[dict]:
 
     next_events = _next_upcoming_by_host(db, host_ids=host_ids, now=now)
 
+    owners = {
+        u.id: u
+        for u in db.scalars(
+            select(User).where(User.id.in_([h.user_id for h in hosts]))
+        ).all()
+    }
+    host_type_by_host: dict[UUID, list[str]] = {}
+    for host in hosts:
+        tax = taxonomy_service.get_host_taxonomy(db, host.id)
+        host_type_by_host[host.id] = list(tax.get("host_type_slugs") or [])
+
     out: list[dict] = []
     for host in hosts:
         profile = host.profile
@@ -115,6 +133,13 @@ def list_discover_hosts(db: Session, *, limit: int = 60) -> list[dict]:
             or (page and page.sponsorship_available)
         )
         next_ev = next_events.get(host.id)
+        type_slugs = host_type_by_host.get(host.id) or []
+        shows_personal = host_shows_personal_gender(type_slugs)
+        owner = owners.get(host.user_id)
+        if not shows_personal or owner is None:
+            gender_payload = dict(HIDDEN_GENDER_PAYLOAD)
+        else:
+            gender_payload = public_cache_safe_gender_payload(owner)
 
         out.append(
             {
@@ -144,6 +169,8 @@ def list_discover_hosts(db: Session, *, limit: int = 60) -> list[dict]:
                 "followers_count": int(score.followers) if score else 0,
                 "vault_items_count": vault_n,
                 "sponsor_ready": sponsor_ready,
+                "shows_personal_gender": shows_personal,
+                **gender_payload,
                 "next_upcoming_event": next_ev,
                 "share_path": f"/@{host.slug}",
             }

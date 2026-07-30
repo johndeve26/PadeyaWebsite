@@ -128,13 +128,13 @@ export function FanPassportCard({
                 </h3>
                 {fan.gender_visible && fan.gender_short ? (
                   <GenderBadge
+                    surface="onDark"
                     value={{
                       gender: fan.gender ?? null,
                       gender_short: fan.gender_short,
                       gender_label: fan.gender_label ?? null,
                       gender_visible: fan.gender_visible,
                     }}
-                    className="border-paper/25 bg-paper/10 text-paper"
                   />
                 ) : null}
                 {fan.is_superfan ? (

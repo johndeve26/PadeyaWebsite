@@ -52,7 +52,7 @@ GENDER_SHORT: dict[str, str] = {
     Gender.FEMALE.value: "F",
 }
 
-DEFAULT_GENDER_VISIBILITY = GenderVisibility.CONNECTIONS_ONLY.value
+DEFAULT_GENDER_VISIBILITY = GenderVisibility.PUBLIC.value
 
 HIDDEN_GENDER_PAYLOAD: dict[str, Any] = {
     "gender": None,

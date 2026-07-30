@@ -339,6 +339,11 @@ class HostDiscoveryPublic(BaseModel):
     followers_count: int = 0
     vault_items_count: int = 0
     sponsor_ready: bool = False
+    gender: str | None = None
+    gender_short: str | None = None
+    gender_label: str | None = None
+    gender_visible: bool = False
+    shows_personal_gender: bool = False
     next_upcoming_event: HostDiscoveryNextEvent | None = None
     share_path: str
 

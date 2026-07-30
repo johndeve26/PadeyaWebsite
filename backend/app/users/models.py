@@ -29,7 +29,7 @@ class User(Base):
     # Explicit selection only — never inferred. Null = unset (legacy users OK).
     gender: Mapped[str | None] = mapped_column(String(32), nullable=True)
     gender_visibility: Mapped[str] = mapped_column(
-        String(32), default="connections_only", nullable=False
+        String(32), default="public", nullable=False
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

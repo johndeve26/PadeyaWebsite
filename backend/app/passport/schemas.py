@@ -137,7 +137,7 @@ class FanPassportPublic(BaseModel):
     gender_short: str | None = None
     gender_label: str | None = None
     gender_visible: bool = False
-    gender_visibility: str = "connections_only"
+    gender_visibility: str = "public"
     tickets_bought: int
     events_attended: int
     hosts_followed: int
