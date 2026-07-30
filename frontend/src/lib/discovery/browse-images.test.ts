@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  browseImageForHref,
+  browseVisualsForHref,
   categoryBrowseImage,
   categoryBrowseVisuals,
   cityBrowseImage,
@@ -20,6 +22,12 @@ describe("browse-images taxonomy visuals", () => {
   it("falls back to deterministic SVG art when admin URL is absent", () => {
     expect(categoryBrowseImage("music")).toBe("/brand/browse/music.svg");
     expect(cityBrowseImage("lagos")).toBe("/brand/browse/city-lagos.svg");
+  });
+
+  it("aliases art-culture to arts-culture branded fallback", () => {
+    expect(categoryBrowseImage("art-culture")).toBe(
+      "/brand/browse/arts-culture.svg",
+    );
   });
 
   it("resolves card visuals from taxonomy API fields", () => {
@@ -100,5 +108,26 @@ describe("browse-images taxonomy visuals", () => {
     expect(visuals.imageUrl).toBe("https://cdn.example.com/hero.png");
     expect(visuals.imageAlt).toBe("Hero crowd");
     expect(visuals.focalX).toBe(0.2);
+  });
+
+  it("uses taxonomy uploads for keep-exploring hrefs", () => {
+    const categories = new Map([
+      [
+        "tech",
+        {
+          primary_image_url: "https://cdn.example.com/tech-upload.png",
+          primary_image_focal_x: 0.4,
+          primary_image_focal_y: 0.6,
+        },
+      ],
+    ]);
+    const visuals = browseVisualsForHref("/events/c/tech", "Tech", {
+      categories,
+    });
+    expect(visuals.imageUrl).toBe("https://cdn.example.com/tech-upload.png");
+    expect(visuals.focalX).toBe(0.4);
+    expect(browseImageForHref("/events/c/tech", { categories })).toBe(
+      "https://cdn.example.com/tech-upload.png",
+    );
   });
 });

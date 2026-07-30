@@ -2,7 +2,10 @@ import Link from "next/link";
 
 import { TaxonomyBrowseCard } from "@/components/discovery/TaxonomyBrowseCard";
 import { Button, Container } from "@/components/ui";
-import { browseImageForHref } from "@/lib/discovery/browse-images";
+import {
+  browseVisualsForHref,
+  type BrowseHrefTaxonomyMaps,
+} from "@/lib/discovery/browse-images";
 import { cn } from "@/lib/cn";
 import { SPONSORSHIP_HOSTS_PATH } from "@/lib/sponsor-marketplace-paths";
 
@@ -12,8 +15,11 @@ export type AdjacentLink = {
   hint?: string;
   eyebrow?: string;
   count?: number;
-  /** Optional explicit art; otherwise resolved from href. */
+  /** Optional explicit art; otherwise resolved from href (+ taxonomy maps). */
   image?: string;
+  imageAlt?: string;
+  focalX?: number;
+  focalY?: number;
   /** @deprecated Glyphs replaced by browse images. */
   iconSlug?: string;
 };
@@ -23,11 +29,14 @@ export function DiscoveryAdjacentSection({
   className = "",
   title = "Keep exploring",
   description = "More ways into cities, categories, and hosts on Pàdéyá.",
+  taxonomy,
 }: {
   links: AdjacentLink[];
   className?: string;
   title?: string;
   description?: string;
+  /** When provided, category/city cards use the same uploaded art as browse rails. */
+  taxonomy?: BrowseHrefTaxonomyMaps;
 }) {
   if (!links.length) return null;
 
@@ -59,6 +68,7 @@ export function DiscoveryAdjacentSection({
                   ? `${link.hint} · ${link.count} upcoming`
                   : `${link.count} upcoming`
                 : link.hint || "Browse on Pàdéyá";
+            const visuals = browseVisualsForHref(link.href, link.label, taxonomy);
             return (
               <li key={link.href} className="h-full">
                 <TaxonomyBrowseCard
@@ -66,7 +76,10 @@ export function DiscoveryAdjacentSection({
                   title={link.label}
                   meta={meta}
                   eyebrow={link.eyebrow}
-                  image={link.image || browseImageForHref(link.href)}
+                  image={link.image || visuals.imageUrl}
+                  imageAlt={link.imageAlt || visuals.imageAlt}
+                  focalX={link.focalX ?? visuals.focalX}
+                  focalY={link.focalY ?? visuals.focalY}
                   className="h-full"
                 />
               </li>

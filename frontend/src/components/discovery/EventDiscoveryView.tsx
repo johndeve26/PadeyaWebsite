@@ -1160,6 +1160,10 @@ export function EventDiscoveryView({
                 )
               : undefined,
         }))}
+        taxonomy={{
+          categories: taxonomyCategories,
+          cities: taxonomyCities,
+        }}
       />
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 p-3 shadow-[var(--shadow-strong)] backdrop-blur-md dark:bg-surface-elevated/95 sm:hidden">

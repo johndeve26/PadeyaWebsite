@@ -326,7 +326,13 @@ export function EventsMarketplaceBottomDiscovery({
         </Container>
       </section>
 
-      <DiscoveryAdjacentSection links={adjacentLinks} />
+      <DiscoveryAdjacentSection
+        links={adjacentLinks}
+        taxonomy={{
+          categories: taxonomyCategories,
+          cities: taxonomyCities,
+        }}
+      />
     </div>
   );
 }

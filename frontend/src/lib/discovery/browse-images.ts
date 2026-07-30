@@ -21,6 +21,8 @@ const CATEGORY_IMAGES: Record<string, string> = {
   campus: "/brand/browse/campus.svg",
   "food-drink": "/brand/browse/food-drink.svg",
   "arts-culture": "/brand/browse/arts-culture.svg",
+  // Seed/demo slug alias — same interest, same fallback art.
+  "art-culture": "/brand/browse/arts-culture.svg",
   lifestyle: "/brand/browse/food-drink.svg",
   business: "/brand/browse/tech.svg",
   community: "/brand/browse/campus.svg",
@@ -234,11 +236,20 @@ export function collectionBrowseImage(href: string): string {
   return byPath[path] || brand.heroImage;
 }
 
+export type BrowseHrefTaxonomyMaps = {
+  categories?: Map<string, TaxonomyImageFields | null | undefined>;
+  cities?: Map<string, TaxonomyImageFields | null | undefined>;
+};
+
 /**
- * Resolve browse art from any taxonomy / collection href
- * (`/events/c/…`, `/events/city/…`, `/events/under/…`, `/hosts`, …).
+ * Full card visuals for a discovery href — prefers uploaded taxonomy art so
+ * “Browse by category” and “Keep exploring” stay in sync.
  */
-export function browseImageForHref(href: string): string {
+export function browseVisualsForHref(
+  href: string,
+  label: string,
+  maps?: BrowseHrefTaxonomyMaps,
+): BrowseCardVisuals {
   try {
     const path = new URL(href, "https://padeya.local").pathname.replace(
       /\/$/,
@@ -247,20 +258,42 @@ export function browseImageForHref(href: string): string {
     const parts = path.split("/").filter(Boolean);
 
     if (parts[0] === "hosts" || parts[0] === "sponsors") {
-      return collectionBrowseImage(path);
+      return {
+        imageUrl: collectionBrowseImage(path),
+        imageAlt: label,
+        focalX: 0.5,
+        focalY: 0.5,
+      };
     }
 
-    if (parts[0] !== "events") return collectionBrowseImage(path);
+    if (parts[0] !== "events") {
+      return {
+        imageUrl: collectionBrowseImage(path),
+        imageAlt: label,
+        focalX: 0.5,
+        focalY: 0.5,
+      };
+    }
 
     // /events/c/{category}
     if (parts[1] === "c" && parts[2]) {
-      return categoryBrowseImage(parts[2]);
+      return categoryBrowseVisuals(
+        parts[2],
+        label,
+        maps?.categories?.get(parts[2]),
+      );
     }
 
-    // /events/city/{city}[/{category}]
+    // /events/city/{city}[/{category}] — category art wins on combo hubs
     if (parts[1] === "city" && parts[2]) {
-      if (parts[3]) return categoryBrowseImage(parts[3]);
-      return cityBrowseImage(parts[2]);
+      if (parts[3]) {
+        return categoryBrowseVisuals(
+          parts[3],
+          label,
+          maps?.categories?.get(parts[3]),
+        );
+      }
+      return cityBrowseVisuals(parts[2], label, maps?.cities?.get(parts[2]));
     }
 
     // /events/state|country|area/{slug}[/{category}]
@@ -270,12 +303,44 @@ export function browseImageForHref(href: string): string {
         parts[1] === "area") &&
       parts[2]
     ) {
-      if (parts[3]) return categoryBrowseImage(parts[3]);
-      return brand.heroImage;
+      if (parts[3]) {
+        return categoryBrowseVisuals(
+          parts[3],
+          label,
+          maps?.categories?.get(parts[3]),
+        );
+      }
+      return {
+        imageUrl: brand.heroImage,
+        imageAlt: label,
+        focalX: 0.5,
+        focalY: 0.5,
+      };
     }
 
-    return collectionBrowseImage(path);
+    return {
+      imageUrl: collectionBrowseImage(path),
+      imageAlt: label,
+      focalX: 0.5,
+      focalY: 0.5,
+    };
   } catch {
-    return brand.heroImage;
+    return {
+      imageUrl: brand.heroImage,
+      imageAlt: label,
+      focalX: 0.5,
+      focalY: 0.5,
+    };
   }
+}
+
+/**
+ * Resolve browse art from any taxonomy / collection href
+ * (`/events/c/…`, `/events/city/…`, `/events/under/…`, `/hosts`, …).
+ */
+export function browseImageForHref(
+  href: string,
+  maps?: BrowseHrefTaxonomyMaps,
+): string {
+  return browseVisualsForHref(href, "", maps).imageUrl;
 }
