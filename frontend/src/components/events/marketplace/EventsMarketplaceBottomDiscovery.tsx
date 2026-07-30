@@ -1,17 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { DiscoveryAdjacentSection } from "@/components/discovery/DiscoveryAdjacentSection";
 import { DiscoveryBrowseSection } from "@/components/discovery/DiscoveryBrowseSection";
 import { DiscoveryCollectionsSection } from "@/components/discovery/DiscoveryCollectionsSection";
 import { Container } from "@/components/ui";
+import {
+  categoryBrowseVisuals,
+  cityBrowseVisuals,
+} from "@/lib/discovery/browse-images";
 import { categoryStory, cityStory } from "@/lib/discovery/category-stories";
 import { filterPublicEvents } from "@/lib/discovery/event-filters";
 import { citySlugFromName } from "@/lib/discovery/slugify";
 import { sortByEventCount } from "@/lib/discovery/sort-by-availability";
 import type { EventCategory, EventItem } from "@/lib/types/events";
+import {
+  fetchTaxonomyCategories,
+  fetchTaxonomyLocations,
+  type TaxonomyCategory,
+  type TaxonomyLocation,
+} from "@/lib/taxonomy-api";
 
 const FORMAT_LINKS = [
   { label: "In person", href: "/events/in-person", hint: "Venues and doors you can walk into." },
@@ -31,6 +41,34 @@ export function EventsMarketplaceBottomDiscovery({
   /** When a city filter is active, category hubs use city × category paths. */
   activeCitySlug?: string;
 }) {
+  const [taxonomyCategories, setTaxonomyCategories] = useState<
+    Map<string, TaxonomyCategory>
+  >(new Map());
+  const [taxonomyCities, setTaxonomyCities] = useState<
+    Map<string, TaxonomyLocation>
+  >(new Map());
+
+  useEffect(() => {
+    let alive = true;
+    void Promise.all([
+      fetchTaxonomyCategories(),
+      fetchTaxonomyLocations({ kind: "city" }),
+    ])
+      .then(([cats, cities]) => {
+        if (!alive) return;
+        setTaxonomyCategories(new Map(cats.map((c) => [c.slug, c])));
+        setTaxonomyCities(new Map(cities.map((c) => [c.slug, c])));
+      })
+      .catch(() => {
+        if (!alive) return;
+        setTaxonomyCategories(new Map());
+        setTaxonomyCities(new Map());
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const collectionCounts = useMemo(() => {
     const weekendCount = filterPublicEvents(events, { weekend: true }).length;
     const freeCount = filterPublicEvents(events, { paid: "free" }).length;
@@ -81,6 +119,11 @@ export function EventsMarketplaceBottomDiscovery({
 
   const browseCategoryItems = categoriesByAvailability.map((c) => {
     const story = categoryStory(c.slug, c.name, c.description);
+    const visuals = categoryBrowseVisuals(
+      c.slug,
+      c.name,
+      taxonomyCategories.get(c.slug),
+    );
     return {
       name: c.name,
       slug: c.slug,
@@ -90,12 +133,17 @@ export function EventsMarketplaceBottomDiscovery({
       hint: story.hint,
       description: story.story,
       count: categoryCounts.get(c.slug),
+      imageUrl: visuals.imageUrl,
+      imageAlt: visuals.imageAlt,
+      focalX: visuals.focalX,
+      focalY: visuals.focalY,
     };
   });
 
   const browseCityItems = cities.slice(0, 12).map((name) => {
     const slug = citySlugFromName(name);
     const story = cityStory(slug, name);
+    const visuals = cityBrowseVisuals(slug, name, taxonomyCities.get(slug));
     return {
       name,
       slug,
@@ -103,6 +151,10 @@ export function EventsMarketplaceBottomDiscovery({
       hint: story.hint,
       description: story.story,
       count: cityCounts.get(slug),
+      imageUrl: visuals.imageUrl,
+      imageAlt: visuals.imageAlt,
+      focalX: visuals.focalX,
+      focalY: visuals.focalY,
     };
   });
 

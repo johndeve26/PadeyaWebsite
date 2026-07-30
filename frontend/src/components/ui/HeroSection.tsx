@@ -14,6 +14,8 @@ export function HeroSection({
   grain = true,
   backgroundSrc,
   backgroundAlt = "",
+  backgroundFocalX = 0.5,
+  backgroundFocalY = 0.5,
   atmosphere = false,
 }: {
   children: ReactNode;
@@ -23,9 +25,13 @@ export function HeroSection({
   /** Full-bleed background image (e.g. brand hero art). */
   backgroundSrc?: string;
   backgroundAlt?: string;
+  /** Normalized focal point for object-position (0–1). */
+  backgroundFocalX?: number;
+  backgroundFocalY?: number;
   /** Soft aurora / particles / beams for discovery heroes. */
   atmosphere?: boolean;
 }) {
+  const objectPosition = `${Math.round(Math.min(1, Math.max(0, backgroundFocalX)) * 100)}% ${Math.round(Math.min(1, Math.max(0, backgroundFocalY)) * 100)}%`;
   const height =
     minHeight === "tall"
       ? "min-h-[min(78vh,820px)]"
@@ -52,9 +58,10 @@ export function HeroSection({
             fetchPriority="high"
             sizes="100vw"
             className={cn(
-              "object-cover object-center padeya-hero-media",
+              "object-cover padeya-hero-media",
               atmosphere && "padeya-discovery-parallax",
             )}
+            style={{ objectPosition }}
           />
           {/* Left-weighted scrim so brand + copy stay readable on busy art */}
           <div

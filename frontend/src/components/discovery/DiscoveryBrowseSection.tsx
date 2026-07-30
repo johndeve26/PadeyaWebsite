@@ -74,17 +74,27 @@ export function DiscoveryBrowseSection({
                 ? `${item.count} ${item.count === 1 ? "event" : "events"}`
                 : item.hint ||
                   (mode === "category" ? "Browse interest" : "Open city hub");
+            const imageUrl =
+              "imageUrl" in item ? item.imageUrl : undefined;
+            const imageAlt =
+              "imageAlt" in item ? item.imageAlt : undefined;
+            const focalX = "focalX" in item ? item.focalX : undefined;
+            const focalY = "focalY" in item ? item.focalY : undefined;
             return (
               <li key={item.slug} className="h-full">
                 <TaxonomyBrowseCard
                   href={item.href}
                   title={item.name}
                   meta={meta}
+                  eyebrow={mode === "category" ? "Category" : "City"}
                   image={
                     mode === "category"
-                      ? categoryBrowseImage(item.slug)
-                      : cityBrowseImage(item.slug)
+                      ? categoryBrowseImage(item.slug, imageUrl)
+                      : cityBrowseImage(item.slug, imageUrl)
                   }
+                  imageAlt={imageAlt || item.name}
+                  focalX={focalX ?? 0.5}
+                  focalY={focalY ?? 0.5}
                   className="h-full"
                 />
               </li>

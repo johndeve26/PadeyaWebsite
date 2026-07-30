@@ -10,6 +10,10 @@ export type CityNavItem = {
   description?: string;
   count?: number;
   selected?: boolean;
+  imageUrl?: string | null;
+  imageAlt?: string | null;
+  focalX?: number | null;
+  focalY?: number | null;
 };
 
 export function CityNav({
@@ -31,7 +35,7 @@ export function CityNav({
         {items.map((item) => {
           const meta =
             typeof item.count === "number"
-              ? `${item.count} ${item.count === 1 ? "event" : "events"}`
+              ? `${item.count} upcoming ${item.count === 1 ? "event" : "events"}`
               : item.hint || item.description || "Open city hub";
           return (
             <li key={item.slug} className="h-full">
@@ -40,7 +44,10 @@ export function CityNav({
                 title={item.name}
                 meta={meta}
                 eyebrow="City"
-                image={cityBrowseImage(item.slug)}
+                image={cityBrowseImage(item.slug, item.imageUrl)}
+                imageAlt={item.imageAlt || item.name}
+                focalX={item.focalX ?? 0.5}
+                focalY={item.focalY ?? 0.5}
                 className={cn(
                   "h-full",
                   item.selected && "ring-2 ring-ink ring-offset-2 ring-offset-background",

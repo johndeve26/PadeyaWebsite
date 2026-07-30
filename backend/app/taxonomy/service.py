@@ -12,7 +12,14 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.audit import write_audit_log
+from app.core.cache_invalidation import invalidate_taxonomy_caches
 from app.events.constants import DEFAULT_CATEGORIES
+from app.taxonomy.image_constants import (
+    PUBLIC_IMAGE_FIELD_NAMES,
+    assert_approved_public_media_url,
+    clamp_focal,
+    normalize_alt,
+)
 from app.events.models import Event, EventCategory
 from app.taxonomy.constants import (
     DEFAULT_AUDIENCE_TYPES,
@@ -131,6 +138,7 @@ def create_category(
     )
     db.commit()
     db.refresh(row)
+    invalidate_taxonomy_caches()
     return row
 
 
@@ -156,6 +164,13 @@ def update_category(
     for key, value in data.items():
         if key == "name" and isinstance(value, str):
             value = value.strip()
+        if key in PUBLIC_IMAGE_FIELD_NAMES:
+            if key.endswith("_url"):
+                value = assert_approved_public_media_url(value, allow_null=True)
+            elif key.endswith("_alt"):
+                value = normalize_alt(value)
+            elif "focal" in key:
+                value = clamp_focal(value)
         setattr(row, key, value)
     write_audit_log(
         db,
@@ -166,6 +181,7 @@ def update_category(
     )
     db.commit()
     db.refresh(row)
+    invalidate_taxonomy_caches()
     return row
 
 
@@ -1278,6 +1294,13 @@ def update_location(
         if clash:
             raise HTTPException(status_code=409, detail="Location already exists")
     for key, value in data.items():
+        if key in PUBLIC_IMAGE_FIELD_NAMES:
+            if key.endswith("_url"):
+                value = assert_approved_public_media_url(value, allow_null=True)
+            elif key.endswith("_alt"):
+                value = normalize_alt(value)
+            elif "focal" in key:
+                value = clamp_focal(value)
         setattr(row, key, value)
     write_audit_log(
         db,
@@ -1288,6 +1311,7 @@ def update_location(
     )
     db.commit()
     db.refresh(row)
+    invalidate_taxonomy_caches()
     return row
 
 

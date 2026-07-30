@@ -433,9 +433,10 @@ Generate (not content CRUD): `POST /ai/host/generate`, `.../events/{id}/generate
 
 | Resource | Model | Create | Read | Update | Delete / lifecycle | Hard delete? | Frontend | Backend (key) | Status | Primary gap |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Categories | `taxonomy_categories` (+ legacy `event_categories`) | Admin | Public + admin | PATCH | Archive/restore | Blocked when in use | `/admin/taxonomy/categories` | `/taxonomy/admin/categories*` | **partial** | Dual-write cutover pending |
+| Categories | `taxonomy_categories` (+ legacy `event_categories`) | Admin | Public + admin | PATCH + visuals | Archive/restore | Blocked when in use | `/admin/taxonomy/categories` | `/taxonomy/admin/categories*`, `/taxonomy/admin/media/upload`, `PATCH …/categories/{id}/visuals` | **partial** | Dual-write cutover pending |
+| Category / location visuals | `taxonomy_categories`, `locations` (`primary_*`, `hero_*` image fields) | Admin upload (`events.approve` / `admin.full_access`) | Public card + hub serializers (`image_url`, `image_alt`, `image_focal_*`, `hero_*`) | Upload/replace/remove primary or hero; PATCH alt + focal | Remove clears DB ref only (orphan cleanup deferred) | N/A (media refs) | Visuals section in `/admin/taxonomy/categories` + `/admin/taxonomy/locations` (city/state/area) | `POST /taxonomy/admin/media/upload`, `PATCH …/visuals`, `invalidate_taxonomy_caches()` | **complete** | Kinds: `category`, `city`, `state`, `area`; storage `taxonomy/{categories\|locations}/{id}/{primary\|hero}/…`; unique object keys per upload; branded SVG fallback when null |
 | Tags | `taxonomy_tags` | Admin | Public + admin | PATCH | Archive/restore | Prefer archive | `/admin/taxonomy/tags` | `/taxonomy/admin/tags*` | **partial** | Usage counts soft |
-| Locations | `locations` | Admin | Public + admin + hubs | PATCH | Archive/restore | Prefer archive | `/events/location`, `/events/{country\|state\|city\|area}/…`, `/admin/taxonomy/locations` | `/taxonomy/locations*`, event `location_kind`/`location_slug` | **partial** | GPS near-me deferred |
+| Locations | `locations` | Admin | Public + admin + hubs | PATCH + visuals | Archive/restore | Prefer archive | `/events/location`, `/events/{country\|state\|city\|area}/…`, `/admin/taxonomy/locations` | `/taxonomy/locations*`, event `location_kind`/`location_slug` | **partial** | GPS near-me deferred |
 | Host types | `host_types` | Admin | Public + admin | PATCH | Archive/restore | Prefer archive | `/admin/taxonomy/host-types` | `/taxonomy/admin/host-types*` | **partial** | — |
 | Venue types | `venue_types` | Admin | Public + admin | PATCH | Archive/restore | Prefer archive | `/admin/taxonomy/venue-types` | `/taxonomy/admin/venue-types*` | **partial** | Venue catalog Phase B |
 | Host taxonomy links | `host_taxonomy_links` / `host_location_links` | Host PATCH | Host me | Replace sync | Soft replace | Soft | `/host/settings` | `PATCH /hosts/me` | **partial** | Public Legacy surfacing |
@@ -494,6 +495,7 @@ See [TAXONOMY_AND_CONTENT_GRAPH.md](./TAXONOMY_AND_CONTENT_GRAPH.md).
 
 | Date | Change |
 |---|---|
+| 2026-07-30 | Marketplace taxonomy visuals: admin upload/replace/remove primary + hero images for `category`, `city`, `state`, `area`; focal + alt; public cards/hubs; migration `20260730_0211`; perm `events.approve` / `admin.full_access` (not blog taxonomy) |
 | 2026-07-29 | Privacy-aware user gender (`male`/`female`/`prefer_not_to_say`) + visibility (`public`/`connections_only`/`private`); backend `can_view_gender`; connect-request exception; personal vs org host display; migration `20260729_0148` |
 | 2026-07-29 | Blog taxonomies A+B+D+E: category/tag full lifecycle + slug redirects; `blog_post_types` + `post_type_id`; `blog_media_roles` + blog media upload; admin hub `/admin/blog/taxonomies`; perm `admin.blog.taxonomy.manage`; migration `20260729_0210` |
 | 2026-07-17 | Taxonomy: vocab tables, hubs, Studio/host taxonomy, demo seed, discovery FE |

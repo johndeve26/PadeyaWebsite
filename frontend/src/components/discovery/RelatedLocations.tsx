@@ -11,10 +11,18 @@ export type RelatedLocationItem = {
   kind: string;
   slug: string;
   name: string;
+  imageUrl?: string | null;
+  imageAlt?: string | null;
+  focalX?: number | null;
+  focalY?: number | null;
 };
 
-function locationBrowseImage(kind: string, slug: string): string {
-  if (kind === "city") return cityBrowseImage(slug);
+function locationBrowseImage(
+  kind: string,
+  slug: string,
+  imageUrl?: string | null,
+): string {
+  if (kind === "city") return cityBrowseImage(slug, imageUrl);
   return brand.heroImage;
 }
 
@@ -59,7 +67,10 @@ export function RelatedLocations({
                 href={locationHubPath(loc.kind, loc.slug)}
                 title={loc.name}
                 meta={loc.kind.replace(/_/g, " ")}
-                image={locationBrowseImage(loc.kind, loc.slug)}
+                image={locationBrowseImage(loc.kind, loc.slug, loc.imageUrl)}
+                imageAlt={loc.imageAlt || loc.name}
+                focalX={loc.focalX ?? 0.5}
+                focalY={loc.focalY ?? 0.5}
                 className="h-full"
               />
             </li>

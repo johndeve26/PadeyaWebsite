@@ -8,6 +8,7 @@ from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Index,
@@ -26,6 +27,24 @@ from app.core.database import Base
 
 class TaxonomyCategory(Base):
     __tablename__ = "taxonomy_categories"
+    __table_args__ = (
+        CheckConstraint(
+            "primary_image_focal_x >= 0 AND primary_image_focal_x <= 1",
+            name="ck_taxonomy_categories_primary_focal_x",
+        ),
+        CheckConstraint(
+            "primary_image_focal_y >= 0 AND primary_image_focal_y <= 1",
+            name="ck_taxonomy_categories_primary_focal_y",
+        ),
+        CheckConstraint(
+            "hero_image_focal_x >= 0 AND hero_image_focal_x <= 1",
+            name="ck_taxonomy_categories_hero_focal_x",
+        ),
+        CheckConstraint(
+            "hero_image_focal_y >= 0 AND hero_image_focal_y <= 1",
+            name="ck_taxonomy_categories_hero_focal_y",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -40,6 +59,22 @@ class TaxonomyCategory(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     archived_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
+    )
+    primary_image_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    primary_image_alt: Mapped[str | None] = mapped_column(String(240), nullable=True)
+    primary_image_focal_x: Mapped[Decimal] = mapped_column(
+        Numeric(4, 3), default=Decimal("0.500"), server_default="0.500", nullable=False
+    )
+    primary_image_focal_y: Mapped[Decimal] = mapped_column(
+        Numeric(4, 3), default=Decimal("0.500"), server_default="0.500", nullable=False
+    )
+    hero_image_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    hero_image_alt: Mapped[str | None] = mapped_column(String(240), nullable=True)
+    hero_image_focal_x: Mapped[Decimal] = mapped_column(
+        Numeric(4, 3), default=Decimal("0.500"), server_default="0.500", nullable=False
+    )
+    hero_image_focal_y: Mapped[Decimal] = mapped_column(
+        Numeric(4, 3), default=Decimal("0.500"), server_default="0.500", nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -231,7 +266,25 @@ class VenueType(Base):
 
 class Location(Base):
     __tablename__ = "locations"
-    __table_args__ = (Index("ix_locations_kind_slug", "kind", "slug"),)
+    __table_args__ = (
+        Index("ix_locations_kind_slug", "kind", "slug"),
+        CheckConstraint(
+            "primary_image_focal_x >= 0 AND primary_image_focal_x <= 1",
+            name="ck_locations_primary_focal_x",
+        ),
+        CheckConstraint(
+            "primary_image_focal_y >= 0 AND primary_image_focal_y <= 1",
+            name="ck_locations_primary_focal_y",
+        ),
+        CheckConstraint(
+            "hero_image_focal_x >= 0 AND hero_image_focal_x <= 1",
+            name="ck_locations_hero_focal_x",
+        ),
+        CheckConstraint(
+            "hero_image_focal_y >= 0 AND hero_image_focal_y <= 1",
+            name="ck_locations_hero_focal_y",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -254,6 +307,22 @@ class Location(Base):
     # auto | force_index | force_noindex — curated override for hub indexability
     seo_index_mode: Mapped[str] = mapped_column(
         String(24), default="auto", server_default="auto", nullable=False
+    )
+    primary_image_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    primary_image_alt: Mapped[str | None] = mapped_column(String(240), nullable=True)
+    primary_image_focal_x: Mapped[Decimal] = mapped_column(
+        Numeric(4, 3), default=Decimal("0.500"), server_default="0.500", nullable=False
+    )
+    primary_image_focal_y: Mapped[Decimal] = mapped_column(
+        Numeric(4, 3), default=Decimal("0.500"), server_default="0.500", nullable=False
+    )
+    hero_image_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    hero_image_alt: Mapped[str | None] = mapped_column(String(240), nullable=True)
+    hero_image_focal_x: Mapped[Decimal] = mapped_column(
+        Numeric(4, 3), default=Decimal("0.500"), server_default="0.500", nullable=False
+    )
+    hero_image_focal_y: Mapped[Decimal] = mapped_column(
+        Numeric(4, 3), default=Decimal("0.500"), server_default="0.500", nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

@@ -51,6 +51,23 @@ def blog_public_folder(kind: str = "content") -> str:
     return f"blog/{leaf}"
 
 
+def taxonomy_public_folder(kind: str, term_id: UUID | str, role: str = "primary") -> str:
+    """Controlled public path for marketplace taxonomy imagery."""
+    leaf = (kind or "category").strip().lower()
+    allowed = {
+        "category": "categories",
+        "city": "locations",
+        "state": "locations",
+        "area": "locations",
+        "location": "locations",
+    }
+    folder = allowed.get(leaf)
+    if folder is None:
+        raise ValueError(f"Unsupported taxonomy media kind '{kind}'")
+    role_leaf = "hero" if (role or "").strip().lower() == "hero" else "primary"
+    return f"taxonomy/{folder}/{term_id}/{role_leaf}"
+
+
 def merch_public_folder(product_id: UUID | str, kind: str = "gallery") -> str:
     leaf = "cover" if kind in {"cover", "banner"} else "gallery"
     return f"merch/{product_id}/{leaf}"

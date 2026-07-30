@@ -1,4 +1,5 @@
 import Image from "next/image";
+import type { CSSProperties } from "react";
 
 import { cn } from "@/lib/cn";
 import {
@@ -13,6 +14,7 @@ type MediaProps = {
   src: string;
   alt?: string;
   className?: string;
+  style?: CSSProperties;
   /**
    * LCP / above-fold only. Never set on marketplace card grids.
    * Implies eager loading + fetchPriority high via next/image.
@@ -39,6 +41,7 @@ export function Media({
   src,
   alt = "",
   className = "",
+  style,
   priority = false,
   sizes,
   loading,
@@ -60,6 +63,7 @@ export function Media({
         src={resolved}
         alt={alt}
         className={imgClass}
+        style={style}
         loading={eager ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : "auto"}
         decoding="async"
@@ -77,6 +81,7 @@ export function Media({
         width={width}
         height={height}
         className={imgClass}
+        style={style}
         sizes={resolvedSizes}
         priority={priority}
         loading={priority ? undefined : eager ? "eager" : "lazy"}
@@ -90,6 +95,7 @@ export function Media({
       alt={alt}
       fill
       className={imgClass}
+      style={style}
       sizes={resolvedSizes}
       priority={priority}
       loading={priority ? undefined : eager ? "eager" : "lazy"}

@@ -19,6 +19,18 @@ export type TaxonomyTermSeo = {
   is_active?: boolean;
   seo_index_mode?: string | null;
   intro_content?: string | null;
+  primary_image_url?: string | null;
+  primary_image_alt?: string | null;
+  primary_image_focal_x?: number | null;
+  primary_image_focal_y?: number | null;
+  hero_image_url?: string | null;
+  hero_image_alt?: string | null;
+  hero_image_focal_x?: number | null;
+  hero_image_focal_y?: number | null;
+  image_url?: string | null;
+  image_alt?: string | null;
+  image_focal_x?: number | null;
+  image_focal_y?: number | null;
 };
 
 async function safeJson<T>(path: string): Promise<T | null> {

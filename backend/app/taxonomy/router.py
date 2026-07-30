@@ -3,12 +3,18 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user, require_permission
 from app.core.database import get_db
 from app.taxonomy import service as taxonomy_service
+from app.taxonomy.image_service import (
+    enrich_category_public,
+    enrich_location_public,
+    update_term_visuals,
+    upload_taxonomy_media,
+)
 from app.taxonomy.schemas import (
     AreaSuggestCreate,
     CategoryCreate,
@@ -22,6 +28,8 @@ from app.taxonomy.schemas import (
     SubcategoryCreate,
     SubcategoryPublic,
     SubcategoryUpdate,
+    TaxonomyImageUploadResponse,
+    TaxonomyVisualUpdate,
     VenueTypeSuggestCreate,
     VocabCreate,
     VocabPublic,
@@ -35,9 +43,12 @@ _ADMIN = Depends(require_permission("admin.full_access", "events.approve"))
 
 
 def _category_public(db: Session, row) -> CategoryPublic:
-    data = CategoryPublic.model_validate(row)
-    data.usage_count = taxonomy_service.category_usage_count(db, row)
-    return data
+    usage = taxonomy_service.category_usage_count(db, row)
+    return CategoryPublic.model_validate(enrich_category_public(row, usage_count=usage))
+
+
+def _location_public(row) -> LocationPublic:
+    return LocationPublic.model_validate(enrich_location_public(row))
 
 
 @router.get("/health")
@@ -132,7 +143,7 @@ def public_list_locations(
     parent_id: UUID | None = Query(default=None),
 ) -> list[LocationPublic]:
     return [
-        LocationPublic.model_validate(r)
+        _location_public(r)
         for r in taxonomy_service.list_locations(
             db, active_only=True, kind=kind, parent_id=parent_id
         )
@@ -155,10 +166,10 @@ def public_get_location(
         raise HTTPException(status_code=404, detail="Location not found")
     location, ancestors, children, siblings = resolved
     return LocationDetailPublic(
-        location=LocationPublic.model_validate(location),
-        ancestors=[LocationPublic.model_validate(a) for a in ancestors],
-        children=[LocationPublic.model_validate(c) for c in children],
-        siblings=[LocationPublic.model_validate(s) for s in siblings],
+        location=_location_public(location),
+        ancestors=[_location_public(a) for a in ancestors],
+        children=[_location_public(c) for c in children],
+        siblings=[_location_public(s) for s in siblings],
     )
 
 
@@ -173,7 +184,7 @@ def suggest_area(
     user: Annotated[User, Depends(get_current_user)],
 ) -> LocationPublic:
     """Host suggests a new area under a city; saved active for all hosts."""
-    return LocationPublic.model_validate(
+    return _location_public(
         taxonomy_service.suggest_area(
             db, user=user, city_id=payload.city_id, name=payload.name
         )
@@ -191,7 +202,7 @@ def suggest_city(
     user: Annotated[User, Depends(get_current_user)],
 ) -> LocationPublic:
     """Host suggests a new city under a state; saved active for all hosts."""
-    return LocationPublic.model_validate(
+    return _location_public(
         taxonomy_service.suggest_city(
             db, user=user, state_id=payload.state_id, name=payload.name
         )
@@ -466,7 +477,7 @@ def admin_list_locations(
     kind: str | None = Query(default=None),
 ) -> list[LocationPublic]:
     return [
-        LocationPublic.model_validate(r)
+        _location_public(r)
         for r in taxonomy_service.list_locations(
             db, include_inactive=include_inactive, kind=kind
         )
@@ -483,7 +494,7 @@ def admin_create_location(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[User, _ADMIN],
 ) -> LocationPublic:
-    return LocationPublic.model_validate(
+    return _location_public(
         taxonomy_service.create_location(db, user=user, payload=payload)
     )
 
@@ -495,7 +506,7 @@ def admin_update_location(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[User, _ADMIN],
 ) -> LocationPublic:
-    return LocationPublic.model_validate(
+    return _location_public(
         taxonomy_service.update_location(
             db, user=user, location_id=location_id, payload=payload
         )
@@ -508,7 +519,7 @@ def admin_archive_location(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[User, _ADMIN],
 ) -> LocationPublic:
-    return LocationPublic.model_validate(
+    return _location_public(
         taxonomy_service.archive_location(db, user=user, location_id=location_id)
     )
 
@@ -519,7 +530,7 @@ def admin_restore_location(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[User, _ADMIN],
 ) -> LocationPublic:
-    return LocationPublic.model_validate(
+    return _location_public(
         taxonomy_service.restore_location(db, user=user, location_id=location_id)
     )
 
@@ -677,3 +688,72 @@ def admin_restore_venue_type(
     return VocabPublic.model_validate(
         taxonomy_service.restore_venue_type(db, user=user, type_id=type_id)
     )
+
+
+@router.post(
+    "/admin/media/upload",
+    response_model=TaxonomyImageUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def admin_upload_taxonomy_media(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, _ADMIN],
+    kind: Annotated[str, Query(description="category|city|state|area")],
+    term_id: Annotated[UUID, Query()],
+    file: Annotated[UploadFile, File(...)],
+    image_role: Annotated[str, Query()] = "primary",
+    alt: Annotated[str | None, Query()] = None,
+    apply: Annotated[bool, Query()] = True,
+) -> TaxonomyImageUploadResponse:
+    """Upload a public raster image for an image-capable taxonomy term."""
+    data = await file.read()
+    result = upload_taxonomy_media(
+        db,
+        user=user,
+        kind=kind,
+        term_id=term_id,
+        image_role=image_role,
+        data=data,
+        filename=file.filename or "upload.bin",
+        content_type=file.content_type or "application/octet-stream",
+        alt=alt,
+        apply=apply,
+    )
+    return TaxonomyImageUploadResponse.model_validate(result)
+
+
+@router.patch("/admin/categories/{category_id}/visuals", response_model=CategoryPublic)
+def admin_update_category_visuals(
+    category_id: UUID,
+    payload: TaxonomyVisualUpdate,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, _ADMIN],
+) -> CategoryPublic:
+    row = update_term_visuals(
+        db, user=user, kind="category", term_id=category_id, payload=payload
+    )
+    return _category_public(db, row)
+
+
+@router.patch("/admin/locations/{location_id}/visuals", response_model=LocationPublic)
+def admin_update_location_visuals(
+    location_id: UUID,
+    payload: TaxonomyVisualUpdate,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, _ADMIN],
+) -> LocationPublic:
+    from app.taxonomy.models import Location
+    from fastapi import HTTPException
+
+    loc = db.get(Location, location_id)
+    if loc is None:
+        raise HTTPException(status_code=404, detail="Location not found")
+    if loc.kind not in {"city", "state", "area"}:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Location kind '{loc.kind}' does not support imagery",
+        )
+    row = update_term_visuals(
+        db, user=user, kind=loc.kind, term_id=location_id, payload=payload
+    )
+    return _location_public(row)

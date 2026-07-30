@@ -40,7 +40,11 @@ const CITY_FROM_DEFAULTS = imagesFromDefaults("city");
 const CATEGORY_FROM_DEFAULTS = imagesFromDefaults("interest");
 
 /** Resolve art for a city hub slug (browse tile art when available). */
-export function cityBrowseImage(slug: string): string {
+export function cityBrowseImage(
+  slug: string,
+  adminImageUrl?: string | null,
+): string {
+  if (adminImageUrl?.trim()) return adminImageUrl.trim();
   const key = slug.trim().toLowerCase();
   return (
     CITY_IMAGES[key] ||
@@ -50,12 +54,130 @@ export function cityBrowseImage(slug: string): string {
 }
 
 /** Resolve art for a category / interest slug. */
-export function categoryBrowseImage(slug: string): string {
+export function categoryBrowseImage(
+  slug: string,
+  adminImageUrl?: string | null,
+): string {
+  if (adminImageUrl?.trim()) return adminImageUrl.trim();
   const key = slug.trim().toLowerCase();
   return (
     CATEGORY_IMAGES[key] ||
     CATEGORY_FROM_DEFAULTS.get(key) ||
     brand.heroImage
+  );
+}
+
+export type BrowseCardVisuals = {
+  imageUrl: string;
+  imageAlt: string;
+  focalX: number;
+  focalY: number;
+};
+
+type TaxonomyImageFields = {
+  primary_image_url?: string | null;
+  image_url?: string | null;
+  primary_image_alt?: string | null;
+  image_alt?: string | null;
+  primary_image_focal_x?: number | null;
+  primary_image_focal_y?: number | null;
+  image_focal_x?: number | null;
+  image_focal_y?: number | null;
+  hero_image_url?: string | null;
+  hero_image_alt?: string | null;
+  hero_image_focal_x?: number | null;
+  hero_image_focal_y?: number | null;
+};
+
+/** Card art + accessibility from taxonomy category fields. */
+export function categoryBrowseVisuals(
+  slug: string,
+  name: string,
+  term?: TaxonomyImageFields | null,
+): BrowseCardVisuals {
+  const adminUrl = term?.image_url ?? term?.primary_image_url;
+  return {
+    imageUrl: categoryBrowseImage(slug, adminUrl),
+    imageAlt: term?.image_alt ?? term?.primary_image_alt ?? name,
+    focalX: term?.image_focal_x ?? term?.primary_image_focal_x ?? 0.5,
+    focalY: term?.image_focal_y ?? term?.primary_image_focal_y ?? 0.5,
+  };
+}
+
+/** Card art + accessibility from taxonomy location fields. */
+export function cityBrowseVisuals(
+  slug: string,
+  name: string,
+  loc?: TaxonomyImageFields | null,
+): BrowseCardVisuals {
+  const adminUrl = loc?.image_url ?? loc?.primary_image_url;
+  return {
+    imageUrl: cityBrowseImage(slug, adminUrl),
+    imageAlt: loc?.image_alt ?? loc?.primary_image_alt ?? name,
+    focalX: loc?.image_focal_x ?? loc?.primary_image_focal_x ?? 0.5,
+    focalY: loc?.image_focal_y ?? loc?.primary_image_focal_y ?? 0.5,
+  };
+}
+
+/** Card art for any image-capable location kind (city/state/area). */
+export function locationBrowseVisuals(
+  slug: string,
+  name: string,
+  kind: string,
+  loc?: TaxonomyImageFields | null,
+): BrowseCardVisuals {
+  if (kind === "city") return cityBrowseVisuals(slug, name, loc);
+  const adminUrl = loc?.image_url ?? loc?.primary_image_url;
+  return {
+    imageUrl: adminUrl?.trim() || brand.heroImage,
+    imageAlt: loc?.image_alt ?? loc?.primary_image_alt ?? name,
+    focalX: loc?.image_focal_x ?? loc?.primary_image_focal_x ?? 0.5,
+    focalY: loc?.image_focal_y ?? loc?.primary_image_focal_y ?? 0.5,
+  };
+}
+
+/** Prefer hero, then primary, then fallback resolver. */
+export function taxonomyHeroImage(
+  slug: string,
+  kind: "category" | "city",
+  opts?: {
+    heroUrl?: string | null;
+    primaryUrl?: string | null;
+  },
+): string {
+  if (opts?.heroUrl?.trim()) return opts.heroUrl.trim();
+  if (opts?.primaryUrl?.trim()) return opts.primaryUrl.trim();
+  return kind === "city" ? cityBrowseImage(slug) : categoryBrowseImage(slug);
+}
+
+/** Hero focal: hero image focal when set, else primary/card focal. */
+export function taxonomyHeroFocal(
+  term?: TaxonomyImageFields | null,
+): { focalX: number; focalY: number } {
+  if (term?.hero_image_url?.trim()) {
+    return {
+      focalX: term.hero_image_focal_x ?? 0.5,
+      focalY: term.hero_image_focal_y ?? 0.5,
+    };
+  }
+  return {
+    focalX: term?.image_focal_x ?? term?.primary_image_focal_x ?? 0.5,
+    focalY: term?.image_focal_y ?? term?.primary_image_focal_y ?? 0.5,
+  };
+}
+
+/** Hero alt: hero alt when hero image set, else primary alt chain. */
+export function taxonomyHeroAlt(
+  term: TaxonomyImageFields | null | undefined,
+  fallbackName: string,
+): string {
+  if (term?.hero_image_url?.trim()) {
+    return term.hero_image_alt?.trim() || fallbackName;
+  }
+  return (
+    term?.primary_image_alt?.trim() ||
+    term?.image_alt?.trim() ||
+    fallbackName
   );
 }
 

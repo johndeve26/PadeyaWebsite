@@ -10,6 +10,10 @@ export type CategoryNavItem = {
   description?: string;
   count?: number;
   selected?: boolean;
+  imageUrl?: string | null;
+  imageAlt?: string | null;
+  focalX?: number | null;
+  focalY?: number | null;
 };
 
 export function CategoryNav({
@@ -40,7 +44,10 @@ export function CategoryNav({
                 title={item.name}
                 meta={meta}
                 eyebrow="Category"
-                image={categoryBrowseImage(item.slug)}
+                image={categoryBrowseImage(item.slug, item.imageUrl)}
+                imageAlt={item.imageAlt || item.name}
+                focalX={item.focalX ?? 0.5}
+                focalY={item.focalY ?? 0.5}
                 className={cn(
                   "h-full",
                   item.selected && "ring-2 ring-ink ring-offset-2 ring-offset-background",

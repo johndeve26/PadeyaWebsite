@@ -5,6 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { TaxonomyManager } from "@/components/admin/taxonomy/TaxonomyManager";
+import {
+  TaxonomyVisualsEditor,
+  type TaxonomyVisualFields,
+  IMAGE_CAPABLE_LOCATION_KINDS,
+} from "@/components/admin/taxonomy/TaxonomyVisualsEditor";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import {
   Alert,
@@ -29,6 +34,14 @@ type LocationRow = {
   state_code?: string | null;
   country_code?: string | null;
   is_active?: boolean;
+  primary_image_url?: string | null;
+  primary_image_alt?: string | null;
+  primary_image_focal_x?: number | null;
+  primary_image_focal_y?: number | null;
+  hero_image_url?: string | null;
+  hero_image_alt?: string | null;
+  hero_image_focal_x?: number | null;
+  hero_image_focal_y?: number | null;
 };
 
 const KINDS = ["country", "state", "city", "area"] as const;
@@ -41,6 +54,7 @@ export function LocationsPage() {
   const [kind, setKind] = useState<string>("city");
   const [parentId, setParentId] = useState("");
   const [slug, setSlug] = useState("");
+  const [visualsFor, setVisualsFor] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -230,9 +244,10 @@ export function LocationsPage() {
               {treeRows.map(({ row, depth }) => (
                 <Card
                   key={row.id}
-                  className="flex flex-wrap items-center justify-between gap-2"
+                  className="flex flex-col gap-3"
                   style={{ marginLeft: depth * 16 }}
                 >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-bold text-foreground">{row.name}</span>
                     <Badge tone="outline" size="sm">
@@ -248,6 +263,20 @@ export function LocationsPage() {
                     ) : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    {row.is_active !== false &&
+                    IMAGE_CAPABLE_LOCATION_KINDS.has(row.kind) ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() =>
+                          setVisualsFor((cur) =>
+                            cur === row.id ? null : row.id,
+                          )
+                        }
+                      >
+                        {visualsFor === row.id ? "Hide visuals" : "Visuals"}
+                      </Button>
+                    ) : null}
                     {row.is_active !== false ? (
                       <ConfirmAction
                         label="Archive"
@@ -267,6 +296,33 @@ export function LocationsPage() {
                       </Button>
                     )}
                   </div>
+                  </div>
+                  {row.is_active !== false &&
+                  visualsFor === row.id &&
+                  IMAGE_CAPABLE_LOCATION_KINDS.has(row.kind) ? (
+                    <TaxonomyVisualsEditor
+                      kind={row.kind as "city" | "state" | "area"}
+                      termId={row.id}
+                      termName={row.name}
+                      value={{
+                        primary_image_url: row.primary_image_url,
+                        primary_image_alt: row.primary_image_alt,
+                        primary_image_focal_x: row.primary_image_focal_x,
+                        primary_image_focal_y: row.primary_image_focal_y,
+                        hero_image_url: row.hero_image_url,
+                        hero_image_alt: row.hero_image_alt,
+                        hero_image_focal_x: row.hero_image_focal_x,
+                        hero_image_focal_y: row.hero_image_focal_y,
+                      }}
+                      onChange={(next: TaxonomyVisualFields) => {
+                        setRows((cur) =>
+                          (cur ?? []).map((r) =>
+                            r.id === row.id ? { ...r, ...next } : r,
+                          ),
+                        );
+                      }}
+                    />
+                  ) : null}
                 </Card>
               ))}
             </div>

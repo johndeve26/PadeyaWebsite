@@ -4,6 +4,7 @@ import {
   HubJsonLd,
   hubPageMetadata,
 } from "@/lib/seo/hub-page";
+import { taxonomyHeroAlt, taxonomyHeroFocal } from "@/lib/discovery/browse-images";
 import { buildCategoryTrail } from "@/lib/marketplace-breadcrumbs";
 
 type Props = { params: Promise<{ categorySlug: string }> };
@@ -32,6 +33,7 @@ export default async function CategoryHubPage({ params }: Props) {
     term?.description ||
     `Browse ${label} events on Pàdéyá — nights built around this interest.`;
   const crumbs = buildCategoryTrail(label, categorySlug);
+  const heroFocal = taxonomyHeroFocal(term);
 
   return (
     <>
@@ -46,6 +48,11 @@ export default async function CategoryHubPage({ params }: Props) {
         categoryName={label}
         categoryDescription={description}
         crumbs={crumbs}
+        primaryImageUrl={term?.primary_image_url ?? term?.image_url ?? null}
+        heroImageUrl={term?.hero_image_url ?? null}
+        imageAlt={taxonomyHeroAlt(term, label)}
+        focalX={heroFocal.focalX}
+        focalY={heroFocal.focalY}
       />
     </>
   );

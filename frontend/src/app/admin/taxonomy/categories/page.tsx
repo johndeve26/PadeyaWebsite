@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { SubcategoryAdminPanel } from "@/components/admin/taxonomy/SubcategoryAdminPanel";
+import {
+  TaxonomyVisualsEditor,
+  type TaxonomyVisualFields,
+} from "@/components/admin/taxonomy/TaxonomyVisualsEditor";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import {
@@ -30,6 +34,14 @@ type TaxTerm = {
   usage_count?: number;
   seo_title?: string | null;
   seo_description?: string | null;
+  primary_image_url?: string | null;
+  primary_image_alt?: string | null;
+  primary_image_focal_x?: number | null;
+  primary_image_focal_y?: number | null;
+  hero_image_url?: string | null;
+  hero_image_alt?: string | null;
+  hero_image_focal_x?: number | null;
+  hero_image_focal_y?: number | null;
 };
 
 function UsageCountBadge({ count }: { count: number }) {
@@ -46,6 +58,7 @@ export default function AdminTaxonomyCategoriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [visualsFor, setVisualsFor] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -191,7 +204,17 @@ export default function AdminTaxonomyCategoriesPage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {row.is_active ? (
-                    <ConfirmAction
+                    <>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() =>
+                          setVisualsFor((cur) => (cur === row.id ? null : row.id))
+                        }
+                      >
+                        {visualsFor === row.id ? "Hide visuals" : "Visuals"}
+                      </Button>
+                      <ConfirmAction
                       label="Archive"
                       title="Archive this category?"
                       description={
@@ -203,6 +226,7 @@ export default function AdminTaxonomyCategoriesPage() {
                       variant="ghost"
                       onConfirm={() => onArchive(row.id)}
                     />
+                    </>
                   ) : (
                     <Button
                       size="sm"
@@ -214,6 +238,30 @@ export default function AdminTaxonomyCategoriesPage() {
                   )}
                 </div>
                 </div>
+                {row.is_active && visualsFor === row.id ? (
+                  <TaxonomyVisualsEditor
+                    kind="category"
+                    termId={row.id}
+                    termName={row.name}
+                    value={{
+                      primary_image_url: row.primary_image_url,
+                      primary_image_alt: row.primary_image_alt,
+                      primary_image_focal_x: row.primary_image_focal_x,
+                      primary_image_focal_y: row.primary_image_focal_y,
+                      hero_image_url: row.hero_image_url,
+                      hero_image_alt: row.hero_image_alt,
+                      hero_image_focal_x: row.hero_image_focal_x,
+                      hero_image_focal_y: row.hero_image_focal_y,
+                    }}
+                    onChange={(next: TaxonomyVisualFields) => {
+                      setRows((cur) =>
+                        (cur ?? []).map((r) =>
+                          r.id === row.id ? { ...r, ...next } : r,
+                        ),
+                      );
+                    }}
+                  />
+                ) : null}
                 {row.is_active ? (
                   <SubcategoryAdminPanel categoryId={row.id} />
                 ) : null}

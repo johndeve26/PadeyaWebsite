@@ -17,6 +17,18 @@ export type TaxonomyLocation = {
   seo_index_mode?: string | null;
   created_at?: string;
   updated_at?: string;
+  primary_image_url?: string | null;
+  primary_image_alt?: string | null;
+  primary_image_focal_x?: number | null;
+  primary_image_focal_y?: number | null;
+  hero_image_url?: string | null;
+  hero_image_alt?: string | null;
+  hero_image_focal_x?: number | null;
+  hero_image_focal_y?: number | null;
+  image_url?: string | null;
+  image_alt?: string | null;
+  image_focal_x?: number | null;
+  image_focal_y?: number | null;
 };
 
 export type TaxonomyLocationDetail = {
@@ -25,6 +37,32 @@ export type TaxonomyLocationDetail = {
   children: TaxonomyLocation[];
   siblings?: TaxonomyLocation[];
 };
+
+export type TaxonomyCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  is_active: boolean;
+  primary_image_url?: string | null;
+  primary_image_alt?: string | null;
+  primary_image_focal_x?: number | null;
+  primary_image_focal_y?: number | null;
+  hero_image_url?: string | null;
+  hero_image_alt?: string | null;
+  hero_image_focal_x?: number | null;
+  hero_image_focal_y?: number | null;
+  image_url?: string | null;
+  image_alt?: string | null;
+  image_focal_x?: number | null;
+  image_focal_y?: number | null;
+};
+
+export async function fetchTaxonomyCategories(): Promise<TaxonomyCategory[]> {
+  return apiRequest<TaxonomyCategory[]>("/taxonomy/categories", {
+    auth: false,
+  });
+}
 
 export async function fetchTaxonomyLocations(opts?: {
   kind?: LocationKind | string;

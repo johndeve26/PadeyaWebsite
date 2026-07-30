@@ -28,6 +28,14 @@ class CategoryUpdate(BaseModel):
     seo_title: str | None = Field(default=None, max_length=200)
     seo_description: str | None = Field(default=None, max_length=320)
     is_active: bool | None = None
+    primary_image_url: str | None = Field(default=None, max_length=1000)
+    primary_image_alt: str | None = Field(default=None, max_length=240)
+    primary_image_focal_x: float | None = Field(default=None, ge=0, le=1)
+    primary_image_focal_y: float | None = Field(default=None, ge=0, le=1)
+    hero_image_url: str | None = Field(default=None, max_length=1000)
+    hero_image_alt: str | None = Field(default=None, max_length=240)
+    hero_image_focal_x: float | None = Field(default=None, ge=0, le=1)
+    hero_image_focal_y: float | None = Field(default=None, ge=0, le=1)
 
 
 class CategoryPublic(BaseModel):
@@ -46,6 +54,19 @@ class CategoryPublic(BaseModel):
     created_at: datetime
     updated_at: datetime
     usage_count: int | None = None
+    primary_image_url: str | None = None
+    primary_image_alt: str | None = None
+    primary_image_focal_x: float = 0.5
+    primary_image_focal_y: float = 0.5
+    hero_image_url: str | None = None
+    hero_image_alt: str | None = None
+    hero_image_focal_x: float = 0.5
+    hero_image_focal_y: float = 0.5
+    # Convenience aliases for public cards (primary with hero fallback handled FE-side)
+    image_url: str | None = None
+    image_alt: str | None = None
+    image_focal_x: float | None = None
+    image_focal_y: float | None = None
 
 
 class VocabCreate(BaseModel):
@@ -170,6 +191,14 @@ class LocationUpdate(BaseModel):
     seo_description: str | None = Field(default=None, max_length=320)
     intro_content: str | None = None
     seo_index_mode: str | None = Field(default=None, max_length=24)
+    primary_image_url: str | None = Field(default=None, max_length=1000)
+    primary_image_alt: str | None = Field(default=None, max_length=240)
+    primary_image_focal_x: float | None = Field(default=None, ge=0, le=1)
+    primary_image_focal_y: float | None = Field(default=None, ge=0, le=1)
+    hero_image_url: str | None = Field(default=None, max_length=1000)
+    hero_image_alt: str | None = Field(default=None, max_length=240)
+    hero_image_focal_x: float | None = Field(default=None, ge=0, le=1)
+    hero_image_focal_y: float | None = Field(default=None, ge=0, le=1)
 
 
 class LocationPublic(BaseModel):
@@ -189,6 +218,41 @@ class LocationPublic(BaseModel):
     seo_index_mode: str = "auto"
     created_at: datetime
     updated_at: datetime
+    primary_image_url: str | None = None
+    primary_image_alt: str | None = None
+    primary_image_focal_x: float = 0.5
+    primary_image_focal_y: float = 0.5
+    hero_image_url: str | None = None
+    hero_image_alt: str | None = None
+    hero_image_focal_x: float = 0.5
+    hero_image_focal_y: float = 0.5
+    image_url: str | None = None
+    image_alt: str | None = None
+    image_focal_x: float | None = None
+    image_focal_y: float | None = None
+
+
+class TaxonomyImageUploadResponse(BaseModel):
+    url: str
+    key: str
+    kind: str
+    term_id: UUID
+    image_role: str
+
+
+class TaxonomyVisualUpdate(BaseModel):
+    """Dedicated visual settings payload (clear by sending null)."""
+
+    primary_image_url: str | None = Field(default=None, max_length=1000)
+    primary_image_alt: str | None = Field(default=None, max_length=240)
+    primary_image_focal_x: float | None = Field(default=None, ge=0, le=1)
+    primary_image_focal_y: float | None = Field(default=None, ge=0, le=1)
+    hero_image_url: str | None = Field(default=None, max_length=1000)
+    hero_image_alt: str | None = Field(default=None, max_length=240)
+    hero_image_focal_x: float | None = Field(default=None, ge=0, le=1)
+    hero_image_focal_y: float | None = Field(default=None, ge=0, le=1)
+    clear_primary: bool = False
+    clear_hero: bool = False
 
 
 class LocationDetailPublic(BaseModel):

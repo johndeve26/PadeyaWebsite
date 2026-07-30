@@ -16,6 +16,9 @@ export function DiscoveryHubHero({
   className = "",
   search,
   backgroundSrc = brand.heroImage,
+  backgroundAlt = "",
+  backgroundFocalX = 0.5,
+  backgroundFocalY = 0.5,
 }: {
   title: string;
   description: string;
@@ -29,12 +32,17 @@ export function DiscoveryHubHero({
   search?: ReactNode;
   /** Taxonomy-specific art when available; falls back to brand hero. */
   backgroundSrc?: string;
+  backgroundAlt?: string;
+  backgroundFocalX?: number;
+  backgroundFocalY?: number;
 }) {
   return (
     <HeroSection
       minHeight={search ? "default" : "compact"}
       backgroundSrc={backgroundSrc}
-      backgroundAlt=""
+      backgroundAlt={backgroundAlt}
+      backgroundFocalX={backgroundFocalX}
+      backgroundFocalY={backgroundFocalY}
       className={cn("border-b border-paper/10", className)}
       atmosphere
     >

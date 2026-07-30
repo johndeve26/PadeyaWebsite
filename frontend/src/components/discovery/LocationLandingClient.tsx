@@ -23,7 +23,7 @@ import {
 } from "@/components/ui";
 import type { BreadcrumbItem } from "@/components/ui/Breadcrumb";
 import type { LocationAnalyticsMeta } from "@/lib/analytics";
-import { categoryBrowseImage } from "@/lib/discovery/browse-images";
+import { categoryBrowseVisuals, locationBrowseVisuals } from "@/lib/discovery/browse-images";
 import {
   categoryInLocationHref,
   LOCATION_LANDING_CATEGORIES,
@@ -37,13 +37,13 @@ import {
   fetchCategories,
   fetchPublicEvents,
 } from "@/lib/events-api";
-import {
-  fetchPadeyaPicks,
-} from "@/lib/placements-api";
-import { resolvePadeyaPicks } from "@/lib/discovery/padeya-picks";
+import { fetchPadeyaPicks } from "@/lib/placements-api";
 import type { EventCategory, EventItem } from "@/lib/types/events";
+import { resolvePadeyaPicks } from "@/lib/discovery/padeya-picks";
 import {
+  fetchTaxonomyCategories,
   locationHubPath,
+  type TaxonomyCategory,
   type TaxonomyLocation,
 } from "@/lib/taxonomy-api";
 
@@ -111,6 +111,11 @@ function LocationLandingInner({
   siblingLocations = [],
   ancestors = [],
   introContent,
+  primaryImageUrl,
+  heroImageUrl,
+  imageAlt,
+  focalX = 0.5,
+  focalY = 0.5,
 }: {
   kind: string;
   slug: string;
@@ -120,12 +125,20 @@ function LocationLandingInner({
   siblingLocations?: TaxonomyLocation[];
   ancestors?: TaxonomyLocation[];
   introContent?: string | null;
+  primaryImageUrl?: string | null;
+  heroImageUrl?: string | null;
+  imageAlt?: string | null;
+  focalX?: number;
+  focalY?: number;
 }) {
   const searchParams = useSearchParams();
   const weekendOnly = searchParams.get("weekend") === "1";
 
   const [events, setEvents] = useState<EventItem[] | null>(null);
   const [categories, setCategories] = useState<EventCategory[]>([]);
+  const [taxonomyCategories, setTaxonomyCategories] = useState<
+    Map<string, TaxonomyCategory>
+  >(new Map());
   const [picks, setPicks] = useState<EventItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -140,14 +153,16 @@ function LocationLandingInner({
     void Promise.all([
       fetchPublicEvents({ location_kind: kind, location_slug: slug }),
       fetchCategories(),
+      fetchTaxonomyCategories(),
       picksCtx
         ? fetchPadeyaPicks(picksCtx.query)
         : Promise.resolve([] as EventItem[]),
     ])
-      .then(([rows, cats, padeyaPicks]) => {
+      .then(([rows, cats, taxCats, padeyaPicks]) => {
         if (!alive) return;
         setEvents(rows);
         setCategories(cats);
+        setTaxonomyCategories(new Map(taxCats.map((c) => [c.slug, c])));
         setPicks(padeyaPicks);
       })
       .catch((err) => {
@@ -270,6 +285,35 @@ function LocationLandingInner({
     parentName,
   });
 
+  const locationImageByKey = useMemo(() => {
+    const map = new Map<string, TaxonomyLocation>();
+    for (const loc of [
+      ...ancestors,
+      ...childLocations,
+      ...siblingLocations,
+    ]) {
+      map.set(`${loc.kind}:${loc.slug}`, loc);
+    }
+    return map;
+  }, [ancestors, childLocations, siblingLocations]);
+
+  const relatedWithImages = useMemo(
+    () =>
+      related.map((loc) => {
+        const row = locationImageByKey.get(`${loc.kind}:${loc.slug}`);
+        if (!row) return loc;
+        const visuals = locationBrowseVisuals(loc.slug, loc.name, loc.kind, row);
+        return {
+          ...loc,
+          imageUrl: visuals.imageUrl,
+          imageAlt: visuals.imageAlt,
+          focalX: visuals.focalX,
+          focalY: visuals.focalY,
+        };
+      }),
+    [related, locationImageByKey],
+  );
+
   const basePath = locationHubPath(kind, slug);
 
   const eventCount = events?.length ?? 0;
@@ -289,6 +333,11 @@ function LocationLandingInner({
         slug={slug}
         name={name}
         description={heroDescription}
+        primaryImageUrl={primaryImageUrl}
+        heroImageUrl={heroImageUrl}
+        imageAlt={imageAlt}
+        focalX={focalX}
+        focalY={focalY}
       />
 
       {introContent?.trim() ? (
@@ -418,6 +467,8 @@ function LocationLandingInner({
               const count = categoryCounts.get(cat.slug) ?? 0;
               const label =
                 categories.find((c) => c.slug === cat.slug)?.name || cat.name;
+              const term = taxonomyCategories.get(cat.slug);
+              const visuals = categoryBrowseVisuals(cat.slug, label, term);
               return (
                 <li key={cat.slug} className="h-full">
                   <TaxonomyBrowseCard
@@ -426,7 +477,11 @@ function LocationLandingInner({
                     meta={
                       count > 0 ? `${count} upcoming` : "Browse category"
                     }
-                    image={categoryBrowseImage(cat.slug)}
+                    eyebrow="Category"
+                    image={visuals.imageUrl}
+                    imageAlt={visuals.imageAlt}
+                    focalX={visuals.focalX}
+                    focalY={visuals.focalY}
                     className="h-full"
                   />
                 </li>
@@ -487,7 +542,7 @@ function LocationLandingInner({
         />
       ) : null}
 
-      <RelatedLocations locations={related} />
+      <RelatedLocations locations={relatedWithImages} />
 
       <CTASection
         tone="accent"
@@ -514,6 +569,11 @@ export function LocationLandingClient(props: {
   siblingLocations?: TaxonomyLocation[];
   ancestors?: TaxonomyLocation[];
   introContent?: string | null;
+  primaryImageUrl?: string | null;
+  heroImageUrl?: string | null;
+  imageAlt?: string | null;
+  focalX?: number;
+  focalY?: number;
 }) {
   return (
     <Suspense

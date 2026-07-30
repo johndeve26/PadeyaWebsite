@@ -19,7 +19,7 @@ import {
   SkeletonCard,
 } from "@/components/ui";
 import type { BreadcrumbItem } from "@/components/ui/Breadcrumb";
-import { cityBrowseImage } from "@/lib/discovery/browse-images";
+import { cityBrowseVisuals } from "@/lib/discovery/browse-images";
 import {
   EVENT_LISTING_CAROUSEL_SLIDE,
   EVENT_LISTING_GRID_DISCOVERY,
@@ -31,6 +31,7 @@ import { resolvePadeyaPicks } from "@/lib/discovery/padeya-picks";
 import { fetchPublicEvents } from "@/lib/events-api";
 import { fetchPadeyaPicks } from "@/lib/placements-api";
 import type { EventItem } from "@/lib/types/events";
+import { fetchTaxonomyLocations } from "@/lib/taxonomy-api";
 
 function eventInWeekend(event: EventItem, now = new Date()): boolean {
   const { start, end } = weekendWindow(now);
@@ -48,6 +49,11 @@ function CategoryLandingInner({
   locationKind,
   locationSlug,
   locationName,
+  primaryImageUrl,
+  heroImageUrl,
+  imageAlt,
+  focalX = 0.5,
+  focalY = 0.5,
 }: {
   categorySlug: string;
   categoryName: string;
@@ -58,6 +64,11 @@ function CategoryLandingInner({
   locationKind?: string;
   locationSlug?: string;
   locationName?: string;
+  primaryImageUrl?: string | null;
+  heroImageUrl?: string | null;
+  imageAlt?: string | null;
+  focalX?: number;
+  focalY?: number;
 }) {
   const searchParams = useSearchParams();
   const weekendOnly = searchParams.get("weekend") === "1";
@@ -65,6 +76,9 @@ function CategoryLandingInner({
   const [events, setEvents] = useState<EventItem[] | null>(null);
   const [picks, setPicks] = useState<EventItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [cityBySlug, setCityBySlug] = useState<
+    Map<string, Awaited<ReturnType<typeof fetchTaxonomyLocations>>[number]>
+  >(new Map());
 
   const placeName = cityName || locationName;
   const lockedToPlace = Boolean(citySlug || (locationKind && locationSlug));
@@ -85,6 +99,22 @@ function CategoryLandingInner({
   }, [categorySlug, citySlug]);
 
   const picksQueryKey = JSON.stringify(picksQuery);
+
+  useEffect(() => {
+    if (lockedToPlace) return;
+    let alive = true;
+    void fetchTaxonomyLocations({ kind: "city" })
+      .then((rows) => {
+        if (!alive) return;
+        setCityBySlug(new Map(rows.map((row) => [row.slug, row])));
+      })
+      .catch(() => {
+        if (alive) setCityBySlug(new Map());
+      });
+    return () => {
+      alive = false;
+    };
+  }, [lockedToPlace]);
 
   useEffect(() => {
     let alive = true;
@@ -201,6 +231,11 @@ function CategoryLandingInner({
         locationName={locationName}
         locationKind={locationKind}
         locationSlug={locationSlug}
+        primaryImageUrl={primaryImageUrl}
+        heroImageUrl={heroImageUrl}
+        imageAlt={imageAlt}
+        focalX={focalX}
+        focalY={focalY}
       />
 
       <Container className="space-y-14 py-10 sm:py-14">
@@ -336,17 +371,28 @@ function CategoryLandingInner({
             description="Jump into the cities where this interest is live right now."
           />
           <ul className="grid auto-rows-fr gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
-            {cityLinks.map((city) => (
+            {cityLinks.map((city) => {
+              const visuals = cityBrowseVisuals(
+                city.slug,
+                city.name,
+                cityBySlug.get(city.slug),
+              );
+              return (
               <li key={city.slug} className="h-full">
                 <TaxonomyBrowseCard
                   href={`/events/city/${city.slug}/${categorySlug}`}
                   title={city.name}
                   meta={`${city.count} upcoming`}
-                  image={cityBrowseImage(city.slug)}
+                  eyebrow="City"
+                  image={visuals.imageUrl}
+                  imageAlt={visuals.imageAlt}
+                  focalX={visuals.focalX}
+                  focalY={visuals.focalY}
                   className="h-full"
                 />
               </li>
-            ))}
+              );
+            })}
           </ul>
         </Container>
       ) : null}
@@ -384,6 +430,11 @@ export function CategoryLandingClient(props: {
   locationKind?: string;
   locationSlug?: string;
   locationName?: string;
+  primaryImageUrl?: string | null;
+  heroImageUrl?: string | null;
+  imageAlt?: string | null;
+  focalX?: number;
+  focalY?: number;
 }) {
   return (
     <Suspense

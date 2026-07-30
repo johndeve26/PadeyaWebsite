@@ -26,6 +26,11 @@ import { TaxonomyEventCard } from "@/components/taxonomy/TaxonomyEventCard";
 import { Button, Container, Select, SkeletonCard } from "@/components/ui";
 import type { BreadcrumbItem } from "@/components/ui/Breadcrumb";
 import {
+  categoryBrowseVisuals,
+  cityBrowseVisuals,
+  locationBrowseVisuals,
+} from "@/lib/discovery/browse-images";
+import {
   categoryStory,
   cityStory,
 } from "@/lib/discovery/category-stories";
@@ -47,7 +52,13 @@ import {
   type PadeyaPicksQuery,
 } from "@/lib/placements-api";
 import type { EventCategory, EventItem } from "@/lib/types/events";
-import type { LocationKind, TaxonomyLocation } from "@/lib/taxonomy-api";
+import {
+  fetchTaxonomyCategories,
+  fetchTaxonomyLocations,
+  type LocationKind,
+  type TaxonomyCategory,
+  type TaxonomyLocation,
+} from "@/lib/taxonomy-api";
 import { locationHubPath } from "@/lib/taxonomy-api";
 
 export type DiscoveryHeroProps = {
@@ -125,6 +136,12 @@ export function EventDiscoveryView({
   const [, startTransition] = useTransition();
   const [padeyaPicks, setPadeyaPicks] = useState<EventItem[]>([]);
   const [refineOpen, setRefineOpen] = useState(false);
+  const [taxonomyCategories, setTaxonomyCategories] = useState<
+    Map<string, TaxonomyCategory>
+  >(new Map());
+  const [taxonomyCities, setTaxonomyCities] = useState<
+    Map<string, TaxonomyLocation>
+  >(new Map());
 
   const locationFilterValue: LocationFilterValue = useMemo(() => {
     const kind = (searchParams.get("location_kind") ||
@@ -153,6 +170,27 @@ export function EventDiscoveryView({
     return { context: "events_page" };
   }, [picksQuery, locationFilterValue?.kind, locationFilterValue?.slug]);
   const picksQueryKey = JSON.stringify(resolvedPicksQuery);
+
+  useEffect(() => {
+    let alive = true;
+    void Promise.all([
+      fetchTaxonomyCategories(),
+      fetchTaxonomyLocations({ kind: "city" }),
+    ])
+      .then(([cats, cities]) => {
+        if (!alive) return;
+        setTaxonomyCategories(new Map(cats.map((c) => [c.slug, c])));
+        setTaxonomyCities(new Map(cities.map((c) => [c.slug, c])));
+      })
+      .catch(() => {
+        if (!alive) return;
+        setTaxonomyCategories(new Map());
+        setTaxonomyCities(new Map());
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     void fetchPadeyaPicks(resolvedPicksQuery)
@@ -685,6 +723,11 @@ export function EventDiscoveryView({
 
   const browseCategoryItems = categoriesByAvailability.slice(0, 16).map((c) => {
     const story = categoryStory(c.slug, c.name, c.description);
+    const visuals = categoryBrowseVisuals(
+      c.slug,
+      c.name,
+      taxonomyCategories.get(c.slug),
+    );
     return {
       name: c.name,
       slug: c.slug,
@@ -694,12 +737,17 @@ export function EventDiscoveryView({
       hint: story.hint,
       description: story.story,
       count: categoryCounts.get(c.slug),
+      imageUrl: visuals.imageUrl,
+      imageAlt: visuals.imageAlt,
+      focalX: visuals.focalX,
+      focalY: visuals.focalY,
     };
   });
 
   const browseCityItems = citiesByAvailability.slice(0, 12).map((c) => {
     const slug = citySlugFromName(c);
     const story = cityStory(slug, c);
+    const visuals = cityBrowseVisuals(slug, c, taxonomyCities.get(slug));
     return {
       name: c,
       slug,
@@ -709,6 +757,10 @@ export function EventDiscoveryView({
       hint: story.hint,
       description: story.story,
       count: cityCounts.get(slug),
+      imageUrl: visuals.imageUrl,
+      imageAlt: visuals.imageAlt,
+      focalX: visuals.focalX,
+      focalY: visuals.focalY,
     };
   });
 
@@ -758,13 +810,25 @@ export function EventDiscoveryView({
     [citiesByAvailability],
   );
 
-  const childBrowseItems = locationChildren.map((child) => ({
-    name: child.name,
-    slug: child.slug,
-    href: locationHubPath(child.kind, child.slug),
-    hint: child.kind,
-    description: `${child.kind} on Pàdéyá`,
-  }));
+  const childBrowseItems = locationChildren.map((child) => {
+    const visuals = locationBrowseVisuals(
+      child.slug,
+      child.name,
+      child.kind,
+      child,
+    );
+    return {
+      name: child.name,
+      slug: child.slug,
+      href: locationHubPath(child.kind, child.slug),
+      hint: child.kind,
+      description: `${child.kind} on Pàdéyá`,
+      imageUrl: visuals.imageUrl,
+      imageAlt: visuals.imageAlt,
+      focalX: visuals.focalX,
+      focalY: visuals.focalY,
+    };
+  });
 
   const browseCategoryItemsSelected = browseCategoryItems.map((item) => ({
     ...item,

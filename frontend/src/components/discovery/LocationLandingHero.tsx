@@ -1,6 +1,6 @@
 import { DiscoveryHubHero } from "@/components/discovery/DiscoveryHubHero";
 import { brand } from "@/lib/brand";
-import { cityBrowseImage } from "@/lib/discovery/browse-images";
+import { taxonomyHeroImage } from "@/lib/discovery/browse-images";
 import { locationLandingSubtext } from "@/lib/discovery/location-landing";
 import { locationHubPath } from "@/lib/taxonomy-api";
 
@@ -21,16 +21,31 @@ export function LocationLandingHero({
   name,
   description,
   className = "",
+  heroImageUrl,
+  primaryImageUrl,
+  imageAlt,
+  focalX = 0.5,
+  focalY = 0.5,
 }: {
   kind: string;
   slug: string;
   name: string;
   description?: string;
   className?: string;
+  heroImageUrl?: string | null;
+  primaryImageUrl?: string | null;
+  imageAlt?: string | null;
+  focalX?: number;
+  focalY?: number;
 }) {
   const basePath = locationHubPath(kind, slug);
   const heroImage =
-    kind === "city" ? cityBrowseImage(slug) : brand.heroImage;
+    kind === "city"
+      ? taxonomyHeroImage(slug, "city", {
+          heroUrl: heroImageUrl,
+          primaryUrl: primaryImageUrl,
+        })
+      : heroImageUrl || primaryImageUrl || brand.heroImage;
 
   return (
     <DiscoveryHubHero
@@ -42,6 +57,9 @@ export function LocationLandingHero({
       secondaryCtaLabel={`All ${name} events`}
       secondaryCtaHref={`${basePath}#events`}
       backgroundSrc={heroImage}
+      backgroundAlt={imageAlt?.trim() || name}
+      backgroundFocalX={focalX}
+      backgroundFocalY={focalY}
       className={className}
     />
   );

@@ -12,10 +12,12 @@ import {
   locationHubIntroParagraph,
 } from "@/lib/seo/hub-eligibility";
 import {
+  fetchTaxonomyCategoryBySlug,
   fetchTaxonomyLocationDetailSeo,
   HubJsonLd,
   hubPageMetadata,
 } from "@/lib/seo/hub-page";
+import { taxonomyHeroAlt, taxonomyHeroFocal } from "@/lib/discovery/browse-images";
 import type { TaxonomyLocation } from "@/lib/taxonomy-api";
 
 type LocSeo = TaxonomyLocation & {
@@ -101,13 +103,16 @@ export async function LocationHubPage({
   categorySlug?: string;
   categoryName?: string;
 }) {
-  const [detail, events] = await Promise.all([
+  const [detail, events, categoryTerm] = await Promise.all([
     fetchTaxonomyLocationDetailSeo(kind, slug),
     fetchPublicEventsServer({
       location_kind: kind,
       location_slug: slug,
       ...(categorySlug ? { category: categorySlug } : {}),
     }),
+    categorySlug
+      ? fetchTaxonomyCategoryBySlug(categorySlug)
+      : Promise.resolve(null),
   ]);
 
   const loc = detail?.location as LocSeo | undefined;
@@ -171,6 +176,9 @@ export async function LocationHubPage({
       hubKind === "country" ||
       hubKind === "area");
 
+  const locationHeroFocal = taxonomyHeroFocal(loc);
+  const categoryHeroFocal = taxonomyHeroFocal(categoryTerm);
+
   return (
     <>
       <HubJsonLd
@@ -193,6 +201,13 @@ export async function LocationHubPage({
           siblingLocations={siblings}
           ancestors={ancestors}
           introContent={intro}
+          primaryImageUrl={
+            loc?.primary_image_url ?? loc?.image_url ?? null
+          }
+          heroImageUrl={loc?.hero_image_url ?? null}
+          imageAlt={taxonomyHeroAlt(loc, label)}
+          focalX={locationHeroFocal.focalX}
+          focalY={locationHeroFocal.focalY}
         />
       ) : categorySlug && categoryName ? (
         <CategoryLandingClient
@@ -205,6 +220,13 @@ export async function LocationHubPage({
           locationKind={kind !== "city" ? kind : undefined}
           locationSlug={kind !== "city" ? slug : undefined}
           locationName={kind !== "city" ? label : undefined}
+          primaryImageUrl={
+            categoryTerm?.primary_image_url ?? categoryTerm?.image_url ?? null
+          }
+          heroImageUrl={categoryTerm?.hero_image_url ?? null}
+          imageAlt={taxonomyHeroAlt(categoryTerm, categoryName)}
+          focalX={categoryHeroFocal.focalX}
+          focalY={categoryHeroFocal.focalY}
         />
       ) : (
         <DiscoveryHubClient
