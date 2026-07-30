@@ -73,3 +73,25 @@ export async function fetchPublicJson<T>(
     return null;
   }
 }
+
+/**
+ * Sitemap-only fetch: always aborts so `next build` cannot hang past the
+ * staticPageGenerationTimeout (Vercel may invoke `next build` without
+ * PADEYA_SSG_ABORT_FETCH). Safe here — sitemap is a single metadata route.
+ */
+export async function fetchSitemapJson<T>(
+  path: string,
+  timeoutMs = 5_000,
+): Promise<T | null> {
+  try {
+    const url = `${publicApiRoot()}${path}`;
+    const res = await fetch(url, {
+      next: { revalidate: 300 },
+      signal: AbortSignal.timeout(timeoutMs),
+    }).catch(() => null);
+    if (!res?.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}

@@ -1,20 +1,9 @@
 import type { MetadataRoute } from "next";
 
-import { API_TIMEOUT_MS } from "@/lib/api-timeouts";
 import {
-  fetchBlogAuthorsServer,
-  fetchBlogCategoriesServer,
-  fetchBlogPostsServer,
-  fetchBlogTagsServer,
-} from "@/lib/blog-api";
-import {
-  fetchPublicJson,
+  fetchSitemapJson,
   isNextProductionBuild,
 } from "@/lib/cache/public-api";
-import {
-  fetchHelpArticlesServer,
-  fetchHelpCategoriesServer,
-} from "@/lib/knowledge-base/api";
 import { getCanonicalSiteOrigin } from "@/lib/seo/site";
 import {
   collectNonEmptyBlogHubSlugs,
@@ -36,10 +25,7 @@ import {
   SPONSORSHIP_MARKETPLACE_PATH,
 } from "@/lib/sponsor-marketplace-paths";
 
-const SITEMAP_FETCH = {
-  next: { revalidate: 300 },
-  timeoutMs: API_TIMEOUT_MS.public,
-} as const;
+const SITEMAP_FETCH_TIMEOUT_MS = 5_000;
 
 type PublicEvent = {
   slug: string;
@@ -74,19 +60,42 @@ type FanDirectoryList = {
 };
 type SponsorDirectoryCard = { slug: string; verified?: boolean };
 
+type BlogPostRow = {
+  slug: string;
+  status?: string;
+  updated_at?: string;
+  published_at?: string | null;
+  category?: { slug?: string } | null;
+  author?: { slug?: string } | null;
+  tags?: Array<{ slug?: string }> | null;
+};
+
+type BlogTaxonomyRow = { slug: string };
+
+type HelpArticleRow = {
+  slug: string;
+  status?: string;
+  updated_at?: string;
+  published_at?: string | null;
+};
+
+type HelpCategoryRow = { slug: string };
+
 /** Paginate public Fan directory (max 48/page) — public+directory-eligible only. */
 async function fetchAllDirectoryFans(): Promise<FanDirectoryCard[]> {
+  // Skip at build: paginated fan fetches are the main sitemap SSG timeout risk.
+  if (isNextProductionBuild()) return [];
+
   const out: FanDirectoryCard[] = [];
   const limit = 48;
-  // During `next build`, cap pages so SSG stays under staticPageGenerationTimeout.
-  const maxPages = isNextProductionBuild() ? 2 : 50;
+  const maxPages = 5;
   let page = 1;
   let total = Infinity;
 
   while (out.length < total && page <= maxPages) {
-    const data = await fetchPublicJson<FanDirectoryList>(
+    const data = await fetchSitemapJson<FanDirectoryList>(
       `/fans?page=${page}&limit=${limit}&sort=recently_active`,
-      SITEMAP_FETCH,
+      SITEMAP_FETCH_TIMEOUT_MS,
     );
     if (!data?.items?.length) break;
     out.push(...data.items);
@@ -202,16 +211,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     sponsors,
     memoryAlbums,
   ] = await Promise.all([
-    fetchPublicJson<PublicEvent[]>("/events", SITEMAP_FETCH),
-    fetchPublicJson<Category[]>("/events/categories", SITEMAP_FETCH),
-    fetchPublicJson<TaxonomyLocation[]>("/taxonomy/locations", SITEMAP_FETCH),
-    fetchBlogPostsServer({ limit: 100 }),
-    fetchBlogCategoriesServer(),
-    fetchBlogTagsServer(),
-    fetchBlogAuthorsServer(),
-    fetchHelpArticlesServer({ limit: 100 }),
-    fetchHelpCategoriesServer(),
-    fetchPublicJson<{
+    fetchSitemapJson<PublicEvent[]>("/events", SITEMAP_FETCH_TIMEOUT_MS),
+    fetchSitemapJson<Category[]>("/events/categories", SITEMAP_FETCH_TIMEOUT_MS),
+    fetchSitemapJson<TaxonomyLocation[]>(
+      "/taxonomy/locations",
+      SITEMAP_FETCH_TIMEOUT_MS,
+    ),
+    fetchSitemapJson<BlogPostRow[]>("/blog/posts?limit=100", SITEMAP_FETCH_TIMEOUT_MS),
+    fetchSitemapJson<BlogTaxonomyRow[]>("/blog/categories", SITEMAP_FETCH_TIMEOUT_MS),
+    fetchSitemapJson<BlogTaxonomyRow[]>("/blog/tags", SITEMAP_FETCH_TIMEOUT_MS),
+    fetchSitemapJson<BlogTaxonomyRow[]>("/blog/authors", SITEMAP_FETCH_TIMEOUT_MS),
+    fetchSitemapJson<HelpArticleRow[]>(
+      "/help/articles?limit=100",
+      SITEMAP_FETCH_TIMEOUT_MS,
+    ),
+    fetchSitemapJson<HelpCategoryRow[]>(
+      "/help/categories",
+      SITEMAP_FETCH_TIMEOUT_MS,
+    ),
+    fetchSitemapJson<{
       items?: Array<{
         slug: string;
         host_slug?: string | null;
@@ -222,16 +240,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         is_vault_exclusive?: boolean;
         updated_at?: string;
       }>;
-    }>("/merch?limit=100&sort=newest", SITEMAP_FETCH),
-    fetchPublicJson<DiscoverHost[]>("/legacy/discover/hosts", SITEMAP_FETCH),
-    fetchAllDirectoryFans(),
-    fetchPublicJson<SponsorDirectoryCard[]>(
-      "/sponsors/public/directory",
-      SITEMAP_FETCH,
+    }>("/merch?limit=100&sort=newest", SITEMAP_FETCH_TIMEOUT_MS),
+    fetchSitemapJson<DiscoverHost[]>(
+      "/legacy/discover/hosts",
+      SITEMAP_FETCH_TIMEOUT_MS,
     ),
-    fetchPublicJson<{
+    fetchAllDirectoryFans(),
+    fetchSitemapJson<SponsorDirectoryCard[]>(
+      "/sponsors/public/directory",
+      SITEMAP_FETCH_TIMEOUT_MS,
+    ),
+    fetchSitemapJson<{
       items?: Array<{ event_slug: string; memories_path?: string }>;
-    }>("/memories/albums?limit=48", SITEMAP_FETCH),
+    }>("/memories/albums?limit=48", SITEMAP_FETCH_TIMEOUT_MS),
   ]);
 
   for (const post of blogPosts) {
