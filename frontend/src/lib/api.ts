@@ -209,7 +209,8 @@ export async function apiRequest<T>(
       // Single refresh retry only — never auto-retry mutations on timeout.
       return apiRequest<T>(path, { ...options, skipRefresh: true });
     }
-    markSessionExpired(DEFAULT_SESSION_EXPIRED_MESSAGE);
+    // Definitive expiry is handled inside refreshTokens(). Transient refresh
+    // failures (network / backend reload) must not soft-logout the user.
   }
 
   if (!response.ok) {
@@ -283,7 +284,6 @@ export async function apiDownload(
     if (refreshed) {
       return apiDownload(path, { ...options, skipRefresh: true });
     }
-    markSessionExpired(DEFAULT_SESSION_EXPIRED_MESSAGE);
   }
 
   if (!response.ok) {
@@ -343,7 +343,6 @@ export async function apiUpload<T>(
     if (refreshed) {
       return apiUpload<T>(path, formData, { ...options, skipRefresh: true });
     }
-    markSessionExpired(DEFAULT_SESSION_EXPIRED_MESSAGE);
   }
 
   if (!response.ok) {
@@ -354,45 +353,78 @@ export async function apiUpload<T>(
 }
 
 /**
- * Single-flight refresh. Backend rotates refresh tokens; concurrent
- * `/auth/refresh` calls can revoke a just-issued token and clearTokens()
- * the good session — which surfaces as "Invalid or expired access token"
- * on host workspace loads.
+ * Single-flight refresh (HMR-safe via globalThis + cross-tab via Web Locks).
+ * Backend rotates refresh tokens; a losing concurrent refresh used to
+ * clearTokens() a just-issued session. Recover when storage already moved on.
  */
-let refreshInFlight: Promise<AuthTokens | null> | null = null;
+const REFRESH_LOCK_NAME = "padeya.auth.refresh";
+const REFRESH_INFLIGHT_KEY = "__padeyaRefreshInFlight";
 
-export async function refreshTokens(): Promise<AuthTokens | null> {
-  if (refreshInFlight) {
-    return refreshInFlight;
+type RefreshInFlightStore = {
+  [REFRESH_INFLIGHT_KEY]?: Promise<AuthTokens | null> | null;
+};
+
+function refreshInFlightStore(): RefreshInFlightStore {
+  return globalThis as RefreshInFlightStore;
+}
+
+function tokensFromStorage(): AuthTokens | null {
+  const access_token = getAccessToken();
+  const refresh_token = getRefreshToken();
+  if (!access_token || !refresh_token) return null;
+  return { access_token, refresh_token, token_type: "bearer" };
+}
+
+async function withRefreshLock<T>(fn: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator !== "undefined" ? navigator.locks : undefined;
+  if (locks?.request) {
+    return locks.request(REFRESH_LOCK_NAME, fn);
+  }
+  return fn();
+}
+
+async function refreshTokensUnlocked(): Promise<AuthTokens | null> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    return null;
   }
 
-  refreshInFlight = (async () => {
-    const refreshToken = getRefreshToken();
-    if (!refreshToken) {
-      return null;
-    }
-
-    try {
-      const tokens = await apiRequest<AuthTokens>("/auth/refresh", {
-        method: "POST",
-        body: { refresh_token: refreshToken },
-        auth: false,
-        skipRefresh: true,
-      });
-      setTokens(tokens);
-      return tokens;
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        markSessionExpired(DEFAULT_SESSION_EXPIRED_MESSAGE);
-        clearTokens();
+  try {
+    const tokens = await apiRequest<AuthTokens>("/auth/refresh", {
+      method: "POST",
+      body: { refresh_token: refreshToken },
+      auth: false,
+      skipRefresh: true,
+    });
+    setTokens(tokens);
+    return tokens;
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 401) {
+      // Another tab/flight already rotated and wrote a newer refresh token.
+      const current = getRefreshToken();
+      if (current && current !== refreshToken) {
+        return tokensFromStorage();
       }
-      return null;
+      markSessionExpired(DEFAULT_SESSION_EXPIRED_MESSAGE);
+      clearTokens();
     }
-  })().finally(() => {
-    refreshInFlight = null;
-  });
+    return null;
+  }
+}
 
-  return refreshInFlight;
+export async function refreshTokens(): Promise<AuthTokens | null> {
+  const store = refreshInFlightStore();
+  if (store[REFRESH_INFLIGHT_KEY]) {
+    return store[REFRESH_INFLIGHT_KEY]!;
+  }
+
+  store[REFRESH_INFLIGHT_KEY] = withRefreshLock(refreshTokensUnlocked).finally(
+    () => {
+      store[REFRESH_INFLIGHT_KEY] = null;
+    },
+  );
+
+  return store[REFRESH_INFLIGHT_KEY]!;
 }
 
 /** Proactively refresh when access JWT is missing or near expiry. */

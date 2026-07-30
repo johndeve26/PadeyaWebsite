@@ -64,6 +64,12 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
 async function loadUserAfterSessionReady(): Promise<User | null> {
   if (!hasStoredSession()) {
     return null;
@@ -94,24 +100,38 @@ async function loadUserAfterSessionReady(): Promise<User | null> {
     return null;
   }
 
-  const sessionOk = await ensureAccessTokenFresh();
-  if (!sessionOk) {
-    return null;
-  }
-
-  try {
-    return await fetchMe();
-  } catch {
-    const tokens = await refreshTokens();
-    if (!tokens) {
+  // One quick retry covers HMR / uvicorn --reload blips around access expiry.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const sessionOk = await ensureAccessTokenFresh();
+    if (!sessionOk) {
+      if (attempt === 0 && getRefreshToken()) {
+        await wait(750);
+        continue;
+      }
+      // Keep tokens on transient refresh failure so a later reload can recover.
       return null;
     }
+
     try {
       return await fetchMe();
     } catch {
+      const tokens = await refreshTokens();
+      if (tokens) {
+        try {
+          return await fetchMe();
+        } catch {
+          /* fall through to retry / fail */
+        }
+      }
+      if (attempt === 0 && getRefreshToken()) {
+        await wait(750);
+        continue;
+      }
       return null;
     }
   }
+
+  return null;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

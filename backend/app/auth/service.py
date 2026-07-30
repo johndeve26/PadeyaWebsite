@@ -32,6 +32,36 @@ from app.users.service import (
 
 settings = get_settings()
 
+# Concurrent /auth/refresh callers (multi-tab, HMR) can race rotation. A brief
+# reuse window issues a fresh pair instead of 401 so the losing client does not
+# wipe a still-valid session from localStorage.
+REFRESH_REUSE_GRACE = timedelta(seconds=30)
+
+
+def _aware(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=UTC)
+    return dt
+
+
+def _require_refreshable_user(db: Session, user_id: UUID) -> User:
+    user = get_user_by_id(db, user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive",
+        )
+    if not user.is_active:
+        from app.users.account_status_service import effective_account_status
+        from app.users.account_status_constants import ACCOUNT_STATUS_SUSPENDED
+
+        if effective_account_status(user) != ACCOUNT_STATUS_SUSPENDED:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found or inactive",
+            )
+    return user
+
 
 def register_user(
     db: Session,
@@ -306,36 +336,64 @@ def refresh_access_token(
     token_row = db.scalar(
         select(RefreshToken).where(RefreshToken.token_hash == hash_token(refresh_token))
     )
-    if token_row is None or token_row.revoked_at is not None:
+    if token_row is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
         )
 
-    expires_at = token_row.expires_at
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=UTC)
+    if token_row.revoked_at is not None:
+        revoked_at = _aware(token_row.revoked_at)
+        if datetime.now(UTC) - revoked_at > REFRESH_REUSE_GRACE:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token",
+            )
+        # Reuse is only forgiven when rotation already minted a replacement.
+        # Logout / credential resets revoke without issuing a sibling → still 401.
+        sibling = db.scalar(
+            select(RefreshToken)
+            .where(
+                RefreshToken.user_id == token_row.user_id,
+                RefreshToken.revoked_at.is_(None),
+                RefreshToken.id != token_row.id,
+                RefreshToken.created_at >= revoked_at - timedelta(seconds=2),
+            )
+            .limit(1)
+        )
+        if sibling is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token",
+            )
+        user = _require_refreshable_user(db, token_row.user_id)
+        write_audit_log(
+            db,
+            action="auth.refresh",
+            actor_user_id=user.id,
+            resource_type="user",
+            resource_id=str(user.id),
+            ip_address=ip_address,
+            user_agent=user_agent,
+            details={"reuse_grace": True},
+        )
+        tokens = issue_token_pair(
+            db,
+            user=user,
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+        db.commit()
+        return tokens
+
+    expires_at = _aware(token_row.expires_at)
     if expires_at < datetime.now(UTC):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token expired",
         )
 
-    user = get_user_by_id(db, token_row.user_id)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found or inactive",
-        )
-    if not user.is_active:
-        from app.users.account_status_service import effective_account_status
-        from app.users.account_status_constants import ACCOUNT_STATUS_SUSPENDED
-
-        if effective_account_status(user) != ACCOUNT_STATUS_SUSPENDED:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found or inactive",
-            )
+    user = _require_refreshable_user(db, token_row.user_id)
 
     # Rotate refresh token; new refresh token gets a full refresh_token_expire_days window.
     token_row.revoked_at = datetime.now(UTC)

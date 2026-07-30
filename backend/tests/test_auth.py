@@ -282,7 +282,40 @@ def test_refresh_token(client: TestClient):
     assert body["access_token"]
     assert body["refresh_token"] != registered["refresh_token"]
 
-    # Old refresh token is revoked after rotation
+    # Concurrent refresh race: recently rotated tokens get a brief reuse grace.
+    replay = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": registered["refresh_token"]},
+    )
+    assert replay.status_code == 200
+    assert replay.json()["refresh_token"] != body["refresh_token"]
+
+
+def test_refresh_token_reuse_after_grace_rejected(
+    client: TestClient, db_session: Session
+):
+    from datetime import UTC, datetime, timedelta
+
+    from app.auth.models import RefreshToken
+
+    registered = _register(client, email="refresh-grace@example.com").json()
+    first = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": registered["refresh_token"]},
+    )
+    assert first.status_code == 200
+
+    # Age the revoked row past the reuse window.
+    row = (
+        db_session.query(RefreshToken)
+        .filter(RefreshToken.revoked_at.is_not(None))
+        .order_by(RefreshToken.revoked_at.desc())
+        .first()
+    )
+    assert row is not None
+    row.revoked_at = datetime.now(UTC) - timedelta(seconds=31)
+    db_session.commit()
+
     replay = client.post(
         "/api/v1/auth/refresh",
         json={"refresh_token": registered["refresh_token"]},
