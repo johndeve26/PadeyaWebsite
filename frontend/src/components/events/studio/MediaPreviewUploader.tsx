@@ -256,7 +256,7 @@ export function MediaPreviewUploader({
 
       <StudioFieldGroup
         title="Hero banner"
-        description="Main listing hero — wide landscape (~21:9). JPEG, PNG, WebP, GIF, or SVG — max 5MB."
+        description="Main listing hero — wide landscape (~21:9). JPEG, PNG, WebP, or GIF — max 5MB."
       >
         <ImageUploadField
           label="Banner image"

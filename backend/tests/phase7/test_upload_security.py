@@ -132,10 +132,48 @@ def test_validate_public_raster_uses_sniff_not_filename() -> None:
         png, declared_content_type="image/png"
     )
     assert validated.content_type == "image/png"
-    with pytest.raises(PublicImageValidationError):
+    # Client Content-Type often follows the filename (JPEG saved as .png).
+    # Magic bytes are authoritative — accept and store as sniffed type.
+    mismatched = validate_public_raster_upload(
+        png, declared_content_type="image/jpeg"
+    )
+    assert mismatched.content_type == "image/png"
+    assert mismatched.extension == ".png"
+
+
+def test_validate_public_raster_accepts_jpeg_named_png() -> None:
+    jpeg = _raster_bytes("JPEG")
+    validated = validate_public_raster_upload(
+        jpeg, declared_content_type="image/png"
+    )
+    assert validated.content_type == "image/jpeg"
+    assert validated.extension == ".jpg"
+
+
+def test_validate_public_raster_rejects_declared_svg() -> None:
+    jpeg = _raster_bytes("JPEG")
+    with pytest.raises(PublicImageValidationError, match="SVG"):
         validate_public_raster_upload(
-            png, declared_content_type="image/jpeg"
+            jpeg, declared_content_type="image/svg+xml"
         )
+
+
+def test_jpeg_with_svg_like_bytes_still_accepted() -> None:
+    """Binary JPEG entropy must not trip active-content ASCII heuristics."""
+    img = Image.new("RGB", (64, 64), (10, 20, 30))
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=85)
+    data = bytearray(buf.getvalue())
+    # Inject SVG-like ASCII after the SOI marker into entropy payload.
+    marker = b"<svg xmlns='http://www.w3.org/2000/svg'>"
+    insert_at = min(200, len(data) - 1)
+    data[insert_at : insert_at + len(marker)] = marker
+    # Keep valid JPEG SOI so sniff still wins.
+    data[0:3] = b"\xff\xd8\xff"
+    validated = validate_public_raster_upload(
+        bytes(data), declared_content_type="image/jpeg"
+    )
+    assert validated.content_type == "image/jpeg"
 
 
 def test_memory_rejects_svg() -> None:

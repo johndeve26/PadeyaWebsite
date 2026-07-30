@@ -61,7 +61,12 @@ def _canonical_mime(mime: str) -> str:
 
 
 def looks_like_active_content(data: bytes) -> bool:
-    """Detect SVG/HTML/JS-style payloads regardless of declared MIME."""
+    """Detect SVG/HTML/JS-style payloads regardless of declared MIME.
+
+    Only meaningful for non-raster payloads. Known JPEG/PNG/WebP/GIF magic
+    must be checked first — binary raster entropy can false-match these
+    ASCII patterns.
+    """
     if not data:
         return False
     sample = data[:8192].lstrip()
@@ -118,34 +123,37 @@ def validate_public_raster_upload(
     *,
     declared_content_type: str | None = None,
 ) -> ValidatedPublicRasterImage:
-    """Validate bytes for public raster storage; return authoritative MIME + ext."""
+    """Validate bytes for public raster storage; return authoritative MIME + ext.
+
+    Magic-byte sniffing is authoritative. Client Content-Type / filename may
+    disagree (e.g. a JPEG saved as ``.png``) — we still accept when the bytes
+    are a valid raster. Declared ``image/svg+xml`` is always rejected.
+    """
     if not data:
         raise PublicImageValidationError("Empty file")
 
-    if looks_like_active_content(data):
+    declared = _normalize_mime(declared_content_type)
+    if declared == "image/svg+xml":
         raise PublicImageValidationError(
-            "SVG and other active content are not allowed for public image uploads"
+            "SVG is not allowed for public image uploads"
         )
 
     sniffed = sniff_public_raster_mime(data)
     if sniffed is None:
+        if looks_like_active_content(data):
+            raise PublicImageValidationError(
+                "SVG and other active content are not allowed for public image uploads"
+            )
         raise PublicImageValidationError(
             "Unrecognized or unsupported image. Use JPEG, PNG, WebP, or GIF."
         )
 
-    declared = _normalize_mime(declared_content_type)
-    if declared:
-        if declared == "image/svg+xml":
-            raise PublicImageValidationError(
-                "SVG is not allowed for public image uploads"
-            )
-        if declared not in PUBLIC_RASTER_IMAGE_MIME_TYPES:
-            raise PublicImageValidationError(
-                "Unsupported image type. Use JPEG, PNG, WebP, or GIF."
-            )
-        if _canonical_mime(declared) != sniffed:
-            raise PublicImageValidationError("File content does not match declared type")
+    if declared and declared not in PUBLIC_RASTER_IMAGE_MIME_TYPES:
+        raise PublicImageValidationError(
+            "Unsupported image type. Use JPEG, PNG, WebP, or GIF."
+        )
 
+    # Sniff wins over a wrong-but-raster declared type (JPEG bytes + image/png).
     _verify_raster_image(data, sniffed)
     return ValidatedPublicRasterImage(
         content_type=sniffed,
