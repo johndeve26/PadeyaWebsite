@@ -19,6 +19,8 @@ export function DiscoveryHubHero({
   backgroundAlt = "",
   backgroundFocalX = 0.5,
   backgroundFocalY = 0.5,
+  /** Soft green aurora — keep off when a real taxonomy photo is the hero. */
+  atmosphere,
 }: {
   title: string;
   description: string;
@@ -35,7 +37,13 @@ export function DiscoveryHubHero({
   backgroundAlt?: string;
   backgroundFocalX?: number;
   backgroundFocalY?: number;
+  atmosphere?: boolean;
 }) {
+  const isRemotePhoto =
+    Boolean(backgroundSrc?.startsWith("http")) ||
+    Boolean(backgroundSrc?.startsWith("/media/"));
+  const useAtmosphere = atmosphere ?? !isRemotePhoto;
+
   return (
     <HeroSection
       minHeight={search ? "default" : "compact"}
@@ -44,7 +52,7 @@ export function DiscoveryHubHero({
       backgroundFocalX={backgroundFocalX}
       backgroundFocalY={backgroundFocalY}
       className={cn("border-b border-paper/10", className)}
-      atmosphere
+      atmosphere={useAtmosphere}
     >
       <Logo
         variant="dark"

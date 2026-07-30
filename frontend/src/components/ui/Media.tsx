@@ -85,6 +85,10 @@ export function Media({
         sizes={resolvedSizes}
         priority={priority}
         loading={priority ? undefined : eager ? "eager" : "lazy"}
+        // Avoid blank cards when CDN Content-Type is wrong (octet-stream).
+        unoptimized={
+          resolved.startsWith("http") || resolved.startsWith("/media/")
+        }
       />
     );
   }
@@ -99,6 +103,9 @@ export function Media({
       sizes={resolvedSizes}
       priority={priority}
       loading={priority ? undefined : eager ? "eager" : "lazy"}
+      unoptimized={
+        resolved.startsWith("http") || resolved.startsWith("/media/")
+      }
     />
   );
 }

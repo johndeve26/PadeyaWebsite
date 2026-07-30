@@ -1,5 +1,6 @@
 import { CategoryLandingClient } from "@/components/discovery/CategoryLandingClient";
 import { fetchPublicEventsServer } from "@/lib/events/public-server";
+import { taxonomyHeroAlt, taxonomyHeroFocal } from "@/lib/discovery/browse-images";
 import { buildCityCategoryTrail } from "@/lib/marketplace-breadcrumbs";
 import {
   evaluateCityCategoryHubEligibility,
@@ -73,6 +74,7 @@ export default async function CityCategoryHubPage({ params }: Props) {
     }).description;
   const path = `/events/city/${citySlug}/${categorySlug}`;
   const crumbs = buildCityCategoryTrail(city, citySlug, cat, categorySlug);
+  const heroFocal = taxonomyHeroFocal(term);
 
   return (
     <>
@@ -89,6 +91,11 @@ export default async function CityCategoryHubPage({ params }: Props) {
         crumbs={crumbs}
         citySlug={citySlug}
         cityName={city}
+        primaryImageUrl={term?.primary_image_url ?? term?.image_url ?? null}
+        heroImageUrl={term?.hero_image_url ?? null}
+        imageAlt={taxonomyHeroAlt(term, cat)}
+        focalX={heroFocal.focalX}
+        focalY={heroFocal.focalY}
       />
     </>
   );

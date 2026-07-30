@@ -1,9 +1,9 @@
 import Image from "next/image";
 import { type ReactNode } from "react";
 
-import { cn } from "@/lib/cn";
-
 import { headerDarkSurfaceProps } from "@/components/layout/headerSurface";
+import { cn } from "@/lib/cn";
+import { isSvgMediaSrc } from "@/lib/media-image";
 
 import { Container } from "./Container";
 
@@ -39,6 +39,14 @@ export function HeroSection({
         ? "min-h-[42vh]"
         : "min-h-[min(68vh,720px)]";
 
+  // SVG + CDN/media uploads: skip the optimizer so bad CDN Content-Types
+  // cannot blank the hero (which left only the green aurora visible).
+  const skipOptimize =
+    Boolean(backgroundSrc) &&
+    (isSvgMediaSrc(backgroundSrc!) ||
+      backgroundSrc!.startsWith("http") ||
+      backgroundSrc!.startsWith("/media/"));
+
   return (
     <section
       {...headerDarkSurfaceProps}
@@ -57,6 +65,7 @@ export function HeroSection({
             preload
             fetchPriority="high"
             sizes="100vw"
+            unoptimized={skipOptimize}
             className={cn(
               "object-cover padeya-hero-media",
               atmosphere && "padeya-discovery-parallax",

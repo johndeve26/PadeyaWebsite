@@ -36,7 +36,8 @@ export type TaxonomyTermSeo = {
 async function safeJson<T>(path: string): Promise<T | null> {
   try {
     const res = await fetch(`${API_URL}${API_PREFIX}${path}`, {
-      next: { revalidate: 120 },
+      // Bust via revalidateTag("taxonomy") after admin visual updates.
+      next: { revalidate: 60, tags: ["taxonomy"] },
     });
     if (!res.ok) return null;
     return (await res.json()) as T;
