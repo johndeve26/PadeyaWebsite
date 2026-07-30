@@ -59,7 +59,14 @@ class PrivateMediaStorage:
     def exists(self, key: str) -> bool:
         raise NotImplementedError
 
-    def presign_get(self, key: str, *, expires_in: int = DEFAULT_PRESIGN_TTL_SECONDS) -> str:
+    def presign_get(
+        self,
+        key: str,
+        *,
+        expires_in: int = DEFAULT_PRESIGN_TTL_SECONDS,
+        response_content_type: str | None = None,
+        response_content_disposition: str | None = None,
+    ) -> str:
         """Return a short-lived download URL. Must not be persisted."""
         raise NotImplementedError
 
@@ -133,7 +140,15 @@ class LocalPrivateMediaStorage(PrivateMediaStorage):
         except FileNotFoundError:
             return False
 
-    def presign_get(self, key: str, *, expires_in: int = DEFAULT_PRESIGN_TTL_SECONDS) -> str:
+    def presign_get(
+        self,
+        key: str,
+        *,
+        expires_in: int = DEFAULT_PRESIGN_TTL_SECONDS,
+        response_content_type: str | None = None,
+        response_content_disposition: str | None = None,
+    ) -> str:
+        _ = (key, expires_in, response_content_type, response_content_disposition)
         raise MediaStorageError(
             "Local private storage does not support presigned URLs; stream via the API."
         )
@@ -215,8 +230,20 @@ class R2PrivateMediaStorage(PrivateMediaStorage):
     def exists(self, key: str) -> bool:
         return self._r2.head_object(key)
 
-    def presign_get(self, key: str, *, expires_in: int = DEFAULT_PRESIGN_TTL_SECONDS) -> str:
-        return self._r2.presign_get(key, expires_in=expires_in)
+    def presign_get(
+        self,
+        key: str,
+        *,
+        expires_in: int = DEFAULT_PRESIGN_TTL_SECONDS,
+        response_content_type: str | None = None,
+        response_content_disposition: str | None = None,
+    ) -> str:
+        return self._r2.presign_get(
+            key,
+            expires_in=expires_in,
+            response_content_type=response_content_type,
+            response_content_disposition=response_content_disposition,
+        )
 
     def supports_presign(self) -> bool:
         return True

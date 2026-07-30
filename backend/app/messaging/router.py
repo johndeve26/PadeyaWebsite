@@ -108,8 +108,16 @@ def download_attachment(
 
     storage = get_attachment_storage()
     # After authorization only: optional short-lived R2 redirect (never persisted).
+    # Override response headers so images preview in-tab (object metadata alone may force download).
     if row.storage_key and storage.supports_presign():
-        signed = storage.presign_get(row.storage_key, expires_in=900)
+        filename = row.original_filename or row.safe_filename or "attachment"
+        disposition = content_disposition_for(row.mime_type, filename)
+        signed = storage.presign_get(
+            row.storage_key,
+            expires_in=900,
+            response_content_type=row.mime_type or None,
+            response_content_disposition=disposition,
+        )
         if signed:
             return RedirectResponse(
                 url=signed,

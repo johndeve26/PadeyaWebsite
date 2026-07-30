@@ -137,6 +137,7 @@ def test_r2_upload_bucket_key_headers_and_public_url(monkeypatch):
     assert call["Bucket"] == "padeya-media"
     assert call["ContentType"] == "image/webp"
     assert call["CacheControl"] == IMMUTABLE_CACHE_CONTROL
+    assert call["ContentDisposition"] == "inline"
     assert call["Body"] == b"webp-bytes"
     key = call["Key"]
     assert key.startswith("memories/events/evt-1/")
@@ -146,6 +147,46 @@ def test_r2_upload_bucket_key_headers_and_public_url(monkeypatch):
     assert stored.key == key
     assert stored.url == f"https://media.padeya.com/{key}"
     assert "r2.cloudflarestorage.com" not in stored.url
+
+
+def test_r2_presign_get_can_override_response_headers(monkeypatch):
+    _set_r2_env(monkeypatch, complete=True)
+    client = MagicMock()
+    client.generate_presigned_url.return_value = "https://signed.example/get"
+    with patch("boto3.client", return_value=client):
+        from app.core.r2_client import R2BucketClient, public_r2_config
+
+        r2 = R2BucketClient(public_r2_config())
+        url = r2.presign_get(
+            "inbox/t/a.png",
+            expires_in=600,
+            response_content_type="image/png",
+            response_content_disposition='inline; filename="a.png"',
+        )
+
+    assert url == "https://signed.example/get"
+    params = client.generate_presigned_url.call_args.kwargs["Params"]
+    assert params["ResponseContentType"] == "image/png"
+    assert params["ResponseContentDisposition"].startswith("inline")
+
+
+def test_r2_rewrite_public_image_headers_sets_inline(monkeypatch):
+    _set_r2_env(monkeypatch, complete=True)
+    client = MagicMock()
+    with patch("boto3.client", return_value=client):
+        from app.core.r2_client import R2BucketClient, public_r2_config
+
+        r2 = R2BucketClient(public_r2_config())
+        ok = r2.rewrite_public_image_headers(
+            "taxonomy/categories/abc/primary/x.png"
+        )
+
+    assert ok is True
+    client.copy_object.assert_called_once()
+    call = client.copy_object.call_args.kwargs
+    assert call["ContentType"] == "image/png"
+    assert call["ContentDisposition"] == "inline"
+    assert call["MetadataDirective"] == "REPLACE"
 
 
 def test_r2_thumbnail_url_under_thumbs(monkeypatch):

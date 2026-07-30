@@ -75,11 +75,15 @@ def _migrate_public_row(
     from app.core.r2_client import R2BucketClient, public_r2_config
 
     client = R2BucketClient(public_r2_config())
-    ctype = "image/webp" if key.endswith(".webp") else "application/octet-stream"
-    if key.endswith(".png"):
+    ctype = "application/octet-stream"
+    if key.endswith(".webp"):
+        ctype = "image/webp"
+    elif key.endswith(".png"):
         ctype = "image/png"
     elif key.endswith(".jpg") or key.endswith(".jpeg"):
         ctype = "image/jpeg"
+    elif key.endswith(".gif"):
+        ctype = "image/gif"
     client.put_object(
         key=key,
         data=data,

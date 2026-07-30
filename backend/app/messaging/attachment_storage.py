@@ -57,7 +57,14 @@ class AttachmentStorage(ABC):
     def exists(self, key: str) -> bool:
         raise NotImplementedError
 
-    def presign_get(self, key: str, *, expires_in: int = 900) -> str | None:
+    def presign_get(
+        self,
+        key: str,
+        *,
+        expires_in: int = 900,
+        response_content_type: str | None = None,
+        response_content_disposition: str | None = None,
+    ) -> str | None:
         """Optional short-lived URL after authorization. Never persist."""
         return None
 
@@ -165,11 +172,23 @@ class PrivateR2AttachmentStorage(AttachmentStorage):
     def supports_presign(self) -> bool:
         return get_private_media_storage().supports_presign()
 
-    def presign_get(self, key: str, *, expires_in: int = 900) -> str | None:
+    def presign_get(
+        self,
+        key: str,
+        *,
+        expires_in: int = 900,
+        response_content_type: str | None = None,
+        response_content_disposition: str | None = None,
+    ) -> str | None:
         private = get_private_media_storage()
         if not private.supports_presign():
             return None
-        return private.presign_get(key, expires_in=expires_in)
+        return private.presign_get(
+            key,
+            expires_in=expires_in,
+            response_content_type=response_content_type,
+            response_content_disposition=response_content_disposition,
+        )
 
 
 # Back-compat name used in docs/comments.

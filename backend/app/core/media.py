@@ -149,6 +149,10 @@ class MediaStorage:
     def exists(self, key: str) -> bool:
         raise NotImplementedError
 
+    def ensure_inline_headers(self, key: str) -> bool:
+        """Best-effort: ensure public image objects open inline in browsers."""
+        return False
+
 
 class LocalMediaStorage(MediaStorage):
     """Writes uploads under MEDIA_ROOT and exposes them via /media/..."""

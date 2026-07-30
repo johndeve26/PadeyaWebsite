@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.core.audit import write_audit_log
 from app.core.cache_invalidation import invalidate_taxonomy_caches
-from app.core.media import get_public_media_storage
+from app.core.media import get_public_media_storage, storage_key_from_url
 from app.core.media_folders import taxonomy_public_folder
 from app.taxonomy.image_constants import (
     PUBLIC_IMAGE_FIELD_NAMES,
@@ -32,6 +32,18 @@ def _focal_float(value: Any) -> float:
         return float(value if value is not None else 0.5)
     except (TypeError, ValueError):
         return 0.5
+
+
+def _ensure_inline_preview(url: str | None) -> None:
+    """Repair CDN Content-Type / Content-Disposition so image URLs preview in-tab."""
+    key = storage_key_from_url(url)
+    if not key:
+        return
+    try:
+        get_public_media_storage().ensure_inline_headers(key)
+    except Exception:
+        # Never block taxonomy saves on header repair.
+        return
 
 
 def public_image_payload(row: TaxonomyCategory | Location) -> dict[str, Any]:
@@ -131,6 +143,8 @@ def upload_taxonomy_media(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    _ensure_inline_preview(stored.url)
+
     if apply:
         alt_norm = normalize_alt(alt)
         if role == "hero":
@@ -224,4 +238,6 @@ def update_term_visuals(
     db.commit()
     db.refresh(row)
     invalidate_taxonomy_caches()
+    _ensure_inline_preview(getattr(row, "primary_image_url", None))
+    _ensure_inline_preview(getattr(row, "hero_image_url", None))
     return row

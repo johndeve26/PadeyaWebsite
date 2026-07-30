@@ -129,6 +129,10 @@ class R2MediaStorage(MediaStorage):
         )
         return StoredMedia(url=self._public_url(key), key=key)
 
+    def ensure_inline_headers(self, key: str) -> bool:
+        """Repair CDN headers so image URLs preview in a browser tab."""
+        return self._r2.rewrite_public_image_headers(key)
+
     def delete(self, key: str) -> None:
         self._r2.delete_object(key)
 

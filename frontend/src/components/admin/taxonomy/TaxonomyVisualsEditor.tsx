@@ -5,6 +5,7 @@ import { useId, useRef, useState } from "react";
 import { Alert, Button, Input, Media } from "@/components/ui";
 import { ApiError, apiRequest, apiUpload } from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { openPublicMediaInNewTab } from "@/lib/media-preview";
 
 export type TaxonomyImageKind = "category" | "city" | "state" | "area";
 
@@ -287,6 +288,17 @@ export function TaxonomyVisualsEditor({
             }
           >
             Remove {role}
+          </Button>
+        ) : null}
+        {activeUrl ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={busy}
+            onClick={() => openPublicMediaInNewTab(activeUrl)}
+          >
+            Open preview
           </Button>
         ) : null}
         <Button

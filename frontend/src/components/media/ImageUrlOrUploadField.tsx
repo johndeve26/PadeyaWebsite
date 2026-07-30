@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 
 import { Alert, Button, Input, Media, Textarea } from "@/components/ui";
 import { ApiError } from "@/lib/api";
+import { openPublicMediaInNewTab } from "@/lib/media-preview";
 import { splitImageUrlLines, uploadFormImage } from "@/lib/media-upload";
 
 const DEFAULT_ACCEPT =
@@ -161,6 +162,17 @@ export function ImageUrlOrUploadField({
                   onClick={() => onChange("")}
                 >
                   Clear
+                </Button>
+              ) : null}
+              {value.trim() ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={uploading}
+                  onClick={() => openPublicMediaInNewTab(value)}
+                >
+                  Open preview
                 </Button>
               ) : null}
             </div>

@@ -102,6 +102,26 @@ def make_object_key(*, folder: str, extension: str) -> str:
     return f"{safe_folder}/{uuid.uuid4()}{ext}"
 
 
+def guess_image_content_type(key: str) -> str | None:
+    """Map a storage key / path extension to an image MIME type."""
+    lower = (key or "").lower()
+    if lower.endswith((".jpg", ".jpeg")):
+        return "image/jpeg"
+    if lower.endswith(".png"):
+        return "image/png"
+    if lower.endswith(".webp"):
+        return "image/webp"
+    if lower.endswith(".gif"):
+        return "image/gif"
+    if lower.endswith(".svg"):
+        return "image/svg+xml"
+    return None
+
+
+# Back-compat alias used by older call sites / scripts.
+_guess_image_content_type = guess_image_content_type
+
+
 def build_r2_client(config: R2ClientConfig) -> Any:
     try:
         import boto3
@@ -146,16 +166,23 @@ class R2BucketClient:
         content_type: str,
         cache_control: str,
         metadata: dict[str, str] | None = None,
+        content_disposition: str | None = None,
     ) -> None:
         try:
-            self._client.put_object(
-                Bucket=self.config.bucket,
-                Key=key,
-                Body=data,
-                ContentType=content_type,
-                CacheControl=cache_control,
-                Metadata=metadata or {},
-            )
+            kwargs: dict[str, Any] = {
+                "Bucket": self.config.bucket,
+                "Key": key,
+                "Body": data,
+                "ContentType": content_type,
+                "CacheControl": cache_control,
+                "Metadata": metadata or {},
+            }
+            # Public images must open inline in the browser (preview), not download.
+            if content_disposition:
+                kwargs["ContentDisposition"] = content_disposition
+            elif content_type.startswith("image/"):
+                kwargs["ContentDisposition"] = "inline"
+            self._client.put_object(**kwargs)
             logger.info(
                 "media_storage provider=r2 kind=%s bucket=%s operation=upload "
                 "result=success key_prefix=%s",
@@ -208,6 +235,54 @@ class R2BucketClient:
         except Exception:
             return False
 
+    def rewrite_public_image_headers(
+        self,
+        key: str,
+        *,
+        content_type: str | None = None,
+        cache_control: str = IMMUTABLE_PUBLIC_CACHE_CONTROL,
+    ) -> bool:
+        """Replace object metadata so browsers preview images instead of downloading.
+
+        Used to repair older public objects that were stored without
+        ``Content-Disposition: inline`` or with a non-image Content-Type.
+        """
+        cleaned = (key or "").replace("\\", "/").lstrip("/")
+        if not cleaned or ".." in cleaned.split("/"):
+            return False
+        ctype = (content_type or guess_image_content_type(cleaned) or "").strip()
+        if not ctype.startswith("image/"):
+            return False
+        try:
+            self._client.copy_object(
+                Bucket=self.config.bucket,
+                Key=cleaned,
+                CopySource={"Bucket": self.config.bucket, "Key": cleaned},
+                MetadataDirective="REPLACE",
+                ContentType=ctype,
+                ContentDisposition="inline",
+                CacheControl=cache_control,
+                Metadata=PUBLIC_MEDIA_OBJECT_METADATA,
+            )
+            logger.info(
+                "media_storage provider=r2 kind=%s bucket=%s operation=rewrite_headers "
+                "result=success key_prefix=%s",
+                self.config.label,
+                self.config.bucket,
+                cleaned.rsplit("/", 1)[0] if "/" in cleaned else cleaned,
+            )
+            return True
+        except Exception as exc:
+            logger.error(
+                "media_storage provider=r2 kind=%s bucket=%s operation=rewrite_headers "
+                "result=failure key_prefix=%s error_type=%s",
+                self.config.label,
+                self.config.bucket,
+                cleaned.rsplit("/", 1)[0] if "/" in cleaned else cleaned,
+                type(exc).__name__,
+            )
+            return False
+
     def get_object_bytes(self, key: str) -> bytes:
         cleaned = (key or "").replace("\\", "/").lstrip("/")
         if not cleaned or ".." in cleaned.split("/"):
@@ -227,15 +302,30 @@ class R2BucketClient:
             )
             raise MediaStorageError("Failed to read media") from exc
 
-    def presign_get(self, key: str, *, expires_in: int = 900) -> str:
+    def presign_get(
+        self,
+        key: str,
+        *,
+        expires_in: int = 900,
+        response_content_type: str | None = None,
+        response_content_disposition: str | None = None,
+    ) -> str:
         cleaned = (key or "").replace("\\", "/").lstrip("/")
         if not cleaned or ".." in cleaned.split("/"):
             raise MediaStorageError("Invalid storage key")
         ttl = max(60, min(int(expires_in), 900))
         try:
+            params: dict[str, Any] = {
+                "Bucket": self.config.bucket,
+                "Key": cleaned,
+            }
+            if response_content_type:
+                params["ResponseContentType"] = response_content_type
+            if response_content_disposition:
+                params["ResponseContentDisposition"] = response_content_disposition
             url = self._client.generate_presigned_url(
                 "get_object",
-                Params={"Bucket": self.config.bucket, "Key": cleaned},
+                Params=params,
                 ExpiresIn=ttl,
             )
             # Never log the signed URL.

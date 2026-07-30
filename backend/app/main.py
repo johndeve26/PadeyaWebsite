@@ -133,11 +133,26 @@ MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 
 
 class SafeMediaStaticFiles(StaticFiles):
-    """Serve local public uploads with nosniff to reduce content-sniffing risk."""
+    """Serve local public uploads inline with authoritative image MIME + nosniff."""
+
+    _IMAGE_TYPES = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".webp": "image/webp",
+        ".gif": "image/gif",
+        ".svg": "image/svg+xml",
+    }
 
     async def get_response(self, path: str, scope) -> Response:  # type: ignore[override]
         response = await super().get_response(path, scope)
         response.headers["X-Content-Type-Options"] = "nosniff"
+        lower = (path or "").lower()
+        for ext, mime in self._IMAGE_TYPES.items():
+            if lower.endswith(ext):
+                response.headers["Content-Type"] = mime
+                response.headers["Content-Disposition"] = "inline"
+                break
         return response
 
 
