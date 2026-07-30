@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import { Media } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -21,6 +21,7 @@ type MemoryMasonryTileProps = {
   index: number;
   hostDisplayName?: string;
   onOpen: (index: number, trigger: HTMLButtonElement) => void;
+  onMeasure?: (id: string, aspectRatio: number) => void;
   priority?: boolean;
 };
 
@@ -31,16 +32,34 @@ export function MemoryMasonryTile({
   index,
   hostDisplayName,
   onOpen,
+  onMeasure,
   priority = false,
 }: MemoryMasonryTileProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const imageSrc = photo.thumbnail_url || photo.url;
+  const hasStoredSize = Boolean(photo.width && photo.height);
   const fallbackArt = isFallbackMemoryArt(imageSrc);
   const alt = memoryAltText(photo);
   const attribution = memoryAttributionLabel(photo);
   const badge = memorySourceBadge(source, hostDisplayName);
   const showCaption =
     !fallbackArt && photo.caption?.trim() && photo.caption.trim().length > 0;
+
+  useEffect(() => {
+    if (!onMeasure || hasStoredSize) return;
+    const img = frameRef.current?.querySelector("img");
+    if (!img) return;
+    const report = () => {
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        onMeasure(photo.id, img.naturalHeight / img.naturalWidth);
+      }
+    };
+    // Cached images can finish decoding before this effect runs.
+    if (img.complete) report();
+    img.addEventListener("load", report);
+    return () => img.removeEventListener("load", report);
+  }, [onMeasure, hasStoredSize, photo.id, imageSrc]);
 
   return (
     <li
@@ -62,13 +81,13 @@ export function MemoryMasonryTile({
         }}
         aria-label={alt}
       >
-        <div className="relative h-full w-full">
+        <div ref={frameRef} className="relative h-full w-full">
           <Media
             src={imageSrc}
             alt={fallbackArt ? "" : alt}
             fill
             className={cn(
-              "object-cover transition-transform duration-300 motion-reduce:transition-none",
+              "object-contain transition-transform duration-300 motion-reduce:transition-none",
               "group-hover:scale-[1.03] group-focus-visible:scale-[1.03]",
             )}
             sizes={memoryImageSizes()}

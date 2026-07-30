@@ -21,7 +21,7 @@ import {
   masonryColumnCount,
   masonryGap,
   masonryRowSpan,
-  memoryAspectRatio,
+  resolveMemoryAspect,
   type MemoryGallerySource,
 } from "@/lib/memories/gallery-utils";
 import type { MemoryMedia } from "@/lib/types/memories";
@@ -83,6 +83,9 @@ export function MemoryMasonryGrid({
   const [visibleCount, setVisibleCount] = useState(
     Math.min(initialBatch, photos.length),
   );
+  const [measuredAspects, setMeasuredAspects] = useState<
+    Record<string, number>
+  >({});
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [returnFocusEl, setReturnFocusEl] = useState<HTMLElement | null>(null);
@@ -98,12 +101,22 @@ export function MemoryMasonryGrid({
       visiblePhotos.map((photo) =>
         masonryRowSpan(
           layout.columnWidth,
-          memoryAspectRatio(photo.width, photo.height),
+          resolveMemoryAspect(
+            photo.width,
+            photo.height,
+            measuredAspects[photo.id],
+          ),
           layout.gap,
         ),
       ),
-    [visiblePhotos, layout],
+    [visiblePhotos, layout, measuredAspects],
   );
+
+  const handleMeasure = useCallback((id: string, aspectRatio: number) => {
+    setMeasuredAspects((prev) =>
+      prev[id] === aspectRatio ? prev : { ...prev, [id]: aspectRatio },
+    );
+  }, []);
 
   const measure = useCallback(() => {
     const el = containerRef.current;
@@ -125,6 +138,7 @@ export function MemoryMasonryGrid({
   useEffect(() => {
     setVisibleCount(Math.min(initialBatch, photos.length));
     impressedRef.current.clear();
+    setMeasuredAspects({});
   }, [photos, initialBatch]);
 
   useEffect(() => {
@@ -233,6 +247,7 @@ export function MemoryMasonryGrid({
             index={index}
             hostDisplayName={hostDisplayName}
             onOpen={openLightbox}
+            onMeasure={handleMeasure}
             priority={index < 4}
           />
         ))}

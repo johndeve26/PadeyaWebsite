@@ -13,6 +13,7 @@ import {
   memoryAttributionLabel,
   memoryAspectRatio,
   memorySourceBadge,
+  resolveMemoryAspect,
 } from "@/lib/memories/gallery-utils";
 import type { MemoryMedia } from "@/lib/types/memories";
 
@@ -43,6 +44,20 @@ describe("memoryAspectRatio", () => {
   it("falls back when dimensions missing", () => {
     expect(memoryAspectRatio(null, null)).toBe(MASONRY_DEFAULT_ASPECT);
     expect(memoryAspectRatio(0, 100)).toBe(MASONRY_DEFAULT_ASPECT);
+  });
+});
+
+describe("resolveMemoryAspect", () => {
+  it("prefers stored dimensions over measured", () => {
+    expect(resolveMemoryAspect(1600, 900, 1.5)).toBe(0.5625);
+  });
+
+  it("uses measured ratio when dimensions are missing", () => {
+    expect(resolveMemoryAspect(null, null, 630 / 1200)).toBeCloseTo(0.525, 3);
+  });
+
+  it("falls back to the default when nothing is known", () => {
+    expect(resolveMemoryAspect(null, null)).toBe(MASONRY_DEFAULT_ASPECT);
   });
 });
 

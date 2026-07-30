@@ -23,6 +23,25 @@ export function memoryAspectRatio(
   return MASONRY_DEFAULT_ASPECT;
 }
 
+/**
+ * Older memory rows never recorded width/height, so the 4:3 default used to
+ * shape their cell and crop wide artwork. Fall back to the decoded size the
+ * browser reports for those.
+ */
+export function resolveMemoryAspect(
+  width?: number | null,
+  height?: number | null,
+  measured?: number | null,
+): number {
+  if (width && height && width > 0 && height > 0) {
+    return memoryAspectRatio(width, height);
+  }
+  if (measured && measured > 0) {
+    return Math.min(MASONRY_MAX_ASPECT, Math.max(MASONRY_MIN_ASPECT, measured));
+  }
+  return MASONRY_DEFAULT_ASPECT;
+}
+
 /** Responsive column count — min card width ~180–220px. */
 export function masonryColumnCount(containerWidth: number): number {
   if (containerWidth < 320) return 1;

@@ -10,6 +10,9 @@ import {
 } from "@/lib/media-image";
 import { resolveMediaUrl } from "@/lib/media";
 
+const OBJECT_FIT_CLASS =
+  /(?:^|\s)object-(contain|cover|fill|none|scale-down)(?:\s|$)/;
+
 type MediaProps = {
   src: string;
   alt?: string;
@@ -54,7 +57,13 @@ export function Media({
 
   const resolvedSizes = resolveMediaSizes(sizes) ?? "100vw";
   const eager = priority || loading === "eager";
-  const imgClass = cn("h-full w-full object-cover", className);
+  // `cn` only joins, so emitting the default alongside a caller's `object-*`
+  // utility ties on specificity and Tailwind's later `object-cover` rule wins.
+  const imgClass = cn(
+    "h-full w-full",
+    !OBJECT_FIT_CLASS.test(className) && "object-cover",
+    className,
+  );
 
   if (isSvgMediaSrc(resolved) || !isOptimizableMediaSrc(resolved)) {
     return (
