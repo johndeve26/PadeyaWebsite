@@ -98,6 +98,31 @@ describe("admin nav Users visibility", () => {
   });
 });
 
+describe("admin nav Taxonomy visibility", () => {
+  it("shows Taxonomy for events.approve", () => {
+    const u = user({
+      roles: ["support_agent"],
+      permissions: ["events.approve"],
+    });
+    const platform = navGroupsForAdmin(u).find((g) => g.label === "Platform");
+    expect(platform?.items.some((i) => i.href === "/admin/taxonomy")).toBe(true);
+  });
+
+  it("hides Taxonomy without marketplace taxonomy permissions", () => {
+    const u = user({
+      roles: ["support_agent"],
+      permissions: ["admin.support.view"],
+    });
+    expect(
+      canSeeAdminNavItem(u, {
+        href: "/admin/taxonomy",
+        label: "Taxonomy",
+        permissions: ["events.approve", "admin.full_access"],
+      }),
+    ).toBe(false);
+  });
+});
+
 describe("admin nav Notification settings visibility", () => {
   it("shows Notification settings for manage_settings", () => {
     const u = user({

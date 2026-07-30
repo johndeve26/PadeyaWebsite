@@ -69,7 +69,7 @@ export function BlogWriteWorkspace({ onAiAssistant: _onAiAssistant }: Props) {
             onChange={(e) => studio.patch({ excerpt: e.target.value, dirty: true })}
             rows={3}
           />
-          <div className="min-w-[min(100%,30rem)]" data-testid="blog-editor-canvas">
+          <div className="min-w-0 w-full" data-testid="blog-editor-canvas">
             <StandardBlogEditor
               document={contentDoc}
               onChange={applyDocument}

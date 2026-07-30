@@ -129,22 +129,22 @@ export function BlogWorkspaceHeader({ activeTab, onTabChange, onAiAssistant, onP
 
   return (
     <header className="z-30 shrink-0 border-b border-border bg-card dark:bg-surface-elevated">
-      <div className="flex items-center gap-3 px-4 py-2 min-h-[3rem]">
-        <div className="flex items-center gap-2 min-w-0 shrink">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 md:min-h-[3rem]">
+        <div className="flex min-w-0 w-full items-center gap-2 md:w-auto md:flex-1 md:max-w-[min(100%,28rem)]">
           <Link
             href="/admin/blog"
-            className="shrink-0 text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+            className="flex shrink-0 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
             <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M10 12L6 8l4-4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Blog
+            <span>Blog</span>
           </Link>
-          <span className="text-muted-foreground/40 shrink-0">/</span>
+          <span className="shrink-0 text-muted-foreground/40">/</span>
           {editingTitle ? (
             <input
               ref={titleRef}
-              className="min-w-0 flex-1 truncate bg-transparent text-sm font-semibold text-foreground outline-none border-b border-primary"
+              className="min-w-0 flex-1 truncate border-b border-primary bg-transparent text-sm font-semibold text-foreground outline-none"
               value={studio.title}
               placeholder="Untitled post"
               onChange={(e) => studio.patch({ title: e.target.value, dirty: true })}
@@ -154,11 +154,11 @@ export function BlogWorkspaceHeader({ activeTab, onTabChange, onAiAssistant, onP
           ) : (
             <button
               type="button"
-              className="min-w-0 truncate text-sm font-semibold text-foreground hover:text-primary text-left"
+              className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-foreground hover:text-primary"
               onClick={() => setEditingTitle(true)}
               title="Click to edit title"
             >
-              {studio.title || <span className="text-muted-foreground italic">Untitled post</span>}
+              {studio.title || <span className="italic text-muted-foreground">Untitled post</span>}
             </button>
           )}
         </div>
@@ -172,27 +172,29 @@ export function BlogWorkspaceHeader({ activeTab, onTabChange, onAiAssistant, onP
           {TABS.map(renderTab)}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-2 ml-auto">
+        <div className="flex w-full shrink-0 items-center justify-end gap-1.5 sm:gap-2 md:w-auto">
           {autosaveEl}
-          <Button size="sm" variant="ghost" onClick={onAiAssistant}>
-            AI Assistant
+          <Button size="sm" variant="ghost" onClick={onAiAssistant} className="shrink-0 px-2 sm:px-3">
+            <span className="sm:hidden">AI</span>
+            <span className="hidden sm:inline">AI Assistant</span>
           </Button>
           <Link
             href={studio.postId && studio.slug ? `/blog/${studio.slug}` : "#"}
             target="_blank"
-            className="inline-flex items-center rounded-[var(--radius-md)] border border-border bg-surface px-3 py-1.5 text-sm font-medium hover:bg-surface-muted transition-colors"
+            className="hidden shrink-0 items-center rounded-[var(--radius-md)] border border-border bg-surface px-3 py-1.5 text-sm font-medium transition-colors hover:bg-surface-muted sm:inline-flex"
           >
             Preview
           </Link>
-          <Button size="sm" onClick={onPublish}>
-            Review &amp; Publish
+          <Button size="sm" onClick={onPublish} className="shrink-0">
+            <span className="sm:hidden">Publish</span>
+            <span className="hidden sm:inline">Review &amp; Publish</span>
           </Button>
         </div>
       </div>
 
       <div
         ref={mobileTabsRef}
-        className="flex md:hidden overflow-x-auto scrollbar-none gap-1 px-4 pb-1"
+        className="flex overflow-x-auto scrollbar-none gap-1 px-4 pb-1 md:hidden"
         role="tablist"
         aria-label="Workspace tabs"
       >

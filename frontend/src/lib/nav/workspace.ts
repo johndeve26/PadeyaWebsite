@@ -371,6 +371,11 @@ export const adminNav: NavItem[] = [
   }),
   adminNavItem("platform", { href: "/admin/hosts", label: "Hosts" }),
   adminNavItem("platform", { href: "/admin/events", label: "Events" }),
+  adminNavItem("platform", {
+    href: "/admin/taxonomy",
+    label: "Taxonomy",
+    permissions: ["events.approve", "admin.full_access"],
+  }),
   adminNavItem("platform", { href: "/admin/orders", label: "Orders" }),
   adminNavItem("platform", { href: "/admin/tickets", label: "Tickets" }),
   adminNavItem("platform", { href: "/admin/merchandise", label: "Merch" }),

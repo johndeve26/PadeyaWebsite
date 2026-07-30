@@ -93,14 +93,15 @@ export function StandardBlogEditor({
             } ${block.props._layoutBound ? "border-dashed border-border/60" : ""}`}
             onClick={() => onSelectBlock(block.id)}
           >
-            <div className="flex items-start gap-2 p-2">
-              <span
-                className="cursor-grab text-muted-foreground opacity-0 group-hover:opacity-100 select-none"
-                aria-hidden
-              >
-                ⠿
-              </span>
-              <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex flex-col gap-2 p-2 sm:flex-row sm:items-start">
+              <div className="flex min-w-0 flex-1 items-start gap-2">
+                <span
+                  className="hidden cursor-grab select-none text-muted-foreground opacity-0 group-hover:opacity-100 sm:inline"
+                  aria-hidden
+                >
+                  ⠿
+                </span>
+                <div className="min-w-0 w-full flex-1 space-y-2">
                 {block.type === "heading" ? (
                   <input
                     className="w-full bg-transparent font-display text-xl font-semibold outline-none"
@@ -118,7 +119,7 @@ export function StandardBlogEditor({
                 {isRich && block.type !== "heading" ? (
                   <Textarea
                     rows={6}
-                    className="font-mono text-sm"
+                    className="w-full font-mono text-sm"
                     value={String(block.content.markdown || "")}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -157,6 +158,7 @@ export function StandardBlogEditor({
                 {block.props._layoutBound ? (
                   <p className="text-xs text-muted-foreground">Layout section (switch to Layout Manager to rearrange columns)</p>
                 ) : null}
+                </div>
               </div>
               <BlogBlockToolbar
                 block={block}
