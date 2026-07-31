@@ -12,6 +12,7 @@ from app.auth.dependencies import require_permission
 from app.auth.service import build_user_public
 from app.core.database import get_db
 from app.users import account_status_service, admin_actions_service
+from app.users import lifecycle_service
 from app.users import restrictions_service
 from app.users.admin_activity_detail_service import (
     ACTIVITY_KINDS,
@@ -67,6 +68,7 @@ _RESTRICT_OR_SUSPEND = require_permission(
 )
 _FORCE_LOGOUT = require_permission("admin.users.force_logout")
 _FORCE_PASSWORD_RESET = require_permission("admin.users.force_password_reset")
+_FORCE_DELETE = require_permission("admin.users.force_delete")
 
 
 @router.get("", response_model=AdminUserListPublic)
@@ -362,6 +364,27 @@ def revoke_restriction(
             user_agent=ua,
         )
     )
+
+
+@router.post("/{user_id}/force-delete", response_model=UserPublic)
+def force_delete_user(
+    user_id: UUID,
+    payload: AdminSensitiveReasonBody,
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(_FORCE_DELETE)],
+) -> UserPublic:
+    """Soft EOL for suspended accounts (test cleanup, etc.). Row retained."""
+    ip, ua = client_request_meta(request)
+    target = lifecycle_service.force_delete_user(
+        db,
+        admin=admin,
+        user_id=user_id,
+        reason=payload.reason,
+        ip_address=ip,
+        user_agent=ua,
+    )
+    return UserPublic.model_validate(build_user_public(target, db=db))
 
 
 @router.post(

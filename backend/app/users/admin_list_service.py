@@ -5,6 +5,7 @@ from __future__ import annotations
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.users.account_status_constants import ACCOUNT_STATUS_DELETED
 from app.users.models import Role, User
 from app.users.service import user_role_names
 
@@ -71,6 +72,9 @@ def list_admin_users(
         filters.append(User.account_status == status_norm)
     elif status_norm == "inactive":
         filters.append(User.is_active.is_(False))
+    else:
+        # Default directory hides soft-deleted accounts; use status=deleted to list them.
+        filters.append(User.account_status != ACCOUNT_STATUS_DELETED)
 
     role_norm = (role or "").strip().lower()
     if role_norm:

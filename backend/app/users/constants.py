@@ -184,6 +184,10 @@ _GRANULAR_PERMISSIONS: list[tuple[str, str]] = [
     ("admin.users.suspend", "Suspend and unsuspend user accounts"),
     ("admin.users.ban", "Ban and unban user accounts"),
     (
+        "admin.users.force_delete",
+        "Force-delete (soft EOL) already-suspended user accounts",
+    ),
+    (
         "admin.appeals.review",
         "Review account suspension appeals (approve / reject)",
     ),
@@ -911,6 +915,7 @@ REQUIRED_PERMISSION_CODES: frozenset[str] = frozenset(
         "admin.users.revoke_restriction",
         "admin.users.suspend",
         "admin.users.ban",
+        "admin.users.force_delete",
         "admin.appeals.review",
         "admin.users.force_logout",
         "admin.users.force_password_reset",
@@ -985,6 +990,7 @@ ADMIN_TEAM_PERMISSION_GROUPS: list[tuple[str, list[str]]] = [
             "admin.users.restrict",
             "admin.users.suspend",
             "admin.users.ban",
+            "admin.users.force_delete",
             "admin.users.force_logout",
             "admin.users.force_password_reset",
             "admin.users.view_audit",
@@ -1130,6 +1136,7 @@ ADMIN_TEAM_HIGH_LEVEL_PERMISSIONS: frozenset[str] = frozenset(
         "admin.settings.edit_secrets",
         "payouts.mark_paid",
         "admin.users.ban",
+        "admin.users.force_delete",
     }
 )
 

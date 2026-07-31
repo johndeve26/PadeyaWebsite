@@ -142,6 +142,7 @@ Admin list/detail JSON is scrubbed (`app.users.admin_response_safety`):
 | `admin.users.suspend` | `super_admin` only | Full suspension / unsuspend (`account_status=suspended`); also reviews appeals |
 | `admin.appeals.review` | `super_admin`, `support_agent` | List / approve / reject suspension appeals |
 | `admin.users.ban` | `super_admin` only | Ban / restore from banned |
+| `admin.users.force_delete` | `super_admin` only | Soft-delete already-suspended accounts (`account_status=deleted`) |
 | `admin.users.force_logout` | `super_admin` only | Revoke all refresh sessions |
 | `admin.users.force_password_reset` | `super_admin` only | Force password-reset email |
 | `admin.users.view_audit` | via `view` (or explicit) | Per-user audit history |
@@ -164,6 +165,7 @@ Admin list/detail JSON is scrubbed (`app.users.admin_response_safety`):
 | **Suspend / unsuspend** | Product block: `account_status=suspended` + sessions revoked; user may still log in for `/account/suspended` + appeal only; notifies in-app / email / push (public category · duration · date only); prefer **Full suspension** preset for day-to-day | `admin_user_status_changed` · `admin_user_suspension_notified` · `admin_user_unsuspended` |
 | **Suspension appeal** | Suspended user submits message; admin `/admin/appeals` approve (unsuspend) or reject (optional user-facing reply) | `account_appeal_submitted` · `account_appeal_approved` · `account_appeal_rejected` |
 | **Ban** | Stronger permanent block (`account_status=banned`) | `admin_user_status_changed` |
+| **Force delete** | Soft EOL: `POST /admin/users/{id}/force-delete` sets `account_status=deleted` **only if already suspended**; reason required; row + commerce history retained; hidden from default admin directory (`status=deleted` to list). Permission: `admin.users.force_delete` (super_admin / `admin.full_access`) | `admin_user_status_changed` (`force_delete: true`) |
 | **Hard delete** | **Blocked** — `DELETE /users/admin/{id}` → `405` | — |
 
 ### Selective restrictions (primary moderation)

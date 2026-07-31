@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 import { AdminUserDetailSections } from "@/components/admin/AdminUserDetailSections";
 import { AdminUserRestrictionsPanel } from "@/components/admin/AdminUserRestrictionsPanel";
@@ -30,6 +30,7 @@ import {
   fetchAdminUser,
   fetchAdminUserRestrictions,
   forceAdminUserPasswordReset,
+  forceDeleteUser,
   markAdminUserUnderReview,
   resolveAdminUserFlag,
   revokeAdminUserRestriction,
@@ -65,6 +66,7 @@ import {
 
 export default function AdminUserDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const userId = String(params.userId ?? "");
   const toast = useToast();
   const { user: adminUser } = useAuth();
@@ -114,6 +116,7 @@ export default function AdminUserDetailPage() {
   const canRestrict = userHasPermission(adminUser, "admin.users.restrict");
   const canSuspend = userHasPermission(adminUser, "admin.users.suspend");
   const canBan = userHasPermission(adminUser, "admin.users.ban");
+  const canForceDelete = userHasPermission(adminUser, "admin.users.force_delete");
   const canForceLogout = userHasPermission(adminUser, "admin.users.force_logout");
   const canForcePasswordReset = userHasPermission(
     adminUser,
@@ -727,6 +730,43 @@ export default function AdminUserDetailPage() {
                         }}
                       />
                     ) : null}
+                    {canForceDelete && detail.account_status === "suspended" ? (
+                      <ConfirmAction
+                        label="Force delete"
+                        title="Force-delete this suspended account?"
+                        description="Soft end-of-life only — commerce history stays. The account leaves the default user directory. Must already be suspended."
+                        confirmLabel="Force delete"
+                        tone="danger"
+                        busy={busy}
+                        requireReason
+                        reasonLabel="Reason for force delete"
+                        onConfirm={(reason) => {
+                          if (!reason?.trim()) return;
+                          void (async () => {
+                            setBusy(true);
+                            try {
+                              await forceDeleteUser(userId, reason);
+                              toast.push({
+                                tone: "success",
+                                title: "User force-deleted",
+                              });
+                              router.push("/admin/users");
+                            } catch (err) {
+                              toast.push({
+                                tone: "danger",
+                                title: "Force delete failed",
+                                description:
+                                  err instanceof ApiError
+                                    ? err.detail
+                                    : "Try again",
+                              });
+                            } finally {
+                              setBusy(false);
+                            }
+                          })();
+                        }}
+                      />
+                    ) : null}
                     {canSuspend && detail.account_status === "banned" ? (
                       <ConfirmAction
                         label="Unban / restore"
@@ -751,7 +791,8 @@ export default function AdminUserDetailPage() {
                   !canForcePasswordReset &&
                   !canRestrict &&
                   !canSuspend &&
-                  !canBan ? (
+                  !canBan &&
+                  !canForceDelete ? (
                     <Alert tone="info" title="No security actions available">
                       Your role can view security details but cannot force
                       logout, reset password, or change account status.
@@ -762,7 +803,8 @@ export default function AdminUserDetailPage() {
                       {ACCOUNT_STATUS_LABELS[
                         detail.account_status as AccountStatus
                       ] || detail.account_status}
-                      . Suspend/Ban are emergency global blocks.
+                      . Suspend/Ban are emergency global blocks. Force delete
+                      requires suspension first (soft EOL).
                     </p>
                   )}
                 </div>

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -10,9 +11,18 @@ from sqlalchemy.orm import Session
 from app.core.audit import write_audit_log
 from app.users.account_status_constants import (
     ACCOUNT_STATUS_ACTIVE,
+    ACCOUNT_STATUS_DELETED,
     ACCOUNT_STATUS_SUSPENDED,
 )
-from app.users.account_status_service import change_account_status
+from app.users.account_status_service import (
+    change_account_status,
+    effective_account_status,
+    stored_restrictions,
+)
+from app.users.admin_user_audit import (
+    ADMIN_USER_STATUS_CHANGED,
+    write_admin_user_audit,
+)
 from app.users.admin_users_permissions import require_admin_users_perm
 from app.users.models import User
 from app.users.service import get_user_by_id
@@ -146,8 +156,114 @@ def restore_user(
 def delete_user_blocked() -> None:
     raise HTTPException(
         status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
-        detail="Hard delete blocked for users; use suspend",
+        detail="Hard delete blocked for users; suspend then POST .../force-delete",
     )
+
+
+def force_delete_user(
+    db: Session,
+    *,
+    admin: User,
+    user_id: uuid.UUID,
+    reason: str,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
+) -> User:
+    """Soft end-of-life: set ``account_status=deleted``.
+
+    Requires the target to already be ``suspended``. Row and commerce history
+    are retained; hard ``DELETE`` remains blocked.
+    """
+    require_admin_users_perm(admin, "admin.users.force_delete")
+    target = get_user_by_id(db, user_id)
+    if target is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    if target.id == admin.id:
+        raise HTTPException(
+            status_code=400, detail="Cannot force-delete your own account"
+        )
+
+    cleaned_reason = (reason or "").strip()
+    if len(cleaned_reason) < 3:
+        raise HTTPException(
+            status_code=400, detail="A reason is required for force delete"
+        )
+
+    current = effective_account_status(target)
+    if current == ACCOUNT_STATUS_DELETED:
+        raise HTTPException(status_code=400, detail="Account is already deleted")
+    if current != ACCOUNT_STATUS_SUSPENDED:
+        raise HTTPException(
+            status_code=400,
+            detail="User must be suspended before force delete",
+        )
+
+    before_restrictions = stored_restrictions(target)
+    before_json = {
+        "account_status": current,
+        "restrictions": before_restrictions,
+        "is_active": bool(target.is_active),
+    }
+
+    now = datetime.now(UTC)
+    target.is_active = False
+    if target.deactivated_at is None:
+        target.deactivated_at = now
+    target.under_review_at = None
+    target.under_review_reason = None
+    target.account_status = ACCOUNT_STATUS_DELETED
+
+    write_admin_user_audit(
+        db,
+        action=ADMIN_USER_STATUS_CHANGED,
+        admin_user_id=admin.id,
+        target_user_id=target.id,
+        reason=cleaned_reason,
+        before_json=before_json,
+        after_json={
+            "account_status": ACCOUNT_STATUS_DELETED,
+            "restrictions": before_restrictions,
+            "is_active": False,
+        },
+        extra={
+            "previous_status": current,
+            "new_status": ACCOUNT_STATUS_DELETED,
+            "force_delete": True,
+            "restriction_keys": before_restrictions,
+            "internal_note_present": False,
+        },
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+
+    from app.users.admin_actions_service import revoke_all_sessions
+
+    revoke_all_sessions(
+        db,
+        admin=admin,
+        user_id=user_id,
+        reason=cleaned_reason,
+        commit=False,
+        skip_permission_check=True,
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+
+    from app.appeals.models import (
+        SUSPENSION_STATUS_ACTIVE,
+        SUSPENSION_STATUS_LIFTED,
+    )
+    from app.appeals.service import get_active_suspension
+
+    prior = get_active_suspension(db, target.id)
+    if prior is not None and prior.status == SUSPENSION_STATUS_ACTIVE:
+        prior.status = SUSPENSION_STATUS_LIFTED
+        prior.lifted_at = now
+        prior.lifted_by_admin_id = admin.id
+
+    db.commit()
+    db.refresh(target)
+    return target
 
 
 def set_ambassadors_blocked(

@@ -40,6 +40,8 @@ ALLOWED_STATUS_TRANSITIONS: frozenset[tuple[str, str]] = frozenset(
         # Restore
         (ACCOUNT_STATUS_SUSPENDED, ACCOUNT_STATUS_ACTIVE),
         (ACCOUNT_STATUS_BANNED, ACCOUNT_STATUS_ACTIVE),
+        # Soft EOL — only via dedicated force-delete (not status toggle)
+        (ACCOUNT_STATUS_SUSPENDED, ACCOUNT_STATUS_DELETED),
     }
 )
 

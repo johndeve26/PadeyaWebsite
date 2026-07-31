@@ -25,6 +25,7 @@ import {
 import {
   deactivateUser,
   fetchAdminUsers,
+  forceDeleteUser,
   lookupAdminUserByEmail,
   restoreUser,
 } from "@/lib/admin-lifecycle-api";
@@ -42,6 +43,7 @@ const STATUS_OPTIONS = [
   { value: "suspended", label: "Suspended" },
   { value: "restricted", label: "Restricted" },
   { value: "banned", label: "Banned" },
+  { value: "deleted", label: "Deleted" },
   { value: "inactive", label: "Inactive (legacy)" },
 ];
 
@@ -59,11 +61,34 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function rowStatus(row: AdminUserRow): string {
+  return (row.account_status || "").toLowerCase();
+}
+
 function isSelectableForDeactivate(
   row: AdminUserRow,
   currentUserId: string | undefined,
 ): boolean {
   return row.is_active && row.id !== currentUserId;
+}
+
+function isSelectableForForceDelete(
+  row: AdminUserRow,
+  currentUserId: string | undefined,
+): boolean {
+  return rowStatus(row) === "suspended" && row.id !== currentUserId;
+}
+
+function isSelectable(
+  row: AdminUserRow,
+  currentUserId: string | undefined,
+  canSuspend: boolean,
+  canForceDelete: boolean,
+): boolean {
+  if (canSuspend && isSelectableForDeactivate(row, currentUserId)) return true;
+  if (canForceDelete && isSelectableForForceDelete(row, currentUserId))
+    return true;
+  return false;
 }
 
 export default function AdminUsersPage() {
@@ -72,6 +97,7 @@ export default function AdminUsersPage() {
   const { user } = useAuth();
   const canView = userHasPermission(user, "admin.users.view");
   const canSuspend = userHasPermission(user, "admin.users.suspend");
+  const canForceDelete = userHasPermission(user, "admin.users.force_delete");
   const currentUserId = user?.id;
 
   const [q, setQ] = useState("");
@@ -153,19 +179,31 @@ export default function AdminUsersPage() {
   );
 
   const selectableIds = useMemo(() => {
-    if (!rows || !canSuspend) return [];
+    if (!rows || (!canSuspend && !canForceDelete)) return [];
     return rows
-      .filter((row) => isSelectableForDeactivate(row, currentUserId))
+      .filter((row) =>
+        isSelectable(row, currentUserId, canSuspend, canForceDelete),
+      )
       .map((row) => row.id);
-  }, [rows, canSuspend, currentUserId]);
+  }, [rows, canSuspend, canForceDelete, currentUserId]);
 
   const selectedActiveCount = useMemo(() => {
-    if (!rows) return 0;
+    if (!rows || !canSuspend) return 0;
     return [...selectedIds].filter((id) => {
       const row = rows.find((r) => r.id === id);
       return row ? isSelectableForDeactivate(row, currentUserId) : false;
     }).length;
-  }, [selectedIds, rows, currentUserId]);
+  }, [selectedIds, rows, currentUserId, canSuspend]);
+
+  const selectedForceDeleteCount = useMemo(() => {
+    if (!rows || !canForceDelete) return 0;
+    return [...selectedIds].filter((id) => {
+      const row = rows.find((r) => r.id === id);
+      return row ? isSelectableForForceDelete(row, currentUserId) : false;
+    }).length;
+  }, [selectedIds, rows, currentUserId, canForceDelete]);
+
+  const selectedCount = selectedActiveCount + selectedForceDeleteCount;
 
   const allSelectableChecked =
     selectableIds.length > 0 &&
@@ -288,6 +326,78 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function onForceDelete(userId: string, reason?: string) {
+    setBusyId(userId);
+    try {
+      await forceDeleteUser(userId, reason?.trim() || "Force-deleted by admin");
+      toast.push({ tone: "success", title: "User force-deleted" });
+      setSelectedIds((prev) => {
+        if (!prev.has(userId)) return prev;
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
+      await load();
+    } catch (err) {
+      toast.push({
+        tone: "danger",
+        title: "Force delete failed",
+        description: err instanceof ApiError ? err.detail : "Try again",
+      });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function onBulkForceDelete(reason?: string) {
+    if (!rows || selectedForceDeleteCount === 0) return;
+    const targets = [...selectedIds].filter((id) => {
+      const row = rows.find((r) => r.id === id);
+      return row ? isSelectableForForceDelete(row, currentUserId) : false;
+    });
+    if (targets.length === 0) return;
+
+    const cleaned = reason?.trim() || "Bulk force-deleted by admin";
+    setBulkBusy(true);
+    let ok = 0;
+    let fail = 0;
+    let lastError: string | null = null;
+    try {
+      for (const userId of targets) {
+        try {
+          await forceDeleteUser(userId, cleaned);
+          ok += 1;
+        } catch (err) {
+          fail += 1;
+          lastError = err instanceof ApiError ? err.detail : "Try again";
+        }
+      }
+      setSelectedIds(new Set());
+      await load();
+      if (fail === 0) {
+        toast.push({
+          tone: "success",
+          title: `${ok} user${ok === 1 ? "" : "s"} force-deleted`,
+        });
+      } else if (ok === 0) {
+        toast.push({
+          tone: "danger",
+          title: "Bulk force delete failed",
+          description: lastError ?? "Try again",
+        });
+      } else {
+        toast.push({
+          tone: "danger",
+          title: `${ok} force-deleted, ${fail} failed`,
+          description:
+            lastError ?? "Only suspended accounts can be force-deleted",
+        });
+      }
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   async function onRestore(userId: string, reason?: string) {
     setBusyId(userId);
     try {
@@ -319,9 +429,11 @@ export default function AdminUsersPage() {
         </Alert>
       ) : (
         <>
-          <Alert tone="info" title="Hard delete blocked">
-            Users cannot be permanently deleted. Deactivation revokes access while
-            preserving orders, tickets, and ledger history.
+          <Alert tone="info" title="Soft delete only">
+            Hard row delete stays blocked so orders, tickets, and ledger history
+            remain. Suspend first, then force-delete to mark an account as soft
+            EOL (hidden from the default directory). Filter status{" "}
+            <code className="text-xs">Deleted</code> to review them.
           </Alert>
 
           <Card className="space-y-4">
@@ -419,7 +531,7 @@ export default function AdminUsersPage() {
 
           {rows && rows.length > 0 ? (
             <>
-              {canSuspend ? (
+              {canSuspend || canForceDelete ? (
                 <div className="flex flex-col gap-3 rounded-[var(--radius-lg)] border border-border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:bg-surface-elevated">
                   <div className="flex flex-wrap items-center gap-4">
                     <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm text-foreground">
@@ -437,24 +549,51 @@ export default function AdminUsersPage() {
                       <span>Select all on page</span>
                     </label>
                     <span className="text-sm text-muted-foreground">
-                      {selectedActiveCount > 0
-                        ? `${selectedActiveCount} selected`
-                        : "Select active users to deactivate"}
+                      {selectedCount > 0
+                        ? `${selectedCount} selected${
+                            selectedForceDeleteCount > 0
+                              ? ` (${selectedForceDeleteCount} suspended)`
+                              : ""
+                          }`
+                        : canForceDelete && canSuspend
+                          ? "Select active to deactivate, or suspended to force-delete"
+                          : canForceDelete
+                            ? "Select suspended users to force-delete"
+                            : "Select active users to deactivate"}
                     </span>
                   </div>
-                  <ConfirmAction
-                    label="Deactivate selected"
-                    title={`Deactivate ${selectedActiveCount} user${selectedActiveCount === 1 ? "" : "s"}?`}
-                    description="Revokes login and platform access for each selected active account. History stays in the database. Your own account is never included."
-                    confirmLabel="Deactivate selected"
-                    tone="danger"
-                    size="sm"
-                    disabled={selectedActiveCount === 0}
-                    busy={bulkBusy}
-                    requireReason
-                    reasonLabel="Reason for deactivation"
-                    onConfirm={(reason) => onBulkDeactivate(reason)}
-                  />
+                  <div className="flex flex-wrap gap-2">
+                    {canSuspend ? (
+                      <ConfirmAction
+                        label="Deactivate selected"
+                        title={`Deactivate ${selectedActiveCount} user${selectedActiveCount === 1 ? "" : "s"}?`}
+                        description="Revokes login and platform access for each selected active account. History stays in the database. Your own account is never included."
+                        confirmLabel="Deactivate selected"
+                        tone="danger"
+                        size="sm"
+                        disabled={selectedActiveCount === 0}
+                        busy={bulkBusy}
+                        requireReason
+                        reasonLabel="Reason for deactivation"
+                        onConfirm={(reason) => onBulkDeactivate(reason)}
+                      />
+                    ) : null}
+                    {canForceDelete ? (
+                      <ConfirmAction
+                        label="Force delete selected"
+                        title={`Force-delete ${selectedForceDeleteCount} suspended user${selectedForceDeleteCount === 1 ? "" : "s"}?`}
+                        description="Only already-suspended accounts are included. Soft EOL keeps commerce history; they leave the default user list."
+                        confirmLabel="Force delete selected"
+                        tone="danger"
+                        size="sm"
+                        disabled={selectedForceDeleteCount === 0}
+                        busy={bulkBusy}
+                        requireReason
+                        reasonLabel="Reason for force delete"
+                        onConfirm={(reason) => onBulkForceDelete(reason)}
+                      />
+                    ) : null}
+                  </div>
                 </div>
               ) : null}
               <DataTable
@@ -462,16 +601,18 @@ export default function AdminUsersPage() {
                 rowKey={(row) => row.id}
                 emptyTitle="No users"
                 columns={[
-                  ...(canSuspend
+                  ...(canSuspend || canForceDelete
                     ? [
                         {
                           key: "select",
                           header: "",
                           className: "w-10",
                           cell: (row: AdminUserRow) => {
-                            const selectable = isSelectableForDeactivate(
+                            const selectable = isSelectable(
                               row,
                               currentUserId,
+                              canSuspend,
+                              canForceDelete,
                             );
                             return (
                               <input
@@ -484,7 +625,7 @@ export default function AdminUsersPage() {
                                     ? `Select ${row.full_name}`
                                     : row.id === currentUserId
                                       ? "Cannot select your own account"
-                                      : "Inactive users cannot be selected"
+                                      : "Not eligible for bulk actions on this page"
                                 }
                                 className="h-4 w-4 accent-[color:var(--brand-green)] disabled:cursor-not-allowed disabled:opacity-40"
                               />
@@ -564,7 +705,7 @@ export default function AdminUsersPage() {
                               reasonLabel="Reason for deactivation"
                               onConfirm={(reason) => onDeactivate(row.id, reason)}
                             />
-                          ) : (
+                          ) : rowStatus(row) === "deleted" ? null : (
                             <ConfirmAction
                               label="Restore"
                               title="Restore this user?"
@@ -575,6 +716,21 @@ export default function AdminUsersPage() {
                               onConfirm={(reason) => onRestore(row.id, reason)}
                             />
                           )
+                        ) : null}
+                        {canForceDelete &&
+                        isSelectableForForceDelete(row, currentUserId) ? (
+                          <ConfirmAction
+                            label="Force delete"
+                            title="Force-delete this suspended user?"
+                            description="Soft end-of-life only. Orders, tickets, and ledger history stay. The account leaves the default user list."
+                            confirmLabel="Force delete"
+                            tone="danger"
+                            size="sm"
+                            busy={busyId === row.id || bulkBusy}
+                            requireReason
+                            reasonLabel="Reason for force delete"
+                            onConfirm={(reason) => onForceDelete(row.id, reason)}
+                          />
                         ) : null}
                       </div>
                     ),

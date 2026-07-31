@@ -94,6 +94,12 @@ def _apply_side_effects(target: User, *, new_status: str, reason: str) -> None:
         target.deactivated_at = now
         target.under_review_at = None
         target.under_review_reason = None
+    elif new_status == ACCOUNT_STATUS_DELETED:
+        target.is_active = False
+        if target.deactivated_at is None:
+            target.deactivated_at = now
+        target.under_review_at = None
+        target.under_review_reason = None
     target.account_status = new_status
 
 

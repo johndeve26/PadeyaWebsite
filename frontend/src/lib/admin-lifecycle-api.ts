@@ -318,6 +318,16 @@ export async function forceAdminUserPasswordReset(
   );
 }
 
+export async function forceDeleteUser(
+  userId: string,
+  reason: string,
+): Promise<UserPublic> {
+  return apiRequest<UserPublic>(`/admin/users/${userId}/force-delete`, {
+    method: "POST",
+    body: { reason: reason.trim() },
+  });
+}
+
 export async function changeAdminUserAccountStatus(
   userId: string,
   payload: {
