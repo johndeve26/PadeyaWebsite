@@ -1529,7 +1529,8 @@ def discard_event(db: Session, *, user: User, event_id: uuid.UUID) -> None:
     event = get_event_by_id(db, event_id)
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
-    host = assert_can_manage_event(db, user, event)
+    if not _is_event_admin(user):
+        assert_can_manage_event(db, user, event)
     if event.status not in {"draft", "rejected"}:
         raise HTTPException(
             status_code=400,

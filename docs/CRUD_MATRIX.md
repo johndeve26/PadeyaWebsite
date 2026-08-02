@@ -85,7 +85,7 @@ Do **not** use status to skip planning. Append-only modules (ledger, audit logs,
 
 | Resource | Model | Create | Read | Update | Delete / lifecycle | Hard delete? | Frontend | Backend (key) | Status | Primary gap |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Events | `events` | Host draft → submit **publishes** (+ soft flag) | Public/host/admin | PATCH (+ soft re-flag, optional `slug`); postpone dates (no re-flag) | pause/resume/postpone/cancel/complete; **auto-complete** when end passes; discard draft; admin **flag/clear-flag**/reject flagged | Draft/rejected only, no sales | **10-step Event Studio** (`/host/events/new`, `/edit?step=`), `/host/events` (Completed tab), admin review + `/admin/events/[id]/review` | `/events/*` lifecycle; `auto_complete_due_events`; `POST .../flag`, `.../clear-flag` | **complete** | No `pending_review`; flag does not unpublish |
+| Events | `events` | Host draft → submit **publishes** (+ soft flag) | Public/host/admin | PATCH (+ soft re-flag, optional `slug`); postpone dates (no re-flag) | pause/resume/postpone/cancel/complete; **auto-complete** when end passes; discard draft; admin **flag/clear-flag**/reject flagged; admin list bulk pause/cancel/archive | Draft/rejected only, no sales | **10-step Event Studio**; `/host/events`; `/admin/events` (select + Deactivate/Cancel/Archive/Delete draft) + review | `/events/*` lifecycle; `auto_complete_due_events`; `POST .../flag`, `.../clear-flag` | **complete** | No `pending_review`; flag does not unpublish; paid events never hard-deleted |
 | Event categories | `event_categories` | Seed + admin | `GET /events/categories` | Admin PATCH | Deactivate/restore | Soft `is_active` | Studio select | `/events/admin/categories*` | **complete** (API) | No admin FE |
 | Event venues | `event_venues` | Nested event write | Nested event | Nested upsert | Cascade w/ discard | Cascade | Studio privacy/location | Nested in EventCreate/Update | partial | No standalone venue API; flat fields duplicate |
 | Event media | `event_media` | Upload/URL | Nested + list | Gallery URL upsert; banner fields | `DELETE .../media/{id}` | Hard delete row | Studio media + ConfirmAction remove | `/events/.../media*` | **complete** | Gallery sync preserves matching URLs |
@@ -494,6 +494,7 @@ See [TAXONOMY_AND_CONTENT_GRAPH.md](./TAXONOMY_AND_CONTENT_GRAPH.md).
 
 | Date | Change |
 |---|---|
+| 2026-08-02 | Admin events list lifecycle: `/admin/events` checkbox + bulk/row Deactivate (pause), Cancel, Archive; Delete draft for unused draft/rejected; admin may discard unused drafts |
 | 2026-08-02 | Host workspace admin soft lifecycle: `POST /hosts/admin/{id}/suspend\|restore\|force-delete`; perms `hosts.suspend` / `hosts.force_delete`; owner user untouched; `/admin/hosts` checkbox + bulk deactivate/force-delete |
 | 2026-07-31 | User force-delete soft EOL: `POST /admin/users/{id}/force-delete` requires prior `suspended`; sets `account_status=deleted`; perm `admin.users.force_delete`; bulk select on `/admin/users` |
 | 2026-07-30 | Marketplace taxonomy visuals: admin upload/replace/remove primary + hero images for `category`, `city`, `state`, `area`; focal + alt; public cards/hubs; migration `20260730_0211`; perm `events.approve` / `admin.full_access` (not blog taxonomy) |
