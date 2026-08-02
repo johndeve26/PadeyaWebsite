@@ -142,7 +142,14 @@ export function HostEventListCard({
                   <h3 className="min-w-0 text-balance text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">
                     {event.title}
                   </h3>
-                  {showStudioActions ? (
+                  {showStudioActions && event.status === "completed" ? (
+                    <Link
+                      href={`/host/events/${event.id}/memory`}
+                      className="shrink-0 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[var(--shadow-soft)] transition-colors hover:bg-primary-hover"
+                    >
+                      Memories
+                    </Link>
+                  ) : showStudioActions ? (
                     <Link
                       href={`/host/events/${event.id}/edit`}
                       className="shrink-0 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[var(--shadow-soft)] transition-colors hover:bg-primary-hover"
@@ -198,6 +205,13 @@ export function HostEventListCard({
                 ) : null
               ) : (
                 <>
+                  {event.status === "completed" ? (
+                    <Link href={`/host/events/${event.id}/memory`}>
+                      <Button size="sm" className="w-full sm:w-auto">
+                        Memories
+                      </Button>
+                    </Link>
+                  ) : null}
                   <Button
                     type="button"
                     size="sm"
@@ -208,7 +222,11 @@ export function HostEventListCard({
                     View
                   </Button>
                   <Link href={`/host/events/${event.id}`}>
-                    <Button size="sm" variant="dark" className="w-full sm:w-auto">
+                    <Button
+                      size="sm"
+                      variant={event.status === "completed" ? "secondary" : "dark"}
+                      className="w-full sm:w-auto"
+                    >
                       {editable ? "Manage" : "Open"}
                     </Button>
                   </Link>
