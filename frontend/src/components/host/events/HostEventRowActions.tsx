@@ -99,7 +99,7 @@ function buildAllActions(
   if (!hideEdit && !actions.deskOnly && actions.canEdit) {
     links.push({
       id: "edit",
-      label: "Edit",
+      label: "Edit event",
       href: `/host/events/${id}/edit`,
       primary: true,
     });

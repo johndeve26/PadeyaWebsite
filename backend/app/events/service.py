@@ -1243,13 +1243,7 @@ def update_event(
     event = get_event_by_id(db, event_id)
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
-    host = assert_can_manage_event(db, user, event)
-
-    if event.status in {"completed", "cancelled", "archived"}:
-        raise HTTPException(
-            status_code=400,
-            detail="Completed/cancelled/archived events cannot be edited",
-        )
+    assert_can_manage_event(db, user, event)
 
     data = payload.model_dump(exclude_unset=True, exclude=NESTED_EXCLUDE)
     _normalize_refund_fields(data)
