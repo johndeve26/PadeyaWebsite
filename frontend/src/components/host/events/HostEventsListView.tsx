@@ -100,7 +100,8 @@ export function HostEventsListView({
                       actions={actions}
                       onView={onView}
                       compact
-                      hideEdit={canEdit}
+                      // Completed swaps the title Edit pill for Memories — keep Edit in Actions.
+                      hideEdit={canEdit && event.status !== "completed"}
                     />
                   </div>
                 </div>

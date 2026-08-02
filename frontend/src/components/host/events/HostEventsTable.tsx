@@ -174,7 +174,8 @@ export function HostEventsTable({
                     event={event}
                     actions={actions}
                     onView={onView}
-                    hideEdit={canEdit}
+                    // Completed swaps the title Edit pill for Memories — keep Edit in Actions.
+                    hideEdit={canEdit && event.status !== "completed"}
                   />
                 </td>
               </tr>

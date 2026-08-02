@@ -168,7 +168,7 @@ function primaryCandidateOrder(
   if (actions.scannerOnly) return ["view", "scanner"];
   if (actions.merchOnly) return ["pickup", "merch"];
   if (actions.deskOnly) return ["scanner", "pickup", "view"];
-  // After the night ends, Memories is the main host job.
+  // After the night ends, Memories + View stay inline; Edit lands in overflow.
   if (event.status === "completed") return ["memories", "view", "hub"];
   if (hideEdit) return ["scanner", "view", "tickets"];
   // Edit always first and always inline when available.

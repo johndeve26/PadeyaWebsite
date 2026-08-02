@@ -113,7 +113,7 @@ export default async function EventMemoriesPage({ params }: PageProps) {
               href={`/events/${memory.event_slug}`}
               className="text-sm font-semibold text-primary-text underline-offset-4 hover:underline"
             >
-              Event page
+              View Event Page
             </Link>
           </div>
 

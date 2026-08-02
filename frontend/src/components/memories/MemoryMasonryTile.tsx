@@ -9,10 +9,9 @@ import {
   memoryAltText,
   memoryAttributionLabel,
   memoryImageSizes,
-  memorySourceBadge,
-  type MemoryGallerySource,
 } from "@/lib/memories/gallery-utils";
 import type { MemoryMedia } from "@/lib/types/memories";
+import type { MemoryGallerySource } from "@/lib/memories/gallery-utils";
 
 type MemoryMasonryTileProps = {
   photo: MemoryMedia;
@@ -30,7 +29,7 @@ export function MemoryMasonryTile({
   source,
   rowSpan,
   index,
-  hostDisplayName,
+  hostDisplayName: _hostDisplayName,
   onOpen,
   onMeasure,
   priority = false,
@@ -42,7 +41,6 @@ export function MemoryMasonryTile({
   const fallbackArt = isFallbackMemoryArt(imageSrc);
   const alt = memoryAltText(photo);
   const attribution = memoryAttributionLabel(photo);
-  const badge = memorySourceBadge(source, hostDisplayName);
   const showCaption =
     !fallbackArt && photo.caption?.trim() && photo.caption.trim().length > 0;
 
@@ -97,17 +95,6 @@ export function MemoryMasonryTile({
             height={photo.height ?? undefined}
           />
         </div>
-
-        <span
-          className={cn(
-            "absolute left-2 top-2 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-            "bg-ink/70 text-paper backdrop-blur-sm",
-            "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100",
-            "transition-opacity duration-200 motion-reduce:transition-none",
-          )}
-        >
-          {badge}
-        </span>
 
         <span
           className={cn(
