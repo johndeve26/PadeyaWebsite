@@ -116,6 +116,15 @@ function buildAllActions(
       primary: Boolean(hideEdit) || actions.deskOnly,
     });
   }
+  // Post-night primary surface — hosts upload/recap from Memories.
+  if (!actions.deskOnly && !actions.scannerOnly && !actions.merchOnly) {
+    links.push({
+      id: "memories",
+      label: "Memories",
+      href: `/host/events/${id}/memory`,
+      primary: event.status === "completed",
+    });
+  }
   if (!actions.deskOnly && actions.canMerch) {
     links.push({
       id: "merch",
@@ -152,12 +161,15 @@ function buildAllActions(
 }
 
 function primaryCandidateOrder(
+  event: EventItem,
   actions: EventRowActions,
   hideEdit?: boolean,
 ): string[] {
   if (actions.scannerOnly) return ["view", "scanner"];
   if (actions.merchOnly) return ["pickup", "merch"];
   if (actions.deskOnly) return ["scanner", "pickup", "view"];
+  // After the night ends, Memories is the main host job.
+  if (event.status === "completed") return ["memories", "view", "hub"];
   if (hideEdit) return ["scanner", "view", "tickets"];
   // Edit always first and always inline when available.
   return ["edit", "scanner", "view"];
@@ -165,6 +177,7 @@ function primaryCandidateOrder(
 
 function splitActions(
   all: ActionLink[],
+  event: EventItem,
   actions: EventRowActions,
   hideEdit?: boolean,
 ): { primary: ActionLink[]; overflow: ActionLink[] } {
@@ -172,7 +185,7 @@ function splitActions(
     return { primary: all, overflow: [] };
   }
 
-  const order = primaryCandidateOrder(actions, hideEdit);
+  const order = primaryCandidateOrder(event, actions, hideEdit);
   const primaryIds: string[] = [];
   for (const id of order) {
     if (primaryIds.length >= 2) break;
@@ -225,7 +238,7 @@ export function HostEventRowActions({
 
   const { primary, overflow } = useMemo(() => {
     const all = buildAllActions(event, actions, onView, hideEdit);
-    return splitActions(all, actions, hideEdit);
+    return splitActions(all, event, actions, hideEdit);
   }, [event, actions, onView, hideEdit]);
 
   const menuItems = useMemo(

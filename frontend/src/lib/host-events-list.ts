@@ -334,7 +334,8 @@ export function emptyStateForTab(tab: EventListTab): {
     case "completed":
       return {
         title: "No completed events yet",
-        description: "Events move here when their end time passes.",
+        description:
+          "Events move here when their end time passes. Open Memories on a completed night to add photos and a host recap.",
       };
     case "cancelled":
       return {

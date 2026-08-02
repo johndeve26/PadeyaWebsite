@@ -89,7 +89,14 @@ export function HostEventsTable({
                         >
                           {event.title}
                         </Link>
-                        {canEdit ? (
+                        {canEdit && event.status === "completed" ? (
+                          <Link
+                            href={`/host/events/${event.id}/memory`}
+                            className="shrink-0 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[var(--shadow-soft)] transition-colors hover:bg-primary-hover"
+                          >
+                            Memories
+                          </Link>
+                        ) : canEdit ? (
                           <Link
                             href={`/host/events/${event.id}/edit`}
                             className="shrink-0 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[var(--shadow-soft)] transition-colors hover:bg-primary-hover"

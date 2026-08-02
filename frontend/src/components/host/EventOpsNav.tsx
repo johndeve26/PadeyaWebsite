@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { ScrollHintNav } from "@/components/ui/ScrollHintNav";
 import { cn } from "@/lib/cn";
+import type { EventStatus } from "@/lib/types/events";
 
 const HOST_LINKS: { suffix: string; label: string }[] = [
   { suffix: "", label: "Overview" },
@@ -25,19 +26,36 @@ const ADMIN_LINKS: { suffix: string; label: string }[] = [
   { suffix: "/analytics", label: "Analytics" },
 ];
 
+function hostLinksForStatus(status?: EventStatus) {
+  if (status !== "completed") return HOST_LINKS;
+  // After completion, Memories sits next to Overview as the main post-night surface.
+  const memories = HOST_LINKS.find((l) => l.suffix === "/memory");
+  if (!memories) return HOST_LINKS;
+  return [
+    HOST_LINKS[0],
+    memories,
+    ...HOST_LINKS.filter((l) => l.suffix !== "" && l.suffix !== "/memory"),
+  ];
+}
+
 export function EventOpsNav({
   eventId,
   base = "host",
+  eventStatus,
 }: {
   eventId: string;
   base?: "host" | "admin";
+  /** When completed, Memories is promoted near the front of the nav. */
+  eventStatus?: EventStatus;
 }) {
   const pathname = usePathname() || "";
   const root =
     base === "admin"
       ? `/admin/events/${eventId}`
       : `/host/events/${eventId}`;
-  const links = base === "admin" ? ADMIN_LINKS : HOST_LINKS;
+  const links =
+    base === "admin" ? ADMIN_LINKS : hostLinksForStatus(eventStatus);
+  const completed = eventStatus === "completed";
 
   return (
     <ScrollHintNav
@@ -50,6 +68,8 @@ export function EventOpsNav({
           link.suffix === ""
             ? pathname === root || pathname === `${root}/`
             : pathname.startsWith(href);
+        const emphasizeMemories =
+          completed && link.suffix === "/memory" && !active;
         if (active) {
           return (
             <span
@@ -66,8 +86,10 @@ export function EventOpsNav({
             key={link.suffix || "overview"}
             href={href}
             className={cn(
-              "shrink-0 rounded-full px-3 py-1.5 text-xs font-bold text-muted-foreground transition-colors",
-              "hover:bg-surface-muted hover:text-foreground",
+              "shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-colors",
+              emphasizeMemories
+                ? "bg-primary text-primary-foreground shadow-[var(--shadow-soft)] hover:bg-primary-hover"
+                : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
             )}
           >
             {link.label}

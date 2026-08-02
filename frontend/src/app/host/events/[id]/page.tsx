@@ -256,7 +256,7 @@ export default function HostEventDetailPage() {
           </div>
         }
       >
-        <EventOpsNav eventId={event.id} />
+        <EventOpsNav eventId={event.id} eventStatus={event.status} />
         {message ? (
           <Alert tone="success" title="Update saved">
             {message}
@@ -266,6 +266,35 @@ export default function HostEventDetailPage() {
           <Alert tone="danger" title="Something went wrong">
             {error}
           </Alert>
+        ) : null}
+
+        {event.status === "completed" ? (
+          <section className="rounded-[var(--radius-xl)] border border-primary/25 bg-primary/10 px-5 py-5 shadow-[var(--shadow-soft)] sm:px-7 sm:py-6">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">
+              After the night
+            </p>
+            <h2 className="mt-2 text-balance text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">
+              Add Event Memories
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+              Upload photos, write a host recap, and share the public album.
+              Memories are the main page fans see for this completed night.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link href={`/host/events/${event.id}/memory`}>
+                <Button>Open Memories</Button>
+              </Link>
+              {event.slug ? (
+                <Link
+                  href={`/events/${event.slug}/memories`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="secondary">View public album</Button>
+                </Link>
+              ) : null}
+            </div>
+          </section>
         ) : null}
 
         <article className="overflow-hidden rounded-[var(--radius-xl)] border border-border bg-ink text-paper shadow-[var(--shadow)]">
@@ -294,6 +323,13 @@ export default function HostEventDetailPage() {
               <p className="text-sm text-subtle-foreground sm:text-base">
                 {formatDateTime(event.start_datetime)} · {where}
               </p>
+              {event.status === "completed" ? (
+                <div className="pt-1">
+                  <Link href={`/host/events/${event.id}/memory`}>
+                    <Button size="sm">Manage Memories</Button>
+                  </Link>
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -423,7 +459,9 @@ export default function HostEventDetailPage() {
             ) : null}
             {event.status === "completed" ? (
               <Link href={`/host/events/${event.id}/memory`}>
-                <Button size="sm">Event Memory</Button>
+                <Button size="sm" variant="secondary">
+                  Memories
+                </Button>
               </Link>
             ) : null}
             {["completed", "cancelled"].includes(event.status) ? (

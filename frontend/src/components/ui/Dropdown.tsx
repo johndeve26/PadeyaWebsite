@@ -1,6 +1,14 @@
 "use client";
 
-import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/cn";
 
@@ -12,6 +20,13 @@ export type DropdownItem = {
   onSelect: () => void;
   danger?: boolean;
   disabled?: boolean;
+};
+
+type MenuCoords = {
+  top: number;
+  left: number;
+  minWidth: number;
+  openUpward: boolean;
 };
 
 export function Dropdown({
@@ -29,43 +44,139 @@ export function Dropdown({
   menuPlacement?: "auto" | "top" | "bottom";
 }) {
   const [open, setOpen] = useState(false);
-  const [openUpward, setOpenUpward] = useState(false);
+  const [coords, setCoords] = useState<MenuCoords | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
 
   useLayoutEffect(() => {
-    if (!open || !root.current) return;
-    if (menuPlacement === "top") {
-      setOpenUpward(true);
+    if (!open || !root.current) {
+      setCoords(null);
       return;
     }
-    if (menuPlacement === "bottom") {
-      setOpenUpward(false);
-      return;
-    }
-    const trigger = root.current.getBoundingClientRect();
-    const menuHeight = menuRef.current?.offsetHeight ?? items.length * 44 + 8;
-    const spaceBelow = window.innerHeight - trigger.bottom;
-    const spaceAbove = trigger.top;
-    setOpenUpward(spaceBelow < menuHeight + 12 && spaceAbove > spaceBelow);
-  }, [open, items.length, menuPlacement]);
+
+    const place = () => {
+      const trigger = root.current?.getBoundingClientRect();
+      if (!trigger) return;
+
+      const menuHeight = menuRef.current?.offsetHeight ?? items.length * 44 + 8;
+      const menuWidth = Math.max(
+        menuRef.current?.offsetWidth ?? 190,
+        trigger.width,
+        190,
+      );
+      const gap = 8;
+      const spaceBelow = window.innerHeight - trigger.bottom;
+      const spaceAbove = trigger.top;
+
+      let openUpward = false;
+      if (menuPlacement === "top") openUpward = true;
+      else if (menuPlacement === "bottom") openUpward = false;
+      else {
+        openUpward = spaceBelow < menuHeight + gap && spaceAbove > spaceBelow;
+      }
+
+      const top = openUpward
+        ? Math.max(8, trigger.top - gap - menuHeight)
+        : Math.min(window.innerHeight - menuHeight - 8, trigger.bottom + gap);
+
+      let left =
+        align === "right" ? trigger.right - menuWidth : trigger.left;
+      left = Math.min(Math.max(8, left), window.innerWidth - menuWidth - 8);
+
+      setCoords({
+        top,
+        left,
+        minWidth: menuWidth,
+        openUpward,
+      });
+    };
+
+    place();
+    // Remeasure after paint so real menu height can flip if needed.
+    const raf = window.requestAnimationFrame(place);
+    return () => window.cancelAnimationFrame(raf);
+  }, [open, items.length, menuPlacement, align]);
 
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (root.current?.contains(target)) return;
+      if (menuRef.current?.contains(target)) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
+    const onRepositionClose = () => setOpen(false);
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onRepositionClose);
+    window.addEventListener("scroll", onRepositionClose, true);
     return () => {
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onRepositionClose);
+      window.removeEventListener("scroll", onRepositionClose, true);
     };
   }, [open]);
+
+  const menu =
+    open && typeof document !== "undefined" ? (
+      <div
+        ref={menuRef}
+        id={menuId}
+        role="menu"
+        style={
+          coords
+            ? {
+                position: "fixed",
+                top: coords.top,
+                left: coords.left,
+                minWidth: coords.minWidth,
+              }
+            : {
+                position: "fixed",
+                top: -9999,
+                left: -9999,
+                visibility: "hidden",
+              }
+        }
+        className="z-[80] overflow-hidden rounded-[var(--radius-md)] border border-border bg-popover py-1 text-popover-foreground shadow-[var(--shadow)]"
+      >
+        {items.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="menuitem"
+            disabled={item.disabled}
+            className={cn(
+              "block w-full px-3.5 py-2.5 text-left text-sm font-medium transition-colors",
+              "focus-visible:bg-surface-muted focus-visible:outline-none",
+              item.disabled
+                ? "cursor-not-allowed text-muted-foreground opacity-70"
+                : "hover:bg-surface-muted",
+              item.danger && !item.disabled
+                ? "text-danger"
+                : !item.disabled
+                  ? "text-popover-foreground"
+                  : "",
+            )}
+            onClick={() => {
+              if (item.disabled) return;
+              item.onSelect();
+              setOpen(false);
+            }}
+          >
+            {item.label}
+            {item.disabled ? (
+              <span className="sr-only"> (unavailable)</span>
+            ) : null}
+          </button>
+        ))}
+      </div>
+    ) : null;
 
   return (
     <div ref={root} className={cn("relative inline-block", className)}>
@@ -82,49 +193,7 @@ export function Dropdown({
           ▾
         </span>
       </Button>
-      {open ? (
-        <div
-          ref={menuRef}
-          id={menuId}
-          role="menu"
-          className={cn(
-            "absolute z-30 min-w-[190px] overflow-hidden rounded-[var(--radius-md)] border border-border bg-popover py-1 text-popover-foreground shadow-[var(--shadow)]",
-            openUpward ? "bottom-full mb-2" : "top-full mt-2",
-            align === "right" ? "right-0" : "left-0",
-          )}
-        >
-          {items.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="menuitem"
-              disabled={item.disabled}
-              className={cn(
-                "block w-full px-3.5 py-2.5 text-left text-sm font-medium transition-colors",
-                "focus-visible:bg-surface-muted focus-visible:outline-none",
-                item.disabled
-                  ? "cursor-not-allowed text-muted-foreground opacity-70"
-                  : "hover:bg-surface-muted",
-                item.danger && !item.disabled
-                  ? "text-danger"
-                  : !item.disabled
-                    ? "text-popover-foreground"
-                    : "",
-              )}
-              onClick={() => {
-                if (item.disabled) return;
-                item.onSelect();
-                setOpen(false);
-              }}
-            >
-              {item.label}
-              {item.disabled ? (
-                <span className="sr-only"> (unavailable)</span>
-              ) : null}
-            </button>
-          ))}
-        </div>
-      ) : null}
+      {menu ? createPortal(menu, document.body) : null}
     </div>
   );
 }

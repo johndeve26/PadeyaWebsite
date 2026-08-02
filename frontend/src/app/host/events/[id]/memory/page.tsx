@@ -129,7 +129,7 @@ export default function HostEventMemoryPage() {
         title="Event memories"
         description="Host album, attendee photos, and external gallery link."
       >
-        <EventOpsNav eventId={eventId} />
+        <EventOpsNav eventId={eventId} eventStatus="completed" />
 
         {error ? (
           <Alert tone="danger" title="Error" className="mt-6">

@@ -77,7 +77,14 @@ export function HostEventsListView({
                       {formatEventVisibility(event.visibility)}
                     </p>
 
-                    {canEdit ? (
+                    {canEdit && event.status === "completed" ? (
+                      <Link
+                        href={`/host/events/${event.id}/memory`}
+                        className="inline-flex w-fit rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[var(--shadow-soft)] transition-colors hover:bg-primary-hover"
+                      >
+                        Memories
+                      </Link>
+                    ) : canEdit ? (
                       <Link
                         href={`/host/events/${event.id}/edit`}
                         className="inline-flex w-fit rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-primary-foreground shadow-[var(--shadow-soft)] transition-colors hover:bg-primary-hover"
