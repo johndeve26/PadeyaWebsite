@@ -55,7 +55,7 @@ export function FanMemoryUploadCard({
     setMessage(null);
     track(TrackedAction.MEMORY_UPLOAD_STARTED, {
       targetEventId: eventId,
-      count: files.length,
+      metadata: { count: files.length },
     });
     let uploaded = 0;
     let lastError: string | null = null;
@@ -77,7 +77,7 @@ export function FanMemoryUploadCard({
       if (uploaded > 0) {
         track(TrackedAction.MEMORY_UPLOAD_COMPLETED, {
           targetEventId: eventId,
-          count: uploaded,
+          metadata: { count: uploaded },
         });
         setMessage(
           uploaded === 1

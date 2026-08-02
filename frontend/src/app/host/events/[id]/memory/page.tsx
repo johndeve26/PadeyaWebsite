@@ -97,7 +97,7 @@ export default function HostEventMemoryPage() {
     setError(null);
     track(TrackedAction.MEMORY_UPLOAD_STARTED, {
       targetEventId: eventId,
-      count: files.length,
+      metadata: { count: files.length },
     });
     let uploaded = 0;
     let lastError: string | null = null;
@@ -115,7 +115,7 @@ export default function HostEventMemoryPage() {
       if (uploaded > 0) {
         track(TrackedAction.MEMORY_UPLOAD_COMPLETED, {
           targetEventId: eventId,
-          count: uploaded,
+          metadata: { count: uploaded },
         });
         await reload();
       }
