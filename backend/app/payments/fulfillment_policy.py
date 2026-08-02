@@ -24,7 +24,6 @@ from app.payments.models import Order
 BLOCK_TICKET_FULFILLMENT_STATUSES = frozenset(
     {
         "draft",
-        "pending_review",
         "rejected",
         "cancelled",
         "archived",

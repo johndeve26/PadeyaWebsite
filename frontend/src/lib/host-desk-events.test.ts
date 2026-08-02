@@ -39,8 +39,8 @@ const sample: HostDeskEvent[] = [
   }),
   event({
     id: "4",
-    title: "Review",
-    status: "pending_review",
+    title: "Cancelled",
+    status: "cancelled",
     start_datetime: "2026-08-30T20:00:00Z",
   }),
 ];

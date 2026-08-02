@@ -1,6 +1,5 @@
 export type EventStatus =
   | "draft"
-  | "pending_review"
   | "published"
   | "paused"
   | "completed"

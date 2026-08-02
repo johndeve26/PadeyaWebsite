@@ -4,7 +4,6 @@ import re
 
 EVENT_STATUSES = (
     "draft",
-    "pending_review",
     "published",
     "paused",
     "completed",

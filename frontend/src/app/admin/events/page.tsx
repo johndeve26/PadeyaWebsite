@@ -37,7 +37,6 @@ import type { EventItem, EventStatus } from "@/lib/types/events";
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "all", label: "All statuses" },
-  { value: "pending_review", label: "Pending review" },
   { value: "published", label: "Published" },
   { value: "draft", label: "Draft" },
   { value: "paused", label: "Paused" },
@@ -248,8 +247,6 @@ export default function AdminEventsPage() {
     });
   }, [events, search, statusFilter, flagFilter]);
 
-  const pendingCount =
-    events?.filter((e) => e.status === "pending_review").length ?? 0;
   const flaggedCount =
     events?.filter((e) => e.admin_flagged || e.admin_flagged_at).length ?? 0;
   const pickCount = Object.keys(pickByEventId).length;
@@ -269,7 +266,7 @@ export default function AdminEventsPage() {
           </Link>
           <Link href="/admin/events/review">
             <Button>
-              Review queue{pendingCount > 0 ? ` (${pendingCount})` : ""}
+              Review queue{flaggedCount > 0 ? ` (${flaggedCount})` : ""}
             </Button>
           </Link>
         </div>
@@ -281,17 +278,10 @@ export default function AdminEventsPage() {
         </Alert>
       ) : null}
 
-      {events && pendingCount > 0 ? (
-        <Alert tone="warning" title="Pending approvals">
-          {pendingCount} event{pendingCount === 1 ? "" : "s"} need review before
-          publishing.
-        </Alert>
-      ) : null}
-
       {events && flaggedCount > 0 ? (
         <Alert tone="info" title="Flagged listings">
           {flaggedCount} event{flaggedCount === 1 ? "" : "s"} currently flagged
-          for ops attention.
+          for ops attention (listings stay live until rejected or paused).
         </Alert>
       ) : null}
 

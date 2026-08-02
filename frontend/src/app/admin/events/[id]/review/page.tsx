@@ -22,7 +22,6 @@ import {
   setEventPadeyaPick,
 } from "@/lib/admin-lifecycle-api";
 import {
-  approveEvent,
   clearEventFlag,
   fetchEventById,
   flagEvent,
@@ -324,32 +323,39 @@ export default function AdminEventReviewDetailPage() {
               </div>
             ) : null}
 
-            {event.status === "pending_review" ? (
+            {event.status === "published" && flagged ? (
               <div className="space-y-3 border-t border-border pt-4">
+                <p className="text-sm text-muted-foreground">
+                  This listing is live and flagged for post-publish review. Mark
+                  reviewed when checked, reject to take it down, or pause sales.
+                </p>
                 <Textarea
                   label="Rejection reason"
                   hint="Required if you reject. Sent to the host with audit trail."
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="Explain what must change before this event can publish…"
+                  placeholder="Explain why this listing must come down…"
                 />
                 <div className="flex flex-wrap gap-2">
                   <ConfirmAction
-                    label="Approve & publish"
-                    title="Approve this event?"
-                    description={`Publish “${event.title}” to Pàdéyá. The host will be notified.`}
-                    confirmLabel="Approve & publish"
+                    label="Mark reviewed"
+                    title="Mark this event reviewed?"
+                    description="Clears the review flag. The listing stays published."
+                    confirmLabel="Mark reviewed"
                     size="md"
                     variant="dark"
                     busy={busy}
                     onConfirm={() =>
-                      run(() => approveEvent(event.id), "Event approved")
+                      run(
+                        () => clearEventFlag(event.id),
+                        "Review flag cleared",
+                      )
                     }
                   />
                   <ConfirmAction
                     label="Reject"
                     title="Reject this event?"
-                    description={`Reject “${event.title}”. The host receives your reason.`}
+                    description={`Take down “${event.title}”. The host receives your reason.`}
                     confirmLabel="Reject event"
                     tone="danger"
                     size="md"
@@ -363,30 +369,6 @@ export default function AdminEventReviewDetailPage() {
                     }
                   />
                 </div>
-              </div>
-            ) : null}
-
-            {event.status === "published" && flagged ? (
-              <div className="space-y-3 border-t border-border pt-4">
-                <p className="text-sm text-muted-foreground">
-                  This listing is already live. Mark reviewed when you have checked
-                  it, or pause the listing if it should come down.
-                </p>
-                <ConfirmAction
-                  label="Mark reviewed"
-                  title="Mark this event reviewed?"
-                  description="Clears the review flag. The listing stays published."
-                  confirmLabel="Mark reviewed"
-                  size="md"
-                  variant="dark"
-                  busy={busy}
-                  onConfirm={() =>
-                    run(
-                      () => clearEventFlag(event.id),
-                      "Review flag cleared",
-                    )
-                  }
-                />
               </div>
             ) : null}
 

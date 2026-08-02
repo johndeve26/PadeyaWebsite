@@ -122,7 +122,7 @@ export function eventStatusSchemaUrl(
     case "cancelled":
       return "https://schema.org/EventCancelled";
     default:
-      // draft / pending_review / completed / rejected / archived — do not guess
+      // draft / completed / rejected / archived — do not guess
       return undefined;
   }
 }

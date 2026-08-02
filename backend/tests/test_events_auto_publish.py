@@ -1,4 +1,4 @@
-"""Auto-publish on host submit (admin reviews flagged listings later)."""
+"""Publish-first on host submit (admin reviews flagged listings later)."""
 
 from __future__ import annotations
 
@@ -59,14 +59,9 @@ def _event_payload(**overrides):
     return payload
 
 
-def test_submit_auto_publishes_and_flags_for_admin_review(
-    client: TestClient, assign_role, monkeypatch
+def test_submit_publishes_and_flags_for_admin_review(
+    client: TestClient, assign_role
 ):
-    monkeypatch.setenv("EVENTS_AUTO_PUBLISH_ON_SUBMIT", "true")
-    from app.core.config import get_settings
-
-    get_settings.cache_clear()
-
     headers = _auth_headers(client, "auto-publish-host@example.com")
     _onboard(client, headers)
     created = client.post("/api/v1/events", headers=headers, json=_event_payload()).json()
@@ -105,26 +100,3 @@ def test_submit_auto_publishes_and_flags_for_admin_review(
     assert cleared.status_code == 200, cleared.text
     assert cleared.json()["status"] == "published"
     assert cleared.json()["admin_flagged"] is False
-
-
-def test_submit_returns_to_pending_when_auto_publish_disabled(
-    client: TestClient, monkeypatch
-):
-    monkeypatch.setenv("EVENTS_AUTO_PUBLISH_ON_SUBMIT", "false")
-    from app.core.config import get_settings
-
-    get_settings.cache_clear()
-    try:
-        headers = _auth_headers(client, "manual-review-host@example.com")
-        _onboard(client, headers)
-        created = client.post("/api/v1/events", headers=headers, json=_event_payload()).json()
-
-        submitted = client.post(
-            f"/api/v1/events/by-id/{created['id']}/submit",
-            headers=headers,
-        )
-        assert submitted.status_code == 200, submitted.text
-        assert submitted.json()["status"] == "pending_review"
-    finally:
-        monkeypatch.setenv("EVENTS_AUTO_PUBLISH_ON_SUBMIT", "true")
-        get_settings.cache_clear()

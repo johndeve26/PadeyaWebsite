@@ -5,7 +5,7 @@ import type { EventItem, EventStatus } from "@/lib/types/events";
  *
  * | Tab        | Rule |
  * |------------|------|
- * | Upcoming   | end_datetime >= now AND status ∈ published, paused, draft, pending_review |
+ * | Upcoming   | end_datetime >= now AND status ∈ published, paused, draft |
  * | Drafts     | status ∈ draft, rejected |
  * | Published  | status === published |
  * | Completed  | status === completed (auto when end_datetime passes; also manual Mark completed) |
@@ -60,7 +60,6 @@ const UPCOMING_STATUSES = new Set<EventStatus>([
   "published",
   "paused",
   "draft",
-  "pending_review",
 ]);
 
 export function parseEventListTab(value: string | null): EventListTab {

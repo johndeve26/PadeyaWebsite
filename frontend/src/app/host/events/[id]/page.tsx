@@ -397,7 +397,7 @@ export default function HostEventDetailPage() {
                 Mark completed
               </Button>
             ) : null}
-            {["draft", "rejected", "pending_review", "published", "paused"].includes(
+            {["draft", "rejected", "published", "paused"].includes(
               event.status,
             ) ? (
               <ConfirmAction

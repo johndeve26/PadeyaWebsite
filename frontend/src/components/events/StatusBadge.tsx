@@ -3,7 +3,6 @@ import type { EventStatus } from "@/lib/types/events";
 
 const labels: Record<EventStatus, string> = {
   draft: "Draft",
-  pending_review: "Pending review",
   published: "Published",
   paused: "Paused",
   completed: "Completed",

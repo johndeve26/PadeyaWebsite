@@ -17,7 +17,6 @@ export type RankedRelatedEvent = {
 
 const HIDDEN_STATUSES = new Set([
   "draft",
-  "pending_review",
   "rejected",
   "cancelled",
   "archived",

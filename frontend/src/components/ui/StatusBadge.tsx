@@ -13,7 +13,6 @@ const toneMap: Record<string, BadgeProps["tone"]> = {
   accepted: "success",
   checked_in: "success",
   pending: "warning",
-  pending_review: "warning",
   under_review: "warning",
   requested: "warning",
   processing: "warning",

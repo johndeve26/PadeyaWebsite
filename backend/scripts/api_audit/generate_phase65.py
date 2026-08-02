@@ -86,7 +86,6 @@ def main() -> None:
             "archived": "BLOCKED_AT_FINALIZATION",
             "rejected": "BLOCKED_AT_FINALIZATION",
             "draft": "BLOCKED_AT_FINALIZATION",
-            "pending_review": "BLOCKED_AT_FINALIZATION",
             "paused": "HONORED_UNTIL_EXPIRY",
             "published": "HONORED_UNTIL_EXPIRY",
             "sales_window_close": "HONORED_UNTIL_EXPIRY",

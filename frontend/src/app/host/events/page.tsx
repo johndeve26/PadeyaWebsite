@@ -54,9 +54,7 @@ function canDiscard(event: EventItem): boolean {
 }
 
 function canCancel(event: EventItem): boolean {
-  return ["draft", "rejected", "pending_review", "published", "paused"].includes(
-    event.status,
-  );
+  return ["draft", "rejected", "published", "paused"].includes(event.status);
 }
 
 function readStoredViewMode(): EventViewMode {

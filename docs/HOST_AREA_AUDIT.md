@@ -434,11 +434,11 @@ Keep `/host/onboarding` unchanged; add `/host/roadmap` as new page. Redirect `/h
 
 #### Tabs (date + status logic)
 
-Uses `EventStatus` from `frontend/src/lib/types/events.ts`: `draft`, `pending_review`, `published`, `paused`, `completed`, `cancelled`, `rejected`, `archived`.
+Uses `EventStatus` from `frontend/src/lib/types/events.ts`: `draft`, `published`, `paused`, `completed`, `cancelled`, `rejected`, `archived`.
 
 | Tab | Rule |
 | --- | --- |
-| **Upcoming** | `end_datetime >= now` AND status ∈ `{published, paused, draft, pending_review}` |
+| **Upcoming** | `end_datetime >= now` AND status ∈ `{published, paused, draft}` |
 | **Drafts** | status ∈ `{draft, rejected}` |
 | **Published** | status === `published` |
 | **Past** | `end_datetime < now` AND status ∈ `{published, completed, paused}` |

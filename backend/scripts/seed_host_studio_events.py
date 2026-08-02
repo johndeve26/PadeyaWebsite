@@ -245,9 +245,10 @@ def _event_blueprints(now: datetime) -> list[dict[str, Any]]:
             "enrich": True,
         },
         {
-            "key": "pending-review",
-            "title": "Studio Pending Review Showcase",
-            "status": "pending_review",
+            "key": "needs-review",
+            "title": "Studio Needs Review Showcase",
+            "status": "published",
+            "admin_flagged": True,
             "event_type": "public",
             "visibility": "listed",
             "location_visibility": "area_only",
@@ -410,6 +411,14 @@ def _upsert_event(
         if spec["status"] in {"published", "paused", "cancelled", "completed"}
         else None
     )
+    if spec.get("admin_flagged"):
+        event.admin_flagged_at = now_utc()
+        event.admin_flag_reason = "Auto-published — pending post-publish review"
+        event.admin_flagged_by_user_id = None
+    else:
+        event.admin_flagged_at = None
+        event.admin_flag_reason = None
+        event.admin_flagged_by_user_id = None
 
     if event.venue is None:
         event.venue = EventVenue(

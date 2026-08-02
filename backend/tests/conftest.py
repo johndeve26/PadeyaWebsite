@@ -20,7 +20,6 @@ else:
 os.environ["SECRET_KEY"] = "test-secret-key-not-for-production"
 os.environ["APP_ENV"] = "test"
 os.environ["DEMO_MODE"] = "false"
-os.environ["EVENTS_AUTO_PUBLISH_ON_SUBMIT"] = "true"
 os.environ["FRONTEND_URL"] = "http://localhost:3000"
 os.environ["EMAIL_PROVIDER"] = "log"
 os.environ["EMAIL_ENABLED"] = "true"

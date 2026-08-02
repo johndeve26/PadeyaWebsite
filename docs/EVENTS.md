@@ -36,7 +36,7 @@ Default tab when param omitted: **Upcoming**.
 
 | Tab | Rule |
 |---|---|
-| **Upcoming** | `end_datetime >= now` and status ∈ `published`, `paused`, `draft`, `pending_review` |
+| **Upcoming** | `end_datetime >= now` and status ∈ `published`, `paused`, `draft` |
 | **Drafts** | status ∈ `draft`, `rejected` |
 | **Published** | status === `published` |
 | **Past** | `end_datetime < now` and status ∈ `published`, `completed`, `paused` |

@@ -288,7 +288,7 @@ Category dual-write: Studio `category_id` (`event_categories`) mirrors to `prima
 | Media URLs | `banner_url`, `mobile_banner_url`, `teaser_video_url`, `social_share_image_url`, `brand_accent_override` (+ JSON arrays for gallery/sponsors via media / payload) |
 | Policies | refund/cancellation/age/ID/safety/terms, door/re-entry, check-in windows, logistics copy, `capacity` |
 | SEO | `seo_title`, `seo_description`, social share fields, hashtags/keywords JSON |
-| Lifecycle | `status` ∈ draft → pending_review → published → paused/completed/cancelled/rejected/archived |
+| Lifecycle | `status` ∈ draft → published → paused/completed/cancelled/rejected/archived (soft admin flags on publish/edit; no `pending_review`) |
 
 ### Ticket type lifecycle columns
 

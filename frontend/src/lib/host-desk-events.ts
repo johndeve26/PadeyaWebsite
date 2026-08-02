@@ -20,7 +20,6 @@ export const DESK_EVENT_FILTERS: {
 const READY_STATUSES = new Set(["published", "paused"]);
 const OTHER_STATUSES = new Set([
   "draft",
-  "pending_review",
   "rejected",
   "cancelled",
 ]);
@@ -36,7 +35,7 @@ export function deskEventMatchesFilter(
     case "completed":
       return status === "completed";
     case "other":
-      // Drafts / review / rejected / cancelled — not door-ready, not completed.
+      // Drafts / rejected / cancelled — not door-ready, not completed.
       return (
         OTHER_STATUSES.has(status) ||
         (!READY_STATUSES.has(status) && status !== "completed")

@@ -32,7 +32,7 @@ from app.users.service import get_role_by_name, get_user_by_email
 INVALID_STATUSES = {"refunded", "cancelled", "expired", "invalid", "transferred"}
 # Event statuses that must not admit attendees at the gate.
 NON_ADMITTING_EVENT_STATUSES = frozenset(
-    {"draft", "pending_review", "rejected", "cancelled", "archived"}
+    {"draft", "rejected", "cancelled", "archived"}
 )
 
 

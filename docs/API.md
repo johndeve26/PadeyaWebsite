@@ -157,7 +157,7 @@ Canonical host create/edit surface. Nested Studio fields ride on event create/up
 | POST | `/api/v1/events` | Create draft (`EventCreate`) |
 | GET | `/api/v1/events/by-id/{id}` | Host/admin detail (full address; includes `publish_checklist`) |
 | PATCH | `/api/v1/events/by-id/{id}` | Update + nested upsert (`EventUpdate`; optional `slug`) |
-| POST | `/api/v1/events/by-id/{id}/submit` | Draft/rejected/paused → `pending_review` |
+| POST | `/api/v1/events/by-id/{id}/submit` | Draft/rejected/paused → `published` (soft-flagged for admin review) |
 | POST | `/api/v1/events/by-id/{id}/approve` \| `/reject` | Admin review |
 | POST | `/api/v1/events/by-id/{id}/pause` \| `/resume` \| `/postpone` \| `/cancel` \| `/complete` \| `/archive` \| `/restore` | Lifecycle |
 | DELETE | `/api/v1/events/by-id/{id}` | Discard **draft/rejected only**, and only when ticket `quantity_sold` is 0 |

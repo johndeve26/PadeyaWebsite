@@ -383,7 +383,7 @@ export function OwnerCommandCenter() {
   const draftEvents = useMemo(
     () =>
       loadedEvents.filter((event) =>
-        ["draft", "pending_review", "rejected"].includes(event.status),
+        ["draft", "rejected"].includes(event.status),
       ).length,
     [loadedEvents],
   );

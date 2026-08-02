@@ -557,8 +557,8 @@ def _event_specs() -> list[dict[str, Any]]:
         ("draft-secret-session", "Secret Session Draft", "djmaze", "music", "draft"),
         ("draft-open-mic", "Open Mic Draft Night", "lagoscomedyhub", "comedy", "draft"),
         ("draft-founder-lab", "Founder Lab Draft", "techconnectafrica", "tech", "draft"),
-        ("pending-neon-nights", "Neon Nights Review", "djmaze", "nightlife", "pending_review"),
-        ("pending-gospel-choir", "Choir Night Review", "praiseexperience", "gospel", "pending_review"),
+        ("flagged-neon-nights", "Neon Nights Review", "djmaze", "nightlife", "published"),
+        ("flagged-gospel-choir", "Choir Night Review", "praiseexperience", "gospel", "published"),
         ("cancelled-beach-bash", "Beach Bash Cancelled", "mainlandvibes", "lifestyle", "cancelled"),
         ("rejected-stadium-show", "Stadium Show Rejected", "djmaze", "music", "rejected"),
         ("art-walk-lagos", "Art Walk Lagos", "lagoscomedyhub", "arts-culture", "published"),
@@ -751,10 +751,17 @@ def _ensure_events(
                 # Fresh seed path marks completed after check-ins; keep published until then.
                 pass
 
+        if spec["key"] in {"flagged-neon-nights", "flagged-gospel-choir"}:
+            flagged_at = _now()
+            event.admin_flagged_at = flagged_at
+            event.admin_flag_reason = "Auto-published — pending post-publish review"
+            event.admin_flagged_by_user_id = None
+            if event.published_at is None:
+                event.published_at = flagged_at
+
         needs_tickets = initial_status in {
             "published",
             "cancelled",
-            "pending_review",
             "draft",
             "rejected",
             "paused",

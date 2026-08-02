@@ -240,7 +240,6 @@ export function HostEventsToolbar({
           >
             <option value="all">All statuses</option>
             <option value="draft">Draft</option>
-            <option value="pending_review">In review</option>
             <option value="published">Published</option>
             <option value="paused">Paused</option>
             <option value="completed">Completed</option>

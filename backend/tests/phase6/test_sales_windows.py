@@ -88,7 +88,7 @@ def test_sales_window_boundary_open_at_exact_start(client: TestClient, db_sessio
 
 @pytest.mark.parametrize(
     "status",
-    ["draft", "pending_review", "paused", "cancelled", "rejected", "archived", "completed"],
+    ["draft", "paused", "cancelled", "rejected", "archived", "completed"],
 )
 def test_purchase_matrix_non_published_blocked(
     client: TestClient, db_session: Session, status: str
