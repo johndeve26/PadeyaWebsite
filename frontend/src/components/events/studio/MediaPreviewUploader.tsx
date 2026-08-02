@@ -76,6 +76,7 @@ function ImageUploadField({
   previewClassName,
   previewEmptyLabel,
   previewContain = false,
+  multiple = false,
   onPick,
 }: {
   label: string;
@@ -87,7 +88,8 @@ function ImageUploadField({
   previewClassName?: string;
   previewEmptyLabel?: string;
   previewContain?: boolean;
-  onPick: (file: File) => void;
+  multiple?: boolean;
+  onPick: (files: File[]) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   return (
@@ -112,17 +114,18 @@ function ImageUploadField({
             disabled={uploading}
             onClick={() => inputRef.current?.click()}
           >
-            {uploading ? "Uploading…" : "Upload image"}
+            {uploading ? "Uploading…" : multiple ? "Upload images" : "Upload image"}
           </Button>
         </div>
         <input
           ref={inputRef}
           type="file"
           accept={accept}
+          multiple={multiple}
           className="sr-only"
           onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) onPick(file);
+            const files = Array.from(e.target.files ?? []);
+            if (files.length) onPick(files);
             e.target.value = "";
           }}
         />
@@ -167,6 +170,72 @@ export function MediaPreviewUploader({
     }
   }
 
+  async function uploadOne(
+    file: File,
+    field: keyof MediaFieldValues,
+    mediaType: string,
+    options?: { appendGallery?: boolean; setAsBanner?: boolean },
+  ) {
+    if (eventId) {
+      const updated = await uploadEventMediaFile(eventId, file, {
+        mediaType,
+        setAsBanner: options?.setAsBanner || mediaType === "banner",
+      });
+      if (options?.appendGallery) {
+        const latest = (updated.media ?? [])
+          .filter((m) => m.media_type === "gallery")
+          .map((m) => m.url)
+          .join("\n");
+        onChange("gallery_urls", latest || values.gallery_urls);
+        return;
+      }
+      if (field === "sponsor_logo_urls") {
+        const match = [...(updated.media ?? [])]
+          .reverse()
+          .find((m) => m.media_type === "sponsor" || m.media_type === mediaType);
+        if (match) {
+          const next = [values.sponsor_logo_urls.trim(), match.url]
+            .filter(Boolean)
+            .join("\n");
+          onChange("sponsor_logo_urls", next);
+        }
+        return;
+      }
+      if (field === "banner_url" && updated.banner_url) {
+        onChange("banner_url", updated.banner_url);
+        return;
+      }
+      if (field === "mobile_banner_url" && updated.mobile_banner_url) {
+        onChange("mobile_banner_url", updated.mobile_banner_url);
+        return;
+      }
+      if (field === "social_share_image_url" && updated.social_share_image_url) {
+        onChange("social_share_image_url", updated.social_share_image_url);
+        return;
+      }
+      const match = [...(updated.media ?? [])]
+        .reverse()
+        .find((m) => m.media_type === mediaType);
+      if (match) onChange(field, match.url);
+      return;
+    }
+
+    const staged = await uploadHostMediaFile(file, mediaType);
+    if (options?.appendGallery || field === "gallery_urls") {
+      const next = [values.gallery_urls.trim(), staged.url]
+        .filter(Boolean)
+        .join("\n");
+      onChange("gallery_urls", next);
+    } else if (field === "sponsor_logo_urls") {
+      const next = [values.sponsor_logo_urls.trim(), staged.url]
+        .filter(Boolean)
+        .join("\n");
+      onChange("sponsor_logo_urls", next);
+    } else {
+      onChange(field, staged.url);
+    }
+  }
+
   async function uploadToField(
     file: File,
     field: keyof MediaFieldValues,
@@ -176,66 +245,74 @@ export function MediaPreviewUploader({
     setError(null);
     setUploadingKey(field);
     try {
-      if (eventId) {
-        const updated = await uploadEventMediaFile(eventId, file, {
-          mediaType,
-          setAsBanner: options?.setAsBanner || mediaType === "banner",
-        });
-        if (options?.appendGallery) {
-          const latest = (updated.media ?? [])
-            .filter((m) => m.media_type === "gallery")
-            .map((m) => m.url)
-            .join("\n");
-          onChange("gallery_urls", latest || values.gallery_urls);
-          return;
-        }
-        if (field === "sponsor_logo_urls") {
-          const match = [...(updated.media ?? [])]
-            .reverse()
-            .find((m) => m.media_type === "sponsor" || m.media_type === mediaType);
-          if (match) {
-            const next = [values.sponsor_logo_urls.trim(), match.url]
-              .filter(Boolean)
-              .join("\n");
-            onChange("sponsor_logo_urls", next);
-          }
-          return;
-        }
-        if (field === "banner_url" && updated.banner_url) {
-          onChange("banner_url", updated.banner_url);
-          return;
-        }
-        if (field === "mobile_banner_url" && updated.mobile_banner_url) {
-          onChange("mobile_banner_url", updated.mobile_banner_url);
-          return;
-        }
-        if (field === "social_share_image_url" && updated.social_share_image_url) {
-          onChange("social_share_image_url", updated.social_share_image_url);
-          return;
-        }
-        const match = [...(updated.media ?? [])]
-          .reverse()
-          .find((m) => m.media_type === mediaType);
-        if (match) onChange(field, match.url);
-        return;
-      }
-
-      const staged = await uploadHostMediaFile(file, mediaType);
-      if (options?.appendGallery || field === "gallery_urls") {
-        const next = [values.gallery_urls.trim(), staged.url]
-          .filter(Boolean)
-          .join("\n");
-        onChange("gallery_urls", next);
-      } else if (field === "sponsor_logo_urls") {
-        const next = [values.sponsor_logo_urls.trim(), staged.url]
-          .filter(Boolean)
-          .join("\n");
-        onChange("sponsor_logo_urls", next);
-      } else {
-        onChange(field, staged.url);
-      }
+      await uploadOne(file, field, mediaType, options);
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : "Unable to upload image");
+    } finally {
+      setUploadingKey(null);
+    }
+  }
+
+  async function uploadManyToField(
+    files: File[],
+    field: "gallery_urls" | "sponsor_logo_urls",
+    mediaType: string,
+  ) {
+    if (!files.length) return;
+    setError(null);
+    setUploadingKey(field);
+    let accumulated =
+      field === "gallery_urls" ? values.gallery_urls : values.sponsor_logo_urls;
+    let uploaded = 0;
+    let lastError: string | null = null;
+    try {
+      for (const file of files) {
+        try {
+          if (eventId) {
+            const updated = await uploadEventMediaFile(eventId, file, {
+              mediaType,
+            });
+            if (field === "gallery_urls") {
+              accumulated = (updated.media ?? [])
+                .filter((m) => m.media_type === "gallery")
+                .map((m) => m.url)
+                .join("\n");
+              onChange("gallery_urls", accumulated || values.gallery_urls);
+            } else {
+              const match = [...(updated.media ?? [])]
+                .reverse()
+                .find(
+                  (m) =>
+                    m.media_type === "sponsor" || m.media_type === mediaType,
+                );
+              if (match) {
+                accumulated = [accumulated.trim(), match.url]
+                  .filter(Boolean)
+                  .join("\n");
+                onChange("sponsor_logo_urls", accumulated);
+              }
+            }
+          } else {
+            const staged = await uploadHostMediaFile(file, mediaType);
+            accumulated = [accumulated.trim(), staged.url]
+              .filter(Boolean)
+              .join("\n");
+            onChange(field, accumulated);
+          }
+          uploaded += 1;
+        } catch (err) {
+          lastError =
+            err instanceof ApiError ? err.detail : "Unable to upload image";
+          break;
+        }
+      }
+      if (lastError) {
+        setError(
+          uploaded > 0
+            ? `Uploaded ${uploaded} of ${files.length}. ${lastError}`
+            : lastError,
+        );
+      }
     } finally {
       setUploadingKey(null);
     }
@@ -264,11 +341,14 @@ export function MediaPreviewUploader({
           previewUrl={values.banner_url}
           previewClassName="h-14 w-32"
           uploading={uploadingKey === "banner_url"}
-          onPick={(file) =>
-            void uploadToField(file, "banner_url", "banner", {
-              setAsBanner: true,
-            })
-          }
+          onPick={(files) => {
+            const file = files[0];
+            if (file) {
+              void uploadToField(file, "banner_url", "banner", {
+                setAsBanner: true,
+              });
+            }
+          }}
         />
         <Input
           label="Banner URL"
@@ -291,9 +371,12 @@ export function MediaPreviewUploader({
             values.banner_url.trim() ? "Uses main banner" : "No image yet"
           }
           uploading={uploadingKey === "mobile_banner_url"}
-          onPick={(file) =>
-            void uploadToField(file, "mobile_banner_url", "mobile_banner")
-          }
+          onPick={(files) => {
+            const file = files[0];
+            if (file) {
+              void uploadToField(file, "mobile_banner_url", "mobile_banner");
+            }
+          }}
         />
         <Input
           label="Mobile banner URL"
@@ -305,19 +388,16 @@ export function MediaPreviewUploader({
 
       <StudioFieldGroup
         title="Gallery"
-        description="Photo strip guests may see on the listing. Upload one image at a time."
+        description="Photo strip guests may see on the listing. Select multiple images at once."
       >
         <ImageUploadField
-          label="Gallery image"
-          hint="Appends to the gallery list below."
+          label="Gallery images"
+          hint="Appends each selected image to the gallery list below."
           previewUrl={galleryLines[0]}
           previewEmptyLabel="No images yet"
+          multiple
           uploading={uploadingKey === "gallery_urls"}
-          onPick={(file) =>
-            void uploadToField(file, "gallery_urls", "gallery", {
-              appendGallery: true,
-            })
-          }
+          onPick={(files) => void uploadManyToField(files, "gallery_urls", "gallery")}
         />
         {galleryLines.length > 0 ? (
           <ul className="space-y-2">
@@ -390,9 +470,12 @@ export function MediaPreviewUploader({
             values.banner_url.trim() ? "Uses main banner" : "No image yet"
           }
           uploading={uploadingKey === "social_share_image_url"}
-          onPick={(file) =>
-            void uploadToField(file, "social_share_image_url", "social_share")
-          }
+          onPick={(files) => {
+            const file = files[0];
+            if (file) {
+              void uploadToField(file, "social_share_image_url", "social_share");
+            }
+          }}
         />
         <Input
           label="Social share image URL"
@@ -407,15 +490,16 @@ export function MediaPreviewUploader({
         description="Optional brand logos and a listing accent color."
       >
         <ImageUploadField
-          label="Sponsor logo"
-          hint="Appends to the sponsor list. Use your own brand assets only."
+          label="Sponsor logos"
+          hint="Select multiple logos at once. Use your own brand assets only."
           previewUrl={sponsorLines[0]}
           previewClassName="h-12 w-20"
           previewEmptyLabel="No logos yet"
           previewContain
+          multiple
           uploading={uploadingKey === "sponsor_logo_urls"}
-          onPick={(file) =>
-            void uploadToField(file, "sponsor_logo_urls", "sponsor")
+          onPick={(files) =>
+            void uploadManyToField(files, "sponsor_logo_urls", "sponsor")
           }
         />
         {sponsorLines.length > 0 ? (

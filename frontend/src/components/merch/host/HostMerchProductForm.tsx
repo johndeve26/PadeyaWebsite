@@ -836,7 +836,7 @@ export function HostMerchProductForm({
 
           <ImageUrlListUploadField
             label="Gallery images"
-            hint="Upload one image at a time or paste URLs below."
+            hint="Select multiple images at once, or paste URLs below."
             value={values.gallery_urls}
             onChange={(next) => setField("gallery_urls", next)}
             eventId={selectedEventId || eventId}

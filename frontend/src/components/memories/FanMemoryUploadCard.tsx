@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Alert, Button } from "@/components/ui";
+import { ApiError } from "@/lib/api";
 import { track } from "@/lib/analytics";
 import { TrackedAction } from "@/lib/analytics-taxonomy";
 import {
@@ -44,21 +45,60 @@ export function FanMemoryUploadCard({
   if (eligibility.role === "host") return null;
   if (!eligibility.ticket_verified || !eligibility.event_started) return null;
 
-  async function onFile(file: File | null) {
-    if (!file) return;
+  const remaining = Math.max(0, eligibility.limit - eligibility.used);
+
+  async function onFiles(fileList: FileList | null) {
+    if (!fileList?.length || remaining <= 0) return;
+    const files = Array.from(fileList).slice(0, remaining);
     setBusy(true);
     setError(null);
     setMessage(null);
-    track(TrackedAction.MEMORY_UPLOAD_STARTED, { targetEventId: eventId });
+    track(TrackedAction.MEMORY_UPLOAD_STARTED, {
+      targetEventId: eventId,
+      count: files.length,
+    });
+    let uploaded = 0;
+    let lastError: string | null = null;
     try {
-      await uploadFanMemoryPhoto(eventId, file);
-      track(TrackedAction.MEMORY_UPLOAD_COMPLETED, { targetEventId: eventId });
-      setMessage("Photo added to community memories.");
-      const next = await fetchMemoryEligibility(eventSlug);
-      setEligibility(next);
-    } catch (err) {
-      track(TrackedAction.MEMORY_UPLOAD_FAILED, { targetEventId: eventId });
-      setError(err instanceof Error ? err.message : "Upload failed");
+      for (const file of files) {
+        try {
+          await uploadFanMemoryPhoto(eventId, file);
+          uploaded += 1;
+        } catch (err) {
+          lastError =
+            err instanceof ApiError
+              ? err.detail
+              : err instanceof Error
+                ? err.message
+                : "Upload failed";
+          break;
+        }
+      }
+      if (uploaded > 0) {
+        track(TrackedAction.MEMORY_UPLOAD_COMPLETED, {
+          targetEventId: eventId,
+          count: uploaded,
+        });
+        setMessage(
+          uploaded === 1
+            ? "Photo added to community memories."
+            : `${uploaded} photos added to community memories.`,
+        );
+        const next = await fetchMemoryEligibility(eventSlug);
+        setEligibility(next);
+      }
+      if (lastError) {
+        track(TrackedAction.MEMORY_UPLOAD_FAILED, { targetEventId: eventId });
+        setError(
+          uploaded > 0
+            ? `Uploaded ${uploaded} of ${files.length}. ${lastError}`
+            : lastError,
+        );
+      } else if (fileList.length > files.length) {
+        setError(
+          `Only ${remaining} slot${remaining === 1 ? "" : "s"} left — uploaded ${uploaded}.`,
+        );
+      }
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -74,8 +114,8 @@ export function FanMemoryUploadCard({
         Add your memories
       </h3>
       <p className="mt-1 text-sm text-muted-foreground">
-        Share up to {eligibility.limit} photos from {eventTitle}.{" "}
-        {eligibility.used}/{eligibility.limit} used.
+        Select multiple photos at once — up to {eligibility.limit} from{" "}
+        {eventTitle}. {eligibility.used}/{eligibility.limit} used.
       </p>
       {message ? (
         <Alert tone="success" title="Uploaded" className="mt-4">
@@ -92,16 +132,17 @@ export function FanMemoryUploadCard({
           ref={inputRef}
           type="file"
           accept="image/jpeg,image/png,image/webp"
+          multiple
           className="sr-only"
           disabled={busy || !eligibility.can_upload}
-          onChange={(e) => void onFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => void onFiles(e.target.files)}
         />
         <Button
           type="button"
           disabled={busy || !eligibility.can_upload}
           onClick={() => inputRef.current?.click()}
         >
-          {busy ? "Uploading…" : "Upload photo"}
+          {busy ? "Uploading…" : "Upload photos"}
         </Button>
       </div>
     </div>

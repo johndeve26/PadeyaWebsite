@@ -239,14 +239,33 @@ export function ImageUrlListUploadField({
   const [error, setError] = useState<string | null>(null);
   const lines = splitImageUrlLines(value);
 
-  async function onPick(file: File) {
+  async function onPickMany(files: File[]) {
+    if (!files.length) return;
     setError(null);
     setUploading(true);
+    let accumulated = value;
+    let uploaded = 0;
+    let lastError: string | null = null;
     try {
-      const url = await uploadFormImage(file, { eventId, mediaType });
-      onChange([value.trim(), url].filter(Boolean).join("\n"));
-    } catch (err) {
-      setError(err instanceof ApiError ? err.detail : "Unable to upload image");
+      for (const file of files) {
+        try {
+          const url = await uploadFormImage(file, { eventId, mediaType });
+          accumulated = [accumulated.trim(), url].filter(Boolean).join("\n");
+          onChange(accumulated);
+          uploaded += 1;
+        } catch (err) {
+          lastError =
+            err instanceof ApiError ? err.detail : "Unable to upload image";
+          break;
+        }
+      }
+      if (lastError) {
+        setError(
+          uploaded > 0
+            ? `Uploaded ${uploaded} of ${files.length}. ${lastError}`
+            : lastError,
+        );
+      }
     } finally {
       setUploading(false);
     }
@@ -276,18 +295,19 @@ export function ImageUrlListUploadField({
               disabled={disabled || uploading}
               onClick={() => inputRef.current?.click()}
             >
-              {uploading ? "Uploading…" : "Upload image"}
+              {uploading ? "Uploading…" : "Upload images"}
             </Button>
           </div>
           <input
             ref={inputRef}
             type="file"
             accept={DEFAULT_ACCEPT}
+            multiple
             className="sr-only"
             disabled={disabled || uploading}
             onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void onPick(file);
+              const files = Array.from(e.target.files ?? []);
+              if (files.length) void onPickMany(files);
               e.target.value = "";
             }}
           />

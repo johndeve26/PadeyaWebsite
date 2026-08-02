@@ -88,18 +88,49 @@ export default function HostEventMemoryPage() {
     memory?.memories_path ||
     (memory ? `/events/${memory.event_slug}/memories` : "");
 
-  async function onUpload(file: File | null) {
-    if (!file) return;
+  async function onUpload(fileList: FileList | null) {
+    if (!fileList?.length) return;
+    const remaining = Math.max(0, 10 - hostCount);
+    if (remaining <= 0) return;
+    const files = Array.from(fileList).slice(0, remaining);
     setBusy(true);
     setError(null);
-    track(TrackedAction.MEMORY_UPLOAD_STARTED, { targetEventId: eventId });
+    track(TrackedAction.MEMORY_UPLOAD_STARTED, {
+      targetEventId: eventId,
+      count: files.length,
+    });
+    let uploaded = 0;
+    let lastError: string | null = null;
     try {
-      await uploadHostMemoryPhoto(eventId, file);
-      track(TrackedAction.MEMORY_UPLOAD_COMPLETED, { targetEventId: eventId });
-      await reload();
-    } catch (err) {
-      track(TrackedAction.MEMORY_UPLOAD_FAILED, { targetEventId: eventId });
-      setError(err instanceof ApiError ? err.detail : "Upload failed");
+      for (const file of files) {
+        try {
+          await uploadHostMemoryPhoto(eventId, file);
+          uploaded += 1;
+        } catch (err) {
+          lastError =
+            err instanceof ApiError ? err.detail : "Upload failed";
+          break;
+        }
+      }
+      if (uploaded > 0) {
+        track(TrackedAction.MEMORY_UPLOAD_COMPLETED, {
+          targetEventId: eventId,
+          count: uploaded,
+        });
+        await reload();
+      }
+      if (lastError) {
+        track(TrackedAction.MEMORY_UPLOAD_FAILED, { targetEventId: eventId });
+        setError(
+          uploaded > 0
+            ? `Uploaded ${uploaded} of ${files.length}. ${lastError}`
+            : lastError,
+        );
+      } else if (fileList.length > files.length) {
+        setError(
+          `Only ${remaining} slot${remaining === 1 ? "" : "s"} left — uploaded ${uploaded}.`,
+        );
+      }
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -175,22 +206,23 @@ export default function HostEventMemoryPage() {
             <Card className="space-y-4 p-5">
               <SectionHeader
                 title="Host memories"
-                description="Upload up to 10 optimized photos. Set a cover for the album card."
+                description="Select multiple photos at once — up to 10 optimized images. Set a cover for the album card."
               />
               <input
                 ref={fileRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
+                multiple
                 className="sr-only"
                 disabled={busy || hostCount >= 10}
-                onChange={(e) => void onUpload(e.target.files?.[0] ?? null)}
+                onChange={(e) => void onUpload(e.target.files)}
               />
               <Button
                 type="button"
                 disabled={busy || hostCount >= 10}
                 onClick={() => fileRef.current?.click()}
               >
-                {busy ? "Working…" : "Upload photo"}
+                {busy ? "Uploading…" : "Upload photos"}
               </Button>
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {hostPhotos.map((photo) => (
