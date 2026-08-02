@@ -5,12 +5,6 @@ import Link from "next/link";
 import { Button, Container, Logo } from "@/components/ui";
 import { brand } from "@/lib/brand";
 
-const VALUE_CHIPS = [
-  { label: "Event add-ons", href: "/merch?type=event_addon#catalog" },
-  { label: "Host shops", href: "#host-shops" },
-  { label: "Vault drops", href: "/merch/vault" },
-] as const;
-
 type Props = {
   catalogHref?: string;
 };
@@ -46,37 +40,17 @@ export function MerchMarketplaceHero({ catalogHref = "#catalog" }: Props) {
             post-event drops, and Vault exclusives in one place. Shop the night,
             take it home.
           </p>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {VALUE_CHIPS.map((chip) => (
-              <Link
-                key={chip.label}
-                href={chip.href}
-                className="rounded-full border border-paper/20 bg-paper/5 px-3 py-1.5 text-xs font-bold text-paper/90 transition hover:border-primary/50 hover:text-primary"
-              >
-                {chip.label}
-              </Link>
-            ))}
-          </div>
           <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap">
             <Link href={catalogHref} className="w-full sm:w-auto">
               <Button size="lg" className="padeya-btn-micro w-full sm:w-auto">
                 Shop merch
               </Button>
             </Link>
-            <Link href="/merch/drops" className="w-full sm:w-auto">
+            <Link href="/host/merchandise/new" className="w-full sm:w-auto">
               <Button
                 size="lg"
                 variant="outline-dark"
                 className="padeya-btn-micro w-full sm:w-auto"
-              >
-                Explore drops
-              </Button>
-            </Link>
-            <Link href="/host/merchandise/new" className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                variant="ghost"
-                className="padeya-btn-micro w-full text-paper hover:bg-paper/10 sm:w-auto"
               >
                 Create merch
               </Button>
