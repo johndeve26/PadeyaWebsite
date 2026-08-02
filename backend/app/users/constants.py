@@ -8,6 +8,8 @@ _LEGACY_PERMISSIONS: list[tuple[str, str]] = [
     ("hosts.create", "Create host profiles"),
     ("hosts.manage_own", "Manage own host profile"),
     ("hosts.verify", "Verify host accounts"),
+    ("hosts.suspend", "Suspend and restore host workspaces"),
+    ("hosts.force_delete", "Force-delete suspended host workspaces (soft EOL)"),
     ("events.manage_own", "Manage own events (umbrella)"),
     ("events.review", "Review event submissions (queue access)"),
     ("payments.view", "View payment records"),
@@ -657,6 +659,7 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         "admin.users.impersonate.host_events",
         "admin.appeals.review",
         "hosts.verify",
+        "hosts.suspend",
         "events.review",
         "events.approve",
         "events.reject",
@@ -970,6 +973,9 @@ REQUIRED_PERMISSION_CODES: frozenset[str] = frozenset(
         "admin.team.manage_roles",
         "admin.team.force_logout",
         "admin.team.view_audit",
+        "hosts.verify",
+        "hosts.suspend",
+        "hosts.force_delete",
     }
 )
 
@@ -1019,6 +1025,8 @@ ADMIN_TEAM_PERMISSION_GROUPS: list[tuple[str, list[str]]] = [
             "events.pause",
             "events.restore",
             "hosts.verify",
+            "hosts.suspend",
+            "hosts.force_delete",
             "admin.events.view",
             "admin.events.export_buyers",
             "admin.events.export_private_contact",
@@ -1137,6 +1145,7 @@ ADMIN_TEAM_HIGH_LEVEL_PERMISSIONS: frozenset[str] = frozenset(
         "payouts.mark_paid",
         "admin.users.ban",
         "admin.users.force_delete",
+        "hosts.force_delete",
     }
 )
 

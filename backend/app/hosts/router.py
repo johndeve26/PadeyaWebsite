@@ -8,8 +8,15 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import CurrentUser, require_permission
 from app.core.database import get_db
-from app.hosts import bank_service, team_service, verification_service, workspace_service
+from app.hosts import (
+    admin_lifecycle_service,
+    bank_service,
+    team_service,
+    verification_service,
+    workspace_service,
+)
 from app.hosts.lifecycle_schemas import (
+    HostAdminLifecycleReason,
     HostBankAccountCreate,
     HostBankAccountPublic,
     HostBankAccountUpdate,
@@ -667,3 +674,54 @@ def admin_reject_verification(
     return HostVerificationPublic.model_validate(
         verification_service.serialize_verification(db, row)
     )
+
+
+# --- Host workspace admin lifecycle (soft EOL; owner user untouched) ---
+
+
+@router.post(
+    "/admin/{host_id}/suspend",
+    response_model=HostPublic,
+)
+def admin_suspend_host(
+    host_id: UUID,
+    payload: HostAdminLifecycleReason,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_permission("hosts.suspend"))],
+) -> HostPublic:
+    host = admin_lifecycle_service.suspend_host(
+        db, admin=admin, host_id=host_id, reason=payload.reason
+    )
+    return _serialize_host(db, host, viewer=admin)
+
+
+@router.post(
+    "/admin/{host_id}/restore",
+    response_model=HostPublic,
+)
+def admin_restore_host(
+    host_id: UUID,
+    payload: HostAdminLifecycleReason,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_permission("hosts.suspend"))],
+) -> HostPublic:
+    host = admin_lifecycle_service.restore_host(
+        db, admin=admin, host_id=host_id, reason=payload.reason
+    )
+    return _serialize_host(db, host, viewer=admin)
+
+
+@router.post(
+    "/admin/{host_id}/force-delete",
+    response_model=HostPublic,
+)
+def admin_force_delete_host(
+    host_id: UUID,
+    payload: HostAdminLifecycleReason,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_permission("hosts.force_delete"))],
+) -> HostPublic:
+    host = admin_lifecycle_service.force_delete_host(
+        db, admin=admin, host_id=host_id, reason=payload.reason
+    )
+    return _serialize_host(db, host, viewer=admin)

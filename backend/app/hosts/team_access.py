@@ -110,6 +110,13 @@ def require_host_for_permission(
         if active is not None:
             host_id = active
         elif owned is not None:
+            if owned.status != "active":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=(
+                        "Host workspace is suspended or deleted and cannot be managed"
+                    ),
+                )
             return owned, True
         else:
             raise HTTPException(
@@ -118,8 +125,13 @@ def require_host_for_permission(
             )
 
     host = get_host_by_id(db, host_id)
-    if host is None or host.status != "active":
+    if host is None:
         raise HTTPException(status_code=404, detail="Host not found")
+    if host.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Host workspace is suspended or deleted and cannot be managed",
+        )
 
     if is_host_owner(host, user) or _is_owner_by_ids(db, user.id, host.id):
         return host, True
@@ -154,8 +166,13 @@ def require_host_event_permission(
         raise HTTPException(status_code=404, detail="Event not found")
 
     host = get_host_by_id(db, event.host_id)
-    if host is None or host.status != "active":
+    if host is None:
         raise HTTPException(status_code=404, detail="Host not found")
+    if host.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Host workspace is suspended or deleted and cannot be managed",
+        )
 
     if user_has_role(user, "super_admin") or user_has_permission(
         user, "admin.full_access"

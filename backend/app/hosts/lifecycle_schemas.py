@@ -271,3 +271,12 @@ class HostVerificationPublic(BaseModel):
 
 class HostVerificationReject(BaseModel):
     notes: str = Field(min_length=3, max_length=2000)
+
+
+class HostAdminLifecycleReason(BaseModel):
+    """Reason body for host workspace lifecycle actions.
+
+    Suspend / force-delete enforce min length in the service; restore may omit.
+    """
+
+    reason: str = Field(default="", max_length=2000)

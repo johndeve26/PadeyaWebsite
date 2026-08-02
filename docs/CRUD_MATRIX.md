@@ -68,8 +68,8 @@ Do **not** use status to skip planning. Append-only modules (ledger, audit logs,
 
 | Resource | Model | Create | Read | Update | Delete / lifecycle | Hard delete? | Frontend | Backend (key) | Status | Primary gap |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Host profiles | `hosts`, `host_profiles` | Onboard | Self; Legacy public | PATCH me | Suspend (none) | Soft `hosts.status` | `/host/onboarding`, `/host/*` | `POST /hosts/onboard`, `GET/PATCH /hosts/me` | partial | No admin suspend/list |
-| Host verification | `host_verifications` | Auto pending on onboard | Admin list (+ host name / owner) | Approve/reject | — | Status fields | `/admin/hosts` | `GET /hosts/admin/verifications`, `POST .../approve\|reject` | **complete** | FE shows `host_display_name`; host actions menu |
+| Host profiles | `hosts`, `host_profiles` | Onboard | Self; Legacy public | PATCH me | Admin suspend → restore; force-delete soft EOL (`deleted`) after suspend; owner user untouched | Soft `hosts.status` only (no hard delete) | `/host/onboarding`, `/host/*`, `/admin/hosts` (select + bulk) | `POST /hosts/admin/{id}/suspend\|restore\|force-delete`; perms `hosts.suspend`, `hosts.force_delete` | **complete** (workspace) | No separate host directory beyond verification queue |
+| Host verification | `host_verifications` | Auto pending on onboard | Admin list (+ host name / owner) | Approve/reject | — | Status fields | `/admin/hosts` | `GET /hosts/admin/verifications`, `POST .../approve\|reject` | **complete** | Bulk workspace lifecycle on same page |
 | Host team members | `host_team_members` | Accept invite → member | Host list | Role/permissions/scope PATCH | Suspend / remove (`removed_at`); restore | Hard delete blocked | `/host/team`, `/host/team/[id]` | `/host/team`, `/host/team/members/*` (+ legacy `/hosts/.../team*`) | **complete** | `scope_json`; see [HOST_TEAM.md](./HOST_TEAM.md) |
 | Host team invites | `host_team_invites` | Host invite | Host list (pending); invitee preview | Role/permissions/scope while pending | Expire / revoke / accept (→ member) | Hard delete blocked | `/host/team`, `/team/invite/[token]` | `/host/team/invites*`, `/team/invites/{token}*` (+ legacy) | **complete** | Token hash; resend rotates token |
 | Host team audit | `host_team_audit_logs` | System on team actions | Host / admin team audit | — | Append-only | — | `/host/team` (audit) | `/host/team/audit-log`, `/admin/teams/audit` | **complete** | Mirrored to global `audit_logs` |
@@ -462,7 +462,7 @@ See [TAXONOMY_AND_CONTENT_GRAPH.md](./TAXONOMY_AND_CONTENT_GRAPH.md).
 | Area | complete | partial | missing |
 |---|---|---|---|
 | Core/Auth | refresh tokens; roles/perms (ops); users API; audit read | user roles | — |
-| Hosts | followers; verification API; team; bank accounts | profile (no admin suspend) | — |
+| Hosts | followers; verification API; team; bank accounts; admin workspace suspend/restore/force-delete | — | — |
 | Events | events; ticket types; media; agenda; people; questions; memories; templates; categories admin | venue | — |
 | Ticketing | tickets; tables (+ cancel) | orders; items; QR; transfers; groups; offline batches | — |
 | Finance | payments; refund requests; balances; ledger; payouts; evidence | webhook events; refund rows | — |
@@ -484,10 +484,9 @@ See [TAXONOMY_AND_CONTENT_GRAPH.md](./TAXONOMY_AND_CONTENT_GRAPH.md).
 
 1. **Frontend wiring** for new lifecycle APIs (CMS, host team/bank, templates, featured, audit read).
 2. **Sponsorship placements** — backend create exists; frontend create missing.
-4. **Webhook event admin read** — still write-only.
-5. **Generic CMS pages** — still absent (blog/FAQ/banners done).
-6. **Manual check-in override** — API exists; frontend not wired.
-7. **Host admin suspend/list** — profile lifecycle still partial.
+3. **Webhook event admin read** — still write-only.
+4. **Generic CMS pages** — still absent (blog/FAQ/banners done).
+5. **Manual check-in override** — API exists; frontend not wired.
 
 ---
 
@@ -495,6 +494,7 @@ See [TAXONOMY_AND_CONTENT_GRAPH.md](./TAXONOMY_AND_CONTENT_GRAPH.md).
 
 | Date | Change |
 |---|---|
+| 2026-08-02 | Host workspace admin soft lifecycle: `POST /hosts/admin/{id}/suspend\|restore\|force-delete`; perms `hosts.suspend` / `hosts.force_delete`; owner user untouched; `/admin/hosts` checkbox + bulk deactivate/force-delete |
 | 2026-07-31 | User force-delete soft EOL: `POST /admin/users/{id}/force-delete` requires prior `suspended`; sets `account_status=deleted`; perm `admin.users.force_delete`; bulk select on `/admin/users` |
 | 2026-07-30 | Marketplace taxonomy visuals: admin upload/replace/remove primary + hero images for `category`, `city`, `state`, `area`; focal + alt; public cards/hubs; migration `20260730_0211`; perm `events.approve` / `admin.full_access` (not blog taxonomy) |
 | 2026-07-29 | Privacy-aware user gender (`male`/`female`/`prefer_not_to_say`) + visibility (`public`/`connections_only`/`private`); backend `can_view_gender`; connect-request exception; personal vs org host display; migration `20260729_0148` |

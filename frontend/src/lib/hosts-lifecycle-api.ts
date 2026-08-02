@@ -1,5 +1,6 @@
 import { apiRequest } from "@/lib/api";
 import { readActiveHostId } from "@/lib/host-workspace";
+import type { Host } from "@/lib/types/events";
 import type {
   HostBankAccount,
   HostTeamAuditItem,
@@ -346,4 +347,36 @@ export async function rejectHostVerification(
     `/hosts/admin/verifications/${id}/reject`,
     { method: "POST", body: { notes } },
   );
+}
+
+/** Soft-suspend a host workspace (owner user account untouched). */
+export async function suspendHostWorkspace(
+  hostId: string,
+  reason: string,
+): Promise<Host> {
+  return apiRequest<Host>(`/hosts/admin/${hostId}/suspend`, {
+    method: "POST",
+    body: { reason: reason.trim() },
+  });
+}
+
+export async function restoreHostWorkspace(
+  hostId: string,
+  reason = "Restored by admin",
+): Promise<Host> {
+  return apiRequest<Host>(`/hosts/admin/${hostId}/restore`, {
+    method: "POST",
+    body: { reason: reason.trim() },
+  });
+}
+
+/** Soft EOL — host must already be suspended. */
+export async function forceDeleteHostWorkspace(
+  hostId: string,
+  reason: string,
+): Promise<Host> {
+  return apiRequest<Host>(`/hosts/admin/${hostId}/force-delete`, {
+    method: "POST",
+    body: { reason: reason.trim() },
+  });
 }

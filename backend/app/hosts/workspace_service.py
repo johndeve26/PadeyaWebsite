@@ -30,7 +30,8 @@ def list_user_workspaces(db: Session, *, user: User) -> list[dict[str, Any]]:
     by_host: dict[uuid.UUID, dict[str, Any]] = {}
 
     owned = get_host_by_user_id(db, user.id)
-    if owned is not None:
+    # Suspended / deleted workspaces stay out of the switcher (owner login intact).
+    if owned is not None and owned.status == "active":
         by_host[owned.id] = {
             "host_id": owned.id,
             "display_name": owned.display_name,

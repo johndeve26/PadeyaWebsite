@@ -69,6 +69,11 @@ def require_user_host(db: Session, user: User) -> Host:
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Host profile not found. Complete onboarding first.",
         )
+    if host.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Host workspace is suspended or deleted and cannot be managed",
+        )
     return host
 
 
@@ -90,7 +95,7 @@ def require_actor_host(
             if host is not None and host.status == "active":
                 return host
         owned = get_host_by_user_id(db, user.id)
-        if owned is not None:
+        if owned is not None and owned.status == "active":
             return owned
 
     from app.hosts.team_access import require_host_for_permission
