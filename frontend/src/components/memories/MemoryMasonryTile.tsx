@@ -3,6 +3,11 @@
 import { useEffect, useRef } from "react";
 
 import { Media } from "@/components/ui";
+import {
+  fromMemoryMedia,
+  getMediaFull,
+  getMediaThumbnail,
+} from "@/lib/public-media";
 import { cn } from "@/lib/cn";
 import {
   isFallbackMemoryArt,
@@ -36,7 +41,9 @@ export function MemoryMasonryTile({
 }: MemoryMasonryTileProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
-  const imageSrc = photo.thumbnail_url || photo.url;
+  const publicMedia = fromMemoryMedia(photo);
+  const imageSrc = getMediaThumbnail(publicMedia, photo.url) ?? photo.url;
+  const enlargeSrc = getMediaFull(publicMedia, photo.url) ?? photo.url;
   const hasStoredSize = Boolean(photo.width && photo.height);
   const fallbackArt = isFallbackMemoryArt(imageSrc);
   const alt = memoryAltText(photo);
@@ -82,6 +89,7 @@ export function MemoryMasonryTile({
         <div ref={frameRef} className="relative h-full w-full">
           <Media
             src={imageSrc}
+            enlargeSrc={enlargeSrc}
             alt={fallbackArt ? "" : alt}
             fill
             enlargeable={false}

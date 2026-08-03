@@ -18,7 +18,7 @@ def test_storage_failure_returns_503(client: TestClient, db_session: Session):
     _, host_user, event = seed_memory_event(db_session)
     headers = login(client, host_user.email)
     with patch(
-        "app.memories.image_processing.get_public_media_storage"
+        "app.public_media.service.get_public_media_storage"
     ) as mock_storage:
         mock_storage.return_value.store_validated_bytes.side_effect = MediaStorageError(
             "R2 down"

@@ -1,3 +1,5 @@
+import type { PublicMedia } from "@/lib/types/public-media";
+
 export type EventStatus =
   | "draft"
   | "published"
@@ -95,6 +97,9 @@ export type EventMedia = {
   media_type: string;
   alt_text: string | null;
   sort_order: number;
+  thumbnail_url?: string | null;
+  full_url?: string | null;
+  public_media?: PublicMedia | null;
 };
 
 export type EventAgendaItem = {
@@ -202,6 +207,8 @@ export type EventItem = {
   distance_is_approximate?: boolean;
   has_valid_coordinates?: boolean | null;
   banner_url: string | null;
+  banner_media?: PublicMedia | null;
+  banner_thumbnail_url?: string | null;
   mobile_banner_url?: string | null;
   teaser_video_url?: string | null;
   social_share_image_url?: string | null;
@@ -263,7 +270,9 @@ export type HostProfile = {
   state: string | null;
   country: string | null;
   avatar_url: string | null;
+  avatar_media?: import("@/lib/types/public-media").PublicMedia | null;
   cover_url: string | null;
+  cover_media?: import("@/lib/types/public-media").PublicMedia | null;
   social_links: Record<string, string> | null;
 };
 

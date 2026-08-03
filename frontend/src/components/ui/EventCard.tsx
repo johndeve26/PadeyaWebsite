@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { formatPublicPlaceLabel } from "@/lib/event-privacy";
 import { formatDateTime, formatNgn } from "@/lib/format";
 import { resolveEventImage } from "@/lib/legacy-presentation";
+import { getMediaCard } from "@/lib/public-media";
 import { eventCardAlt } from "@/lib/seo/image-alt";
 import {
   trackEventCardClick,
@@ -51,12 +52,17 @@ export function EventCard({
 }) {
   const price = priceFrom(event);
   const stock = availability(event);
-  const image = resolveEventImage(
-    event.slug,
-    event.title,
-    event.banner_url,
-    event.category?.name || event.category?.slug,
-  );
+  const bannerFromMedia = event.banner_media
+    ? getMediaCard(event.banner_media, event.banner_url)
+    : null;
+  const image =
+    bannerFromMedia ||
+    resolveEventImage(
+      event.slug,
+      event.title,
+      event.banner_url,
+      event.category?.name || event.category?.slug,
+    );
   const when = formatDateTime(event.start_datetime);
   const place = formatPublicPlaceLabel(event) || "Location TBA";
 

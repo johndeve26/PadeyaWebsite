@@ -42,6 +42,10 @@ type MediaProps = {
    * Set false for decorative images or when a domain lightbox already handles open.
    */
   enlargeable?: boolean;
+  /** Full-res URL for lightbox when preview src is a smaller variant. */
+  enlargeSrc?: string | null;
+  focalX?: number | null;
+  focalY?: number | null;
 };
 
 function maybeEnlargeableWrap(
@@ -51,10 +55,11 @@ function maybeEnlargeableWrap(
     fill: boolean;
     src: string;
     alt: string;
+    enlargeSrc?: string | null;
   },
 ) {
   if (!options.enlargeable) return node;
-  const attrs = enlargeableAttrs(options.src, options.alt);
+  const attrs = enlargeableAttrs(options.src, options.alt, options.enlargeSrc);
   if (!attrs) return node;
   return (
     <span
@@ -86,12 +91,22 @@ export function Media({
   width,
   height,
   enlargeable = true,
+  enlargeSrc,
+  focalX,
+  focalY,
 }: MediaProps) {
   const resolved = resolveMediaUrl(src);
   if (!resolved) return null;
 
   const resolvedSizes = resolveMediaSizes(sizes) ?? "100vw";
   const eager = priority || loading === "eager";
+  const objectPosition =
+    focalX != null || focalY != null
+      ? `${(focalX ?? 0.5) * 100}% ${(focalY ?? 0.5) * 100}%`
+      : undefined;
+  const mergedStyle: CSSProperties | undefined = objectPosition
+    ? { ...style, objectPosition }
+    : style;
   const imgClass = cn(
     "h-full w-full",
     !OBJECT_FIT_CLASS.test(className) && "object-cover",
@@ -107,7 +122,7 @@ export function Media({
         src={resolved}
         alt={alt}
         className={imgClass}
-        style={style}
+        style={mergedStyle}
         loading={eager ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : "auto"}
         decoding="async"
@@ -123,7 +138,7 @@ export function Media({
         width={width}
         height={height}
         className={imgClass}
-        style={style}
+        style={mergedStyle}
         sizes={resolvedSizes}
         priority={priority}
         loading={priority ? undefined : eager ? "eager" : "lazy"}
@@ -139,7 +154,7 @@ export function Media({
         alt={alt}
         fill
         className={imgClass}
-        style={style}
+        style={mergedStyle}
         sizes={resolvedSizes}
         priority={priority}
         loading={priority ? undefined : eager ? "eager" : "lazy"}
@@ -155,5 +170,6 @@ export function Media({
     fill,
     src: resolved,
     alt,
+    enlargeSrc,
   });
 }

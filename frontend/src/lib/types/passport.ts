@@ -165,6 +165,8 @@ export type FanPassportPublicPage = {
   user_id: string;
   display_name: string;
   avatar_url?: string | null;
+  /** Variant payload when public-media pipeline has processed the DP. */
+  avatar_media?: import("@/lib/types/public-media").PublicMedia | null;
   tagline?: string | null;
   bio?: string | null;
   visibility: PassportVisibility;

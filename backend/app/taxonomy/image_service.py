@@ -131,29 +131,47 @@ def upload_taxonomy_media(
     if isinstance(row, Location) and not row.is_active:
         raise HTTPException(status_code=400, detail="Restore before updating")
     role = assert_image_role(image_role)
-    folder = taxonomy_public_folder(kind, term_id, role)
-    storage = get_public_media_storage()
+    from app.public_media.processor import PublicMediaProcessingError
+    from app.public_media.roles import MediaRole
+    from app.public_media.service import (
+        process_and_store_public_media,
+        public_media_response,
+    )
+
+    media_role = (
+        MediaRole.TAXONOMY_HERO if role == "hero" else MediaRole.TAXONOMY_CARD
+    )
     try:
-        stored = storage.store_bytes(
+        payload = process_and_store_public_media(
+            db,
             data=data,
-            filename=filename,
-            content_type=content_type,
-            folder=folder,
+            declared_content_type=content_type,
+            role=media_role,
+            created_by_user_id=user.id,
+            owner_type=f"taxonomy_{kind}",
+            owner_id=term_id,
+            alt_text=normalize_alt(alt),
+            store_source=True,
         )
-    except ValueError as exc:
+    except PublicMediaProcessingError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    _ensure_inline_preview(stored.url)
+    public = public_media_response(payload)
+    display_url = public.get("display_url") or public.get("url")
+    if not display_url:
+        raise HTTPException(status_code=400, detail="Failed to process image")
+
+    _ensure_inline_preview(display_url)
 
     if apply:
         alt_norm = normalize_alt(alt)
         if role == "hero":
-            row.hero_image_url = stored.url
+            row.hero_image_url = display_url
             if alt_norm is not None:
                 row.hero_image_alt = alt_norm
             action = "taxonomy.hero_image_upload"
         else:
-            row.primary_image_url = stored.url
+            row.primary_image_url = display_url
             if alt_norm is not None:
                 row.primary_image_alt = alt_norm
             action = "taxonomy.primary_image_upload"
@@ -163,15 +181,20 @@ def upload_taxonomy_media(
             actor_user_id=user.id,
             resource_type=f"taxonomy_{kind}",
             resource_id=str(term_id),
-            details={"image_role": role, "url": stored.url},
+            details={"image_role": role, "url": display_url},
         )
         db.commit()
         db.refresh(row)
         invalidate_taxonomy_caches()
 
     return {
-        "url": stored.url,
-        "key": stored.key,
+        "url": display_url,
+        "thumbnail_url": public.get("thumbnail_url"),
+        "card_url": public.get("card_url"),
+        "display_url": display_url,
+        "full_url": public.get("full_url"),
+        "media": public,
+        "key": None,
         "kind": kind,
         "term_id": term_id,
         "image_role": role,

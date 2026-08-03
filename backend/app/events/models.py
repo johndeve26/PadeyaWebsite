@@ -130,6 +130,12 @@ class Event(Base):
     )
     banner_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     mobile_banner_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    banner_media: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"), nullable=True
+    )
+    mobile_banner_media: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"), nullable=True
+    )
     teaser_video_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     social_share_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     brand_accent_override: Mapped[str | None] = mapped_column(String(32), nullable=True)
@@ -277,6 +283,11 @@ class EventMedia(Base):
         index=True,
     )
     url: Mapped[str] = mapped_column(String(500), nullable=False)
+    thumbnail_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    full_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    public_media: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"), nullable=True
+    )
     media_type: Mapped[str] = mapped_column(String(32), default="gallery", nullable=False)
     alt_text: Mapped[str | None] = mapped_column(String(255), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

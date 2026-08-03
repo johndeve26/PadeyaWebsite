@@ -46,11 +46,12 @@ export const ENLARGE_ALT_ATTR = "data-enlarge-alt";
 export function enlargeableAttrs(
   src: string | null | undefined,
   alt = "",
+  enlargeSrc?: string | null,
 ): Record<string, string> | undefined {
   const resolved = src ? resolveMediaUrl(src) : null;
   if (!resolved) return undefined;
   return {
-    [ENLARGE_SRC_ATTR]: resolved,
+    [ENLARGE_SRC_ATTR]: resolveMediaUrl(enlargeSrc || src) || resolved,
     [ENLARGE_ALT_ATTR]: alt || "Enlarged image",
   };
 }

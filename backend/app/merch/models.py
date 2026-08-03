@@ -105,6 +105,9 @@ class EventMerchProduct(Base):
     base_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(8), nullable=False, default="NGN")
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    image_media: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"), nullable=True
+    )
     gallery_urls: Mapped[list[Any] | None] = mapped_column(
         JSON().with_variant(JSONB, "postgresql"), nullable=True
     )

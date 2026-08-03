@@ -15,6 +15,7 @@ function formatDate(iso: string): string {
 
 export function MemoryAlbumCardView({ album }: { album: MemoryAlbumCard }) {
   const cover = album.cover_thumbnail_url || album.cover_url;
+  const coverEnlarge = album.cover_url || cover;
   const count = album.counts?.memory_count ?? 0;
   return (
     <Link
@@ -25,6 +26,7 @@ export function MemoryAlbumCardView({ album }: { album: MemoryAlbumCard }) {
         {cover ? (
           <Media
             src={cover}
+            enlargeSrc={coverEnlarge !== cover ? coverEnlarge : undefined}
             alt=""
             fill
             enlargeable={false}

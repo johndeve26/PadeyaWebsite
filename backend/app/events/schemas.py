@@ -476,11 +476,14 @@ class EventMediaPublic(BaseModel):
 
     id: UUID
     url: str
+    thumbnail_url: str | None = None
+    full_url: str | None = None
+    public_media: dict[str, Any] | None = None
     media_type: str
     alt_text: str | None
     sort_order: int
 
-    @field_validator("url", mode="before")
+    @field_validator("url", "thumbnail_url", "full_url", mode="before")
     @classmethod
     def normalize_url(cls, value: str | None) -> str | None:
         return normalize_public_media_url(value)
@@ -488,11 +491,25 @@ class EventMediaPublic(BaseModel):
 
 class MediaUploadPublic(BaseModel):
     url: str
-    key: str
+    key: str | None = None
     media_type: str
     event_id: UUID | None = None
+    thumbnail_url: str | None = None
+    card_url: str | None = None
+    display_url: str | None = None
+    full_url: str | None = None
+    og_url: str | None = None
+    media: dict[str, Any] | None = None
 
-    @field_validator("url", mode="before")
+    @field_validator(
+        "url",
+        "thumbnail_url",
+        "card_url",
+        "display_url",
+        "full_url",
+        "og_url",
+        mode="before",
+    )
     @classmethod
     def normalize_url(cls, value: str | None) -> str | None:
         return normalize_public_media_url(value)
@@ -705,6 +722,9 @@ class EventPublic(BaseModel):
     has_valid_coordinates: bool | None = None
     banner_url: str | None
     mobile_banner_url: str | None = None
+    banner_media: dict[str, Any] | None = None
+    mobile_banner_media: dict[str, Any] | None = None
+    banner_thumbnail_url: str | None = None
     teaser_video_url: str | None = None
     social_share_image_url: str | None = None
     brand_accent_override: str | None = None

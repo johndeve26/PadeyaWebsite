@@ -44,6 +44,8 @@ class HostProfilePublic(BaseModel):
     country: str | None
     avatar_url: str | None
     cover_url: str | None
+    avatar_media: dict[str, Any] | None = None
+    cover_media: dict[str, Any] | None = None
     social_links: dict[str, Any] | None
 
 

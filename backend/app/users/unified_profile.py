@@ -133,7 +133,13 @@ def apply_unified_display_name(db: Session, user: User, raw_name: str) -> str:
     return name
 
 
-def apply_unified_avatar(db: Session, user: User, raw_url: str | None) -> str | None:
+def apply_unified_avatar(
+    db: Session,
+    user: User,
+    raw_url: str | None,
+    *,
+    media: dict | None = None,
+) -> str | None:
     """Set one profile photo on Fan Passport and Host Legacy (same as username sync)."""
     try:
         url = validate_image_url(raw_url)
@@ -145,18 +151,30 @@ def apply_unified_avatar(db: Session, user: User, raw_url: str | None) -> str | 
 
     passport = ensure_passport(db, user)
     passport.avatar_url = url
+    if media is not None and hasattr(passport, "avatar_media"):
+        passport.avatar_media = media
 
     host = get_host_by_user_id(db, user.id)
     if host is not None:
         if host.profile is None:
             host.profile = HostProfile(host_id=host.id)
         host.profile.avatar_url = url
+        if media is not None and hasattr(host.profile, "avatar_media"):
+            host.profile.avatar_media = media
 
     try:
         from app.core.cache_invalidation import invalidate_fan_public_caches
 
         if passport.username:
             invalidate_fan_public_caches(username=passport.username)
+    except Exception:
+        pass
+
+    try:
+        from app.core.cache_invalidation import invalidate_host_public_caches
+
+        if host is not None and getattr(host, "slug", None):
+            invalidate_host_public_caches(host_id=host.id, username=host.slug)
     except Exception:
         pass
 

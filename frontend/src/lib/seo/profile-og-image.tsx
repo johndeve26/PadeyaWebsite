@@ -1,7 +1,9 @@
 /**
- * Profile share cards — always render the user DP (avatar) into a
- * crawler-safe 1200×630 raster so WhatsApp/iMessage do not fall back
- * to the brand logo when the raw avatar is oversized or SVG.
+ * Profile share cards — image-first DP showcase (1200×630).
+ *
+ * WhatsApp/iMessage need a bounded raster; the composed “passport badge”
+ * layout felt mild. Prefer a full-bleed avatar with a light bottom identity
+ * strip so the photo remains the hero.
  */
 
 import { ImageResponse } from "next/og";
@@ -22,7 +24,6 @@ async function avatarDataUrl(
     if (pathname.endsWith(".svg") || pathname.includes(".svg/")) return null;
 
     const res = await fetch(absolute, {
-      // Avatars change rarely; keep OG generation snappy across crawlers.
       next: { revalidate: 3600 },
       headers: { Accept: "image/*,*/*;q=0.8" },
     });
@@ -31,7 +32,6 @@ async function avatarDataUrl(
     if (contentType.includes("svg")) return null;
 
     const bytes = await res.arrayBuffer();
-    // Guard runaway downloads — raw avatars can be multi‑MB.
     if (bytes.byteLength === 0 || bytes.byteLength > 8_000_000) return null;
 
     const mime = contentType.startsWith("image/")
@@ -68,110 +68,115 @@ export async function buildProfileOgImage(opts: {
           width: "100%",
           height: "100%",
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
+          position: "relative",
           backgroundColor: brand.colors.ink,
-          backgroundImage:
-            "radial-gradient(circle at 20% 20%, #1a1a1a 0%, #000000 55%)",
           color: brand.colors.paper,
           fontFamily: "ui-sans-serif, system-ui, sans-serif",
+          overflow: "hidden",
         }}
       >
+        {/* Full-bleed DP — the share card’s main signal */}
+        {avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element -- ImageResponse
+          <img
+            src={avatar}
+            width={PROFILE_OG_SIZE.width}
+            height={PROFILE_OG_SIZE.height}
+            alt=""
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: PROFILE_OG_SIZE.width,
+              height: PROFILE_OG_SIZE.height,
+              objectFit: "cover",
+              objectPosition: "center",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundImage:
+                "radial-gradient(circle at 30% 20%, #222222 0%, #000000 70%)",
+              fontSize: 180,
+              fontWeight: 800,
+              color: brand.colors.green,
+            }}
+          >
+            {initials}
+          </div>
+        )}
+
+        {/* Soft bottom grade so identity stays readable on any photo */}
         <div
           style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 220,
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 280,
-            height: 280,
-            borderRadius: 9999,
-            overflow: "hidden",
-            border: `6px solid ${brand.colors.green}`,
-            backgroundColor: brand.colors.surfaceDark,
+            backgroundImage:
+              "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0) 100%)",
           }}
-        >
-          {avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element -- ImageResponse
-            <img
-              src={avatar}
-              width={280}
-              height={280}
-              alt=""
-              style={{
-                width: 280,
-                height: 280,
-                objectFit: "cover",
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "100%",
-                height: "100%",
-                fontSize: 96,
-                fontWeight: 800,
-                color: brand.colors.green,
-              }}
-            >
-              {initials}
-            </div>
-          )}
-        </div>
+        />
 
         <div
           style={{
+            position: "absolute",
+            left: 56,
+            right: 56,
+            bottom: 44,
             display: "flex",
             flexDirection: "column",
-            alignItems: "center",
-            marginTop: 36,
-            paddingLeft: 64,
-            paddingRight: 64,
+            alignItems: "flex-start",
           }}
         >
           <div
             style={{
               display: "flex",
-              fontSize: 56,
+              fontSize: 18,
               fontWeight: 800,
-              letterSpacing: -1,
-              textAlign: "center",
-              maxWidth: 1000,
+              letterSpacing: 5,
+              textTransform: "uppercase",
+              color: brand.colors.green,
+              marginBottom: 10,
+            }}
+          >
+            {brand.name}
+            {subtitle ? ` · ${subtitle}` : ""}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              fontSize: 58,
+              fontWeight: 800,
+              letterSpacing: -1.2,
+              lineHeight: 1.05,
+              maxWidth: 1080,
+              textShadow: "0 2px 18px rgba(0,0,0,0.55)",
             }}
           >
             {name.slice(0, 48)}
           </div>
-          {subtitle ? (
-            <div
-              style={{
-                display: "flex",
-                marginTop: 12,
-                fontSize: 28,
-                fontWeight: 600,
-                color: brand.colors.softGray,
-                textAlign: "center",
-              }}
-            >
-              {subtitle}
-            </div>
-          ) : null}
-          <div
-            style={{
-              display: "flex",
-              marginTop: 28,
-              fontSize: 22,
-              fontWeight: 700,
-              letterSpacing: 4,
-              textTransform: "uppercase",
-              color: brand.colors.green,
-            }}
-          >
-            {brand.name}
-          </div>
         </div>
+
+        {/* Accent bar */}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 10,
+            backgroundColor: brand.colors.green,
+          }}
+        />
       </div>
     ),
     {

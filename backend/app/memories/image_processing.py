@@ -1,20 +1,17 @@
-"""Optimize memory photo uploads: orient, strip EXIF, resize, WebP."""
+"""Optimize memory photo uploads via the shared public media pipeline."""
 
 from __future__ import annotations
 
-import io
 import uuid
 from dataclasses import dataclass
 
-from app.core.media import MediaStorageError, get_public_media_storage
-from app.core.media_folders import memory_public_folder
+from sqlalchemy.orm import Session
 
-ALLOWED_MEMORY_MIME = frozenset({"image/jpeg", "image/jpg", "image/png", "image/webp"})
-MAX_RAW_UPLOAD_BYTES = 10 * 1024 * 1024
-MAX_LONG_EDGE = 1800
-THUMB_LONG_EDGE = 400
-WEBP_QUALITY = 80
-THUMB_QUALITY = 75
+from app.core.media import MediaStorageError, delete_media_keys, get_public_media_storage
+from app.core.media_folders import memory_public_folder
+from app.public_media.processor import PublicMediaProcessingError, encode_variants
+from app.public_media.roles import MediaRole, VariantType
+from app.public_media.service import process_and_store_public_media
 
 
 class MemoryImageError(ValueError):
@@ -32,20 +29,8 @@ class ProcessedMemoryImage:
     mime_type: str
     size_bytes: int
     original_bytes: int
-
-
-def _normalize_mime(declared: str | None) -> str:
-    return (declared or "").split(";")[0].strip().lower()
-
-
-def _sniff_image_mime(data: bytes) -> str | None:
-    if data[:3] == b"\xff\xd8\xff":
-        return "image/jpeg"
-    if data[:8] == b"\x89PNG\r\n\x1a\n":
-        return "image/png"
-    if len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP":
-        return "image/webp"
-    return None
+    asset_id: str | None = None
+    full_url: str | None = None
 
 
 def process_memory_image(
@@ -53,85 +38,123 @@ def process_memory_image(
     data: bytes,
     declared_content_type: str | None,
     event_id: uuid.UUID,
+    db: Session | None = None,
+    created_by_user_id: uuid.UUID | None = None,
 ) -> ProcessedMemoryImage:
-    """Validate and optimize a memory photo for storage."""
-    if not data:
-        raise MemoryImageError("Empty file")
-    original_bytes = len(data)
-    if original_bytes > MAX_RAW_UPLOAD_BYTES:
-        raise MemoryImageError("Image must be 10MB or smaller")
+    """Validate and optimize a memory photo for storage.
 
-    sniffed = _sniff_image_mime(data)
-    if sniffed is None:
-        raise MemoryImageError("Unrecognized or unsupported image")
-    declared = _normalize_mime(declared_content_type)
-    if declared and declared not in ALLOWED_MEMORY_MIME:
-        raise MemoryImageError("Only JPEG, PNG, and WebP images are allowed")
-    if declared and declared in ALLOWED_MEMORY_MIME:
-        # jpg alias
-        declared_norm = "image/jpeg" if declared == "image/jpg" else declared
-        sniffed_norm = "image/jpeg" if sniffed == "image/jpg" else sniffed
-        if declared_norm != sniffed_norm:
-            raise MemoryImageError("File content does not match declared type")
+    With ``db``: persist a PublicMediaAsset + variants (shared pipeline).
+    Without ``db``: encode + store under legacy memory folders (unit tests /
+    offline callers) without asset rows.
+    """
+    if db is not None:
+        return _process_with_asset(
+            db,
+            data=data,
+            declared_content_type=declared_content_type,
+            event_id=event_id,
+            created_by_user_id=created_by_user_id,
+        )
+    return _process_legacy_folders(
+        data=data,
+        declared_content_type=declared_content_type,
+        event_id=event_id,
+    )
 
+
+def _process_with_asset(
+    db: Session,
+    *,
+    data: bytes,
+    declared_content_type: str | None,
+    event_id: uuid.UUID,
+    created_by_user_id: uuid.UUID | None,
+) -> ProcessedMemoryImage:
     try:
-        from PIL import Image, ImageOps, UnidentifiedImageError
-    except ImportError as exc:  # pragma: no cover
-        raise MemoryImageError("Image processing unavailable") from exc
-
-    try:
-        with Image.open(io.BytesIO(data)) as img:
-            img.verify()
-    except (UnidentifiedImageError, OSError, ValueError, SyntaxError) as exc:
-        raise MemoryImageError("Invalid or corrupt image") from exc
-
-    try:
-        with Image.open(io.BytesIO(data)) as img:
-            img = ImageOps.exif_transpose(img)
-            if img.mode not in {"RGB", "RGBA"}:
-                img = img.convert("RGB")
-            elif img.mode == "RGBA":
-                # Flatten alpha onto white for consistent WebP photos.
-                background = Image.new("RGB", img.size, (255, 255, 255))
-                background.paste(img, mask=img.split()[-1])
-                img = background
-
-            width, height = img.size
-            if width < 1 or height < 1 or width > 20000 or height > 20000:
-                raise MemoryImageError("Image dimensions are not allowed")
-
-            display = img.copy()
-            display.thumbnail((MAX_LONG_EDGE, MAX_LONG_EDGE), Image.Resampling.LANCZOS)
-            thumb = img.copy()
-            thumb.thumbnail((THUMB_LONG_EDGE, THUMB_LONG_EDGE), Image.Resampling.LANCZOS)
-
-            display_buf = io.BytesIO()
-            display.save(display_buf, format="WEBP", quality=WEBP_QUALITY, method=4)
-            display_bytes = display_buf.getvalue()
-
-            thumb_buf = io.BytesIO()
-            thumb.save(thumb_buf, format="WEBP", quality=THUMB_QUALITY, method=4)
-            thumb_bytes = thumb_buf.getvalue()
-
-            out_w, out_h = display.size
-    except MemoryImageError:
+        payload = process_and_store_public_media(
+            db,
+            data=data,
+            declared_content_type=declared_content_type,
+            role=MediaRole.MEMORY,
+            created_by_user_id=created_by_user_id,
+            owner_type="event",
+            owner_id=event_id,
+            store_source=True,
+        )
+    except MediaStorageError:
         raise
-    except (UnidentifiedImageError, OSError, ValueError, SyntaxError) as exc:
-        raise MemoryImageError("Failed to process image") from exc
+    except PublicMediaProcessingError as exc:
+        raise MemoryImageError(str(exc)) from exc
 
-    if not display_bytes or not thumb_bytes:
-        raise MemoryImageError("Failed to encode image")
+    db.flush()
 
-    # Object keys are backend-generated UUIDs under memories/events/{event_id}/…
+    from app.public_media.models import PublicMediaVariant
+
+    asset_id = payload.get("id")
+    display_key = ""
+    thumb_key = ""
+    if asset_id:
+        rows = (
+            db.query(PublicMediaVariant)
+            .filter(PublicMediaVariant.asset_id == uuid.UUID(str(asset_id)))
+            .all()
+        )
+        by_type = {r.variant_type: r for r in rows}
+        if "display" in by_type:
+            display_key = by_type["display"].storage_key
+        if "thumbnail" in by_type:
+            thumb_key = by_type["thumbnail"].storage_key
+
+    variants = payload.get("variants") or {}
+    display = variants.get("display") or {}
+    thumb = variants.get("thumbnail") or {}
+    full = variants.get("full") or display
+    return ProcessedMemoryImage(
+        display_url=str(payload.get("display_url") or display.get("url") or ""),
+        display_key=display_key,
+        thumbnail_url=str(payload.get("thumbnail_url") or thumb.get("url") or ""),
+        thumbnail_key=thumb_key,
+        width=int(payload.get("width") or display.get("width") or 0),
+        height=int(payload.get("height") or display.get("height") or 0),
+        mime_type="image/webp",
+        size_bytes=int((payload.get("_variant_byte_sizes") or {}).get("display") or 0),
+        original_bytes=int(payload.get("_source_bytes") or len(data)),
+        asset_id=str(asset_id) if asset_id else None,
+        full_url=str(
+            payload.get("full_url") or full.get("url") or payload.get("display_url") or ""
+        ),
+    )
+
+
+def _process_legacy_folders(
+    *,
+    data: bytes,
+    declared_content_type: str | None,
+    event_id: uuid.UUID,
+) -> ProcessedMemoryImage:
+    try:
+        processed = encode_variants(
+            data=data,
+            declared_content_type=declared_content_type,
+            role=MediaRole.MEMORY,
+        )
+    except PublicMediaProcessingError as exc:
+        raise MemoryImageError(str(exc)) from exc
+
+    by = {v.variant: v for v in processed.variants}
+    display = by.get(VariantType.DISPLAY) or next(iter(processed.variants))
+    thumb = by.get(VariantType.THUMBNAIL) or display
+    full = by.get(VariantType.FULL) or display
+
     storage = get_public_media_storage()
     try:
         display_stored = storage.store_validated_bytes(
-            data=display_bytes,
+            data=display.data,
             filename="memory.webp",
             content_type="image/webp",
             folder=memory_public_folder(event_id, thumb=False),
             extension=".webp",
-            max_bytes=MAX_RAW_UPLOAD_BYTES,
+            max_bytes=max(len(display.data), 10 * 1024 * 1024),
         )
     except MediaStorageError:
         raise
@@ -140,12 +163,12 @@ def process_memory_image(
 
     try:
         thumb_stored = storage.store_validated_bytes(
-            data=thumb_bytes,
+            data=thumb.data,
             filename="memory-thumb.webp",
             content_type="image/webp",
             folder=memory_public_folder(event_id, thumb=True),
             extension=".webp",
-            max_bytes=MAX_RAW_UPLOAD_BYTES,
+            max_bytes=max(len(thumb.data), 10 * 1024 * 1024),
         )
     except Exception:
         try:
@@ -159,12 +182,18 @@ def process_memory_image(
         display_key=display_stored.key,
         thumbnail_url=thumb_stored.url,
         thumbnail_key=thumb_stored.key,
-        width=int(out_w),
-        height=int(out_h),
+        width=display.width,
+        height=display.height,
         mime_type="image/webp",
-        size_bytes=len(display_bytes),
-        original_bytes=original_bytes,
+        size_bytes=len(display.data),
+        original_bytes=processed.source_bytes,
+        asset_id=None,
+        full_url=display_stored.url if full is display else display_stored.url,
     )
+
+
+def cleanup_processed_memory_keys(processed: ProcessedMemoryImage) -> None:
+    delete_media_keys(processed.display_key, processed.thumbnail_key)
 
 
 def validate_external_gallery_url(url: str | None) -> str | None:

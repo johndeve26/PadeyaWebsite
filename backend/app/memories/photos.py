@@ -268,6 +268,8 @@ async def upload_host_photo(
             data=raw,
             declared_content_type=file.content_type,
             event_id=event.id,
+            db=db,
+            created_by_user_id=user.id,
         )
     except MemoryImageError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -362,6 +364,8 @@ async def upload_fan_photo(
             data=raw,
             declared_content_type=file.content_type,
             event_id=event.id,
+            db=db,
+            created_by_user_id=user.id,
         )
     except MemoryImageError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

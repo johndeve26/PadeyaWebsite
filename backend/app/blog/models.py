@@ -202,6 +202,7 @@ class BlogPost(Base):
     # Markdown / structured source (never trust raw HTML from clients)
     body: Mapped[str] = mapped_column(Text, nullable=False, default="")
     cover_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    cover_media: Mapped[dict[str, Any] | None] = mapped_column(JSON_TYPE, nullable=True)
     # draft | scheduled | published | archived
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft", index=True)
     is_featured: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

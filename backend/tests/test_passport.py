@@ -275,3 +275,34 @@ def test_superfan_badge_logic(client: TestClient, db_session: Session):
     db_session.commit()
     badges = client.get("/api/v1/passport/me/badges", headers=headers).json()
     assert next(b for b in badges if b["slug"] == "day-one-fan")["earned"] is True
+
+
+def test_followed_hosts_hide_deleted_and_suspended(
+    client: TestClient, db_session: Session
+):
+    active = _seed_host(
+        db_session, email="follow-active@example.com", slug="follow-active"
+    )
+    deleted = _seed_host(
+        db_session, email="follow-deleted@example.com", slug="follow-deleted"
+    )
+    suspended = _seed_host(
+        db_session, email="follow-suspended@example.com", slug="follow-suspended"
+    )
+    deleted.status = "deleted"
+    suspended.status = "suspended"
+    db_session.commit()
+
+    headers = _register(client, "follow-fan@example.com", "Follow Fan")
+    buyer = db_session.query(User).filter_by(email="follow-fan@example.com").one()
+    for host in (active, deleted, suspended):
+        db_session.add(
+            HostFollower(host_id=host.id, user_id=buyer.id, marketing_opt_in=False)
+        )
+    db_session.commit()
+
+    passport = client.get("/api/v1/passport/me", headers=headers).json()
+    usernames = {h["username"] for h in passport["followed_hosts"]}
+    assert "follow-active" in usernames
+    assert "follow-deleted" not in usernames
+    assert "follow-suspended" not in usernames

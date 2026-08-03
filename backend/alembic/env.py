@@ -45,6 +45,7 @@ from app.email import models as email_models  # noqa: F401
 from app.notifications import models as notifications_models  # noqa: F401
 from app.push import models as push_models  # noqa: F401
 from app.runtime_settings import models as runtime_settings_models  # noqa: F401
+from app.public_media import models as public_media_models  # noqa: F401
 
 config = context.config
 settings = get_settings()

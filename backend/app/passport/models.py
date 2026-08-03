@@ -41,6 +41,9 @@ class FanPassport(Base):
         String(64), unique=True, nullable=True, index=True
     )
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    avatar_media: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"), nullable=True
+    )
     tagline: Mapped[str | None] = mapped_column(String(200), nullable=True)
     bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     # private | unlisted (direct link) | public (default)

@@ -245,6 +245,13 @@ def serialize_event(
         "map_open_url": None,
         "banner_url": event.banner_url,
         "mobile_banner_url": getattr(event, "mobile_banner_url", None),
+        "banner_media": getattr(event, "banner_media", None),
+        "mobile_banner_media": getattr(event, "mobile_banner_media", None),
+        "banner_thumbnail_url": (
+            (getattr(event, "banner_media", None) or {}).get("thumbnail_url")
+            if isinstance(getattr(event, "banner_media", None), dict)
+            else None
+        ),
         "teaser_video_url": getattr(event, "teaser_video_url", None),
         "social_share_image_url": getattr(event, "social_share_image_url", None),
         "brand_accent_override": getattr(event, "brand_accent_override", None),
@@ -1936,21 +1943,39 @@ def upload_host_media_file(
         "other",
     }:
         raise HTTPException(status_code=400, detail="Invalid media_type")
-    storage = get_public_media_storage()
+
+    from app.public_media.processor import PublicMediaProcessingError
+    from app.public_media.service import process_upload_kind, public_media_response
+
     try:
-        stored = storage.store_bytes(
+        payload = process_upload_kind(
+            db,
             data=data,
-            filename=filename,
-            content_type=content_type,
-            folder=host_public_folder(host.id, kind),
+            declared_content_type=content_type,
+            media_type=kind,
+            created_by_user_id=user.id,
+            owner_type="host",
+            owner_id=host.id,
         )
-    except ValueError as exc:
+    except PublicMediaProcessingError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    public = public_media_response(payload)
+    display_url = public.get("display_url") or public.get("url")
+    if not display_url:
+        raise HTTPException(status_code=400, detail="Failed to process image")
+    db.commit()
     return {
-        "url": stored.url,
-        "key": stored.key,
+        "url": display_url,
+        "thumbnail_url": public.get("thumbnail_url"),
+        "card_url": public.get("card_url"),
+        "display_url": display_url,
+        "full_url": public.get("full_url"),
+        "og_url": public.get("og_url"),
+        "media": public,
         "media_type": kind,
         "event_id": None,
+        "key": None,
     }
 
 
@@ -1982,31 +2007,46 @@ def upload_event_media_file(
     }:
         raise HTTPException(status_code=400, detail="Invalid media_type")
 
-    storage = get_public_media_storage()
+    from app.public_media.processor import PublicMediaProcessingError
+    from app.public_media.service import process_upload_kind, public_media_response
+
     try:
-        stored = storage.store_bytes(
+        payload = process_upload_kind(
+            db,
             data=data,
-            filename=filename,
-            content_type=content_type,
-            folder=event_public_folder(event.id, media_type),
+            declared_content_type=content_type,
+            media_type=media_type,
+            created_by_user_id=user.id,
+            owner_type="event",
+            owner_id=event.id,
         )
-    except ValueError as exc:
+    except PublicMediaProcessingError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    public = public_media_response(payload)
+    display_url = public.get("display_url") or public.get("url")
+    if not display_url:
+        raise HTTPException(status_code=400, detail="Failed to process image")
 
     media = EventMedia(
         event_id=event.id,
-        url=stored.url,
+        url=display_url,
+        thumbnail_url=public.get("thumbnail_url"),
+        full_url=public.get("full_url"),
+        public_media=public,
         media_type=media_type,
         alt_text=alt_text,
         sort_order=len(event.media or []),
     )
     db.add(media)
     if set_as_banner or media_type == "banner":
-        event.banner_url = stored.url
+        event.banner_url = display_url
+        event.banner_media = public
     if media_type == "mobile_banner":
-        event.mobile_banner_url = stored.url
+        event.mobile_banner_url = display_url
+        event.mobile_banner_media = public
     if media_type == "social_share":
-        event.social_share_image_url = stored.url
+        event.social_share_image_url = public.get("og_url") or display_url
     return _commit_refresh_event(db, event.id)
 
 

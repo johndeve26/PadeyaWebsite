@@ -70,7 +70,13 @@ def _hosts_map(db: Session, host_ids: set[UUID]) -> dict[UUID, Host]:
     if not host_ids:
         return {}
     return {
-        h.id: h for h in db.scalars(select(Host).where(Host.id.in_(host_ids)))
+        h.id: h
+        for h in db.scalars(
+            select(Host).where(
+                Host.id.in_(host_ids),
+                Host.status == "active",
+            )
+        )
     }
 
 
@@ -359,6 +365,7 @@ def build_public_passport_page(
         "user_id": passport.user_id,
         "display_name": passport.display_name,
         "avatar_url": passport.avatar_url,
+        "avatar_media": getattr(passport, "avatar_media", None),
         "tagline": passport.tagline,
         "bio": passport.bio,
         "visibility": passport.visibility,

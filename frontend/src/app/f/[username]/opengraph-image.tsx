@@ -16,9 +16,16 @@ export default async function FanOpenGraphImage({ params }: Props) {
   const { username } = await params;
   const page = await getPublicFanPassport(decodeURIComponent(username));
   const displayName = page?.display_name?.trim() || "Fan Passport";
+  const media = page?.avatar_media as
+    | { display_url?: string | null; url?: string | null }
+    | null
+    | undefined;
+  // Prefer compressed display variant when the media pipeline has run.
+  const avatarUrl =
+    media?.display_url || media?.url || page?.avatar_url || null;
   return buildProfileOgImage({
     displayName,
     subtitle: "Fan Passport",
-    avatarUrl: page?.avatar_url,
+    avatarUrl,
   });
 }

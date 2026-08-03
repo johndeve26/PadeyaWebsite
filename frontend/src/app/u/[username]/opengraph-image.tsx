@@ -16,10 +16,18 @@ export default async function HostOpenGraphImage({ params }: Props) {
   const { username } = await params;
   const page = await getPublicLegacyByUsername(decodeURIComponent(username));
   const displayName = page?.display_name?.trim() || "Host";
-  // Prefer DP (avatar) over cover — matches Fan Passport share behaviour.
+  const media = page?.profile?.avatar_media as
+    | { display_url?: string | null; url?: string | null }
+    | null
+    | undefined;
+  const avatarUrl =
+    media?.display_url ||
+    media?.url ||
+    page?.profile?.avatar_url ||
+    null;
   return buildProfileOgImage({
     displayName,
     subtitle: "Host on Pàdéyá",
-    avatarUrl: page?.profile?.avatar_url,
+    avatarUrl,
   });
 }

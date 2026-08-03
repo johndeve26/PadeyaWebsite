@@ -487,15 +487,22 @@ def _serialize_passport(db: Session, user: User, passport: FanPassport) -> dict:
     )
     f_host_ids = {f.host_id for f in followers}
     f_hosts = {
-        h.id: h for h in db.scalars(select(Host).where(Host.id.in_(f_host_ids)))
+        h.id: h
+        for h in db.scalars(
+            select(Host).where(
+                Host.id.in_(f_host_ids),
+                Host.status == "active",
+            )
+        )
     } if f_host_ids else {}
     followed_hosts = [
         {
             "host_id": str(f.host_id),
-            "display_name": f_hosts[f.host_id].display_name if f.host_id in f_hosts else "Host",
-            "username": f_hosts[f.host_id].slug if f.host_id in f_hosts else "",
+            "display_name": f_hosts[f.host_id].display_name,
+            "username": f_hosts[f.host_id].slug,
         }
         for f in followers
+        if f.host_id in f_hosts
     ]
 
     paid_purchases = list(
