@@ -6,6 +6,18 @@ Brand: **Pàdéyá**. Public product name: **Ambassadors** (Event Ambassadors, P
 
 Related: [PROMO_CODES.md](./PROMO_CODES.md) · [PAYMENTS.md](./PAYMENTS.md) · [TICKETS.md](./TICKETS.md) · [MERCH.md](./MERCH.md) · [CHECKOUT.md](./CHECKOUT.md) · [HOST_AS_FAN.md](./HOST_AS_FAN.md) · [PRIVACY.md](./PRIVACY.md#ambassadors) · [SECURITY.md](./SECURITY.md#ambassadors-fraud-controls) · [API.md](./API.md#ambassadors-domain-api-phase-10) · [DEMO_DATA.md](./DEMO_DATA.md#open-event-ambassadors-demo)
 
+## Unified referral frontend alignment
+
+| Surface | Role |
+|---|---|
+| Admin **Overview** (`/admin/ambassadors`) | Operational hub: global switch, ledger-backed summary (programs + host campaigns, unique ambassadors, converted orders, host vs Pàdéyá commission owed), search/block, links to workspaces |
+| Admin **Programs** | Platform-wide program CRUD + enrollments (Pàdéyá-funded) |
+| Admin **Campaigns** | Existing host/event-scoped campaigns |
+| Admin **Liabilities** | Payer-separated ledger liabilities |
+| Public `/ambassadors` | Explains Pàdéyá-wide programs **and** host campaigns; CTA states are auth/enrollment-aware; does **not** promise open self-serve platform enrollment |
+
+Overview summary uses `GET /admin/referrals/summary` (shared reporting / `ReferralCommissionEntry`). Do not invent commission totals in React.
+
 ## Product model (summary)
 
 | Topic | Rule |

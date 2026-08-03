@@ -498,3 +498,18 @@ def test_admin_ambassadors_list_includes_platform_wide_null_host(
     assert summary.status_code == 200, summary.text
     settings = client.get("/api/v1/promos/admin/settings", headers=admin)
     assert settings.status_code == 200, settings.text
+
+    # Ledger overview hub (used by Admin Overview cards)
+    ledger = client.get("/api/v1/admin/referrals/summary", headers=admin)
+    assert ledger.status_code == 200, ledger.text
+    body = ledger.json()
+    assert "active_arrangements" in body
+    assert "unique_active_ambassadors" in body
+    assert "active_host_campaigns" in body
+    assert "active_platform_programs" in body
+    assert "commission_owed_total" in body
+    assert "host_funded_owed" in body
+    assert "platform_funded_owed" in body
+    assert "converted_orders" in body
+    assert body["active_platform_programs"] >= 1
+    assert body["unique_active_ambassadors"] >= 1

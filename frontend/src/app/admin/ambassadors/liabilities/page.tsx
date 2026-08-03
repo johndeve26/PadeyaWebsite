@@ -17,6 +17,7 @@ import { formatNgn } from "@/lib/format";
 import {
   fetchAdminReferralLiabilities,
   fetchAdminReferralSummary,
+  type AdminReferralOverviewSummary,
 } from "@/lib/promos-api";
 
 function money(v: unknown): string {
@@ -24,7 +25,7 @@ function money(v: unknown): string {
 }
 
 export default function AdminReferralLiabilitiesPage() {
-  const [summary, setSummary] = useState<Record<string, unknown> | null>(null);
+  const [summary, setSummary] = useState<AdminReferralOverviewSummary | null>(null);
   const [rows, setRows] = useState<Array<Record<string, unknown>> | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +47,7 @@ export default function AdminReferralLiabilitiesPage() {
               ? err.detail
               : "Could not load referral liabilities",
           );
-          setSummary({});
+          setSummary({} as AdminReferralOverviewSummary);
           setRows([]);
         }
       }

@@ -234,7 +234,9 @@ export async function fetchEventCampaigns(
 }
 
 export async function fetchAdminAmbassadorSettings(): Promise<AmbassadorPlatformSettings> {
-  return apiRequest<AmbassadorPlatformSettings>("/promos/admin/settings");
+  return apiRequest<AmbassadorPlatformSettings>("/promos/admin/settings", {
+    timeout: "long",
+  });
 }
 
 export async function updateAdminAmbassadorSettings(input: {
@@ -294,7 +296,9 @@ export async function fetchAdminAmbassadors(params?: {
   if (params?.status) qs.set("status", params.status);
   if (params?.blocked_only) qs.set("blocked_only", "true");
   const suffix = qs.toString() ? `?${qs}` : "";
-  return apiRequest<AdminAmbassadorRow[]>(`/promos/admin/ambassadors${suffix}`);
+  return apiRequest<AdminAmbassadorRow[]>(`/promos/admin/ambassadors${suffix}`, {
+    timeout: "long",
+  });
 }
 
 export async function blockAdminAmbassador(
@@ -432,6 +436,10 @@ export type ReferralSummary = {
   paid_commission: string;
   reversed_commission: string;
   net_commission: string;
+  has_platform_enrollment?: boolean;
+  has_host_enrollment?: boolean;
+  primary_referral_link_path?: string | null;
+  scopes?: string[];
 };
 
 export type ReferralProgramRow = {
@@ -511,9 +519,36 @@ export async function fetchHostPlatformAttributedSales(): Promise<
   return apiRequest("/host/referrals/platform-attributed-sales");
 }
 
-export async function fetchAdminReferralSummary(): Promise<Record<string, unknown>> {
-  return apiRequest("/admin/referrals/summary");
+export async function fetchAdminReferralSummary(): Promise<AdminReferralOverviewSummary> {
+  return apiRequest("/admin/referrals/summary", { timeout: "long" });
 }
+
+export type AdminReferralOverviewSummary = {
+  total_referred_gross_sales?: string | number;
+  host_funded_commission?: string | number;
+  platform_funded_commission?: string | number;
+  pending_platform_liability?: string | number;
+  approved_platform_liability?: string | number;
+  paid_platform_commission?: string | number;
+  platform_reversals?: string | number;
+  host_reversals?: string | number;
+  active_platform_programs?: number;
+  active_platform_ambassadors?: number;
+  converted_orders?: number;
+  attributed_items?: number;
+  active_host_campaigns?: number;
+  active_platform_campaigns?: number;
+  active_arrangements?: number;
+  unique_active_ambassadors?: number;
+  platform_enrollments_active?: number;
+  host_enrollments_active?: number;
+  commission_owed_total?: string | number;
+  host_funded_owed?: string | number;
+  platform_funded_owed?: string | number;
+  pending_commission?: string | number;
+  available_commission?: string | number;
+  paid_commission?: string | number;
+};
 
 export async function fetchAdminReferralLiabilities(params?: {
   payer?: string;

@@ -166,10 +166,35 @@ def get_ambassador_referral_summary(
     rate = (
         round((converted / clicks) * 100, 2) if clicks > 0 else 0.0
     )
+    active_enrollments = [e for e in enrollments if e.status == "active"]
+    has_platform = any(
+        e.program_kind == "platform_wide" for e in active_enrollments
+    )
+    has_host = any(
+        e.program_kind != "platform_wide" for e in active_enrollments
+    )
+    primary_link = None
+    for e in active_enrollments:
+        if e.program_kind == "platform_wide" and e.referral_code:
+            primary_link = f"/r/{e.referral_code}"
+            break
+    if primary_link is None:
+        for e in active_enrollments:
+            if e.referral_code:
+                primary_link = f"/r/{e.referral_code}"
+                break
+
     return {
         "clicks": clicks,
         "conversion_rate": rate,
-        "enrollments_active": sum(1 for e in enrollments if e.status == "active"),
+        "enrollments_active": len(active_enrollments),
+        "has_platform_enrollment": has_platform,
+        "has_host_enrollment": has_host,
+        "primary_referral_link_path": primary_link,
+        "scopes": (
+            (["platform"] if has_platform else [])
+            + (["host"] if has_host else [])
+        ),
         **agg,
     }
 
@@ -430,6 +455,11 @@ def get_admin_referral_summary(
     date_from: datetime | None = None,
     date_to: datetime | None = None,
 ) -> dict:
+    from app.promos.campaigns import campaign_is_live
+
+    source_host = "host"
+    source_platform = "platform"
+
     clauses = _entry_filters(
         scope=scope,
         payer_type=payer,
@@ -472,6 +502,54 @@ def get_admin_referral_summary(
         or 0
     )
 
+    campaigns = list(db.scalars(select(AmbassadorCampaign)).all())
+    host_campaigns_live = sum(
+        1
+        for c in campaigns
+        if campaign_is_live(c)
+        and getattr(c, "source", source_host) != source_platform
+    )
+    # Platform-sourced campaigns (rare admin-created) counted separately from programs
+    platform_campaigns_live = sum(
+        1
+        for c in campaigns
+        if campaign_is_live(c)
+        and getattr(c, "source", source_host) == source_platform
+    )
+
+    platform_enrollments = active_ambassadors
+    host_enrollments = int(
+        db.scalar(
+            select(func.count())
+            .select_from(Ambassador)
+            .where(
+                Ambassador.status == "active",
+                Ambassador.program_kind != "platform_wide",
+            )
+        )
+        or 0
+    )
+    unique_active = int(
+        db.scalar(
+            select(func.count(func.distinct(Ambassador.user_id))).where(
+                Ambassador.status == "active",
+                Ambassador.user_id.is_not(None),
+            )
+        )
+        or 0
+    )
+
+    def _owed(agg: dict) -> str:
+        pending = Decimal(str(agg["pending_commission"]))
+        available = Decimal(str(agg["available_commission"]))
+        return _money(pending + available)
+
+    host_owed = _owed(host_agg)
+    platform_owed = _owed(plat_agg)
+    total_owed = _money(
+        Decimal(host_owed) + Decimal(platform_owed)
+    )
+
     return {
         "total_referred_gross_sales": all_agg["referred_gross_sales"],
         "host_funded_commission": host_agg["net_commission"],
@@ -485,6 +563,19 @@ def get_admin_referral_summary(
         "active_platform_ambassadors": active_ambassadors,
         "converted_orders": all_agg["converted_orders"],
         "attributed_items": all_agg["attributed_items"],
+        # Overview hub fields (additive; ledger-backed)
+        "active_host_campaigns": host_campaigns_live,
+        "active_platform_campaigns": platform_campaigns_live,
+        "active_arrangements": active_programs + host_campaigns_live,
+        "unique_active_ambassadors": unique_active,
+        "platform_enrollments_active": platform_enrollments,
+        "host_enrollments_active": host_enrollments,
+        "commission_owed_total": total_owed,
+        "host_funded_owed": host_owed,
+        "platform_funded_owed": platform_owed,
+        "pending_commission": all_agg["pending_commission"],
+        "available_commission": all_agg["available_commission"],
+        "paid_commission": all_agg["paid_commission"],
     }
 
 
