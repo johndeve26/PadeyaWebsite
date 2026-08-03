@@ -1,5 +1,6 @@
 import { resolveMediaUrl } from "@/lib/media";
 import type {
+  MediaVariant,
   MediaVariantIntent,
   PublicMedia,
 } from "@/lib/types/public-media";
@@ -21,7 +22,7 @@ const CONVENIENCE_FIELDS: Record<string, keyof PublicMedia> = {
 };
 
 function variantEntryUrl(
-  entry: PublicMedia["variants"][keyof PublicMedia["variants"]],
+  entry: MediaVariant | string | null | undefined,
 ): string | null {
   if (!entry) return null;
   if (typeof entry === "string") return entry || null;
