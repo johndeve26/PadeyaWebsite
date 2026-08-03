@@ -144,6 +144,10 @@ def follow_host(db: Session, *, user: User, payload: FollowRequest) -> dict:
         resource_id=str(host.id),
     )
     _notify_host_new_follower(db, host=host, follower=user)
+    from app.crm.follower_count import sync_legacy_follower_count
+
+    db.flush()
+    sync_legacy_follower_count(db, host.id)
     db.commit()
     db.refresh(row)
     return {
@@ -172,6 +176,10 @@ def unfollow_host(db: Session, *, user: User, host_id: UUID) -> None:
         resource_type="host",
         resource_id=str(host_id),
     )
+    from app.crm.follower_count import sync_legacy_follower_count
+
+    db.flush()
+    sync_legacy_follower_count(db, host_id)
     db.commit()
 
 

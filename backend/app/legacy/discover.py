@@ -55,6 +55,10 @@ def list_discover_hosts(db: Session, *, limit: int = 60) -> list[dict]:
     host_ids = [h.id for h in hosts]
     now = datetime.now(timezone.utc)
 
+    from app.crm.follower_count import follower_counts_by_host
+
+    live_followers = follower_counts_by_host(db, host_ids)
+
     scores = {
         row.host_id: row
         for row in db.scalars(
@@ -166,7 +170,7 @@ def list_discover_hosts(db: Session, *, limit: int = 60) -> list[dict]:
                     else None
                 ),
                 "review_count": int(score.review_count) if score else 0,
-                "followers_count": int(score.followers) if score else 0,
+                "followers_count": int(live_followers.get(host.id, 0)),
                 "vault_items_count": vault_n,
                 "sponsor_ready": sponsor_ready,
                 "shows_personal_gender": shows_personal,

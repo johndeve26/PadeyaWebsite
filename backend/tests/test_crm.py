@@ -229,6 +229,66 @@ def test_follow_unfollow_host(client: TestClient, db_session: Session):
     assert client.get("/api/v1/crm/me/following", headers=buyer).json() == []
 
 
+def test_follow_updates_public_legacy_follower_count(
+    client: TestClient, db_session: Session
+):
+    """Public Legacy stats must reflect live follows even when score is stale."""
+    from sqlalchemy import select
+
+    from app.legacy.models import HostLegacyScore
+    from app.legacy.seed import seed_legacy_tiers
+
+    host, _ = _seed_host(db_session)
+    seed_legacy_tiers(db_session)
+    db_session.add(
+        HostLegacyScore(
+            host_id=host.id,
+            events_hosted=0,
+            completed_events=0,
+            tickets_sold=0,
+            verified_checkins=0,
+            review_count=0,
+            followers=0,
+            composite_score=0,
+            legacy_status="New Host",
+        )
+    )
+    db_session.commit()
+
+    before = client.get(f"/api/v1/u/{host.slug}/legacy")
+    assert before.status_code == 200, before.text
+    assert before.json()["stats"]["followers"] == 0
+
+    buyer = _register(client, "legacy-follower@example.com", "Legacy Follower")
+    followed = client.post(
+        "/api/v1/crm/follow",
+        headers=buyer,
+        json={"host_slug": host.slug},
+    )
+    assert followed.status_code == 201, followed.text
+
+    after = client.get(f"/api/v1/u/{host.slug}/legacy")
+    assert after.status_code == 200, after.text
+    assert after.json()["stats"]["followers"] == 1
+
+    score = db_session.scalar(
+        select(HostLegacyScore).where(HostLegacyScore.host_id == host.id)
+    )
+    assert score is not None
+    assert score.followers == 1
+
+    removed = client.delete(f"/api/v1/crm/follow/{host.id}", headers=buyer)
+    assert removed.status_code == 204
+
+    unfollowed = client.get(f"/api/v1/u/{host.slug}/legacy")
+    assert unfollowed.json()["stats"]["followers"] == 0
+    score = db_session.scalar(
+        select(HostLegacyScore).where(HostLegacyScore.host_id == host.id)
+    )
+    assert score is not None
+    assert score.followers == 0
+
+
 def test_follow_by_host_id(client: TestClient, db_session: Session):
     host, _ = _seed_host(db_session)
     buyer = _register(client, "follow-by-id@example.com", "Follow By Id")

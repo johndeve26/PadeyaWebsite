@@ -11,7 +11,6 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.audit import write_audit_log
-from app.crm.models import HostFollower
 from app.events.models import Event
 from app.hosts.models import Host
 from app.hosts.schemas import HostProfileUpdate
@@ -146,16 +145,9 @@ def collect_host_metrics(db: Session, host_id: UUID) -> ScoreInputs:
 
     score_row = db.scalar(select(HostLegacyScore).where(HostLegacyScore.host_id == host_id))
 
-    follower_rows = db.scalars(
-        select(HostFollower).where(HostFollower.host_id == host_id)
-    ).all()
-    followers = sum(
-        1
-        for row in follower_rows
-        if not is_user_owner_of_host(
-            db, user_id=row.user_id, host_profile_id=host_id
-        )
-    )
+    from app.crm.follower_count import count_host_followers
+
+    followers = count_host_followers(db, host_id)
     repeat_buyers_rate = score_row.repeat_buyers_rate if score_row else None
     refund_dispute_rate = score_row.refund_dispute_rate if score_row else None
 
@@ -445,6 +437,7 @@ def build_legacy_page(
 
     from app.passport.merch_proof import host_merch_proof_counts, host_merch_proof_summaries
     from app.reviews.service import list_visible_host_reviews
+    from app.crm.follower_count import count_host_followers
 
     merch_counts = host_merch_proof_counts(db, host.id)
     merch_summaries = host_merch_proof_summaries(db, host.id)
@@ -484,7 +477,9 @@ def build_legacy_page(
             "verified_checkins": score.verified_checkins,
             "average_verified_rating": score.average_verified_rating,
             "review_count": score.review_count,
-            "followers": score.followers,
+            # Live count — denormalized score.followers can lag when public
+            # pages assemble with rescore=False after follow/unfollow.
+            "followers": count_host_followers(db, host.id),
             "repeat_buyers_rate": score.repeat_buyers_rate,
             "refund_dispute_rate": score.refund_dispute_rate,
             "legacy_status": score.legacy_status,

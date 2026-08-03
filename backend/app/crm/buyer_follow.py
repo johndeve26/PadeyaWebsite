@@ -87,6 +87,9 @@ def ensure_buyer_follows_host(
         details={"source": source, "marketing_opt_in": True},
     )
     db.flush()
+    from app.crm.follower_count import sync_legacy_follower_count
+
+    sync_legacy_follower_count(db, host_id)
     return row
 
 
