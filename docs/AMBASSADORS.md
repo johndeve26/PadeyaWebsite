@@ -14,7 +14,7 @@ Related: [PROMO_CODES.md](./PROMO_CODES.md) · [PAYMENTS.md](./PAYMENTS.md) · [
 | Admin **Programs** | Platform-wide program CRUD + enrollments (Pàdéyá-funded) |
 | Admin **Campaigns** | Existing host/event-scoped campaigns |
 | Admin **Liabilities** | Payer-separated ledger liabilities |
-| Public `/ambassadors` | Explains Pàdéyá-wide programs **and** host campaigns; CTA states are auth/enrollment-aware; does **not** promise open self-serve platform enrollment |
+| Public `/ambassadors` | Explains Pàdéyá-wide + host campaigns, username links, **dual host/Pàdéyá earnings** when enrolled in both; CTA states are auth/enrollment-aware; does **not** promise open self-serve platform enrollment |
 
 ### Coverage invariant (platform vs host)
 

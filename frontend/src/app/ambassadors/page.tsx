@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { EligibleEventsGrid } from "@/components/ambassadors/EligibleEventsGrid";
@@ -10,6 +10,13 @@ import { headerDarkSurfaceProps } from "@/components/layout/headerSurface";
 import { Badge, Button, Container, SkeletonLoader } from "@/components/ui";
 import { track } from "@/lib/analytics";
 import { fetchDomainEligibleEvents } from "@/lib/ambassadors-api";
+import {
+  DUAL_COMMISSION_COPY,
+  enrollmentScopeAnalytics,
+  resolveOwnPlatformLinkPath,
+  resolvePublicEnrollmentState,
+  type PublicEnrollmentState,
+} from "@/lib/ambassador-frontend-alignment";
 import { brand } from "@/lib/brand";
 import {
   fetchEligibleAmbassadorEvents,
@@ -18,56 +25,97 @@ import {
   type ReferralProgramRow,
   type ReferralSummary,
 } from "@/lib/promos-api";
-import {
-  resolvePublicEnrollmentState,
-  type PublicEnrollmentState,
-} from "@/lib/ambassador-frontend-alignment";
 import type { EligibleAmbassadorEvent } from "@/lib/types/promos";
 
 const FAQ = [
   {
+    id: "who",
     q: "Who can become an Ambassador?",
-    a: "Users may join host campaigns that a host has enabled, or be enrolled in a Pàdéyá-wide program by Pàdéyá. Platform-wide enrollment is currently managed by Pàdéyá — not open self-serve.",
+    a: "Users may participate through eligible host event campaigns or through Pàdéyá-wide programs controlled by Pàdéyá. Availability depends on active programs, campaigns and enrollment.",
   },
   {
+    id: "platform",
     q: "What is a Pàdéyá-wide program?",
-    a: "A referral program created by Pàdéyá. By default it covers tickets and merchandise across events under the program’s rules — hosts do not need to enable anything. Your platform link uses your Pàdéyá username when you have one. Commission is funded by Pàdéyá. Admins may exclude specific hosts or events.",
+    a: "A referral program created by Pàdéyá that may cover eligible tickets, merchandise or both across participating events. Its commission is funded by Pàdéyá and does not reduce the host’s settlement.",
   },
   {
+    id: "host",
     q: "What is a host campaign?",
-    a: "An event-specific referral campaign that only exists after a host enables Ambassadors for that event’s tickets and/or merchandise. Rules and funding follow that host campaign.",
+    a: "An event-specific referral campaign created by an event host. The host defines its ticket or merchandise rules and funds its commission.",
   },
   {
+    id: "host-enable",
     q: "Do hosts need to enable Pàdéyá-wide programs?",
-    a: "No. Pàdéyá-wide coverage is the platform default for enrolled ambassadors. Hosts only enable Ambassadors when they want their own event-scoped, host-funded campaigns.",
+    a: "No. Pàdéyá-wide programs are managed and funded by Pàdéyá. Their commission does not reduce the host’s settlement. Hosts only enable Ambassadors when they want their own host-funded campaigns.",
   },
   {
+    id: "links",
     q: "Do I get one referral link?",
-    a: "Your Pàdéyá-wide link is normally /r/{your-username}. Each host campaign enrollment can also have its own code. One username link can unlock both pots when you are enrolled in both scopes for that event.",
+    a: "Your Pàdéyá-wide enrollment uses your Fan Passport username link where available. Individual host campaigns may also provide campaign-specific links.",
   },
   {
+    id: "multi",
     q: "Can I join more than one campaign?",
-    a: "Yes — you can hold multiple host campaign enrollments and, when enrolled by Pàdéyá, a platform-wide program. All of them appear in one ambassador dashboard.",
+    a: "Yes — you can hold multiple host campaign enrollments and, when enrolled by Pàdéyá, a Pàdéyá-wide program. All of them appear in one ambassador dashboard.",
   },
   {
-    q: "What happens if a host campaign and Pàdéyá-wide both apply?",
-    a: "Both can pay on the same item: host-funded commission for your host enrollment and Pàdéyá-funded commission for your platform enrollment. Enabling a host campaign does not cancel platform earnings.",
+    id: "dual",
+    q: "What happens if a host campaign and Pàdéyá-wide program both apply?",
+    a: "When you are actively enrolled in both and the purchase item is eligible under both sets of rules, it may create two separate earnings: one funded by the host and one funded by Pàdéyá.",
   },
   {
-    q: "Who pays the commission?",
-    a: "Pàdéyá funds Pàdéyá-wide program commission. Host event campaign commission follows that campaign’s host-funded rules. On a dual item, both payers can owe separately.",
+    id: "live-only",
+    q: "Does a live host campaign automatically make me eligible?",
+    a: "No. You must be enrolled in that campaign. A live campaign without your enrollment does not create a host-funded earning for you.",
   },
   {
+    id: "username-link",
+    q: "What happens when I use my Pàdéyá-wide username link?",
+    a: "It records your Pàdéyá-wide referral. Where you also hold a valid matching host enrollment, the same purchase may recognise both eligible earning pots.",
+  },
+  {
+    id: "host-link",
+    q: "What happens when I use a host campaign link?",
+    a: "It records your host campaign referral. Where you also have an eligible active Pàdéyá-wide enrollment, the same purchase may also create a separate Pàdéyá-funded earning.",
+  },
+  {
+    id: "who-pays",
+    q: "Who pays my commission?",
+    a: "Pàdéyá funds Pàdéyá-wide earnings. Event hosts fund earnings from their own campaigns.",
+  },
+  {
+    id: "when",
     q: "When does commission become available?",
-    a: "Eligible commission moves through pending, approved, payable, and paid states according to the applicable hold and payout policy. Instant payout is not guaranteed.",
+    a: "Eligible commission moves through pending, approved, payable and paid states according to the applicable hold and payout policy. Instant payout is not guaranteed.",
   },
   {
+    id: "refund",
     q: "What happens after a refund?",
-    a: "If a referred purchase is fully or partially refunded, the related commission may be adjusted or reversed. Your earnings history continues to show the original earning and any later adjustment.",
+    a: "A full or partial refund may create separate reversal entries for each affected earning. The original earnings remain visible in your history.",
   },
   {
+    id: "where",
     q: "Where can I see my results?",
-    a: "In the unified ambassador dashboard — clicks, converted orders, attributed items, commission, and reversals in one place.",
+    a: "Your ambassador dashboard combines Pàdéyá-wide programs and host campaigns while keeping each earning and payer clearly labelled.",
+  },
+] as const;
+
+const EARNING_MODEL = [
+  {
+    title: "Platform enrollment only",
+    result: "Pàdéyá-funded earning",
+  },
+  {
+    title: "Host enrollment only",
+    result: "Host-funded earning",
+  },
+  {
+    title: "Both eligible enrollments",
+    result: "Two separate earnings",
+  },
+  {
+    title: "Neither enrollment",
+    result: "No commission",
   },
 ] as const;
 
@@ -79,6 +127,8 @@ export default function AmbassadorsLandingPage() {
   const [programs, setPrograms] = useState<ReferralProgramRow[]>([]);
   const [personalLoaded, setPersonalLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyAnnounce, setCopyAnnounce] = useState("");
+  const dualSectionTracked = useRef(false);
 
   const signedIn = Boolean(user);
   const isHost = Boolean(
@@ -87,7 +137,10 @@ export default function AmbassadorsLandingPage() {
 
   useEffect(() => {
     track("ambassador_page_view", {
-      metadata: { auth_state: signedIn ? "signed_in" : "signed_out" },
+      metadata: {
+        auth_state: signedIn ? "signed_in" : "signed_out",
+        enrollment_scope: signedIn ? "loading" : "signed_out",
+      },
       dedupeTtlMs: 30_000,
       dedupeScope: "ambassador_page_view",
     });
@@ -153,7 +206,6 @@ export default function AmbassadorsLandingPage() {
         setPrograms(p);
       } catch {
         if (!active) return;
-        // Marketing page must still render; personalized CTA falls back safely.
         setSummary(null);
         setPrograms([]);
       } finally {
@@ -176,11 +228,33 @@ export default function AmbassadorsLandingPage() {
     [signedIn, authLoading, personalLoaded, summary, programs],
   );
 
-  const ownLink =
-    summary?.primary_referral_link_path ||
-    programs.find((p) => p.status === "active" && p.referral_link_path)
-      ?.referral_link_path ||
-    null;
+  const ownLink = resolveOwnPlatformLinkPath(summary, programs);
+  const scopeAnalytics = enrollmentScopeAnalytics(enrollmentState);
+
+  useEffect(() => {
+    if (dualSectionTracked.current) return;
+    const el = document.getElementById("dual-earnings");
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          dualSectionTracked.current = true;
+          track("ambassador_dual_earning_section_view", {
+            metadata: {
+              auth_state: signedIn ? "signed_in" : "signed_out",
+              enrollment_scope: scopeAnalytics,
+            },
+            dedupeTtlMs: 60_000,
+            dedupeScope: "ambassador_dual_earning_section_view",
+          });
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.35 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [signedIn, scopeAnalytics]);
 
   async function copyOwnLink() {
     if (!ownLink || typeof window === "undefined") return;
@@ -188,26 +262,44 @@ export default function AmbassadorsLandingPage() {
     try {
       await navigator.clipboard.writeText(absolute);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-      track("ambassador_secondary_cta_click", {
+      setCopyAnnounce("Pàdéyá referral link copied to clipboard");
+      window.setTimeout(() => {
+        setCopied(false);
+        setCopyAnnounce("");
+      }, 2000);
+      track("ambassador_username_link_copy", {
         metadata: {
           auth_state: "signed_in",
-          enrollment_state: enrollmentState,
-          destination_type: "copy_referral_link",
+          enrollment_scope: scopeAnalytics,
+          destination_type: "copy_platform_link",
         },
         dedupeTtlMs: 2_000,
       });
     } catch {
       setCopied(false);
+      setCopyAnnounce("Could not copy link. Try again.");
     }
   }
 
-  function trackPrimary(destination: string) {
+  function trackPrimary(destination: string, location = "hero") {
     track("ambassador_primary_cta_click", {
       metadata: {
         auth_state: signedIn ? "signed_in" : "signed_out",
-        enrollment_state: enrollmentState,
+        enrollment_scope: scopeAnalytics,
         destination_type: destination,
+        location,
+      },
+      dedupeTtlMs: 2_000,
+    });
+  }
+
+  function trackSecondary(destination: string, location = "hero") {
+    track("ambassador_secondary_cta_click", {
+      metadata: {
+        auth_state: signedIn ? "signed_in" : "signed_out",
+        enrollment_scope: scopeAnalytics,
+        destination_type: destination,
+        location,
       },
       dedupeTtlMs: 2_000,
     });
@@ -224,18 +316,12 @@ export default function AmbassadorsLandingPage() {
             >
               <Button size="lg">Sign in to continue</Button>
             </Link>
-            <a href="#how-it-works">
+            <Link
+              href="/ambassadors/events"
+              onClick={() => trackSecondary("browse_host_campaigns")}
+            >
               <Button size="lg" variant="outline-dark">
-                See how it works
-              </Button>
-            </a>
-            <Link href="/register?next=/ambassadors">
-              <Button
-                size="lg"
-                variant="ghost"
-                className="text-paper hover:bg-paper/10"
-              >
-                Create account
+                Browse open host campaigns
               </Button>
             </Link>
           </>
@@ -251,14 +337,17 @@ export default function AmbassadorsLandingPage() {
             >
               <Button size="lg">Go to ambassador area</Button>
             </Link>
-            <Link href="/ambassadors/events">
+            <Link
+              href="/ambassadors/events"
+              onClick={() => trackSecondary("browse_host_campaigns")}
+            >
               <Button size="lg" variant="outline-dark">
                 Browse open host campaigns
               </Button>
             </Link>
             <p className="basis-full text-sm text-subtle-foreground">
-              Programs and campaigns appear when you are enrolled or accepted.
-              Pàdéyá-wide enrollment is managed by Pàdéyá — not open self-serve.
+              Pàdéyá-wide programs appear when Pàdéyá enrols you. Host campaigns
+              require an eligible campaign enrollment.
             </p>
           </>
         );
@@ -271,9 +360,12 @@ export default function AmbassadorsLandingPage() {
             >
               <Button size="lg">Open ambassador dashboard</Button>
             </Link>
-            <Link href="/dashboard/ambassador">
+            <Link
+              href="/dashboard/ambassador"
+              onClick={() => trackSecondary("view_host_campaigns")}
+            >
               <Button size="lg" variant="outline-dark">
-                View my campaigns
+                View my host campaigns
               </Button>
             </Link>
           </>
@@ -288,8 +380,17 @@ export default function AmbassadorsLandingPage() {
               <Button size="lg">Open ambassador dashboard</Button>
             </Link>
             {ownLink ? (
-              <Button size="lg" variant="outline-dark" onClick={() => void copyOwnLink()}>
-                {copied ? "Link copied" : "Copy my referral link"}
+              <Button
+                size="lg"
+                variant="outline-dark"
+                aria-label={
+                  copied
+                    ? "Pàdéyá referral link copied"
+                    : "Copy my Pàdéyá referral link"
+                }
+                onClick={() => void copyOwnLink()}
+              >
+                {copied ? "Link copied" : "Copy my Pàdéyá link"}
               </Button>
             ) : null}
           </>
@@ -303,7 +404,10 @@ export default function AmbassadorsLandingPage() {
             >
               <Button size="lg">Open unified dashboard</Button>
             </Link>
-            <Link href="/dashboard/ambassador">
+            <Link
+              href="/dashboard/ambassador"
+              onClick={() => trackSecondary("view_referral_links")}
+            >
               <Button size="lg" variant="outline-dark">
                 View my referral links
               </Button>
@@ -317,9 +421,12 @@ export default function AmbassadorsLandingPage() {
               Your ambassador enrollments are not currently active for new
               earnings. You can still review history in your dashboard.
             </p>
-            <Link href="/dashboard/ambassador">
+            <Link
+              href="/dashboard/ambassador"
+              onClick={() => trackPrimary("history")}
+            >
               <Button size="lg" variant="outline-dark">
-                Open dashboard history
+                View referral history
               </Button>
             </Link>
           </>
@@ -331,6 +438,9 @@ export default function AmbassadorsLandingPage() {
 
   return (
     <main className="min-w-0">
+      <div className="sr-only" aria-live="polite">
+        {copyAnnounce}
+      </div>
       <section
         {...headerDarkSurfaceProps}
         className="relative overflow-hidden border-b border-ink bg-ink text-paper"
@@ -365,23 +475,25 @@ export default function AmbassadorsLandingPage() {
             <span className="block text-accent">Earn from eligible referrals.</span>
           </h1>
           <p className="mt-4 max-w-xl text-base text-subtle-foreground sm:text-lg">
-            Enrolled Pàdéyá-wide ambassadors promote across events and merch by
-            default — hosts do not need to opt in. Hosts can also enable their own
-            event campaigns. Share your link and track results in one dashboard.
+            {DUAL_COMMISSION_COPY.heroSupport}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">{heroCtas}</div>
+          <p className="mt-5 max-w-2xl text-sm leading-relaxed text-subtle-foreground">
+            {DUAL_COMMISSION_COPY.heroDisclaimer}
+          </p>
         </Container>
       </section>
 
       <Container className="space-y-16 py-12 sm:py-16">
         <section
           aria-label="Ambassador features"
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5"
         >
           {[
-            "Unique referral links",
+            "Username-based Pàdéyá link",
             "Ticket and merchandise coverage",
-            "Unified tracking",
+            "Host + Pàdéyá earning pots",
+            "One connected dashboard",
             "Approved payouts",
           ].map((label) => (
             <div
@@ -399,7 +511,8 @@ export default function AmbassadorsLandingPage() {
               Two ways to earn
             </h2>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              One connected ambassador system — two scopes.
+              Separate scopes inside one connected ambassador system — they can
+              stack when you are enrolled in both.
             </p>
           </div>
           <div className="grid gap-6 md:grid-cols-2">
@@ -409,17 +522,20 @@ export default function AmbassadorsLandingPage() {
                 Pàdéyá-wide programs
               </h3>
               <p className="mt-2 text-sm text-body">
-                Promote across Pàdéyá with one program link. By default, coverage
-                includes tickets and merchandise under the program’s rules — hosts
-                do not need to mark their events for Pàdéyá-wide to apply.
+                Promote eligible tickets and merchandise across participating
+                events with your Pàdéyá-wide referral link. Depending on the
+                program, the link may cover tickets, merchandise or both.
               </p>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <li>One program link</li>
-                <li>Default across events and merch (program rules)</li>
-                <li>No host opt-in required</li>
                 <li>Commission funded by Pàdéyá</li>
-                <li>Invitation or admin enrollment</li>
+                <li>Username-based referral link</li>
+                <li>Tickets, merchandise or both</li>
+                <li>Requires active Pàdéyá enrollment</li>
+                <li>Can earn alongside an eligible host campaign</li>
               </ul>
+              <p className="mt-4 text-xs text-muted-foreground">
+                {DUAL_COMMISSION_COPY.settlementNote}
+              </p>
               {signedIn &&
               (enrollmentState === "platform_only" ||
                 enrollmentState === "both") ? (
@@ -428,7 +544,10 @@ export default function AmbassadorsLandingPage() {
                   className="mt-5 inline-block"
                   onClick={() =>
                     track("ambassador_scope_card_click", {
-                      metadata: { scope: "platform" },
+                      metadata: {
+                        scope: "platform",
+                        enrollment_scope: scopeAnalytics,
+                      },
                       dedupeTtlMs: 2_000,
                     })
                   }
@@ -437,7 +556,7 @@ export default function AmbassadorsLandingPage() {
                 </Link>
               ) : (
                 <p className="mt-5 text-xs text-muted-foreground">
-                  Platform-wide access is enrollment-controlled — not open join.
+                  Pàdéyá-wide access is enrollment-controlled — not open join.
                 </p>
               )}
             </article>
@@ -447,16 +566,19 @@ export default function AmbassadorsLandingPage() {
                 Host event campaigns
               </h3>
               <p className="mt-2 text-sm text-body">
-                Hosts enable Ambassadors per event when they want their own
-                campaign. Ticketing and/or merch coverage starts only after they
-                turn it on for that event.
+                Promote a specific event through a ticket or merchandise
+                campaign created by its host.
               </p>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <li>Host must enable (tick) per event</li>
-                <li>Ticket and/or merch — chosen by host</li>
-                <li>Host-funded campaign rules</li>
-                <li>Tracked in the same dashboard</li>
+                <li>Event-specific</li>
+                <li>Commission funded by the host</li>
+                <li>Requires active campaign enrollment</li>
+                <li>Rules are managed by the host</li>
+                <li>Can earn alongside an eligible Pàdéyá-wide program</li>
               </ul>
+              <p className="mt-4 text-xs text-muted-foreground">
+                {DUAL_COMMISSION_COPY.hostEnrollmentRequired}
+              </p>
               <Link
                 href={
                   signedIn &&
@@ -467,7 +589,10 @@ export default function AmbassadorsLandingPage() {
                 className="mt-5 inline-block"
                 onClick={() =>
                   track("ambassador_scope_card_click", {
-                    metadata: { scope: "host" },
+                    metadata: {
+                      scope: "host",
+                      enrollment_scope: scopeAnalytics,
+                    },
                     dedupeTtlMs: 2_000,
                   })
                 }
@@ -475,8 +600,8 @@ export default function AmbassadorsLandingPage() {
                 <Button size="sm" variant="secondary">
                   {signedIn &&
                   (enrollmentState === "host_only" || enrollmentState === "both")
-                    ? "View my campaigns"
-                    : "Browse open campaigns"}
+                    ? "View my host campaigns"
+                    : "Browse open host campaigns"}
                 </Button>
               </Link>
             </article>
@@ -495,27 +620,27 @@ export default function AmbassadorsLandingPage() {
               {
                 step: "01",
                 title: "Get enrolled",
-                body: "Join an eligible host campaign or get enrolled in a Pàdéyá-wide program.",
+                body: "Join an eligible host campaign or get enrolled in a Pàdéyá-wide program. You may participate in one scope or both.",
               },
               {
                 step: "02",
-                title: "Receive your link",
-                body: "Your Pàdéyá-wide link is normally /r/{your-username}. Host campaign enrollments can have their own codes. One username link can unlock both pots when you are enrolled in both scopes.",
+                title: "Receive your links",
+                body: "Your Pàdéyá-wide program uses your Fan Passport username link where available. Individual host campaigns may also provide campaign-specific links.",
               },
               {
                 step: "03",
                 title: "Share eligible experiences",
-                body: "Pàdéyá-wide links cover events and merch by default under program rules. Host campaigns cover only the event the host enabled.",
+                body: "Promote covered events, tickets and merchandise. Using either valid link may recognise both of your eligible enrollments when you are enrolled in both scopes.",
               },
               {
                 step: "04",
-                title: "Track results",
-                body: "View clicks, converted orders, attributed items and commission in your dashboard.",
+                title: "Track both earnings",
+                body: "See host-funded and Pàdéyá-funded earnings separately in one ambassador dashboard.",
               },
               {
                 step: "05",
                 title: "Receive approved payouts",
-                body: "Eligible commission progresses through pending, approved, payable and paid states.",
+                body: "Eligible commission progresses through pending, approved, payable and paid states. Refunds may create separate reversal entries.",
               },
             ].map((item) => (
               <div key={item.step}>
@@ -531,67 +656,116 @@ export default function AmbassadorsLandingPage() {
           </div>
         </section>
 
+        <section
+          id="username-link"
+          className="rounded-[var(--radius-xl)] border border-border bg-surface p-6 sm:p-8"
+          aria-labelledby="username-link-heading"
+        >
+          <h2
+            id="username-link-heading"
+            className="text-2xl font-extrabold text-heading"
+          >
+            Your Pàdéyá-wide link
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-body">
+            When you have an active Pàdéyá-wide enrollment, your referral link
+            uses your Fan Passport username where available. Share it to promote
+            eligible experiences covered by your program.
+          </p>
+          <p className="mt-4 break-all font-mono text-base text-heading sm:text-lg">
+            {ownLink &&
+            (enrollmentState === "platform_only" || enrollmentState === "both")
+              ? ownLink.startsWith("http")
+                ? ownLink.replace(/^https?:\/\//, "")
+                : `padeya.com${ownLink.startsWith("/") ? ownLink : `/${ownLink}`}`
+              : DUAL_COMMISSION_COPY.usernameExample}
+          </p>
+          {ownLink &&
+          (enrollmentState === "platform_only" || enrollmentState === "both") ? (
+            <p className="mt-1 text-xs text-muted-foreground">Your active link</p>
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Illustrative example — not a live account link
+            </p>
+          )}
+          <p className="mt-4 max-w-2xl text-sm text-muted-foreground">
+            Host event campaigns may still provide separate campaign links. When
+            you are eligible in both scopes, either valid link may recognise both
+            of your enrollments for the same eligible purchase.
+          </p>
+          {ownLink &&
+          (enrollmentState === "platform_only" || enrollmentState === "both") ? (
+            <Button
+              size="sm"
+              className="mt-5"
+              aria-label={
+                copied
+                  ? "Pàdéyá referral link copied"
+                  : "Copy my Pàdéyá referral link"
+              }
+              onClick={() => void copyOwnLink()}
+            >
+              {copied ? "Link copied" : "Copy my Pàdéyá link"}
+            </Button>
+          ) : null}
+        </section>
+
         <section className="space-y-6 rounded-[var(--radius-xl)] border border-border bg-surface p-6 sm:p-8">
           <div>
             <h2 className="text-2xl font-extrabold text-heading">
               Everything in one ambassador dashboard
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-body">
-              Platform and host activity stay connected — links, clicks,
-              converted orders, commission states, and reversals in one place.
-              Filter by tickets or merchandise without switching tools.
+              Platform and Host badges, username-based Pàdéyá links, host
+              campaign links, clicks, converted orders, attributed items,
+              pending and available commission, paid totals, reversals, and
+              payer separation — connected in one place. One attributed item can
+              still produce up to two separate commission earnings.
             </p>
           </div>
 
           <div
-            className="grid gap-4 lg:grid-cols-3"
-            aria-hidden
+            className="rounded-[var(--radius-lg)] border border-dashed border-border bg-background/60 p-4 sm:p-5"
+            role="img"
+            aria-label="Illustrative example: one ticket purchase with separate host-funded and Pàdéyá-funded earnings"
           >
-            <div className="rounded-[var(--radius-lg)] border border-border bg-background/60 p-4">
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-muted-foreground">
-                Sample · Scopes
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Badge tone="success">Pàdéyá-wide</Badge>
-                <Badge tone="neutral">Host campaign</Badge>
-                <Badge tone="outline">Tickets</Badge>
-                <Badge tone="outline">Merchandise</Badge>
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-accent">
+              Illustrative example
+            </p>
+            <p className="mt-3 text-sm font-semibold text-heading">
+              Sample earning · Sunday Comedy Room ticket
+            </p>
+            <div className="mt-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+                <div>
+                  <Badge tone="neutral">Host campaign</Badge>
+                  <p className="mt-1 text-xs text-muted-foreground">Host-funded</p>
+                </div>
+                <p className="font-mono text-sm text-heading">₦1,000</p>
               </div>
-              <p className="mt-3 text-xs text-muted-foreground">
-                Badges show which enrollments are active for you.
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+                <div>
+                  <Badge tone="success">Pàdéyá-wide program</Badge>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Funded by Pàdéyá
+                  </p>
+                </div>
+                <p className="font-mono text-sm text-heading">₦500</p>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-heading">
+                  Total commission
+                </p>
+                <p className="font-mono text-sm font-semibold text-heading">
+                  ₦1,500
+                </p>
+              </div>
             </div>
-
-            <div className="rounded-[var(--radius-lg)] border border-border bg-background/60 p-4">
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-muted-foreground">
-                Sample · Your link
-              </p>
-              <p className="mt-3 font-mono text-sm text-heading">
-                /r/your-username
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Platform-wide uses your username when set. Host campaigns can
-                add event-specific codes alongside it.
-              </p>
-            </div>
-
-            <div className="rounded-[var(--radius-lg)] border border-border bg-background/60 p-4">
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-muted-foreground">
-                Sample · What you track
-              </p>
-              <ul className="mt-3 space-y-1.5 text-xs text-muted-foreground">
-                <li>Clicks and converted orders</li>
-                <li>Attributed items</li>
-                <li>Pending · approved · payable · paid</li>
-                <li>Host-funded and Pàdéyá-funded pots</li>
-                <li>Reversals after refunds</li>
-              </ul>
-            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              One converted order · one attributed item · two separate earnings —
+              not your live balances.
+            </p>
           </div>
-
-          <p className="text-xs text-muted-foreground">
-            Illustrative layout only — not your live balances or account data.
-          </p>
 
           {signedIn &&
           (enrollmentState === "platform_only" ||
@@ -604,7 +778,7 @@ export default function AmbassadorsLandingPage() {
                 track("ambassador_dashboard_cta_click", {
                   metadata: {
                     location: "dashboard_preview",
-                    enrollment_state: enrollmentState,
+                    enrollment_scope: scopeAnalytics,
                   },
                   dedupeTtlMs: 2_000,
                 })
@@ -613,47 +787,53 @@ export default function AmbassadorsLandingPage() {
               <Button size="sm">
                 {enrollmentState === "both"
                   ? "Open unified dashboard"
-                  : "Open ambassador dashboard"}
+                  : enrollmentState === "inactive"
+                    ? "View referral history"
+                    : "Open ambassador dashboard"}
               </Button>
             </Link>
           ) : null}
         </section>
 
-        <section className="space-y-4 border-y border-border py-10">
+        <section
+          id="dual-earnings"
+          className="space-y-5 border-y border-border py-10"
+          aria-labelledby="dual-earnings-heading"
+        >
           <div>
-            <h2 className="text-2xl font-extrabold text-heading">
-              Fair attribution
+            <h2
+              id="dual-earnings-heading"
+              className="text-2xl font-extrabold text-heading"
+            >
+              {DUAL_COMMISSION_COPY.dualEarningsTitle}
             </h2>
+            <p className="sr-only">{DUAL_COMMISSION_COPY.dualEarningsSr}</p>
             <p className="mt-2 max-w-2xl text-sm text-body">
-              When you are enrolled in both a host campaign and a Pàdéyá-wide
-              program, an eligible ticket or merchandise item can earn two
-              commissions — one host-funded and one funded by Pàdéyá. Your
-              platform link uses your username when available
-              (<span className="whitespace-nowrap"> /r/your-username</span>).
+              Pàdéyá-wide programs and host campaigns are separate earning
+              opportunities. When you are actively enrolled in both a Pàdéyá-wide
+              program and an eligible host campaign, the same referred purchase
+              item may create two commission earnings: one funded by the host and
+              another funded by Pàdéyá.
+            </p>
+            <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
+              Each earning is calculated and recorded independently. Hosts only
+              fund commission from their own campaigns. Pàdéyá-wide commission is
+              paid separately and does not reduce the host’s settlement. A
+              campaign or program must be active, your enrollment must be valid,
+              and the purchase must meet its eligibility rules.
             </p>
           </div>
-          <ul className="max-w-2xl space-y-2 text-sm text-muted-foreground">
-            <li>
-              Platform-only enrollment: Pàdéyá pays. Host settlement is not
-              reduced.
-            </li>
-            <li>
-              Host-campaign-only enrollment: the host campaign pays under its
-              rules.
-            </li>
-            <li>
-              Both enrollments on the same event or product: both pots can apply
-              on the same item.
-            </li>
-            <li>
-              A host enabling Ambassadors alone does not create a host earner —
-              you still need an enrollment for that campaign.
-            </li>
-            <li>
-              Refunds may reverse each related commission while your earnings
-              history stays visible.
-            </li>
-          </ul>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {EARNING_MODEL.map((row) => (
+              <div
+                key={row.title}
+                className="rounded-[var(--radius-lg)] border border-border bg-surface px-4 py-4"
+              >
+                <p className="text-sm font-semibold text-heading">{row.title}</p>
+                <p className="mt-2 text-xs text-muted-foreground">→ {row.result}</p>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="rounded-[var(--radius-xl)] border border-border p-6 sm:flex sm:items-center sm:justify-between sm:gap-6">
@@ -662,13 +842,14 @@ export default function AmbassadorsLandingPage() {
               Hosting an event?
             </h2>
             <p className="mt-2 max-w-xl text-sm text-body">
-              Pàdéyá-wide programs already cover events and merch by default —
-              you do not need to enable anything for that. Enable host campaigns
-              only when you want your own event-scoped, host-funded Ambassadors
-              for tickets and/or merchandise.
+              Create event-specific ambassador campaigns for eligible tickets or
+              merchandise. Only ambassadors enrolled in your campaign can earn
+              the host-funded commission. Where an ambassador is also enrolled in
+              an eligible Pàdéyá-wide program, Pàdéyá may fund a separate earning
+              without reducing your settlement.
             </p>
           </div>
-          <div className="mt-4 sm:mt-0">
+          <div className="mt-4 shrink-0 sm:mt-0">
             {isHost ? (
               <Link
                 href="/host/ambassadors/campaigns"
@@ -695,9 +876,12 @@ export default function AmbassadorsLandingPage() {
               <h2 className="text-2xl font-extrabold text-heading">
                 Open host campaigns
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Self-serve host campaigns you can join today. Pàdéyá-wide
-                programs are not listed publicly when enrollment is private.
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                These are host event campaigns — enrollment is required and
+                commission is host-funded. Joining a host campaign does not
+                automatically create a Pàdéyá-wide enrollment. If you are already
+                enrolled platform-wide, both pots may apply where both scopes are
+                eligible.
               </p>
             </div>
             <Link href="/ambassadors/events">
@@ -718,14 +902,17 @@ export default function AmbassadorsLandingPage() {
           <div className="space-y-4">
             {FAQ.map((item) => (
               <details
-                key={item.q}
+                key={item.id}
                 className="group border-b border-border pb-4"
                 onToggle={(e) => {
                   if ((e.target as HTMLDetailsElement).open) {
                     track("ambassador_faq_open", {
-                      metadata: { question: item.q.slice(0, 80) },
+                      metadata: {
+                        faq_id: item.id,
+                        enrollment_scope: scopeAnalytics,
+                      },
                       dedupeTtlMs: 5_000,
-                      dedupeScope: `faq:${item.q.slice(0, 40)}`,
+                      dedupeScope: `faq:${item.id}`,
                     });
                   }
                 }}
@@ -747,8 +934,8 @@ export default function AmbassadorsLandingPage() {
         <section className="rounded-[var(--radius-xl)] bg-ink px-6 py-10 text-paper sm:px-10">
           <h2 className="text-2xl font-extrabold">Ready when you are</h2>
           <p className="mt-2 max-w-lg text-sm text-subtle-foreground">
-            Use your dashboard when enrolled, or browse open host campaigns to
-            get started.
+            Use your ambassador dashboard to manage your links, track eligible
+            referrals and see host-funded and Pàdéyá-funded earnings separately.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">{heroCtas}</div>
         </section>
