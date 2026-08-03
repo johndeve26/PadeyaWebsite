@@ -485,6 +485,33 @@ export default function AmbassadorsLandingPage() {
       </section>
 
       <Container className="space-y-16 py-12 sm:py-16">
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-extrabold text-heading">
+                Open host campaigns
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                These are host event campaigns — enrollment is required and
+                commission is host-funded. Joining a host campaign does not
+                automatically create a Pàdéyá-wide enrollment. If you are already
+                enrolled platform-wide, both pots may apply where both scopes are
+                eligible.
+              </p>
+            </div>
+            <Link href="/ambassadors/events">
+              <Button size="sm" variant="secondary">
+                See all
+              </Button>
+            </Link>
+          </div>
+          {!eventsLoaded ? (
+            <SkeletonLoader lines={4} />
+          ) : (
+            <EligibleEventsGrid events={events.slice(0, 6)} />
+          )}
+        </section>
+
         <section
           aria-label="Ambassador features"
           className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5"
@@ -868,33 +895,6 @@ export default function AmbassadorsLandingPage() {
               </Link>
             )}
           </div>
-        </section>
-
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="text-2xl font-extrabold text-heading">
-                Open host campaigns
-              </h2>
-              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                These are host event campaigns — enrollment is required and
-                commission is host-funded. Joining a host campaign does not
-                automatically create a Pàdéyá-wide enrollment. If you are already
-                enrolled platform-wide, both pots may apply where both scopes are
-                eligible.
-              </p>
-            </div>
-            <Link href="/ambassadors/events">
-              <Button size="sm" variant="secondary">
-                See all
-              </Button>
-            </Link>
-          </div>
-          {!eventsLoaded ? (
-            <SkeletonLoader lines={4} />
-          ) : (
-            <EligibleEventsGrid events={events.slice(0, 6)} />
-          )}
         </section>
 
         <section className="space-y-6">
