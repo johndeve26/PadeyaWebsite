@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 
 import type { LegacyPage } from "@/lib/types/legacy";
-import { pickEntityOgImage, resolvePublicAssetUrl } from "@/lib/seo/public-asset";
+import { PROFILE_OG_SIZE } from "@/lib/seo/profile-og-size";
+import { resolvePublicAssetUrl } from "@/lib/seo/public-asset";
 import { absoluteUrl, buildPageMetadata } from "@/lib/seo/site";
 
 /** Canonical public Legacy path (middleware also serves `/@username`). */
 export function hostLegacyCanonicalPath(username: string): string {
   const slug = username.replace(/^@/, "").trim();
   return `/u/${encodeURIComponent(slug)}`;
+}
+
+export function hostLegacyOgImagePath(username: string): string {
+  return `${hostLegacyCanonicalPath(username)}/opengraph-image`;
 }
 
 export function buildHostMetadata(opts: {
@@ -18,6 +23,8 @@ export function buildHostMetadata(opts: {
   category?: string | null;
   location?: string | null;
   noIndex?: boolean;
+  ogImageWidth?: number;
+  ogImageHeight?: number;
 }): Metadata {
   const locationBit = opts.location?.trim();
   const categoryBit = opts.category?.trim();
@@ -30,7 +37,9 @@ export function buildHostMetadata(opts: {
     title: opts.displayName,
     description,
     path: hostLegacyCanonicalPath(opts.slug),
-    image: resolvePublicAssetUrl(opts.image),
+    image: resolvePublicAssetUrl(opts.image) ?? opts.image,
+    ogImageWidth: opts.ogImageWidth,
+    ogImageHeight: opts.ogImageHeight,
     noIndex: opts.noIndex,
   });
 }
@@ -49,18 +58,17 @@ export function buildHostMetadataFromPage(page: LegacyPage): Metadata {
   const location =
     [page.profile?.city, page.profile?.state].filter(Boolean).join(", ") ||
     null;
-  const image = pickEntityOgImage({
-    cover: page.profile?.cover_url,
-    avatar: page.profile?.avatar_url,
-  });
 
   return buildHostMetadata({
     displayName: page.display_name,
     bio,
     slug: page.username,
-    image,
     category,
     location,
+    // Same-origin DP card from avatar (not cover/logo).
+    image: hostLegacyOgImagePath(page.username),
+    ogImageWidth: PROFILE_OG_SIZE.width,
+    ogImageHeight: PROFILE_OG_SIZE.height,
   });
 }
 
@@ -95,11 +103,11 @@ export function hostLegacyJsonLd(page: LegacyPage): Record<string, unknown> {
     page.about ||
     page.profile?.bio ||
     `${page.display_name} on Pàdéyá`;
-  const logo =
+  const logo = resolvePublicAssetUrl(page.profile?.avatar_url) || undefined;
+  const image =
     resolvePublicAssetUrl(page.profile?.avatar_url) ||
     resolvePublicAssetUrl(page.profile?.cover_url) ||
-    undefined;
-  const image = resolvePublicAssetUrl(page.profile?.cover_url) || logo;
+    logo;
   const sameAs = publicSameAs(page);
 
   const org: Record<string, unknown> = {

@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 
-import type { FanPassportPublicPage } from "@/lib/types/passport";
-import { pickEntityOgImage, resolvePublicAssetUrl } from "@/lib/seo/public-asset";
+import { PROFILE_OG_SIZE } from "@/lib/seo/profile-og-size";
 import { absoluteUrl, buildPageMetadata } from "@/lib/seo/site";
+import { resolvePublicAssetUrl } from "@/lib/seo/public-asset";
+import type { FanPassportPublicPage } from "@/lib/types/passport";
 
 export function fanPassportCanonicalPath(username: string): string {
   return `/f/${encodeURIComponent(username.replace(/^@/, "").trim())}`;
+}
+
+export function fanPassportOgImagePath(username: string): string {
+  return `${fanPassportCanonicalPath(username)}/opengraph-image`;
 }
 
 export function isFanPassportIndexable(
@@ -20,15 +25,14 @@ export function buildFanMetadata(page: FanPassportPublicPage): Metadata {
     page.bio?.trim().slice(0, 160) ||
     `${page.display_name}'s Fan Passport on Pàdéyá — verified nights, badges, and hosts.`;
 
-  const image = pickEntityOgImage({
-    avatar: page.avatar_url,
-  });
-
   return buildPageMetadata({
     title: `${page.display_name} · Fan Passport`,
     description,
     path: fanPassportCanonicalPath(page.username),
-    image,
+    // Same-origin DP card (never raw multi‑MB avatar or brand logo).
+    image: fanPassportOgImagePath(page.username),
+    ogImageWidth: PROFILE_OG_SIZE.width,
+    ogImageHeight: PROFILE_OG_SIZE.height,
     noIndex: !isFanPassportIndexable(page),
   });
 }

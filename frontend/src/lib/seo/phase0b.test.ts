@@ -172,6 +172,22 @@ describe("host Legacy SEO", () => {
     });
     expect(String(direct.alternates?.canonical)).toContain("/u/djmaze");
     expect(String(meta.alternates?.canonical)).toContain("/u/djmaze");
+    const images = meta.openGraph?.images;
+    const first = Array.isArray(images) ? images[0] : images;
+    const url =
+      typeof first === "string"
+        ? first
+        : first && typeof first === "object" && "url" in first
+          ? String(first.url)
+          : "";
+    expect(url).toBe("https://padeya.com/u/djmaze/opengraph-image");
+  });
+
+  it("prefers avatar over cover in host JSON-LD", () => {
+    const ld = hostLegacyJsonLd(page);
+    const org = ld.mainEntity as Record<string, unknown>;
+    expect(org.logo).toBe("https://padeya.com/media/avatar.jpg");
+    expect(org.image).toBe("https://padeya.com/media/avatar.jpg");
   });
 
   it("emits ProfilePage Organization without private email", () => {
@@ -271,6 +287,15 @@ describe("fan passport SEO", () => {
     expect(String(meta.alternates?.canonical)).toBe(
       "https://padeya.com/f/ada",
     );
+    const images = meta.openGraph?.images;
+    const first = Array.isArray(images) ? images[0] : images;
+    const url =
+      typeof first === "string"
+        ? first
+        : first && typeof first === "object" && "url" in first
+          ? String(first.url)
+          : "";
+    expect(url).toBe("https://padeya.com/f/ada/opengraph-image");
     const ld = fanPassportJsonLd(publicFan);
     expect(ld?.["@type"]).toBe("ProfilePage");
     expect((ld?.mainEntity as { "@type": string })["@type"]).toBe("Person");

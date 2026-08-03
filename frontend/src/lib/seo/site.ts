@@ -140,6 +140,9 @@ export function buildPageMetadata(opts: {
    * `NOINDEX_ROBOTS` instead.
    */
   noIndexFollow?: boolean;
+  /** Optional dimensions for non-default OG images (profile DP cards). */
+  ogImageWidth?: number;
+  ogImageHeight?: number;
   env?: SeoEnvInput;
 }): Metadata {
   const env = opts.env ?? readSeoEnv();
@@ -158,7 +161,12 @@ export function buildPageMetadata(opts: {
         height: DEFAULT_OG_IMAGE.height,
         type: DEFAULT_OG_IMAGE.type,
       }
-    : { url: image };
+    : {
+        url: image,
+        ...(opts.ogImageWidth && opts.ogImageHeight
+          ? { width: opts.ogImageWidth, height: opts.ogImageHeight }
+          : {}),
+      };
 
   // Never set `robots: undefined` — Next.js merge treats the key as present and
   // clears parent root robots (wiping production index,follow).
