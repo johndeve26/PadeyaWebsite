@@ -1,1 +1,12 @@
-export { alt, contentType, default, runtime, size } from "./opengraph-image";
+import FanOpenGraphImage from "./opengraph-image";
+import {
+  PROFILE_OG_CONTENT_TYPE,
+  PROFILE_OG_SIZE,
+} from "@/lib/seo/profile-og-size";
+
+export const alt = "Fan Passport profile";
+export const size = PROFILE_OG_SIZE;
+export const contentType = PROFILE_OG_CONTENT_TYPE;
+export const runtime = "nodejs";
+
+export default FanOpenGraphImage;
