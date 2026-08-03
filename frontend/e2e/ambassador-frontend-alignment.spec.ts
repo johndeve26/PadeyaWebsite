@@ -44,13 +44,6 @@ test.describe("ambassador dual-commission landing", () => {
     await expect(
       page.getByRole("heading", { name: "Host event campaigns" }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Your Pàdéyá-wide link" }),
-    ).toBeVisible();
-    await expect(page.getByText("padeya.com/r/yourusername")).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Fair and transparent earnings" }),
-    ).toBeVisible();
     await expect(page.getByText("Illustrative example").first()).toBeVisible();
     await expect(page.getByText("Host-funded").first()).toBeVisible();
     await expect(page.getByText("Funded by Pàdéyá").first()).toBeVisible();
@@ -58,7 +51,7 @@ test.describe("ambassador dual-commission landing", () => {
       page.getByText(/does not reduce the host’s settlement/i).first(),
     ).toBeVisible();
     await expect(
-      page.getByText(/Two separate earnings/i).first(),
+      page.getByRole("heading", { name: "How it works" }),
     ).toBeVisible();
 
     await page
@@ -93,7 +86,7 @@ test.describe("ambassador dual-commission landing", () => {
     });
     expect(overflow).toBeFalsy();
     await expect(
-      page.getByRole("heading", { name: "Fair and transparent earnings" }),
+      page.getByRole("heading", { name: "How it works" }),
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: /Sign in to continue/i }).first(),
