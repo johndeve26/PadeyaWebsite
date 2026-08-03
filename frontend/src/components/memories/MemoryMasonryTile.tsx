@@ -84,6 +84,7 @@ export function MemoryMasonryTile({
             src={imageSrc}
             alt={fallbackArt ? "" : alt}
             fill
+            enlargeable={false}
             className={cn(
               "object-contain transition-transform duration-300 motion-reduce:transition-none",
               "group-hover:scale-[1.03] group-focus-visible:scale-[1.03]",

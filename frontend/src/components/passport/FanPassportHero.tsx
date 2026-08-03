@@ -71,6 +71,7 @@ export function FanPassportHero({
                       className="h-full w-full object-cover"
                       sizes="avatarMd"
                       loading="eager"
+                      enlargeable
                     />
                   ) : (
                     mark

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Badge, Button, SectionHeader } from "@/components/ui";
+import { enlargeableAttrs } from "@/components/media/ImageLightbox";
 import { cn } from "@/lib/cn";
 
 export type FollowedHostCard = {
@@ -63,8 +64,9 @@ export function FollowedHostCards({ hosts, initialVisible = 6 }: Props) {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={h.avatar_url}
-                        alt=""
-                        className="h-full w-full object-cover"
+                        alt={h.display_name}
+                        className="h-full w-full cursor-zoom-in object-cover"
+                        {...enlargeableAttrs(h.avatar_url, h.display_name)}
                       />
                     ) : (
                       initials(h.display_name)

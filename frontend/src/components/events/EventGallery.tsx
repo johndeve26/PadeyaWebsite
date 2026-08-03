@@ -140,6 +140,7 @@ export function EventGallery({ event }: { event: EventItem }) {
                   <Media
                     src={item.url}
                     alt={item.alt_text || ""}
+                    enlargeable={false}
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                     sizes="(max-width: 640px) 50vw, 33vw"
                   />
@@ -182,7 +183,7 @@ export function EventGallery({ event }: { event: EventItem }) {
                   key={url}
                   className="relative h-12 w-24 overflow-hidden rounded-[var(--radius-sm)] border border-border bg-card p-1.5"
                 >
-                  <Media src={url} alt="" className="object-contain" />
+                  <Media src={url} alt="" enlargeable={false} className="object-contain" />
                 </li>
               ))}
             </ul>
@@ -221,6 +222,7 @@ export function EventGallery({ event }: { event: EventItem }) {
             <Media
               src={active.url}
               alt={active.alt_text || ""}
+              enlargeable={false}
               className="object-contain"
             />
           </div>

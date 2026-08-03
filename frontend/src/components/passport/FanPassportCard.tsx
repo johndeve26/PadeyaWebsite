@@ -8,6 +8,7 @@ import { FanFollowButton } from "@/components/passport/FanFollowButton";
 import { FanPassportSafetyMenu } from "@/components/passport/FanPassportSafetyMenu";
 import { GenderBadge } from "@/components/profile/GenderBadge";
 import { Badge, Button } from "@/components/ui";
+import { enlargeableAttrs } from "@/components/media/ImageLightbox";
 import { trackFanCardClick, trackFanCardImpression } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import {
@@ -101,8 +102,9 @@ export function FanPassportCard({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={fan.avatar_url}
-                  alt=""
-                  className="h-full w-full object-cover"
+                  alt={fan.display_name}
+                  className="h-full w-full cursor-zoom-in object-cover"
+                  {...enlargeableAttrs(fan.avatar_url, fan.display_name)}
                 />
               ) : (
                 initials(fan.display_name)

@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { MaintenanceBanner } from "@/components/maintenance/MaintenanceBanner";
 import { MaintenanceGate } from "@/components/maintenance/MaintenanceGate";
+import { ImageLightboxProvider } from "@/components/media/ImageLightbox";
 import { PwaProvider } from "@/components/pwa/PwaProvider";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ThemeScript } from "@/components/theme/ThemeScript";
@@ -126,14 +127,16 @@ export default function RootLayout({
             <AnalyticsProvider>
               <PwaProvider>
                 <NotificationToastProvider>
-                  <MaintenanceGate>
-                    <ImpersonationBanner />
-                    <MaintenanceBanner />
-                    <SiteHeader />
-                    <div className="min-w-0 flex-1">{children}</div>
-                    <SiteFooter />
-                    <MobileBottomNav />
-                  </MaintenanceGate>
+                  <ImageLightboxProvider>
+                    <MaintenanceGate>
+                      <ImpersonationBanner />
+                      <MaintenanceBanner />
+                      <SiteHeader />
+                      <div className="min-w-0 flex-1">{children}</div>
+                      <SiteFooter />
+                      <MobileBottomNav />
+                    </MaintenanceGate>
+                  </ImageLightboxProvider>
                 </NotificationToastProvider>
               </PwaProvider>
             </AnalyticsProvider>

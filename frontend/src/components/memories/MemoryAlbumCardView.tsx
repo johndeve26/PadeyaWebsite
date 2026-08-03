@@ -27,6 +27,7 @@ export function MemoryAlbumCardView({ album }: { album: MemoryAlbumCard }) {
             src={cover}
             alt=""
             fill
+            enlargeable={false}
             className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
             sizes="(max-width: 640px) 100vw, 33vw"
           />

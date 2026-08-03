@@ -25,7 +25,7 @@ export function ParticipantAvatar({
           className,
         )}
       >
-        <Media src={avatarUrl} alt="" className="h-full w-full" />
+        <Media src={avatarUrl} alt={name} className="h-full w-full" />
       </span>
     );
   }

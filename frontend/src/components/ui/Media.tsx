@@ -1,6 +1,9 @@
-import Image from "next/image";
-import type { CSSProperties } from "react";
+"use client";
 
+import Image from "next/image";
+import type { CSSProperties, ReactNode } from "react";
+
+import { enlargeableAttrs } from "@/components/media/ImageLightbox";
 import { cn } from "@/lib/cn";
 import {
   isOptimizableMediaSrc,
@@ -34,11 +37,42 @@ type MediaProps = {
   fill?: boolean;
   width?: number;
   height?: number;
+  /**
+   * Click to enlarge (WhatsApp/TikTok-style). Default true for content photos.
+   * Set false for decorative images or when a domain lightbox already handles open.
+   */
+  enlargeable?: boolean;
 };
+
+function maybeEnlargeableWrap(
+  node: ReactNode,
+  options: {
+    enlargeable: boolean;
+    fill: boolean;
+    src: string;
+    alt: string;
+  },
+) {
+  if (!options.enlargeable) return node;
+  const attrs = enlargeableAttrs(options.src, options.alt);
+  if (!attrs) return node;
+  return (
+    <span
+      className={cn(
+        options.fill ? "absolute inset-0 block" : "contents",
+        "cursor-zoom-in",
+      )}
+      {...attrs}
+    >
+      {node}
+    </span>
+  );
+}
 
 /**
  * Public media renderer — prefers next/image for optimizable hosts,
  * falls back to <img> for SVG / unknown remotes (no SSRF-style wildcards).
+ * Enlargeable by default via ImageLightboxProvider.
  */
 export function Media({
   src,
@@ -51,22 +85,23 @@ export function Media({
   fill = true,
   width,
   height,
+  enlargeable = true,
 }: MediaProps) {
   const resolved = resolveMediaUrl(src);
   if (!resolved) return null;
 
   const resolvedSizes = resolveMediaSizes(sizes) ?? "100vw";
   const eager = priority || loading === "eager";
-  // `cn` only joins, so emitting the default alongside a caller's `object-*`
-  // utility ties on specificity and Tailwind's later `object-cover` rule wins.
   const imgClass = cn(
     "h-full w-full",
     !OBJECT_FIT_CLASS.test(className) && "object-cover",
     className,
   );
 
+  let node: ReactNode;
+
   if (isSvgMediaSrc(resolved) || !isOptimizableMediaSrc(resolved)) {
-    return (
+    node = (
       // eslint-disable-next-line @next/next/no-img-element -- SVG / unlisted hosts
       <img
         src={resolved}
@@ -80,10 +115,8 @@ export function Media({
         height={height}
       />
     );
-  }
-
-  if (!fill && width && height) {
-    return (
+  } else if (!fill && width && height) {
+    node = (
       <Image
         src={resolved}
         alt={alt}
@@ -94,7 +127,22 @@ export function Media({
         sizes={resolvedSizes}
         priority={priority}
         loading={priority ? undefined : eager ? "eager" : "lazy"}
-        // Avoid blank cards when CDN Content-Type is wrong (octet-stream).
+        unoptimized={
+          resolved.startsWith("http") || resolved.startsWith("/media/")
+        }
+      />
+    );
+  } else {
+    node = (
+      <Image
+        src={resolved}
+        alt={alt}
+        fill
+        className={imgClass}
+        style={style}
+        sizes={resolvedSizes}
+        priority={priority}
+        loading={priority ? undefined : eager ? "eager" : "lazy"}
         unoptimized={
           resolved.startsWith("http") || resolved.startsWith("/media/")
         }
@@ -102,19 +150,10 @@ export function Media({
     );
   }
 
-  return (
-    <Image
-      src={resolved}
-      alt={alt}
-      fill
-      className={imgClass}
-      style={style}
-      sizes={resolvedSizes}
-      priority={priority}
-      loading={priority ? undefined : eager ? "eager" : "lazy"}
-      unoptimized={
-        resolved.startsWith("http") || resolved.startsWith("/media/")
-      }
-    />
-  );
+  return maybeEnlargeableWrap(node, {
+    enlargeable,
+    fill,
+    src: resolved,
+    alt,
+  });
 }
