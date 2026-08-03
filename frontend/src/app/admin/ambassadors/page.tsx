@@ -207,7 +207,10 @@ export default function AdminAmbassadorsPage() {
                         </span>
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {row.event_title || "Host partner"} · {row.status}
+                        {row.program_kind === "platform_wide"
+                          ? "Platform-wide"
+                          : row.event_title || "Host partner"}{" "}
+                        · {row.status}
                         {row.ambassadors_blocked ? " · blocked" : ""}
                       </p>
                     </div>

@@ -422,10 +422,12 @@ class AmbassadorPlatformSettingsPublic(BaseModel):
 
 class AdminAmbassadorRow(BaseModel):
     id: UUID
-    host_id: UUID
+    # Nullable for platform-wide enrollments (Pàdéyá-funded).
+    host_id: UUID | None = None
     event_id: UUID | None = None
     campaign_id: UUID | None = None
     user_id: UUID | None = None
+    program_id: UUID | None = None
     program_kind: str
     referral_code: str
     display_name: str

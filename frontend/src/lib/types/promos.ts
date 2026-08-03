@@ -221,10 +221,12 @@ export type AmbassadorPlatformSettings = {
 
 export type AdminAmbassadorRow = {
   id: string;
-  host_id: string;
+  /** Null for platform-wide (Pàdéyá-funded) enrollments. */
+  host_id: string | null;
   event_id: string | null;
   campaign_id: string | null;
   user_id: string | null;
+  program_id?: string | null;
   program_kind: string;
   referral_code: string;
   display_name: string;

@@ -459,3 +459,42 @@ def test_platform_wide_kind_on_enrollment(
     assert amb.program_kind == PROGRAM_PLATFORM_WIDE
     assert amb.host_id is None
     assert amb.event_id is None
+
+
+def test_admin_ambassadors_list_includes_platform_wide_null_host(
+    client: TestClient, db_session: Session, assign_role
+):
+    """Overview fails if response_model rejects null host_id (platform enrollments)."""
+    tag = uuid4().hex[:8]
+    _host, _event, fan, _buyer, _he = _seed_event(db_session, tag=tag)
+    admin = _admin(client, assign_role, f"uni-admin-list-{tag}@example.com")
+    prog = client.post(
+        "/api/v1/promos/admin/referral-programs",
+        headers=admin,
+        json={
+            "name": "List null host",
+            "ticket_rule": {
+                "commission_mode": "percentage",
+                "commission_value": 4,
+            },
+        },
+    ).json()
+    enroll = client.post(
+        f"/api/v1/promos/admin/referral-programs/{prog['id']}/enrollments",
+        headers=admin,
+        json={"email": fan.email, "referral_code": f"nullh{tag}"},
+    )
+    assert enroll.status_code == 201, enroll.text
+    amb_id = enroll.json()["id"]
+
+    listed = client.get("/api/v1/promos/admin/ambassadors", headers=admin)
+    assert listed.status_code == 200, listed.text
+    row = next(r for r in listed.json() if r["id"] == amb_id)
+    assert row["host_id"] is None
+    assert row["program_kind"] == PROGRAM_PLATFORM_WIDE
+    assert row["program_id"] == prog["id"]
+
+    summary = client.get("/api/v1/promos/admin/reports/summary", headers=admin)
+    assert summary.status_code == 200, summary.text
+    settings = client.get("/api/v1/promos/admin/settings", headers=admin)
+    assert settings.status_code == 200, settings.text

@@ -309,6 +309,7 @@ def list_admin_ambassadors(
                 "event_id": amb.event_id,
                 "campaign_id": amb.campaign_id,
                 "user_id": amb.user_id,
+                "program_id": getattr(amb, "program_id", None),
                 "program_kind": amb.program_kind,
                 "referral_code": amb.referral_code,
                 "display_name": amb.display_name,
