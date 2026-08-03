@@ -913,12 +913,25 @@ export default function CheckoutPage() {
             urlCode: urlReferralCode,
             explicitCode: explicitAmbassadorCode,
           });
-          return attributed.code
-            ? {
-                referral_code: attributed.code,
-                referral_source: attributed.source ?? undefined,
-              }
-            : {};
+          const payload: Record<string, string> = {};
+          if (attributed.code) {
+            payload.referral_code = attributed.code;
+            if (attributed.source) payload.referral_source = attributed.source;
+          }
+          if (
+            attributed.platformCode &&
+            attributed.platformCode !== attributed.code
+          ) {
+            payload.platform_referral_code = attributed.platformCode;
+          } else if (
+            attributed.platformCode &&
+            !attributed.code
+          ) {
+            payload.platform_referral_code = attributed.platformCode;
+            payload.referral_code = attributed.platformCode;
+            if (attributed.source) payload.referral_source = attributed.source;
+          }
+          return payload;
         })(),
         ...(hasMerchLines && effectiveFulfillment
           ? { fulfillment_method: effectiveFulfillment }

@@ -138,6 +138,19 @@ _GRANULAR_PERMISSIONS: list[tuple[str, str]] = [
     ("fan_connect.use", "Use Fan Connect requests and connections"),
     # Admin
     ("admin.full_access", "Full administrative access"),
+    ("admin.referrals.view", "View referral programs, enrollments and performance"),
+    (
+        "admin.referrals.programs.manage",
+        "Create and manage platform-wide referral programs",
+    ),
+    (
+        "admin.referrals.enrollments.manage",
+        "Enroll, suspend and end platform referral ambassadors",
+    ),
+    (
+        "admin.referrals.finance",
+        "View and manage platform-funded referral commission liabilities",
+    ),
     ("admin.emails.view", "View admin platform email templates"),
     ("admin.emails.edit_templates", "Edit admin platform email templates"),
     ("admin.emails.test_send", "Send admin email template tests"),
@@ -613,6 +626,8 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         "payouts.approve",
         "payouts.reject",
         # payouts.mark_paid intentionally omitted — super_admin only
+        "admin.referrals.view",
+        "admin.referrals.finance",
         "legacy.manage",
         "vault.moderate",
         "memories.moderate",
@@ -660,6 +675,9 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         "admin.appeals.review",
         "hosts.verify",
         "hosts.suspend",
+        "admin.referrals.view",
+        "admin.referrals.programs.manage",
+        "admin.referrals.enrollments.manage",
         "events.review",
         "events.approve",
         "events.reject",

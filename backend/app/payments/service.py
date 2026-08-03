@@ -1142,9 +1142,15 @@ def _create_event_order(
 
     if (
         payload.referral_code
+        or getattr(payload, "platform_referral_code", None)
         or getattr(payload, "ambassador_attribution_id", None) is not None
     ):
-        from app.promos.constants import REFERRAL_SOURCES
+        from app.promos.constants import (
+            PRODUCT_SLICE_MERCH,
+            PRODUCT_SLICE_TICKETS,
+            REFERRAL_SOURCES,
+        )
+        from app.promos.attribution import resolve_platform_ambassador
         from app.promos.service import (
             attach_ambassador_to_order,
             resolve_ambassador_for_event,
@@ -1161,6 +1167,10 @@ def _create_event_order(
             if payload.referral_source in REFERRAL_SOURCES
             else "link"
         )
+        platform_code = getattr(payload, "platform_referral_code", None)
+        if platform_code:
+            order.platform_referral_code = platform_code.strip().lower()
+
         # v1 ambassador row (legacy) — dual-write until cutover.
         if payload.referral_code:
             ambassador = resolve_ambassador_for_event(
@@ -1169,11 +1179,41 @@ def _create_event_order(
                 event=event,
                 prefer_merch=prefer_merch,
             )
+            if ambassador is None:
+                # Platform-wide code may be sent as the primary referral_code.
+                slice_name = (
+                    PRODUCT_SLICE_MERCH if prefer_merch else PRODUCT_SLICE_TICKETS
+                )
+                plat = resolve_platform_ambassador(
+                    db,
+                    referral_code=payload.referral_code,
+                    event=event,
+                    product_slice=slice_name,
+                )
+                if plat is not None:
+                    ambassador = plat.ambassador
             if ambassador is not None:
                 attach_ambassador_to_order(
                     db,
                     order=order,
                     ambassador=ambassador,
+                    attribution_source=source,
+                )
+        elif platform_code:
+            slice_name = (
+                PRODUCT_SLICE_MERCH if prefer_merch else PRODUCT_SLICE_TICKETS
+            )
+            plat = resolve_platform_ambassador(
+                db,
+                referral_code=platform_code,
+                event=event,
+                product_slice=slice_name,
+            )
+            if plat is not None:
+                attach_ambassador_to_order(
+                    db,
+                    order=order,
+                    ambassador=plat.ambassador,
                     attribution_source=source,
                 )
 

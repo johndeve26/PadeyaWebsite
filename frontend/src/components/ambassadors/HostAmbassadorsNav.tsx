@@ -9,6 +9,7 @@ const LINKS: { href: string; label: string; exact?: boolean }[] = [
   { href: "/host/ambassadors", label: "Partners", exact: true },
   { href: "/host/ambassadors/campaigns", label: "Campaigns" },
   { href: "/host/ambassadors/conversions", label: "Conversions" },
+  { href: "/host/ambassadors/platform-attributed", label: "Platform sales" },
   { href: "/host/ambassadors/payouts", label: "Payouts" },
 ];
 

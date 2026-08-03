@@ -118,7 +118,7 @@ export default function AdminAmbassadorCampaignsPage() {
       tone="soft"
       eyebrow="Admin · Ambassadors"
       title="Campaigns"
-      description="View all host and platform Ambassadors campaigns. Create platform campaigns for any event."
+      description="View all host and platform Ambassadors campaigns. Create event-scoped platform campaigns here; for platform-wide programs (one link, tickets + merch, funded by Pàdéyá) use Programs."
     >
       <AdminAmbassadorsNav />
       {error ? <Alert tone="danger" title="Something went wrong">{error}</Alert> : null}

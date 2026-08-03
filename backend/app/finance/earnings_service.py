@@ -172,20 +172,10 @@ def _snapshot_host_processing(db: Session, order_ids: list[UUID]) -> dict[UUID, 
 def _ambassador_by_order(
     db: Session, order_ids: list[UUID]
 ) -> dict[UUID, Decimal]:
-    if not order_ids:
-        return {}
-    rows = db.scalars(
-        select(AmbassadorSale).where(
-            AmbassadorSale.order_id.in_(order_ids),
-            AmbassadorSale.status.in_(ACTIVE_AMBASSADOR_STATUSES),
-        )
-    ).all()
-    out: dict[UUID, Decimal] = {}
-    for row in rows:
-        out[row.order_id] = out.get(row.order_id, Decimal("0")) + _q(
-            row.commission_owed
-        )
-    return out
+    """Host-funded referral commission liability from the append-only ledger."""
+    from app.promos.ledger_service import host_funded_net_by_order
+
+    return host_funded_net_by_order(db, order_ids)
 
 
 def _refunds_by_order(db: Session, host_id: UUID, order_ids: list[UUID]) -> dict[UUID, Decimal]:

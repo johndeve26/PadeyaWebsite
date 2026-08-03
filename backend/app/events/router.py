@@ -27,6 +27,7 @@ from app.events.schemas import (
     EventClearFlagRequest,
     EventCreate,
     EventFlagRequest,
+    EventForceDeleteRequest,
     EventMediaCreate,
     EventPostponeRequest,
     EventPublic,
@@ -58,6 +59,7 @@ from app.events.service import (
     delete_ticket_type,
     discard_event,
     flag_event,
+    force_delete_event,
     get_event_by_id,
     list_admin_categories,
     list_admin_events,
@@ -228,6 +230,25 @@ def admin_unfeature_event(
         set_event_featured(db, user=user, event_id=event_id, featured=False),
         access="admin",
     )
+
+
+@router.post(
+    "/admin/{event_id}/force-delete",
+    response_model=MessageResponse,
+)
+def admin_force_delete_event(
+    event_id: UUID,
+    payload: EventForceDeleteRequest,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[
+        User, Depends(require_permission("admin.full_access", "events.approve"))
+    ],
+) -> MessageResponse:
+    """Permanently delete an event (cascades tickets/orders/etc). For test cleanup."""
+    force_delete_event(
+        db, user=user, event_id=event_id, reason=payload.reason
+    )
+    return MessageResponse(message="Event permanently deleted")
 
 
 @router.post("/admin/{event_id}/padeya-pick", response_model=EventPublic)

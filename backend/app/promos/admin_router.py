@@ -1,5 +1,7 @@
 """Admin Ambassadors API — platform-wide management."""
 
+from datetime import datetime
+from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
 
@@ -240,3 +242,202 @@ def admin_reports_summary(
     _: Annotated[User, Depends(require_permission("admin.full_access"))],
 ) -> dict:
     return admin_service.reports_summary(db)
+
+
+# --- Platform-wide referral programs ---
+
+
+class PlatformProgramCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    description: str | None = None
+    public_description: str | None = None
+    enrollment_mode: str = "manual_enrollment"
+    status: str = "active"
+    starts_at: datetime | None = None
+    ends_at: datetime | None = None
+    attribution_window_days: int = Field(default=30, ge=1, le=365)
+    default_landing_path: str = "/events"
+    hold_period_days: int = Field(default=7, ge=0, le=365)
+    budget_total: Decimal | None = None
+    per_ambassador_cap: Decimal | None = None
+    ticket_rule: dict | None = None
+    merchandise_rule: dict | None = None
+    excluded_host_ids: list[UUID] | None = None
+    excluded_event_ids: list[UUID] | None = None
+
+
+class PlatformProgramPatch(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    public_description: str | None = None
+    enrollment_mode: str | None = None
+    starts_at: datetime | None = None
+    ends_at: datetime | None = None
+    attribution_window_days: int | None = Field(default=None, ge=1, le=365)
+    default_landing_path: str | None = None
+    hold_period_days: int | None = Field(default=None, ge=0, le=365)
+    budget_total: Decimal | None = None
+    per_ambassador_cap: Decimal | None = None
+    ticket_rule: dict | None = None
+    merchandise_rule: dict | None = None
+
+
+class EnrollmentCreate(BaseModel):
+    user_id: UUID | None = None
+    email: str | None = None
+    display_name: str | None = None
+    referral_code: str | None = None
+    status: str = "active"
+
+
+class EnrollmentPatch(BaseModel):
+    status: str | None = None
+
+
+@router.get("/referral-programs")
+def admin_list_referral_programs(
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_permission("admin.referrals.view", "admin.referrals.programs.manage", "admin.full_access"))],
+    scope: str | None = Query(default=None),
+    status_filter: str | None = Query(default=None, alias="status"),
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> list[dict]:
+    from app.promos import programs_service
+
+    return programs_service.list_programs(
+        db, scope=scope, status=status_filter, limit=limit, offset=offset
+    )
+
+
+@router.post("/referral-programs", status_code=status.HTTP_201_CREATED)
+def admin_create_referral_program(
+    payload: PlatformProgramCreate,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_permission("admin.referrals.programs.manage", "admin.full_access"))],
+) -> dict:
+    from app.promos import programs_service
+
+    return programs_service.create_platform_program(
+        db, admin=admin, payload=payload.model_dump()
+    )
+
+
+@router.get("/referral-programs/{program_id}")
+def admin_get_referral_program(
+    program_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_permission("admin.referrals.view", "admin.referrals.programs.manage", "admin.full_access"))],
+) -> dict:
+    from app.promos import programs_service
+
+    program = programs_service.get_program(db, program_id)
+    return programs_service.serialize_program(db, program)
+
+
+@router.patch("/referral-programs/{program_id}")
+def admin_patch_referral_program(
+    program_id: UUID,
+    payload: PlatformProgramPatch,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_permission("admin.referrals.programs.manage", "admin.full_access"))],
+) -> dict:
+    from app.promos import programs_service
+
+    return programs_service.patch_program(
+        db,
+        admin=admin,
+        program_id=program_id,
+        payload=payload.model_dump(exclude_unset=True),
+    )
+
+
+@router.post("/referral-programs/{program_id}/activate")
+def admin_activate_program(
+    program_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_permission("admin.referrals.programs.manage", "admin.full_access"))],
+) -> dict:
+    from app.promos import programs_service
+
+    return programs_service.transition_program(
+        db, admin=admin, program_id=program_id, new_status="active"
+    )
+
+
+@router.post("/referral-programs/{program_id}/pause")
+def admin_pause_program(
+    program_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_permission("admin.referrals.programs.manage", "admin.full_access"))],
+) -> dict:
+    from app.promos import programs_service
+
+    return programs_service.transition_program(
+        db, admin=admin, program_id=program_id, new_status="paused"
+    )
+
+
+@router.post("/referral-programs/{program_id}/close")
+def admin_close_program(
+    program_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_permission("admin.referrals.programs.manage", "admin.full_access"))],
+) -> dict:
+    from app.promos import programs_service
+
+    return programs_service.transition_program(
+        db, admin=admin, program_id=program_id, new_status="ended"
+    )
+
+
+@router.get("/referral-programs/{program_id}/enrollments")
+def admin_list_enrollments(
+    program_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_permission("admin.referrals.view", "admin.referrals.enrollments.manage", "admin.full_access"))],
+) -> list[dict]:
+    from app.promos import programs_service
+
+    return programs_service.list_enrollments(db, program_id)
+
+
+@router.post(
+    "/referral-programs/{program_id}/enrollments",
+    status_code=status.HTTP_201_CREATED,
+)
+def admin_enroll(
+    program_id: UUID,
+    payload: EnrollmentCreate,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_permission("admin.referrals.enrollments.manage", "admin.full_access"))],
+) -> dict:
+    from app.promos import programs_service
+
+    return programs_service.enroll_user(
+        db,
+        admin=admin,
+        program_id=program_id,
+        user_id=payload.user_id,
+        email=payload.email,
+        display_name=payload.display_name,
+        referral_code=payload.referral_code,
+        status=payload.status,
+    )
+
+
+@router.patch("/referral-enrollments/{enrollment_id}")
+def admin_patch_enrollment(
+    enrollment_id: UUID,
+    payload: EnrollmentPatch,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_permission("admin.referrals.enrollments.manage", "admin.full_access"))],
+) -> dict:
+    from app.promos import programs_service
+
+    return programs_service.patch_enrollment(
+        db,
+        admin=admin,
+        enrollment_id=enrollment_id,
+        payload=payload.model_dump(exclude_unset=True),
+    )

@@ -885,6 +885,12 @@ class MessageResponse(BaseModel):
     message: str
 
 
+class EventForceDeleteRequest(BaseModel):
+    """Admin permanent delete (intended for test/cleanup; cascades related rows)."""
+
+    reason: str = Field(min_length=3, max_length=2000)
+
+
 class EventCategoryCreate(BaseModel):
     name: str = Field(min_length=2, max_length=120)
     slug: str | None = Field(default=None, max_length=140)

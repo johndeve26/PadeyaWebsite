@@ -349,6 +349,14 @@ def refresh_access_token(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid refresh token",
             )
+        # Credential / logout bulk-revoke also expires the row immediately so it
+        # cannot ride rotation reuse-grace after another device refreshes.
+        expires_at = _aware(token_row.expires_at)
+        if expires_at <= revoked_at:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token",
+            )
         # Reuse is only forgiven when rotation already minted a replacement.
         # Logout / credential resets revoke without issuing a sibling → still 401.
         sibling = db.scalar(
@@ -431,7 +439,9 @@ def logout_user(
         return
 
     if token_row.revoked_at is None:
-        token_row.revoked_at = datetime.now(UTC)
+        now = datetime.now(UTC)
+        token_row.revoked_at = now
+        token_row.expires_at = now
         write_audit_log(
             db,
             action="auth.logout",

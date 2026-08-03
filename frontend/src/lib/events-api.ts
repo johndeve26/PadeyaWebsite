@@ -322,6 +322,17 @@ export async function discardEvent(id: string): Promise<void> {
   await apiRequest<{ message: string }>(`/events/by-id/${id}`, { method: "DELETE" });
 }
 
+/** Admin permanent delete — any status; cascades related rows. Requires reason. */
+export async function forceDeleteEvent(
+  id: string,
+  reason: string,
+): Promise<void> {
+  await apiRequest<{ message: string }>(`/events/admin/${id}/force-delete`, {
+    method: "POST",
+    body: { reason: reason.trim() },
+  });
+}
+
 export async function archiveEvent(id: string): Promise<EventItem> {
   return apiRequest<EventItem>(`/events/by-id/${id}/archive`, { method: "POST" });
 }

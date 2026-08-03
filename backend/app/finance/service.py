@@ -169,6 +169,10 @@ def _serialize_refund_request(db: Session, row: RefundRequest) -> dict:
         "reason": row.reason,
         "policy_snapshot": row.policy_snapshot,
         "ticket_ids": row.ticket_ids,
+        "line_allocations": getattr(row, "line_allocations", None),
+        "requires_referral_refund_allocation": bool(
+            getattr(row, "requires_referral_refund_allocation", False)
+        ),
         "escalation_note": row.escalation_note,
         "review_note": row.review_note,
         "reviewed_by_user_id": row.reviewed_by_user_id,
@@ -459,7 +463,7 @@ def review_refund_request(
     order = db.scalar(
         select(Order)
         .where(Order.id == row.order_id)
-        .options(selectinload(Order.payments))
+        .options(selectinload(Order.payments), selectinload(Order.items))
         .with_for_update()
     )
     if order is None:
@@ -511,13 +515,80 @@ def review_refund_request(
     )
 
     from app.promos.commission import reverse_ambassador_sale_for_order
-
-    reverse_ambassador_sale_for_order(
-        db,
-        order_id=order.id,
-        reason="Order refunded",
-        actor_user_id=user.id,
+    from app.promos.refund_allocations import (
+        ReferralRefundAllocationError,
+        apply_referral_reversals_for_finance_refund,
+        parse_allocation_payloads,
     )
+
+    order_total = Decimal(order.total_amount or 0)
+    requested = Decimal(row.requested_amount or 0)
+    is_full_refund = (
+        getattr(row, "refund_type", "full") == "full"
+        or requested >= order_total
+    )
+
+    raw_allocs = None
+    if payload.line_allocations:
+        raw_allocs = [a.model_dump(mode="json") for a in payload.line_allocations]
+        row.line_allocations = raw_allocs
+    elif getattr(row, "line_allocations", None):
+        raw_allocs = list(row.line_allocations or [])
+
+    try:
+        allocations = parse_allocation_payloads(raw_allocs)
+    except ReferralRefundAllocationError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": exc.code, "message": exc.detail},
+        ) from exc
+
+    try:
+        _, needs_alloc = apply_referral_reversals_for_finance_refund(
+            db,
+            order=order,
+            refund_id=refund.id,
+            requested_amount=requested,
+            reason="Order refunded",
+            actor_user_id=user.id,
+            allocations=allocations,
+            is_full_refund=is_full_refund,
+        )
+    except ReferralRefundAllocationError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": exc.code, "message": exc.detail},
+        ) from exc
+
+    if needs_alloc:
+        row.requires_referral_refund_allocation = True
+
+    from app.promos.ledger_service import remaining_reversible_amount
+    from app.promos.referral_ledger import ReferralCommissionEntry as RCE
+
+    earns = list(
+        db.scalars(
+            select(RCE).where(
+                RCE.order_id == order.id,
+                RCE.entry_type == "earning",
+            )
+        ).all()
+    )
+    all_cleared = (
+        all(remaining_reversible_amount(db, earning=e) <= 0 for e in earns)
+        if earns
+        else True
+    )
+    if is_full_refund or all_cleared:
+        # Ledger already updated above — mark legacy dual-write sales only.
+        reverse_ambassador_sale_for_order(
+            db,
+            order_id=order.id,
+            reason="Order refunded",
+            actor_user_id=user.id,
+            source_event_id=f"finance-refund:{refund.id}:legacy-sale",
+            skip_ledger=True,
+        )
 
     from app.ambassadors.payment import reverse_conversions_for_order
 
@@ -538,6 +609,8 @@ def review_refund_request(
             "amount": str(row.requested_amount),
             "tickets_invalidated": len(tickets),
             "ledger_entry_id": str(entry.id),
+            "line_allocations": raw_allocs,
+            "is_full_refund": is_full_refund,
         },
     )
 

@@ -347,3 +347,179 @@ export async function setAdminConversionRewardStatus(
 export async function fetchAdminAmbassadorReports(): Promise<AmbassadorReportsSummary> {
   return apiRequest<AmbassadorReportsSummary>("/promos/admin/reports/summary");
 }
+
+export type ReferralProgram = {
+  id: string;
+  name: string;
+  description?: string | null;
+  public_description?: string | null;
+  scope: string;
+  owner_type: string;
+  status: string;
+  enrollment_mode: string;
+  default_landing_path: string;
+  attribution_window_days: number;
+  hold_period_days: number;
+  commission_funded_by?: string;
+  rules: Array<{
+    id: string;
+    product_type: string;
+    commission_mode: string;
+    commission_value: string | number;
+    is_active: boolean;
+  }>;
+  enrollment_count?: number;
+};
+
+export async function fetchAdminReferralPrograms(params?: {
+  scope?: string;
+  status?: string;
+}): Promise<ReferralProgram[]> {
+  const qs = new URLSearchParams();
+  if (params?.scope) qs.set("scope", params.scope);
+  if (params?.status) qs.set("status", params.status);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return apiRequest<ReferralProgram[]>(`/promos/admin/referral-programs${suffix}`);
+}
+
+export async function createAdminReferralProgram(
+  input: Record<string, unknown>,
+): Promise<ReferralProgram> {
+  return apiRequest<ReferralProgram>("/promos/admin/referral-programs", {
+    method: "POST",
+    body: input,
+  });
+}
+
+export async function enrollAdminReferralProgram(
+  programId: string,
+  input: { email?: string; user_id?: string; referral_code?: string },
+): Promise<{ id: string; referral_code: string; referral_link_path: string }> {
+  return apiRequest(`/promos/admin/referral-programs/${programId}/enrollments`, {
+    method: "POST",
+    body: input,
+  });
+}
+
+export async function pauseAdminReferralProgram(
+  programId: string,
+): Promise<ReferralProgram> {
+  return apiRequest(`/promos/admin/referral-programs/${programId}/pause`, {
+    method: "POST",
+  });
+}
+
+export async function activateAdminReferralProgram(
+  programId: string,
+): Promise<ReferralProgram> {
+  return apiRequest(`/promos/admin/referral-programs/${programId}/activate`, {
+    method: "POST",
+  });
+}
+
+/* --- Unified referral reporting (ledger-backed) --- */
+
+export type ReferralSummary = {
+  clicks: number;
+  conversion_rate: number;
+  enrollments_active: number;
+  converted_orders: number;
+  attributed_items: number;
+  referred_gross_sales: string;
+  eligible_sales: string;
+  pending_commission: string;
+  available_commission: string;
+  paid_commission: string;
+  reversed_commission: string;
+  net_commission: string;
+};
+
+export type ReferralProgramRow = {
+  enrollment_id: string;
+  name: string;
+  scope_badge: string;
+  scope: string;
+  event_title?: string | null;
+  product_coverage: string[];
+  status: string;
+  referral_code: string;
+  referral_link_path?: string | null;
+  clicks: number;
+  converted_orders: number;
+  referred_gross_sales: string;
+  pending_commission: string;
+  available_commission: string;
+  paid_commission: string;
+};
+
+export type ReferralEarningRow = {
+  id: string;
+  date: string;
+  entry_type: string;
+  source: string;
+  payer_type: string;
+  program_name?: string | null;
+  event_title?: string | null;
+  product_type: string;
+  eligible_sale: string;
+  commission: string;
+  status: string;
+};
+
+export async function fetchMyReferralSummary(params?: {
+  scope?: string;
+  product_type?: string;
+}): Promise<ReferralSummary> {
+  const qs = new URLSearchParams();
+  if (params?.scope) qs.set("scope", params.scope);
+  if (params?.product_type) qs.set("product_type", params.product_type);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return apiRequest<ReferralSummary>(`/referrals/me/summary${suffix}`);
+}
+
+export async function fetchMyReferralPrograms(params?: {
+  scope?: string;
+}): Promise<ReferralProgramRow[]> {
+  const qs = new URLSearchParams();
+  if (params?.scope) qs.set("scope", params.scope);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return apiRequest<ReferralProgramRow[]>(`/referrals/me/programs${suffix}`);
+}
+
+export async function fetchMyReferralEarnings(params?: {
+  scope?: string;
+  product_type?: string;
+}): Promise<ReferralEarningRow[]> {
+  const qs = new URLSearchParams();
+  if (params?.scope) qs.set("scope", params.scope);
+  if (params?.product_type) qs.set("product_type", params.product_type);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return apiRequest<ReferralEarningRow[]>(`/referrals/me/earnings${suffix}`);
+}
+
+export async function fetchHostPlatformAttributedSales(): Promise<
+  Array<{
+    order_reference?: string | null;
+    event_title?: string | null;
+    product_type: string;
+    gross_attributed_sale: string;
+    attribution_badge: string;
+    commission_funded_by: string;
+    host_proceeds_note: string;
+  }>
+> {
+  return apiRequest("/host/referrals/platform-attributed-sales");
+}
+
+export async function fetchAdminReferralSummary(): Promise<Record<string, unknown>> {
+  return apiRequest("/admin/referrals/summary");
+}
+
+export async function fetchAdminReferralLiabilities(params?: {
+  payer?: string;
+}): Promise<Array<Record<string, unknown>>> {
+  const qs = new URLSearchParams();
+  if (params?.payer) qs.set("payer", params.payer);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return apiRequest(`/admin/referrals/liabilities${suffix}`);
+}

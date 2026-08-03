@@ -1,12 +1,14 @@
 /**
  * Ambassador referral capture: ?ref= / ?amb=, 30-day cookie, last-click wins.
  * Explicit checkout code always beats cookie/link when placing an order.
+ * Platform-wide codes use cookie key `__platform__` and `/r/{code}` links.
  */
 
 import { publicShareOrigin } from "@/lib/seo/site";
 
 export const AMBASSADOR_REFERRAL_COOKIE_DAYS = 30;
 export const AMBASSADOR_REFERRAL_COOKIE = "padeya_amb_ref_v1";
+export const PLATFORM_REFERRAL_COOKIE_KEY = "__platform__";
 
 export type ReferralAttributionSource = "explicit" | "link" | "cookie";
 
@@ -63,6 +65,25 @@ export function captureAmbassadorReferral(
   return normalized;
 }
 
+/** Platform-wide referral touch (survives across events). */
+export function capturePlatformReferral(code: string): string | null {
+  const normalized = normalizeAmbassadorCode(code);
+  if (!normalized) return null;
+  const store = readStore();
+  store[PLATFORM_REFERRAL_COOKIE_KEY] = { code: normalized, at: Date.now() };
+  writeStore(store);
+  return normalized;
+}
+
+export function getPlatformReferralCookie(): string | null {
+  const entry = readStore()[PLATFORM_REFERRAL_COOKIE_KEY];
+  if (!entry?.code) return null;
+  const ageMs = Date.now() - (entry.at || 0);
+  const maxMs = AMBASSADOR_REFERRAL_COOKIE_DAYS * 24 * 60 * 60 * 1000;
+  if (ageMs > maxMs) return null;
+  return normalizeAmbassadorCode(entry.code);
+}
+
 export function getAmbassadorReferralCookie(eventKey: string): string | null {
   if (!eventKey) return null;
   const entry = readStore()[eventKey];
@@ -77,27 +98,36 @@ export function getAmbassadorReferralCookie(eventKey: string): string | null {
  * Checkout attribution precedence:
  * 1. Explicit code typed at checkout
  * 2. URL ?ref= / ?amb= (also refreshes cookie — last click)
- * 3. Cookie within 30 days
+ * 3. Event cookie within 30 days
+ * 4. Platform-wide cookie fallback
  */
 export function resolveCheckoutReferral(input: {
   eventKey: string;
   urlCode?: string | null;
   explicitCode?: string | null;
-}): { code: string | null; source: ReferralAttributionSource | null } {
+}): {
+  code: string | null;
+  source: ReferralAttributionSource | null;
+  platformCode: string | null;
+} {
+  const platformCode = getPlatformReferralCookie();
   const explicit = normalizeAmbassadorCode(input.explicitCode);
   if (explicit) {
-    return { code: explicit, source: "explicit" };
+    return { code: explicit, source: "explicit", platformCode };
   }
   const fromUrl = normalizeAmbassadorCode(input.urlCode);
   if (fromUrl) {
     captureAmbassadorReferral(input.eventKey, fromUrl);
-    return { code: fromUrl, source: "link" };
+    return { code: fromUrl, source: "link", platformCode };
   }
   const fromCookie = getAmbassadorReferralCookie(input.eventKey);
   if (fromCookie) {
-    return { code: fromCookie, source: "cookie" };
+    return { code: fromCookie, source: "cookie", platformCode };
   }
-  return { code: null, source: null };
+  if (platformCode) {
+    return { code: platformCode, source: "cookie", platformCode };
+  }
+  return { code: null, source: null, platformCode: null };
 }
 
 export function buildAmbassadorEventLink(
@@ -118,8 +148,7 @@ export function buildAmbassadorEventLink(
 /**
  * Full shareable referral URL. Prefers the event landing page when a slug
  * exists; otherwise falls back to site root with `?ref=`.
- * Always uses the public live origin (not localhost) unless an explicit
- * non-local origin is passed.
+ * Platform-wide enrollments use `/r/{code}`.
  */
 export function buildAmbassadorReferralLink(
   code: string,
@@ -127,6 +156,7 @@ export function buildAmbassadorReferralLink(
     slug?: string | null;
     merch?: boolean;
     origin?: string;
+    platformWide?: boolean;
   },
 ): string {
   const explicit = opts?.origin?.replace(/\/$/, "") || "";
@@ -134,6 +164,10 @@ export function buildAmbassadorReferralLink(
     explicit && !/localhost|127\.0\.0\.1/i.test(explicit)
       ? explicit
       : publicShareOrigin();
+  const display = normalizeAmbassadorCode(code);
+  if (opts?.platformWide) {
+    return `${origin}/r/${display}`;
+  }
   const slug = (opts?.slug || "").trim();
   if (slug) {
     return buildAmbassadorEventLink(slug, code, {
@@ -141,7 +175,6 @@ export function buildAmbassadorReferralLink(
       merch: opts?.merch,
     });
   }
-  const display = normalizeAmbassadorCode(code);
   return `${origin}/events?ref=${display}`;
 }
 

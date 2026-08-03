@@ -114,6 +114,8 @@ class OrderCreate(BaseModel):
     promo_code: str | None = Field(default=None, max_length=64)
     merch_discount_code: str | None = Field(default=None, max_length=64)
     referral_code: str | None = Field(default=None, max_length=64)
+    # Platform-wide fallback (host event campaign still wins per item when present)
+    platform_referral_code: str | None = Field(default=None, max_length=64)
     # explicit | link | cookie — explicit checkout entry wins over cookie/link
     referral_source: Literal["explicit", "link", "cookie"] | None = None
     # Optional domain attribution from track-click / track-checkout-started

@@ -1,0 +1,10 @@
+{
+  "migration": "20260803_0216",
+  "existing_sales_count": 1,
+  "entries_backfilled": 1,
+  "unmapped_rows": 0,
+  "duplicate_rows_prevented": true,
+  "host_payer_entries": 1,
+  "platform_payer_entries": 0,
+  "notes": "Amounts preserved from ambassador_sales; no recalculation."
+}

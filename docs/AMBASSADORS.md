@@ -100,7 +100,7 @@ High-value admin alert threshold: `AMBASSADOR_HIGH_VALUE_REWARD_NGN` (default `5
 | Host remove | `POST /host/ambassadors/participants/{id}/remove` (and v1 campaign remove) |
 | Admin block | `POST /admin/ambassadors/participants/{id}/block` (+ platform `ambassadors_blocked`) |
 | Test / admin inflation | Test/admin flows must not create commission or public ranking lift; no live Paystack for owner own-host QA; future test orders must be metric-excluded |
-| Refunds | Full refund approve reverses v1 sales + domain conversions; refunded orders cannot be marked paid |
+| Refunds | Full refund approve reverses remaining ledger earnings + domain conversions; **partial** refunds require explicit `line_allocations` (`order_item_id`, `refunded_quantity`, `refunded_item_subtotal`) when earnings mix host/platform or rates — never silent `refund/order_total` spreading. Homogeneous earnings may use a documented shared fraction. Fixed commission reverses per refunded unit via original snapshot. |
 | Ticket cancel | `cancel_ticket` reverses commission for the order (idempotent) |
 | Admin override | Platform admin may force status changes / reverse via oversight endpoint |
 

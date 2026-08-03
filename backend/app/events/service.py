@@ -1554,6 +1554,47 @@ def discard_event(db: Session, *, user: User, event_id: uuid.UUID) -> None:
     db.commit()
 
 
+def force_delete_event(
+    db: Session,
+    *,
+    user: User,
+    event_id: uuid.UUID,
+    reason: str,
+) -> None:
+    """Admin permanent delete for any status (test/cleanup). Cascades related rows."""
+    if not _is_event_admin(user):
+        raise HTTPException(status_code=403, detail="Insufficient permission")
+    cleaned = (reason or "").strip()
+    if len(cleaned) < 3:
+        raise HTTPException(
+            status_code=400,
+            detail="A reason of at least 3 characters is required",
+        )
+    event = get_event_by_id(db, event_id)
+    if event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    event_id_str = str(event.id)
+    had_sales = _event_has_sales(event)
+    write_audit_log(
+        db,
+        action="events.force_delete",
+        actor_user_id=user.id,
+        resource_type="event",
+        resource_id=event_id_str,
+        details={
+            "title": event.title,
+            "slug": event.slug,
+            "status": event.status,
+            "had_sales": had_sales,
+            "reason": cleaned,
+            "force_delete": True,
+        },
+    )
+    db.delete(event)
+    db.commit()
+
+
 def restore_archived_event(db: Session, *, user: User, event_id: uuid.UUID) -> Event:
     """Restore an archived event to draft (unused) or cancelled (had lifecycle end)."""
     event = _require_event_lifecycle(

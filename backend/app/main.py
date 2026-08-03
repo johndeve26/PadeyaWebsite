@@ -115,6 +115,7 @@ from app.ambassadors.host_router import router as ambassadors_host_router
 from app.ambassadors.router import router as ambassadors_router
 from app.promos.admin_router import router as promos_admin_router
 from app.promos.router import router as promos_router
+from app.promos.referrals_router import router as referrals_router
 from app.reviews.router import router as reviews_router
 from app.support.router import router as support_router
 from app.placements.router import router as placements_router
@@ -354,6 +355,7 @@ app.include_router(merch_alias_router, prefix=api)
 app.include_router(merch_marketplace_router, prefix=api)
 app.include_router(promos_router, prefix=api)
 app.include_router(promos_admin_router, prefix=api)
+app.include_router(referrals_router, prefix=api)
 app.include_router(ambassadors_router, prefix=api)
 app.include_router(ambassadors_event_router, prefix=api)
 app.include_router(ambassadors_host_router, prefix=api)

@@ -120,6 +120,10 @@ class Order(Base):
         index=True,
     )
     referral_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Platform-wide fallback code (event-scoped code still preferred per item)
+    platform_referral_code: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
+    )
     # explicit | link | cookie — explicit checkout code is never overwritten
     referral_attribution_source: Mapped[str | None] = mapped_column(
         String(32), nullable=True

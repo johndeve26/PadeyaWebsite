@@ -8,6 +8,7 @@ from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     ForeignKey,
     Numeric,
@@ -69,6 +70,12 @@ class RefundRequest(Base):
     policy_snapshot: Mapped[str] = mapped_column(String(64), nullable=False)
     ticket_ids: Mapped[list[Any] | None] = mapped_column(
         JSON().with_variant(JSONB, "postgresql"), nullable=True
+    )
+    line_allocations: Mapped[list[Any] | None] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"), nullable=True
+    )
+    requires_referral_refund_allocation: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default="false"
     )
     escalation_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     review_note: Mapped[str | None] = mapped_column(Text, nullable=True)

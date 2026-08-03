@@ -255,39 +255,69 @@ def reverse_ambassador_sale_for_order(
     order_id: UUID,
     reason: str,
     actor_user_id: UUID | None = None,
+    refund_fraction: Decimal | None = None,
+    source_event_id: str | None = None,
+    allocation_id: str | None = None,
+    skip_ledger: bool = False,
 ) -> AmbassadorSale | None:
-    """Reverse commission for refunded/cancelled orders. Idempotent."""
-    sale = db.scalar(
-        select(AmbassadorSale).where(AmbassadorSale.order_id == order_id)
-    )
-    if sale is None:
-        return None
-    if sale.status == "reversed":
-        return sale
+    """Mark legacy sales reversed and append ledger reversals. Idempotent.
 
-    previous = sale.status
-    now = datetime.now(UTC)
-    sale.status = "reversed"
-    sale.reversed_at = now
-    sale.reversed_by_user_id = actor_user_id
-    sale.reversal_reason = (reason or "Order refunded/cancelled")[:500]
-    sale.reward_status_updated_at = now
-    sale.reward_status_updated_by_user_id = actor_user_id
-    write_audit_log(
-        db,
-        action="ambassadors.sale_reversed",
-        actor_user_id=actor_user_id,
-        resource_type="ambassador_sale",
-        resource_id=str(sale.id),
-        details={
-            "previous_status": previous,
-            "reason": sale.reversal_reason,
-            "order_id": str(order_id),
-            "commission_owed": str(sale.commission_owed),
-            "system": True,
-        },
+    Original earning amounts on the ledger are never mutated.
+    Prefer line-item allocations via ``refund_allocations`` for partial/mixed carts.
+    Set skip_ledger=True when ledger reversals were already applied.
+    """
+    if not skip_ledger:
+        from app.promos.ledger_service import reverse_commissions_for_order
+
+        reverse_commissions_for_order(
+            db,
+            order_id=order_id,
+            reason=reason,
+            source_event_id=source_event_id or f"order-refund:{order_id}",
+            actor_user_id=actor_user_id,
+            refund_fraction=refund_fraction,
+            allocation_id=allocation_id,
+        )
+
+    sales = list(
+        db.scalars(
+            select(AmbassadorSale).where(AmbassadorSale.order_id == order_id)
+        ).all()
     )
-    return sale
+    if not sales:
+        return None
+    last: AmbassadorSale | None = None
+    now = datetime.now(UTC)
+    for sale in sales:
+        if sale.status == "reversed":
+            last = sale
+            continue
+        previous = sale.status
+        sale.status = "reversed"
+        sale.reversed_at = now
+        sale.reversed_by_user_id = actor_user_id
+        sale.reversal_reason = (reason or "Order refunded/cancelled")[:500]
+        sale.reward_status_updated_at = now
+        sale.reward_status_updated_by_user_id = actor_user_id
+        write_audit_log(
+            db,
+            action="ambassadors.sale_reversed",
+            actor_user_id=actor_user_id,
+            resource_type="ambassador_sale",
+            resource_id=str(sale.id),
+            details={
+                "previous_status": previous,
+                "reason": sale.reversal_reason,
+                "order_id": str(order_id),
+                "commission_owed": str(sale.commission_owed),
+                "product_slice": getattr(sale, "product_slice", "all"),
+                "payer_type": getattr(sale, "payer_type", "host"),
+                "system": True,
+                "ledger_append_only": True,
+            },
+        )
+        last = sale
+    return last
 
 
 def maybe_grant_free_ticket_reward(

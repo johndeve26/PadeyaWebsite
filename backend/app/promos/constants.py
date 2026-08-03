@@ -145,3 +145,22 @@ PAYOUT_STATUSES = frozenset(
         PAYOUT_STATUS_CANCELLED,
     }
 )
+
+# Unified referral / platform-wide programs
+PROGRAM_PLATFORM_WIDE = "platform_wide"
+REFERRAL_SCOPE_EVENT = "event"
+REFERRAL_SCOPE_PLATFORM = "platform"
+REFERRAL_OWNER_HOST = "host"
+REFERRAL_OWNER_PLATFORM = "platform"
+PAYER_HOST = "host"
+PAYER_PLATFORM = "platform"
+PRODUCT_SLICE_TICKETS = "tickets"
+PRODUCT_SLICE_MERCH = "merch"
+PRODUCT_SLICE_ALL = "all"
+ENROLLMENT_INVITE_ONLY = "invite_only"
+ENROLLMENT_APPLICATION = "application"
+ENROLLMENT_MANUAL = "manual_enrollment"
+SAFE_LANDING_PATHS = frozenset(
+    {"/", "/events", "/shop", "/ambassadors", "/marketplace"}
+)
+PLATFORM_REFERRAL_COOKIE_KEY = "__platform__"

@@ -28,6 +28,15 @@ from sqlalchemy.types import Uuid
 
 from app.core.database import Base
 from app.promos.referral_clicks import ReferralClick  # noqa: F401
+from app.promos.referral_programs import (  # noqa: F401
+    ReferralProgram,
+    ReferralProgramExclusion,
+    ReferralProgramRule,
+)
+from app.promos.referral_ledger import (  # noqa: F401
+    ReferralAttribution,
+    ReferralCommissionEntry,
+)
 from app.promos.ambassador_domain import (  # noqa: F401
     AmbassadorAttribution,
     AmbassadorAuditLog,
@@ -244,6 +253,13 @@ class AmbassadorCampaign(Base):
     ends_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Parent ReferralProgram (event-scoped backfill or platform-wide umbrella)
+    program_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("referral_programs.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -307,10 +323,11 @@ class Ambassador(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    host_id: Mapped[uuid.UUID] = mapped_column(
+    # Nullable for platform-wide enrollments (Pàdéyá-funded).
+    host_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("hosts.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
     event_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -325,12 +342,19 @@ class Ambassador(Base):
         nullable=True,
         index=True,
     )
+    program_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("referral_programs.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
+    # host_curated | open_event | platform_wide
     program_kind: Mapped[str] = mapped_column(
         String(32), default="host_curated", nullable=False, index=True
     )
@@ -391,7 +415,22 @@ class PromoClick(Base):
 
 class AmbassadorSale(Base):
     __tablename__ = "ambassador_sales"
-    __table_args__ = (UniqueConstraint("order_id", name="uq_ambassador_sales_order_id"),)
+    __table_args__ = (
+        Index(
+            "uq_ambassador_sales_order_slice_amb",
+            "order_id",
+            "product_slice",
+            "ambassador_id",
+            unique=True,
+        ),
+        Index(
+            "uq_ambassador_sales_idempotency",
+            "idempotency_key",
+            unique=True,
+            postgresql_where=text("idempotency_key IS NOT NULL"),
+            sqlite_where=text("idempotency_key IS NOT NULL"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -414,6 +453,21 @@ class AmbassadorSale(Base):
         nullable=False,
         index=True,
     )
+    # host | platform — platform commissions must not reduce host settlement
+    payer_type: Mapped[str] = mapped_column(
+        String(32), default="host", nullable=False, index=True
+    )
+    # tickets | merch | all (legacy single-row sales)
+    product_slice: Mapped[str] = mapped_column(
+        String(32), default="all", nullable=False
+    )
+    program_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("referral_programs.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    idempotency_key: Mapped[str | None] = mapped_column(String(120), nullable=True)
     tickets_sold: Mapped[int] = mapped_column(Integer, nullable=False)
     merch_units_sold: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     revenue_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)

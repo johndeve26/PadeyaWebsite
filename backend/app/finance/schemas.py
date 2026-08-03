@@ -9,12 +9,27 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.finance.constants import REFUND_POLICY_TYPES
 
 
+class RefundEscalate(BaseModel):
+    note: str = Field(min_length=3, max_length=2000)
+
+
+class RefundLineAllocationIn(BaseModel):
+    """Authoritative per-order-item refund allocation for commission reversal."""
+
+    order_item_id: UUID
+    refunded_quantity: int = Field(ge=1)
+    refunded_item_subtotal: Decimal = Field(gt=0)
+    allocation_id: str | None = Field(default=None, max_length=128)
+    provider_refund_reference: str | None = Field(default=None, max_length=128)
+
+
 class RefundRequestCreate(BaseModel):
     order_id: UUID
     reason: str = Field(min_length=5, max_length=2000)
     refund_type: str = "full"
     amount: Decimal | None = None
     ticket_ids: list[UUID] | None = None
+    line_allocations: list[RefundLineAllocationIn] | None = None
 
     @field_validator("refund_type")
     @classmethod
@@ -24,13 +39,10 @@ class RefundRequestCreate(BaseModel):
         return value
 
 
-class RefundEscalate(BaseModel):
-    note: str = Field(min_length=3, max_length=2000)
-
-
 class RefundReview(BaseModel):
     action: str
     note: str | None = None
+    line_allocations: list[RefundLineAllocationIn] | None = None
 
     @field_validator("action")
     @classmethod
@@ -56,6 +68,8 @@ class RefundRequestPublic(BaseModel):
     reason: str
     policy_snapshot: str
     ticket_ids: list | None
+    line_allocations: list | None = None
+    requires_referral_refund_allocation: bool = False
     escalation_note: str | None
     review_note: str | None
     reviewed_by_user_id: UUID | None

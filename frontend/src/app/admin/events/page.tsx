@@ -30,9 +30,9 @@ import {
   archiveEvent,
   cancelEvent,
   clearEventFlag,
-  discardEvent,
   fetchAdminEvents,
   flagEvent,
+  forceDeleteEvent,
   pauseEvent,
   resumeEvent,
 } from "@/lib/events-api";
@@ -75,12 +75,9 @@ function canArchive(e: EventItem): boolean {
   return ["draft", "rejected", "completed", "cancelled"].includes(e.status);
 }
 
-function canDiscard(e: EventItem): boolean {
-  return e.status === "draft" || e.status === "rejected";
-}
-
 function isSelectable(e: EventItem): boolean {
-  return canDeactivate(e) || canCancel(e) || canArchive(e) || canDiscard(e);
+  // Any listed event can be permanently deleted by admin (test cleanup).
+  return true;
 }
 
 export default function AdminEventsPage() {
@@ -200,8 +197,7 @@ export default function AdminEventsPage() {
     [selectedIds, filtered],
   );
 
-  const selectedCount =
-    selectedDeactivateCount + selectedCancelCount + selectedArchiveCount;
+  const selectedDeleteCount = selectedIds.size;
 
   const allSelectableChecked =
     selectableIds.length > 0 &&
@@ -359,11 +355,14 @@ export default function AdminEventsPage() {
     }
   }
 
-  async function onDiscard(id: string) {
+  async function onForceDelete(id: string, reason?: string) {
     setBusyId(id);
     try {
-      await discardEvent(id);
-      toast.push({ tone: "success", title: "Draft deleted" });
+      await forceDeleteEvent(
+        id,
+        reason?.trim() || "Permanent delete by admin",
+      );
+      toast.push({ tone: "success", title: "Event permanently deleted" });
       setSelectedIds((prev) => {
         if (!prev.has(id)) return prev;
         const next = new Set(prev);
@@ -380,6 +379,21 @@ export default function AdminEventsPage() {
     } finally {
       setBusyId(null);
     }
+  }
+
+  async function onBulkForceDelete(reason?: string) {
+    const targets = [...selectedIds];
+    if (targets.length === 0) return;
+    const cleaned = reason?.trim() || "Bulk permanent delete by admin";
+    await runBulk(
+      targets,
+      (id) => forceDeleteEvent(id, cleaned),
+      {
+        success: "event(s) permanently deleted",
+        fail: "Bulk delete failed",
+        mixed: "{ok} deleted, {fail} failed",
+      },
+    );
   }
 
   async function toggleFeatured(event: EventItem) {
@@ -529,11 +543,10 @@ export default function AdminEventsPage() {
       ) : null}
 
       {events ? (
-        <Alert tone="info" title="Soft lifecycle only">
+        <Alert tone="info" title="Lifecycle + permanent delete">
           Deactivate pauses a live listing. Cancel ends sales and notifies
-          ticket holders. Archive is soft end-of-life for completed/cancelled
-          (or unused drafts). Hard delete only removes unused draft/rejected
-          events with no sales.
+          ticket holders. Archive is soft end-of-life. Delete permanently
+          removes the event and cascaded data — intended for test cleanup.
         </Alert>
       ) : null}
 
@@ -601,9 +614,9 @@ export default function AdminEventsPage() {
                   <span>Select all on page</span>
                 </label>
                 <span className="text-sm text-muted-foreground">
-                  {selectedCount > 0
+                  {selectedIds.size > 0
                     ? `${selectedIds.size} selected`
-                    : "Select events to deactivate, cancel, or archive"}
+                    : "Select events to deactivate, cancel, archive, or delete"}
                 </span>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -678,6 +691,19 @@ export default function AdminEventsPage() {
                       },
                     )
                   }
+                />
+                <ConfirmAction
+                  label="Delete permanently"
+                  title={`Permanently delete ${selectedDeleteCount} event${selectedDeleteCount === 1 ? "" : "s"}?`}
+                  description="This cannot be undone. Cascades tickets, orders, and related rows. Use for test cleanup only."
+                  confirmLabel="Delete permanently"
+                  tone="danger"
+                  size="sm"
+                  disabled={selectedDeleteCount === 0}
+                  busy={bulkBusy}
+                  requireReason
+                  reasonLabel="Reason for permanent delete"
+                  onConfirm={(reason) => onBulkForceDelete(reason)}
                 />
               </div>
             </div>
@@ -836,7 +862,7 @@ export default function AdminEventsPage() {
                         <ConfirmAction
                           label="Archive"
                           title="Archive this event?"
-                          description={`Soft end-of-life for “${e.title}”. Commerce history stays; hard delete is not used for paid events.`}
+                          description={`Soft end-of-life for “${e.title}”. Commerce history stays unless you delete permanently.`}
                           confirmLabel="Archive"
                           tone="danger"
                           size="sm"
@@ -844,18 +870,18 @@ export default function AdminEventsPage() {
                           onConfirm={() => onArchive(e.id)}
                         />
                       ) : null}
-                      {canDiscard(e) ? (
-                        <ConfirmAction
-                          label="Delete draft"
-                          title="Permanently delete this unused draft?"
-                          description={`Hard-deletes “${e.title}” only if it has no ticket sales. Prefer archive when unsure.`}
-                          confirmLabel="Delete draft"
-                          tone="danger"
-                          size="sm"
-                          busy={rowBusy}
-                          onConfirm={() => onDiscard(e.id)}
-                        />
-                      ) : null}
+                      <ConfirmAction
+                        label="Delete permanently"
+                        title="Permanently delete this event?"
+                        description={`Removes “${e.title}” and cascaded tickets/orders. Cannot be undone — intended for test cleanup.`}
+                        confirmLabel="Delete permanently"
+                        tone="danger"
+                        size="sm"
+                        busy={rowBusy}
+                        requireReason
+                        reasonLabel="Reason for permanent delete"
+                        onConfirm={(reason) => onForceDelete(e.id, reason)}
+                      />
                       {isFlagged ? (
                         <ConfirmAction
                           label="Clear flag"

@@ -46,7 +46,7 @@ def revoke_other_sessions(
             RefreshToken.user_id == user_id,
             RefreshToken.revoked_at.is_(None),
         )
-        .values(revoked_at=now)
+        .values(revoked_at=now, expires_at=now)
     )
     if keep:
         stmt = stmt.where(RefreshToken.token_hash != hash_token(keep))

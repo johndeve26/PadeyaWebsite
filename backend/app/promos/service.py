@@ -34,6 +34,8 @@ from app.promos.schemas import (
 from app.users.models import User
 from app.users.service import get_user_by_email
 
+from app.promos.constants import PROGRAM_PLATFORM_WIDE as PROGRAM_PLATFORM_WIDE
+
 PROGRAM_HOST_CURATED = "host_curated"
 PROGRAM_OPEN_EVENT = "open_event"
 
@@ -520,21 +522,24 @@ def attach_ambassador_to_order(
 
 
 def finalize_promo_and_attribution(db: Session, *, order: Order) -> None:
-    """Called from payment finalize — redeem promo and attribute ambassador sale.
+    """Called from payment finalize — redeem promo and attribute referral earnings.
 
-    Commission is created only for verified paid orders. Duplicate webhook calls
-    are idempotent (unique order_id on ambassador_sales / early return).
+    Commission is created only for verified paid orders. Attribution is resolved
+    per order item: event-scoped host campaigns beat platform-wide programs.
+    Authoritative money lives on the append-only referral commission ledger.
+    ambassador_sales remains a legacy conversion summary for compatibility.
     """
     from app.analytics.trusted import emit_ambassador_sale, emit_promo_redemption
     from app.events.models import Event
+    from app.promos.attribution import resolve_winning_attributions_for_order
     from app.promos.commission import (
-        compute_commission_owed,
-        filter_units_and_revenue,
         hold_until_for_sale,
         maybe_grant_free_ticket_reward,
-        resolve_commission_rules,
     )
+    from app.promos.constants import PAYER_HOST, PRODUCT_SLICE_ALL
+    from app.promos.ledger_service import record_item_earning
     from app.promos.models import AmbassadorCampaign
+    from app.promos.referral_ledger import ReferralCommissionEntry
 
     event = db.get(Event, order.event_id)
     host_id = event.host_id if event else None
@@ -543,7 +548,6 @@ def finalize_promo_and_attribution(db: Session, *, order: Order) -> None:
         select(PromoRedemption).where(PromoRedemption.order_id == order.id)
     )
     if redemption is not None and redemption.status == "pending":
-        # Only redeem after verified payment — never on pending/failed.
         if order.status == "paid":
             redemption.status = "redeemed"
             redemption.redeemed_at = datetime.now(UTC)
@@ -569,134 +573,184 @@ def finalize_promo_and_attribution(db: Session, *, order: Order) -> None:
                 discount=redemption.discount_amount,
             )
 
-    if order.ambassador_id is None:
-        return
-    # No commission on pending/failed/cancelled — only verified paid.
     if order.status != "paid":
         return
 
-    existing = db.scalar(
-        select(AmbassadorSale).where(AmbassadorSale.order_id == order.id)
+    # Fully backfilled legacy sale — do not re-attribute under new rules.
+    legacy = db.scalar(
+        select(AmbassadorSale).where(
+            AmbassadorSale.order_id == order.id,
+            AmbassadorSale.product_slice == PRODUCT_SLICE_ALL,
+        )
     )
-    if existing is not None:
+    if legacy is not None:
         return
 
-    ambassador = db.get(Ambassador, order.ambassador_id)
-    if ambassador is None or not _ambassador_attribution_allowed(db, ambassador):
-        return
-    if (
-        ambassador.user_id is not None
-        and order.buyer_user_id is not None
-        and ambassador.user_id == order.buyer_user_id
-    ):
+    winners = resolve_winning_attributions_for_order(db, order=order)
+    if not winners and order.ambassador_id is not None:
+        from app.promos.attribution import (
+            _winner_from_event_for_item,
+            product_type_for_item,
+            resolve_platform_for_item,
+        )
+        from app.promos.constants import PROGRAM_PLATFORM_WIDE
+
+        amb = db.get(Ambassador, order.ambassador_id)
+        if amb is not None and _ambassador_attribution_allowed(db, amb):
+            for item in list(order.items):
+                ptype = product_type_for_item(item)
+                if ptype is None:
+                    continue
+                if amb.program_kind == PROGRAM_PLATFORM_WIDE and event is not None:
+                    win = resolve_platform_for_item(
+                        db,
+                        referral_code=amb.referral_code,
+                        event=event,
+                        product_type=ptype,
+                        item=item,
+                    )
+                else:
+                    win = _winner_from_event_for_item(
+                        db, amb=amb, product_type=ptype, item=item
+                    )
+                if win is not None:
+                    winners.append(win)
+
+    if not winners:
         return
 
     from app.ambassadors.fraud import commission_blocked_for_host_owner
-
-    if commission_blocked_for_host_owner(
-        db, user_id=ambassador.user_id, ambassador=ambassador
-    ):
-        return
-
-    tickets_raw = sum(
-        item.quantity
-        for item in order.items
-        if getattr(item, "item_kind", "ticket") == "ticket"
-    )
-    merch_raw = sum(
-        item.quantity
-        for item in order.items
-        if getattr(item, "item_kind", "ticket") in {"merch", "bundle"}
-    )
-    ticket_revenue = sum(
-        (
-            Decimal(item.line_total)
-            for item in order.items
-            if getattr(item, "item_kind", "ticket") == "ticket"
-        ),
-        Decimal("0"),
-    )
-    merch_revenue = sum(
-        (
-            Decimal(item.line_total)
-            for item in order.items
-            if getattr(item, "item_kind", "ticket") in {"merch", "bundle"}
-        ),
-        Decimal("0"),
-    )
-
-    campaign = None
-    if ambassador.campaign_id is not None:
-        campaign = db.get(AmbassadorCampaign, ambassador.campaign_id)
-    rules = resolve_commission_rules(campaign, ambassador=ambassador)
-    tickets_sold, merch_units, _t_rev, _m_rev, revenue = filter_units_and_revenue(
-        applies_to=rules["applies_to"],
-        tickets_sold=tickets_raw,
-        merch_units=merch_raw,
-        ticket_revenue=ticket_revenue,
-        merch_revenue=merch_revenue,
-    )
-
-    if revenue <= 0 and tickets_sold <= 0 and merch_units <= 0:
-        return
-
-    commission = compute_commission_owed(
-        commission_type=rules["commission_type"],
-        commission_value=rules["commission_value"],
-        applies_to=rules["applies_to"],
-        tickets_sold=tickets_sold,
-        merch_units=merch_units,
-        commissionable_revenue=revenue,
-        max_commission_per_order=rules["max_commission_per_order"],
-    )
-    hold_until = hold_until_for_sale(hold_period_days=rules["hold_period_days"])
-
-    sale = AmbassadorSale(
-        ambassador_id=ambassador.id,
-        order_id=order.id,
-        event_id=order.event_id,
-        tickets_sold=tickets_sold,
-        merch_units_sold=merch_units,
-        revenue_amount=revenue,
-        commission_owed=commission,
-        commission_type=rules["commission_type"],
-        hold_until=hold_until,
-        status="attributed",
-    )
-    db.add(sale)
-    db.flush()
-    maybe_grant_free_ticket_reward(db, ambassador=ambassador, campaign=campaign)
-    write_audit_log(
-        db,
-        action="ambassadors.sale_attributed",
-        actor_user_id=order.buyer_user_id,
-        resource_type="ambassador_sale",
-        resource_id=str(sale.id),
-        details={
-            "ambassador_id": str(ambassador.id),
-            "referral_code": ambassador.referral_code,
-            "order_id": str(order.id),
-            "revenue": str(revenue),
-            "commission_owed": str(commission),
-            "commission_type": rules["commission_type"],
-            "applies_to": rules["applies_to"],
-            "hold_until": hold_until.isoformat(),
-        },
-    )
-    emit_ambassador_sale(
-        db,
-        order_id=order.id,
-        event_id=order.event_id,
-        host_id=host_id,
-        ambassador_id=ambassador.id,
-        revenue=revenue,
-        commission=commission,
-        tickets_sold=tickets_sold,
-        buyer_user_id=order.buyer_user_id,
-    )
     from app.ambassadors.notifications import on_v1_sale_created
 
-    on_v1_sale_created(db, ambassador=ambassador, sale=sale)
+    # Group item earnings for legacy ambassador_sales summary rows.
+    summary: dict[tuple[UUID, str, str], dict] = {}
+
+    for win in winners:
+        ambassador = win.ambassador
+        if (
+            ambassador.user_id is not None
+            and order.buyer_user_id is not None
+            and ambassador.user_id == order.buyer_user_id
+        ):
+            continue
+        if commission_blocked_for_host_owner(
+            db, user_id=ambassador.user_id, ambassador=ambassador
+        ):
+            continue
+
+        entry = record_item_earning(
+            db,
+            order=order,
+            win=win,
+            attribution_source=getattr(order, "referral_attribution_source", None),
+        )
+        if entry is None:
+            continue
+
+        if order.ambassador_id is None:
+            order.ambassador_id = ambassador.id
+            if not order.referral_code:
+                order.referral_code = ambassador.referral_code
+
+        slice_name = "merch" if win.product_type == "merchandise" else "tickets"
+        key = (ambassador.id, slice_name, win.payer_type)
+        bucket = summary.setdefault(
+            key,
+            {
+                "ambassador": ambassador,
+                "product_slice": slice_name,
+                "payer_type": win.payer_type,
+                "program_id": win.program_id,
+                "campaign_id": win.campaign_id,
+                "commission_type": win.commission_type,
+                "hold_period_days": win.hold_period_days,
+                "tickets": 0,
+                "merch": 0,
+                "revenue": Decimal("0"),
+                "commission": Decimal("0"),
+            },
+        )
+        if slice_name == "tickets":
+            bucket["tickets"] += int(win.order_item.quantity or 0)
+        else:
+            bucket["merch"] += int(win.order_item.quantity or 0)
+        bucket["revenue"] += Decimal(entry.eligible_commission_base)
+        bucket["commission"] += Decimal(entry.commission_amount)
+
+        emit_ambassador_sale(
+            db,
+            order_id=order.id,
+            event_id=order.event_id,
+            host_id=host_id,
+            ambassador_id=ambassador.id,
+            revenue=entry.eligible_commission_base,
+            commission=entry.commission_amount,
+            tickets_sold=int(win.order_item.quantity or 0)
+            if win.product_type == "ticket"
+            else 0,
+            buyer_user_id=order.buyer_user_id,
+        )
+
+    for bucket in summary.values():
+        ambassador = bucket["ambassador"]
+        product_slice = bucket["product_slice"]
+        existing_slice = db.scalar(
+            select(AmbassadorSale).where(
+                AmbassadorSale.order_id == order.id,
+                AmbassadorSale.product_slice == product_slice,
+                AmbassadorSale.ambassador_id == ambassador.id,
+            )
+        )
+        if existing_slice is not None:
+            continue
+        hold_until = hold_until_for_sale(
+            hold_period_days=bucket["hold_period_days"]
+        )
+        idem = f"{order.id}:{product_slice}:{ambassador.id}:summary"
+        sale = AmbassadorSale(
+            ambassador_id=ambassador.id,
+            order_id=order.id,
+            event_id=order.event_id,
+            payer_type=bucket["payer_type"],
+            product_slice=product_slice,
+            program_id=bucket["program_id"],
+            idempotency_key=idem,
+            tickets_sold=bucket["tickets"],
+            merch_units_sold=bucket["merch"],
+            revenue_amount=bucket["revenue"],
+            commission_owed=bucket["commission"],
+            commission_type=bucket["commission_type"],
+            hold_until=hold_until,
+            status="attributed",
+        )
+        db.add(sale)
+        db.flush()
+        campaign = None
+        if bucket["campaign_id"] is not None:
+            campaign = db.get(AmbassadorCampaign, bucket["campaign_id"])
+        if bucket["payer_type"] == PAYER_HOST:
+            maybe_grant_free_ticket_reward(
+                db, ambassador=ambassador, campaign=campaign
+            )
+        write_audit_log(
+            db,
+            action="ambassadors.sale_attributed",
+            actor_user_id=order.buyer_user_id,
+            resource_type="ambassador_sale",
+            resource_id=str(sale.id),
+            details={
+                "ambassador_id": str(ambassador.id),
+                "order_id": str(order.id),
+                "product_slice": product_slice,
+                "payer_type": bucket["payer_type"],
+                "commission_owed": str(bucket["commission"]),
+                "ledger": True,
+            },
+        )
+        on_v1_sale_created(db, ambassador=ambassador, sale=sale)
+
+    # Silence unused import if no winners wrote ledger (type checkers)
+    _ = ReferralCommissionEntry
 
 
 def release_promo_reservation(db: Session, *, order: Order) -> None:
@@ -798,13 +852,24 @@ def serialize_ambassador(db: Session, ambassador: Ambassador) -> dict:
                 campaign_type, campaign_type
             )
     code = ambassador.referral_code or ""
+    scope = (
+        "platform"
+        if ambassador.program_kind == PROGRAM_PLATFORM_WIDE
+        else "event"
+    )
     return {
         "id": ambassador.id,
         "host_id": ambassador.host_id,
         "event_id": ambassador.event_id,
         "campaign_id": ambassador.campaign_id,
+        "program_id": getattr(ambassador, "program_id", None),
         "user_id": ambassador.user_id,
         "program_kind": ambassador.program_kind,
+        "scope": scope,
+        "scope_badge": "Platform" if scope == "platform" else "Host",
+        "referral_link_path": (
+            f"/r/{code}" if scope == "platform" and code else None
+        ),
         "campaign_type": campaign_type,
         "campaign_type_label": campaign_type_label,
         "referral_code": code,

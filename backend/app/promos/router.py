@@ -512,3 +512,32 @@ def my_ambassador_earnings_summary(
     return AmbassadorEarningsSummary.model_validate(
         get_my_ambassador_earnings_summary(db, user)
     )
+
+
+@router.get("/referral/resolve/{code}")
+def resolve_referral_code(
+    code: str,
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User | None, Depends(get_current_user_optional)] = None,
+) -> dict:
+    """Public resolver for /r/{code} — validates enrollment and returns safe landing."""
+    from app.promos import programs_service
+
+    result = programs_service.resolve_public_referral_code(db, code)
+    # Privacy-safe click touch (hashed IP via existing path)
+    try:
+        record_referral_click(
+            db,
+            referral_code=result["referral_code"],
+            event_id=None,
+            landing_path=result.get("landing_path"),
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            source="platform_link" if result.get("scope") == "platform" else "referral_resolve",
+            user=user,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+    return result

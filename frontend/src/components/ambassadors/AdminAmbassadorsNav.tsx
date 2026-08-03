@@ -7,7 +7,9 @@ import { cn } from "@/lib/cn";
 
 const LINKS: { href: string; label: string; exact?: boolean }[] = [
   { href: "/admin/ambassadors", label: "Overview", exact: true },
+  { href: "/admin/ambassadors/programs", label: "Programs" },
   { href: "/admin/ambassadors/campaigns", label: "Campaigns" },
+  { href: "/admin/ambassadors/liabilities", label: "Liabilities" },
   { href: "/admin/ambassadors/conversions", label: "Conversions" },
   { href: "/admin/ambassadors/fraud", label: "Fraud flags" },
   { href: "/admin/ambassadors/payouts", label: "Payouts" },
