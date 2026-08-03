@@ -42,6 +42,20 @@ test.describe("ambassador frontend alignment", () => {
       page.getByRole("heading", { name: "Host event campaigns" }),
     ).toBeVisible();
     await expect(page.getByText(/enrollment-controlled/i).first()).toBeVisible();
+    await expect(page.getByText(/No host opt-in required/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/Host must enable \(tick\) per event/i).first(),
+    ).toBeVisible();
+    await page.getByText("Do hosts need to enable Pàdéyá-wide programs?").click();
+    await expect(
+      page.getByText(/Hosts only enable Ambassadors when they want their own/i),
+    ).toBeVisible();
+    await page
+      .getByText("What happens if a host campaign and Pàdéyá-wide both apply?")
+      .click();
+    await expect(
+      page.getByText(/Both can pay on the same item/i),
+    ).toBeVisible();
     await page.getByText("What happens after a refund?").click();
     await expect(
       page.getByText(/original earning and any later adjustment/i),

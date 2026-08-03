@@ -221,6 +221,7 @@ def test_multi_ticket_line_item_attribution_and_ledger(
             "campaign_id": camp.json()["id"],
             "display_name": "Host Amb",
             "email": fan.email,
+            "user_email": fan.email,
             "referral_code": f"host{tag}",
             "commission_rate_percent": 5,
         },
@@ -249,14 +250,14 @@ def test_multi_ticket_line_item_attribution_and_ledger(
             },
         ],
     )
-    # Host code wins for both ticket lines (same event campaign)
+    # Host + platform stack: 2 items × 2 payers
     order.referral_code = host_code
     order.platform_referral_code = plat["referral_code"]
     db_session.commit()
 
     winners = resolve_winning_attributions_for_order(db_session, order=order)
-    assert len(winners) == 2
-    assert all(w.payer_type == PAYER_HOST for w in winners)
+    assert len(winners) == 4
+    assert {w.payer_type for w in winners} == {PAYER_HOST, PAYER_PLATFORM}
     assert len({w.attribution_item_key for w in winners}) == 2
 
     finalize_promo_and_attribution(db_session, order=order)
@@ -267,7 +268,7 @@ def test_multi_ticket_line_item_attribution_and_ledger(
             select(ReferralAttribution).where(ReferralAttribution.order_id == order.id)
         )
     )
-    assert len(attrs) == 2
+    assert len(attrs) == 4
     earnings = list(
         db_session.scalars(
             select(ReferralCommissionEntry).where(
@@ -276,22 +277,25 @@ def test_multi_ticket_line_item_attribution_and_ledger(
             )
         )
     )
-    assert len(earnings) == 2
-    total = sum((Decimal(e.commission_amount) for e in earnings), Decimal("0"))
-    assert total == Decimal("1500.00")  # 5% of 10k + 5% of 20k
+    assert len(earnings) == 4
+    host_total = sum(
+        (Decimal(e.commission_amount) for e in earnings if e.payer_type == PAYER_HOST),
+        Decimal("0"),
+    )
+    plat_total = sum(
+        (
+            Decimal(e.commission_amount)
+            for e in earnings
+            if e.payer_type == PAYER_PLATFORM
+        ),
+        Decimal("0"),
+    )
+    assert host_total == Decimal("1500.00")  # 5% of 10k + 5% of 20k
+    assert plat_total == Decimal("3000.00")  # 10% of 10k + 10% of 20k
 
     # Duplicate finalize is idempotent
     finalize_promo_and_attribution(db_session, order=order)
     db_session.commit()
-    assert (
-        db_session.scalar(
-            select(ReferralCommissionEntry).where(
-                ReferralCommissionEntry.order_id == order.id,
-                ReferralCommissionEntry.entry_type == "earning",
-            )
-        )
-        is not None
-    )
     assert (
         db_session.query(ReferralCommissionEntry)
         .filter(
@@ -299,7 +303,7 @@ def test_multi_ticket_line_item_attribution_and_ledger(
             ReferralCommissionEntry.entry_type == "earning",
         )
         .count()
-        == 2
+        == 4
     )
 
 

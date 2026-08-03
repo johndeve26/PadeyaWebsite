@@ -100,6 +100,16 @@ def apply_unified_username(db: Session, user: User, raw_username: str) -> str:
         )
     except Exception:
         pass
+
+    try:
+        from app.promos.programs_service import sync_platform_referral_codes_for_username
+
+        sync_platform_referral_codes_for_username(
+            db, user_id=user.id, username=username
+        )
+    except Exception:
+        pass
+
     return username
 
 

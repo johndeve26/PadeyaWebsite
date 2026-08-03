@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   adminEnrollmentScopeLabel,
+  hostCampaignCoverageCopy,
   overviewArrangementHint,
   overviewCommissionHint,
+  platformWideCoverageCopy,
   resolvePublicEnrollmentState,
 } from "@/lib/ambassador-frontend-alignment";
 
@@ -14,6 +16,10 @@ describe("ambassador frontend alignment helpers", () => {
     expect(adminEnrollmentScopeLabel("host_curated")).toBe("Host campaign");
   });
 
+  it("states platform-wide needs no host opt-in", () => {
+    expect(platformWideCoverageCopy()).toMatch(/no host opt-in/i);
+    expect(hostCampaignCoverageCopy()).toMatch(/host enables/i);
+  });
   it("formats overview arrangement and commission hints", () => {
     expect(overviewArrangementHint(4, 8)).toBe(
       "4 Pàdéyá programs · 8 host campaigns",

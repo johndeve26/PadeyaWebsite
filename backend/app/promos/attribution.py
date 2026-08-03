@@ -1,4 +1,4 @@
-"""Per-item referral attribution: host event campaign beats platform-wide."""
+"""Per-item referral attribution: host and platform commissions may both apply."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ from app.promos.referral_programs import (
 
 @dataclass(frozen=True)
 class ItemAttributionWinner:
-    """Winning enrollment for a single order item."""
+    """Winning enrollment for a single order item and payer scope."""
 
     ambassador: Ambassador
     order_item: OrderItem
@@ -150,7 +150,22 @@ def resolve_platform_for_item(
             Ambassador.program_kind == PROGRAM_PLATFORM_WIDE,
         )
     )
-    if amb is None or amb.program_id is None:
+    if amb is None:
+        return None
+    return _platform_winner_from_ambassador(
+        db, amb=amb, event=event, product_type=product_type, item=item
+    )
+
+
+def _platform_winner_from_ambassador(
+    db: Session,
+    *,
+    amb: Ambassador,
+    event: Event,
+    product_type: str,
+    item: OrderItem,
+) -> ItemAttributionWinner | None:
+    if amb.program_kind != PROGRAM_PLATFORM_WIDE or amb.program_id is None:
         return None
     program = db.get(ReferralProgram, amb.program_id)
     if program is None or program.scope != REFERRAL_SCOPE_PLATFORM:
@@ -260,15 +275,104 @@ def _winner_from_event_for_item(
     )
 
 
-def resolve_winning_attribution_for_item(
+def _host_enrollment_for_user(
+    db: Session,
+    *,
+    user_id: UUID,
+    event: Event,
+    product_type: str,
+    item: OrderItem,
+) -> ItemAttributionWinner | None:
+    """Active host/open enrollment for this user on the event covering product."""
+    from app.promos.service import (
+        PROGRAM_HOST_CURATED,
+        PROGRAM_OPEN_EVENT,
+        _ambassador_attribution_allowed,
+    )
+
+    rows = list(
+        db.scalars(
+            select(Ambassador).where(
+                Ambassador.user_id == user_id,
+                Ambassador.status == "active",
+                Ambassador.program_kind.in_(
+                    [PROGRAM_OPEN_EVENT, PROGRAM_HOST_CURATED]
+                ),
+                (
+                    (Ambassador.event_id == event.id)
+                    | (
+                        (Ambassador.event_id.is_(None))
+                        & (Ambassador.host_id == event.host_id)
+                    )
+                ),
+            )
+        ).all()
+    )
+    prefer_merch = product_type == "merchandise"
+    ranked: list[Ambassador] = []
+    for amb in rows:
+        if not _ambassador_attribution_allowed(db, amb):
+            continue
+        if amb.campaign_id is not None:
+            camp = db.get(AmbassadorCampaign, amb.campaign_id)
+            if camp is None:
+                continue
+            ctype = getattr(camp, "campaign_type", CAMPAIGN_TYPE_EVENT_TICKETS)
+            if prefer_merch and ctype == CAMPAIGN_TYPE_EVENT_MERCH:
+                ranked.insert(0, amb)
+            elif not prefer_merch and ctype != CAMPAIGN_TYPE_EVENT_MERCH:
+                ranked.insert(0, amb)
+            else:
+                ranked.append(amb)
+        else:
+            ranked.append(amb)
+    for amb in ranked:
+        win = _winner_from_event_for_item(
+            db, amb=amb, product_type=product_type, item=item
+        )
+        if win is not None:
+            return win
+    return None
+
+
+def _platform_enrollment_for_user(
+    db: Session,
+    *,
+    user_id: UUID,
+    event: Event,
+    product_type: str,
+    item: OrderItem,
+) -> ItemAttributionWinner | None:
+    from app.promos.service import _ambassador_attribution_allowed
+
+    amb = db.scalar(
+        select(Ambassador).where(
+            Ambassador.user_id == user_id,
+            Ambassador.status == "active",
+            Ambassador.program_kind == PROGRAM_PLATFORM_WIDE,
+        )
+    )
+    if amb is None or not _ambassador_attribution_allowed(db, amb):
+        return None
+    return _platform_winner_from_ambassador(
+        db, amb=amb, event=event, product_type=product_type, item=item
+    )
+
+
+def resolve_attributions_for_item(
     db: Session,
     *,
     order: Order,
     item: OrderItem,
     event: Event,
     codes: list[str],
-) -> ItemAttributionWinner | None:
-    """Host event campaign wins over platform for this item only."""
+) -> list[ItemAttributionWinner]:
+    """Return 0–2 winners: host-funded and/or platform-funded for this item.
+
+    Dual commission applies when both scopes resolve (same user with both
+    enrollments, or distinct codes for different ambassadors). Host enabling
+    alone does not invent a host earner without an enrollment.
+    """
     from app.promos.service import (
         _ambassador_attribution_allowed,
         resolve_ambassador_for_event,
@@ -276,9 +380,10 @@ def resolve_winning_attribution_for_item(
 
     product_type = product_type_for_item(item)
     if product_type is None:
-        return None
+        return []
     prefer_merch = product_type == "merchandise"
 
+    host_win: ItemAttributionWinner | None = None
     for code in codes:
         amb = resolve_ambassador_for_event(
             db,
@@ -292,8 +397,10 @@ def resolve_winning_attribution_for_item(
             db, amb=amb, product_type=product_type, item=item
         )
         if win is not None:
-            return win
+            host_win = win
+            break
 
+    plat_win: ItemAttributionWinner | None = None
     for code in codes:
         win = resolve_platform_for_item(
             db,
@@ -306,8 +413,49 @@ def resolve_winning_attribution_for_item(
             continue
         if not _ambassador_attribution_allowed(db, win.ambassador):
             continue
-        return win
-    return None
+        plat_win = win
+        break
+
+    # Sibling enrollments: one username/platform (or host) link unlocks both pots
+    # when the same user holds both enrollments.
+    if plat_win is not None and host_win is None and plat_win.ambassador.user_id:
+        host_win = _host_enrollment_for_user(
+            db,
+            user_id=plat_win.ambassador.user_id,
+            event=event,
+            product_type=product_type,
+            item=item,
+        )
+    if host_win is not None and plat_win is None and host_win.ambassador.user_id:
+        plat_win = _platform_enrollment_for_user(
+            db,
+            user_id=host_win.ambassador.user_id,
+            event=event,
+            product_type=product_type,
+            item=item,
+        )
+
+    out: list[ItemAttributionWinner] = []
+    if host_win is not None:
+        out.append(host_win)
+    if plat_win is not None:
+        out.append(plat_win)
+    return out
+
+
+def resolve_winning_attribution_for_item(
+    db: Session,
+    *,
+    order: Order,
+    item: OrderItem,
+    event: Event,
+    codes: list[str],
+) -> ItemAttributionWinner | None:
+    """Back-compat: first winner (host preferred, then platform)."""
+    winners = resolve_attributions_for_item(
+        db, order=order, item=item, event=event, codes=codes
+    )
+    return winners[0] if winners else None
 
 
 def resolve_winning_attributions_for_order(
@@ -315,7 +463,7 @@ def resolve_winning_attributions_for_order(
     *,
     order: Order,
 ) -> list[ItemAttributionWinner]:
-    """One winner per eligible order item. No order-level shortcut."""
+    """Collect host and/or platform winners per eligible order item."""
     event = db.get(Event, order.event_id) if order.event_id else None
     if event is None:
         return []
@@ -325,11 +473,11 @@ def resolve_winning_attributions_for_order(
 
     winners: list[ItemAttributionWinner] = []
     for item in list(order.items):
-        win = resolve_winning_attribution_for_item(
-            db, order=order, item=item, event=event, codes=codes
+        winners.extend(
+            resolve_attributions_for_item(
+                db, order=order, item=item, event=event, codes=codes
+            )
         )
-        if win is not None:
-            winners.append(win)
     return winners
 
 

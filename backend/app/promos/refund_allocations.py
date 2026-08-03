@@ -68,25 +68,42 @@ class ReferralRefundAllocationError(Exception):
         self.code = code
 
 
+def _earnings_for_item(
+    db: Session, *, order_id: UUID, order_item_id: UUID
+) -> list[ReferralCommissionEntry]:
+    earnings = list(
+        db.scalars(
+            select(ReferralCommissionEntry).where(
+                ReferralCommissionEntry.order_id == order_id,
+                ReferralCommissionEntry.order_item_id == order_item_id,
+                ReferralCommissionEntry.entry_type == "earning",
+            )
+        ).all()
+    )
+    if earnings:
+        return earnings
+    return list(
+        db.scalars(
+            select(ReferralCommissionEntry).where(
+                ReferralCommissionEntry.order_id == order_id,
+                ReferralCommissionEntry.attribution_item_key == str(order_item_id),
+                ReferralCommissionEntry.entry_type == "earning",
+            )
+        ).all()
+    )
+
+
 def _earning_for_item(
     db: Session, *, order_id: UUID, order_item_id: UUID
 ) -> ReferralCommissionEntry | None:
-    earning = db.scalar(
-        select(ReferralCommissionEntry).where(
-            ReferralCommissionEntry.order_id == order_id,
-            ReferralCommissionEntry.order_item_id == order_item_id,
-            ReferralCommissionEntry.entry_type == "earning",
-        )
-    )
-    if earning is not None:
-        return earning
-    return db.scalar(
-        select(ReferralCommissionEntry).where(
-            ReferralCommissionEntry.order_id == order_id,
-            ReferralCommissionEntry.attribution_item_key == str(order_item_id),
-            ReferralCommissionEntry.entry_type == "earning",
-        )
-    )
+    """Back-compat: first earning for an item (prefer host when dual)."""
+    rows = _earnings_for_item(db, order_id=order_id, order_item_id=order_item_id)
+    if not rows:
+        return None
+    for row in rows:
+        if row.payer_type == "host":
+            return row
+    return rows[0]
 
 
 def _prior_refunded_quantity(db: Session, *, earning: ReferralCommissionEntry) -> int:
@@ -128,7 +145,7 @@ def validate_line_allocations(
     order: Order,
     allocations: list[LineRefundAllocation],
     currency: str | None = None,
-) -> list[tuple[LineRefundAllocation, OrderItem, ReferralCommissionEntry | None]]:
+) -> list[tuple[LineRefundAllocation, OrderItem, list[ReferralCommissionEntry]]]:
     if not allocations:
         raise ReferralRefundAllocationError(
             "line_allocations required for this refund",
@@ -144,7 +161,7 @@ def validate_line_allocations(
 
     items_by_id = {item.id: item for item in list(order.items or [])}
     seen: set[UUID] = set()
-    out: list[tuple[LineRefundAllocation, OrderItem, ReferralCommissionEntry | None]] = []
+    out: list[tuple[LineRefundAllocation, OrderItem, list[ReferralCommissionEntry]]] = []
 
     for alloc in allocations:
         if alloc.order_item_id in seen:
@@ -185,7 +202,8 @@ def validate_line_allocations(
             )
 
         purchased = int(item.quantity or 0)
-        earning = _earning_for_item(db, order_id=order.id, order_item_id=item.id)
+        earnings = _earnings_for_item(db, order_id=order.id, order_item_id=item.id)
+        earning = earnings[0] if earnings else None
         already_qty = _prior_refunded_quantity(db, earning=earning) if earning else 0
         if alloc.refunded_quantity + already_qty > purchased:
             raise ReferralRefundAllocationError(
@@ -213,7 +231,7 @@ def validate_line_allocations(
                         code="referral_refund_subtotal_exceeded",
                     )
 
-        out.append((alloc, item, earning))
+        out.append((alloc, item, earnings))
     return out
 
 
@@ -275,33 +293,34 @@ def apply_line_item_referral_reversals(
         db, order=order, allocations=allocations, currency=currency
     )
     out: list[ReferralCommissionEntry] = []
-    for alloc, item, earning in validated:
-        if earning is None:
+    for alloc, item, earnings in validated:
+        if not earnings:
             # Excluded / unattributed line — no ledger work
             continue
-        amount = compute_reversal_amount_for_allocation(
-            earning=earning, item=item, alloc=alloc
-        )
-        remaining = remaining_reversible_amount(db, earning=earning)
-        if amount > remaining:
-            amount = remaining
-        if amount <= 0:
-            continue
-        allocation_id = (
-            alloc.allocation_id
-            or f"{alloc.order_item_id}:{alloc.refunded_quantity}:{_q(Decimal(alloc.refunded_item_subtotal))}"
-        )
-        row = append_reversal_for_earning(
-            db,
-            earning=earning,
-            amount=amount,
-            reason=reason,
-            source_event_id=refund_event_id,
-            actor_user_id=actor_user_id,
-            allocation_id=allocation_id,
-        )
-        if row is not None:
-            out.append(row)
+        for earning in earnings:
+            amount = compute_reversal_amount_for_allocation(
+                earning=earning, item=item, alloc=alloc
+            )
+            remaining = remaining_reversible_amount(db, earning=earning)
+            if amount > remaining:
+                amount = remaining
+            if amount <= 0:
+                continue
+            allocation_id = (
+                alloc.allocation_id
+                or f"{alloc.order_item_id}:{alloc.refunded_quantity}:{_q(Decimal(alloc.refunded_item_subtotal))}:{earning.payer_type}"
+            )
+            row = append_reversal_for_earning(
+                db,
+                earning=earning,
+                amount=amount,
+                reason=reason,
+                source_event_id=refund_event_id,
+                actor_user_id=actor_user_id,
+                allocation_id=allocation_id,
+            )
+            if row is not None:
+                out.append(row)
     return out
 
 

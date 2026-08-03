@@ -23,14 +23,15 @@ from app.core.database import Base
 
 
 class ReferralAttribution(Base):
-    """One winning referral attribution per eligible order item."""
+    """Referral attribution per order item and payer (host and/or platform)."""
 
     __tablename__ = "referral_attributions"
     __table_args__ = (
         UniqueConstraint(
             "order_id",
             "attribution_item_key",
-            name="uq_referral_attributions_order_item",
+            "payer_type",
+            name="uq_referral_attributions_order_item_payer",
         ),
         UniqueConstraint(
             "idempotency_key",

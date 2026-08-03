@@ -406,6 +406,53 @@ def _unique_platform_code(db: Session, *, preferred: str | None = None) -> str:
     raise HTTPException(status_code=500, detail="Could not allocate referral code")
 
 
+def _preferred_platform_code_for_user(db: Session, user: User) -> str | None:
+    """Fan Passport / unified username is the standard platform-wide code."""
+    from app.passport.privacy import is_valid_passport_username, normalize_username
+    from app.users.unified_profile import resolve_user_username
+
+    raw = resolve_user_username(db, user)
+    if not raw:
+        return None
+    username = normalize_username(raw)
+    if not is_valid_passport_username(username):
+        return None
+    return username
+
+
+def sync_platform_referral_codes_for_username(
+    db: Session, *, user_id: UUID, username: str
+) -> None:
+    """Keep active platform-wide codes aligned with Fan Passport username."""
+    from app.passport.privacy import is_valid_passport_username, normalize_username
+
+    code = normalize_username(username)
+    if not is_valid_passport_username(code):
+        return
+    clash = db.scalar(
+        select(Ambassador).where(
+            Ambassador.referral_code == code,
+            Ambassador.program_kind == PROGRAM_PLATFORM_WIDE,
+            Ambassador.user_id != user_id,
+        )
+    )
+    if clash is not None:
+        return
+    rows = list(
+        db.scalars(
+            select(Ambassador).where(
+                Ambassador.user_id == user_id,
+                Ambassador.program_kind == PROGRAM_PLATFORM_WIDE,
+                Ambassador.status.in_(["active", "invited", "pending"]),
+            )
+        ).all()
+    )
+    for amb in rows:
+        if amb.referral_code == code:
+            continue
+        amb.referral_code = code
+
+
 def enroll_user(
     db: Session,
     *,
@@ -442,7 +489,10 @@ def enroll_user(
     if existing is not None:
         raise HTTPException(status_code=409, detail="User already enrolled")
 
-    code = _unique_platform_code(db, preferred=referral_code)
+    preferred = (referral_code or "").strip().lower() or _preferred_platform_code_for_user(
+        db, user
+    )
+    code = _unique_platform_code(db, preferred=preferred)
     amb = Ambassador(
         host_id=None,
         event_id=None,
@@ -471,6 +521,7 @@ def enroll_user(
             "user_id": str(user.id),
             "referral_code": code,
             "status": amb.status,
+            "code_source": "username" if preferred and code == preferred else "generated",
         },
     )
     db.commit()

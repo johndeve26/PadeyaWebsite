@@ -70,3 +70,12 @@ export function overviewCommissionHint(
 ): string {
   return `${hostFunded} host-funded · ${platformFunded} Pàdéyá-funded`;
 }
+
+/** Product copy invariant: platform-wide needs no host tick. */
+export function platformWideCoverageCopy(): string {
+  return "By default across events and merch — no host opt-in required";
+}
+
+export function hostCampaignCoverageCopy(): string {
+  return "Only after the host enables Ambassadors for that event";
+}

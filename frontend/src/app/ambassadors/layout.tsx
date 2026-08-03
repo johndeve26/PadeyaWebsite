@@ -5,7 +5,7 @@ import { buildPageMetadata } from "@/lib/seo/site";
 export const metadata: Metadata = buildPageMetadata({
   title: "Become a Pàdéyá Ambassador | Share Events and Earn Commission",
   description:
-    "Join eligible Pàdéyá-wide referral programs or promote event campaigns from hosts. Share referral links and track clicks, sales and commission in one dashboard.",
+    "Pàdéyá-wide ambassadors promote across events and merch by default. Hosts can also enable their own event campaigns. Track clicks, sales and commission in one dashboard.",
   path: "/ambassadors",
 });
 

@@ -74,8 +74,8 @@ export default function AdminReferralProgramsPage() {
       await createAdminReferralProgram({
         name,
         description: description || null,
-        public_description:
-          "Share one Pàdéyá link. Earn on eligible ticket and merchandise purchases. Commission funded by Pàdéyá.",
+          public_description:
+          "Share one Pàdéyá link. By default earn on ticket and merchandise purchases across events — hosts do not need to opt in. Commission funded by Pàdéyá.",
         enrollment_mode: "manual_enrollment",
         status: "active",
         default_landing_path: landing,
@@ -126,7 +126,7 @@ export default function AdminReferralProgramsPage() {
       tone="soft"
       eyebrow="Admin · Ambassadors"
       title="Referral programs"
-      description="Platform-wide programs use one ambassador link for tickets and merchandise. Commission is funded by Pàdéyá and never reduces host settlement. Host event campaigns stay under Campaigns."
+      description="Platform-wide programs use one ambassador link (normally the user’s Fan Passport username). By default they cover tickets and merchandise across events under the program rules — hosts do not opt in. When a host campaign is also enabled and the ambassador is enrolled in both, commissions can stack (host-funded + Pàdéyá-funded). Host event campaigns stay under Campaigns."
     >
       <AdminAmbassadorsNav />
       {error ? <Alert tone="danger" title="Something went wrong">{error}</Alert> : null}
@@ -136,9 +136,10 @@ export default function AdminReferralProgramsPage() {
           Create platform-wide program
         </h2>
         <p className="text-sm text-muted-foreground">
-          Scope: Platform-wide · Commission funded by Pàdéyá. No event ID required.
-          When a buyer also has a matching host event campaign touch, the host
-          campaign wins for that item.
+          Scope: Platform-wide · Default coverage for events and merch under the
+          rules you enable — no host tick required. Codes prefer the enrollee’s
+          username. Commission funded by Pàdéyá. When the same ambassador is also
+          on a live host campaign, host and platform commissions can both apply.
         </p>
         <form onSubmit={onCreate} className="grid gap-3 sm:grid-cols-2">
           <Input

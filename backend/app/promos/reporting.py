@@ -73,15 +73,20 @@ def _aggregate_entries(rows: list[ReferralCommissionEntry]) -> dict:
     gross = Decimal("0")
     order_ids: set[UUID] = set()
     item_keys: set[str] = set()
+    bases_counted: set[str] = set()
 
     for row in rows:
         amt = _q(Decimal(row.commission_amount))
         net += amt
         if row.entry_type == "earning":
-            eligible += _q(Decimal(row.eligible_commission_base))
-            gross += _q(Decimal(row.gross_item_amount))
+            item_key = f"{row.order_id}:{row.attribution_item_key}"
+            # Dual host+platform earnings share one item base — count once
+            if item_key not in bases_counted:
+                eligible += _q(Decimal(row.eligible_commission_base))
+                gross += _q(Decimal(row.gross_item_amount))
+                bases_counted.add(item_key)
             order_ids.add(row.order_id)
-            item_keys.add(f"{row.order_id}:{row.attribution_item_key}")
+            item_keys.add(item_key)
             if row.status == "paid":
                 paid += amt
             elif row.status in {"approved", "payable"}:

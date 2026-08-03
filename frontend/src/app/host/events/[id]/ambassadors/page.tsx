@@ -114,7 +114,7 @@ export default function HostEventAmbassadorsPage() {
         tone="soft"
         eyebrow="Event"
         title={event?.title || "Ambassadors"}
-        description="Enable Event Ambassador (tickets) and/or Event Merch Ambassador campaigns for this event."
+        description="Enable your own host-funded Event Ambassador (tickets) and/or Event Merch Ambassador campaigns. Pàdéyá-wide programs already cover events and merch by default — you do not need to enable anything for platform-wide attribution."
         actions={<EventOpsNav eventId={eventId} />}
       >
         {error ? (
@@ -123,12 +123,22 @@ export default function HostEventAmbassadorsPage() {
           </Alert>
         ) : null}
 
+        {loaded ? (
+          <Alert tone="info" title="Pàdéyá-wide vs host campaigns">
+            Enrolled Pàdéyá ambassadors can already earn platform-funded
+            commission on this event without you enabling anything here. When you
+            enable a host campaign, ambassadors enrolled in both scopes can earn
+            stacked host + Pàdéyá commission on the same purchase — host enabling
+            does not cancel platform earnings.
+          </Alert>
+        ) : null}
+
         {!loaded ? <SkeletonLoader lines={5} /> : null}
 
         {loaded && campaigns.length === 0 ? (
           <EmptyState
-            title="Ambassadors not enabled"
-            description="Create a public_open campaign so fans can promote tickets and/or merch."
+            title="No host Ambassadors campaign yet"
+            description="Turn on a public host campaign so fans can join and promote this event under your rules. This is optional — Pàdéyá-wide coverage does not require it."
             action={
               <div className="flex flex-wrap gap-2">
                 <Button

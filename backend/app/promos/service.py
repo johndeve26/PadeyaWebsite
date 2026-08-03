@@ -928,20 +928,22 @@ def create_ambassador(db: Session, *, user: User, payload: AmbassadorCreate) -> 
         raise HTTPException(status_code=409, detail="Ambassador code already exists")
 
     linked_user_id = None
-    if payload.user_email:
-        linked = get_user_by_email(db, payload.user_email.lower())
-        if linked is None:
+    link_email = payload.user_email or payload.email
+    if link_email:
+        linked = get_user_by_email(db, link_email.lower())
+        if linked is None and payload.user_email:
             raise HTTPException(status_code=404, detail="User email not found — register first")
-        linked_user_id = linked.id
-        # Host owners cannot be curated onto their own host for rewards.
-        if linked_user_id == host.user_id:
-            raise HTTPException(
-                status_code=403,
-                detail=(
-                    "Campaign host owners cannot join as Ambassadors unless "
-                    "allow_host_owner_commission is enabled on the campaign"
-                ),
-            )
+        if linked is not None:
+            linked_user_id = linked.id
+            # Host owners cannot be curated onto their own host for rewards.
+            if linked_user_id == host.user_id:
+                raise HTTPException(
+                    status_code=403,
+                    detail=(
+                        "Campaign host owners cannot join as Ambassadors unless "
+                        "allow_host_owner_commission is enabled on the campaign"
+                    ),
+                )
 
     ambassador = Ambassador(
         host_id=host.id,

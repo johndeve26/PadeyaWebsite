@@ -16,6 +16,24 @@ Related: [PROMO_CODES.md](./PROMO_CODES.md) · [PAYMENTS.md](./PAYMENTS.md) · [
 | Admin **Liabilities** | Payer-separated ledger liabilities |
 | Public `/ambassadors` | Explains Pàdéyá-wide programs **and** host campaigns; CTA states are auth/enrollment-aware; does **not** promise open self-serve platform enrollment |
 
+### Coverage invariant (platform vs host)
+
+| Scope | Host action required? | Default coverage |
+|---|---|---|
+| **Pàdéyá-wide program** | **No** — hosts do not mark or enable events for platform-wide | Tickets and/or merch per program rules across events (admin may exclude hosts/events) |
+| **Host event campaign** | **Yes** — host enables (ticks) Ambassadors for that event’s tickets and/or merch | Only after host creates a live campaign |
+
+### Dual commission (stacked pots)
+
+When an ambassador has **both** a platform-wide enrollment and a host campaign enrollment for that event/product, a referred item can create **two** ledger earnings:
+
+1. Host-funded (reduces host settlement path)
+2. Pàdéyá-funded (does not reduce host settlement beyond the host pot)
+
+Host enabling alone does not invent a host earner without an enrollment. Platform-only or host-only enrollments still earn a single pot.
+
+Platform-wide referral codes prefer the user’s **Fan Passport / unified username** (`/r/{username}`). Renaming username updates active platform codes.
+
 Overview summary uses `GET /admin/referrals/summary` (shared reporting / `ReferralCommissionEntry`). Do not invent commission totals in React.
 
 ## Product model (summary)

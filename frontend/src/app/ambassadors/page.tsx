@@ -27,31 +27,35 @@ import type { EligibleAmbassadorEvent } from "@/lib/types/promos";
 const FAQ = [
   {
     q: "Who can become an Ambassador?",
-    a: "Users may participate in eligible host campaigns or be enrolled in Pàdéyá-wide programs. Availability depends on the active campaign or program — platform-wide enrollment is currently managed by Pàdéyá.",
+    a: "Users may join host campaigns that a host has enabled, or be enrolled in a Pàdéyá-wide program by Pàdéyá. Platform-wide enrollment is currently managed by Pàdéyá — not open self-serve.",
   },
   {
     q: "What is a Pàdéyá-wide program?",
-    a: "A referral program created by Pàdéyá that may cover eligible tickets, merchandise, or both across multiple events. Commission is funded by Pàdéyá.",
+    a: "A referral program created by Pàdéyá. By default it covers tickets and merchandise across events under the program’s rules — hosts do not need to enable anything. Your platform link uses your Pàdéyá username when you have one. Commission is funded by Pàdéyá. Admins may exclude specific hosts or events.",
   },
   {
     q: "What is a host campaign?",
-    a: "A referral campaign created for a specific event by its host. Rules may cover tickets or merchandise and are set for that event.",
+    a: "An event-specific referral campaign that only exists after a host enables Ambassadors for that event’s tickets and/or merchandise. Rules and funding follow that host campaign.",
+  },
+  {
+    q: "Do hosts need to enable Pàdéyá-wide programs?",
+    a: "No. Pàdéyá-wide coverage is the platform default for enrolled ambassadors. Hosts only enable Ambassadors when they want their own event-scoped, host-funded campaigns.",
   },
   {
     q: "Do I get one referral link?",
-    a: "Each enrollment has its own referral link. A combined Pàdéyá-wide program uses one link for the ticket and merchandise rules enabled under that program.",
+    a: "Your Pàdéyá-wide link is normally /r/{your-username}. Each host campaign enrollment can also have its own code. One username link can unlock both pots when you are enrolled in both scopes for that event.",
   },
   {
     q: "Can I join more than one campaign?",
     a: "Yes — you can hold multiple host campaign enrollments and, when enrolled by Pàdéyá, a platform-wide program. All of them appear in one ambassador dashboard.",
   },
   {
-    q: "What happens if more than one referral link is used?",
-    a: "An eligible matching host event campaign takes priority for that item. A Pàdéyá-wide program may apply when no matching host campaign wins. Each eligible item can produce only one referral commission.",
+    q: "What happens if a host campaign and Pàdéyá-wide both apply?",
+    a: "Both can pay on the same item: host-funded commission for your host enrollment and Pàdéyá-funded commission for your platform enrollment. Enabling a host campaign does not cancel platform earnings.",
   },
   {
     q: "Who pays the commission?",
-    a: "Pàdéyá funds Pàdéyá-wide program commission. Host event campaign commission follows that campaign’s host-funded rules.",
+    a: "Pàdéyá funds Pàdéyá-wide program commission. Host event campaign commission follows that campaign’s host-funded rules. On a dual item, both payers can owe separately.",
   },
   {
     q: "When does commission become available?",
@@ -361,9 +365,9 @@ export default function AmbassadorsLandingPage() {
             <span className="block text-accent">Earn from eligible referrals.</span>
           </h1>
           <p className="mt-4 max-w-xl text-base text-subtle-foreground sm:text-lg">
-            Join eligible Pàdéyá-wide programs or promote specific campaigns from
-            event hosts. Share your referral link and track clicks, referred sales
-            and commission from one connected dashboard.
+            Enrolled Pàdéyá-wide ambassadors promote across events and merch by
+            default — hosts do not need to opt in. Hosts can also enable their own
+            event campaigns. Share your link and track results in one dashboard.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">{heroCtas}</div>
         </Container>
@@ -405,13 +409,14 @@ export default function AmbassadorsLandingPage() {
                 Pàdéyá-wide programs
               </h3>
               <p className="mt-2 text-sm text-body">
-                Promote eligible experiences across Pàdéyá with one program link.
-                Depending on the program, you may earn from eligible ticket sales,
-                merchandise sales, or both.
+                Promote across Pàdéyá with one program link. By default, coverage
+                includes tickets and merchandise under the program’s rules — hosts
+                do not need to mark their events for Pàdéyá-wide to apply.
               </p>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                 <li>One program link</li>
-                <li>Eligible events and products</li>
+                <li>Default across events and merch (program rules)</li>
+                <li>No host opt-in required</li>
                 <li>Commission funded by Pàdéyá</li>
                 <li>Invitation or admin enrollment</li>
               </ul>
@@ -442,13 +447,14 @@ export default function AmbassadorsLandingPage() {
                 Host event campaigns
               </h3>
               <p className="mt-2 text-sm text-body">
-                Partner with an event host to promote a specific event. Campaign
-                rules may cover tickets or merchandise and are set for that event.
+                Hosts enable Ambassadors per event when they want their own
+                campaign. Ticketing and/or merch coverage starts only after they
+                turn it on for that event.
               </p>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <li>Event-specific</li>
-                <li>Ticket or merchandise campaigns</li>
-                <li>Host-managed campaign</li>
+                <li>Host must enable (tick) per event</li>
+                <li>Ticket and/or merch — chosen by host</li>
+                <li>Host-funded campaign rules</li>
                 <li>Tracked in the same dashboard</li>
               </ul>
               <Link
@@ -499,7 +505,7 @@ export default function AmbassadorsLandingPage() {
               {
                 step: "03",
                 title: "Share eligible experiences",
-                body: "Share approved events, tickets and products covered by your program or campaign.",
+                body: "Pàdéyá-wide links cover events and merch by default under program rules. Host campaigns cover only the event the host enabled.",
               },
               {
                 step: "04",
@@ -559,14 +565,15 @@ export default function AmbassadorsLandingPage() {
             Fair attribution
           </h2>
           <p className="max-w-2xl text-sm text-body">
-            When more than one valid referral applies to the same purchase, an
-            eligible event-specific host campaign takes priority for that item. A
-            Pàdéyá-wide program may apply when no matching host campaign wins.
-            Each eligible item can produce only one referral commission.
+            When you are enrolled in both a host campaign and a Pàdéyá-wide
+            program, an eligible item can earn two commissions — one host-funded
+            and one funded by Pàdéyá. Your platform link uses your username when
+            available.
           </p>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Pàdéyá-wide program commission is funded by Pàdéyá. Host campaign
-            commission follows that campaign’s host-funded rules.
+            Host enabling alone does not invent a host earner. Platform-only
+            enrollments still earn Pàdéyá-funded commission without reducing
+            host settlement.
           </p>
         </section>
 
@@ -576,9 +583,10 @@ export default function AmbassadorsLandingPage() {
               Hosting an event?
             </h2>
             <p className="mt-2 max-w-xl text-sm text-body">
-              Create event-specific ambassador campaigns for eligible tickets or
-              merchandise from your host dashboard. Platform program creation
-              stays with Pàdéyá.
+              Pàdéyá-wide programs already cover events and merch by default —
+              you do not need to enable anything for that. Enable host campaigns
+              only when you want your own event-scoped, host-funded Ambassadors
+              for tickets and/or merchandise.
             </p>
           </div>
           <div className="mt-4 sm:mt-0">

@@ -261,9 +261,10 @@ def test_platform_commission_does_not_reduce_host_settlement(
     assert host_deduction.get(order.id, Decimal("0")) == Decimal("0")
 
 
-def test_host_event_campaign_beats_platform(
+def test_host_and_platform_stack_dual_commission(
     client: TestClient, db_session: Session, assign_role
 ):
+    """Same user with both enrollments earns host + platform pots on one item."""
     tag = uuid4().hex[:8]
     host, event, fan, buyer, host_email = _seed_event(db_session, tag=tag)
     admin = _admin(client, assign_role, f"uni-admin-c-{tag}@example.com")
@@ -310,21 +311,23 @@ def test_host_event_campaign_beats_platform(
             "campaign_id": campaign_id,
             "display_name": "Host Amb",
             "email": fan.email,
+            "user_email": fan.email,
             "referral_code": f"host{tag}",
             "commission_rate_percent": 5,
         },
     )
     assert created_amb.status_code == 201, created_amb.text
-    host_code = created_amb.json()["referral_code"]
 
+    # Platform username/link alone unlocks both pots via sibling enrollment
     order = _paid_order(db_session, event=event, buyer=buyer, tickets=1)
-    order.referral_code = host_code
+    order.referral_code = plat_enroll["referral_code"]
     order.platform_referral_code = plat_enroll["referral_code"]
     db_session.commit()
 
     winners = resolve_winning_attributions_for_order(db_session, order=order)
-    assert len(winners) == 1
-    assert winners[0].payer_type == PAYER_HOST
+    assert len(winners) == 2
+    payers = {w.payer_type for w in winners}
+    assert payers == {PAYER_HOST, PAYER_PLATFORM}
 
     finalize_promo_and_attribution(db_session, order=order)
     db_session.commit()
@@ -333,9 +336,59 @@ def test_host_event_campaign_beats_platform(
             select(AmbassadorSale).where(AmbassadorSale.order_id == order.id)
         )
     )
-    assert len(sales) == 1
-    assert sales[0].payer_type == PAYER_HOST
-    assert sales[0].commission_owed == Decimal("500.00")
+    assert len(sales) == 2
+    by_payer = {s.payer_type: s for s in sales}
+    assert by_payer[PAYER_HOST].commission_owed == Decimal("500.00")
+    assert by_payer[PAYER_PLATFORM].commission_owed == Decimal("800.00")
+
+    host_deduction = _ambassador_by_order(db_session, [order.id])
+    assert host_deduction.get(order.id, Decimal("0")) == Decimal("500.00")
+
+
+def test_platform_enroll_uses_passport_username(
+    client: TestClient, db_session: Session, assign_role
+):
+    from app.passport.service import ensure_passport
+    from app.users.unified_profile import apply_unified_username
+
+    tag = uuid4().hex[:8]
+    _host, _event, fan, _buyer, _he = _seed_event(db_session, tag=tag)
+    ensure_passport(db_session, fan)
+    apply_unified_username(db_session, fan, f"amb{tag}")
+    db_session.commit()
+
+    admin = _admin(client, assign_role, f"uni-admin-u-{tag}@example.com")
+    prog = client.post(
+        "/api/v1/promos/admin/referral-programs",
+        headers=admin,
+        json={
+            "name": "Username Program",
+            "ticket_rule": {
+                "commission_mode": "percentage",
+                "commission_value": 5,
+            },
+        },
+    ).json()
+    enroll = client.post(
+        f"/api/v1/promos/admin/referral-programs/{prog['id']}/enrollments",
+        headers=admin,
+        json={"email": fan.email},
+    )
+    assert enroll.status_code == 201, enroll.text
+    assert enroll.json()["referral_code"] == f"amb{tag}"
+    assert enroll.json()["referral_link_path"] == f"/r/amb{tag}"
+
+    # Rename syncs platform code
+    apply_unified_username(db_session, fan, f"new{tag}")
+    db_session.commit()
+    amb = db_session.scalar(
+        select(Ambassador).where(
+            Ambassador.user_id == fan.id,
+            Ambassador.program_kind == PROGRAM_PLATFORM_WIDE,
+        )
+    )
+    assert amb is not None
+    assert amb.referral_code == f"new{tag}"
 
 
 def test_excluded_event_no_platform_commission(

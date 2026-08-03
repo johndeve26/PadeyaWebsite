@@ -56,13 +56,14 @@ def record_item_earning(
     win: ItemAttributionWinner,
     attribution_source: str | None = None,
 ) -> ReferralCommissionEntry | None:
-    """Create attribution + earning ledger entry. Idempotent per item key."""
+    """Create attribution + earning ledger entry. Idempotent per item+payer."""
     from app.events.models import Event
 
     item = win.order_item
     item_key = win.attribution_item_key
-    attr_idem = f"referral-attr:{order.id}:{item_key}"
-    earn_idem = f"referral-earning:{order.id}:{item_key}"
+    payer = win.payer_type
+    attr_idem = f"referral-attr:{order.id}:{item_key}:{payer}"
+    earn_idem = f"referral-earning:{order.id}:{item_key}:{payer}"
 
     existing_earn = db.scalar(
         select(ReferralCommissionEntry).where(
@@ -83,6 +84,7 @@ def record_item_earning(
         select(ReferralAttribution).where(
             ReferralAttribution.order_id == order.id,
             ReferralAttribution.attribution_item_key == item_key,
+            ReferralAttribution.payer_type == payer,
         )
     )
     if existing_attr is None:
@@ -324,50 +326,58 @@ def reverse_commission_for_order_item(
     allocation_id: str | None = None,
     refunded_quantity: int | None = None,
 ) -> ReferralCommissionEntry | None:
-    """Proportional reversal for one item using original rate/base snapshot."""
-    earning = db.scalar(
-        select(ReferralCommissionEntry).where(
-            ReferralCommissionEntry.order_id == order_id,
-            ReferralCommissionEntry.order_item_id == order_item_id,
-            ReferralCommissionEntry.entry_type == "earning",
-        )
-    )
-    if earning is None:
-        # Fallback: match attribution_item_key
-        earning = db.scalar(
+    """Proportional reversal for all earnings on one item (host and/or platform)."""
+    earnings = list(
+        db.scalars(
             select(ReferralCommissionEntry).where(
                 ReferralCommissionEntry.order_id == order_id,
-                ReferralCommissionEntry.attribution_item_key == str(order_item_id),
+                ReferralCommissionEntry.order_item_id == order_item_id,
                 ReferralCommissionEntry.entry_type == "earning",
             )
-        )
-    if earning is None:
-        return None
-    base = Decimal(earning.eligible_commission_base or 0)
-    alloc = allocation_id or (
-        f"{order_item_id}:{refunded_quantity or 0}:{_q(Decimal(refunded_base))}"
+        ).all()
     )
-    if base <= 0:
-        return append_reversal_for_earning(
+    if not earnings:
+        earnings = list(
+            db.scalars(
+                select(ReferralCommissionEntry).where(
+                    ReferralCommissionEntry.order_id == order_id,
+                    ReferralCommissionEntry.attribution_item_key == str(order_item_id),
+                    ReferralCommissionEntry.entry_type == "earning",
+                )
+            ).all()
+        )
+    if not earnings:
+        return None
+    last: ReferralCommissionEntry | None = None
+    for earning in earnings:
+        base = Decimal(earning.eligible_commission_base or 0)
+        alloc = allocation_id or (
+            f"{order_item_id}:{refunded_quantity or 0}:{_q(Decimal(refunded_base))}:"
+            f"{earning.payer_type}"
+        )
+        if base <= 0:
+            last = append_reversal_for_earning(
+                db,
+                earning=earning,
+                amount=remaining_reversible_amount(db, earning=earning),
+                reason=reason,
+                source_event_id=source_event_id,
+                actor_user_id=actor_user_id,
+                allocation_id=alloc,
+            )
+            continue
+        fraction = min(Decimal("1"), max(Decimal("0"), Decimal(refunded_base) / base))
+        target = _q(Decimal(earning.commission_amount) * fraction)
+        last = append_reversal_for_earning(
             db,
             earning=earning,
-            amount=remaining_reversible_amount(db, earning=earning),
+            amount=target,
             reason=reason,
             source_event_id=source_event_id,
             actor_user_id=actor_user_id,
             allocation_id=alloc,
         )
-    fraction = min(Decimal("1"), max(Decimal("0"), Decimal(refunded_base) / base))
-    target = _q(Decimal(earning.commission_amount) * fraction)
-    return append_reversal_for_earning(
-        db,
-        earning=earning,
-        amount=target,
-        reason=reason,
-        source_event_id=source_event_id,
-        actor_user_id=actor_user_id,
-        allocation_id=alloc,
-    )
+    return last
 
 
 def host_funded_net_by_order(
