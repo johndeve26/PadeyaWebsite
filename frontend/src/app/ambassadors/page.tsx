@@ -500,7 +500,7 @@ export default function AmbassadorsLandingPage() {
               {
                 step: "02",
                 title: "Receive your link",
-                body: "Each enrollment provides a unique referral link. A Pàdéyá-wide program uses one link for its enabled ticket and merchandise rules.",
+                body: "Your Pàdéyá-wide link is normally /r/{your-username}. Host campaign enrollments can have their own codes. One username link can unlock both pots when you are enrolled in both scopes.",
               },
               {
                 step: "03",
@@ -531,50 +531,129 @@ export default function AmbassadorsLandingPage() {
           </div>
         </section>
 
-        <section className="space-y-4 rounded-[var(--radius-xl)] border border-border bg-surface p-6 sm:p-8">
-          <h2 className="text-2xl font-extrabold text-heading">
-            Everything in one ambassador dashboard
-          </h2>
-          <p className="max-w-2xl text-sm text-body">
-            Platform and Host badges, referral links, clicks, converted orders,
-            pending and available commission, paid totals, reversals, and ticket
-            or merchandise filters — connected in one place.
-          </p>
+        <section className="space-y-6 rounded-[var(--radius-xl)] border border-border bg-surface p-6 sm:p-8">
+          <div>
+            <h2 className="text-2xl font-extrabold text-heading">
+              Everything in one ambassador dashboard
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-body">
+              Platform and host activity stay connected — links, clicks,
+              converted orders, commission states, and reversals in one place.
+              Filter by tickets or merchandise without switching tools.
+            </p>
+          </div>
+
           <div
-            className="grid gap-3 sm:grid-cols-3"
+            className="grid gap-4 lg:grid-cols-3"
             aria-hidden
           >
-            {["Platform · Host", "Converted orders", "Commission history"].map(
-              (label) => (
-                <div
-                  key={label}
-                  className="rounded-[var(--radius-lg)] border border-dashed border-border bg-muted/40 px-4 py-6 text-center text-xs font-semibold text-muted-foreground"
-                >
-                  Sample · {label}
-                </div>
-              ),
-            )}
+            <div className="rounded-[var(--radius-lg)] border border-border bg-background/60 p-4">
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-muted-foreground">
+                Sample · Scopes
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Badge tone="success">Pàdéyá-wide</Badge>
+                <Badge tone="neutral">Host campaign</Badge>
+                <Badge tone="outline">Tickets</Badge>
+                <Badge tone="outline">Merchandise</Badge>
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Badges show which enrollments are active for you.
+              </p>
+            </div>
+
+            <div className="rounded-[var(--radius-lg)] border border-border bg-background/60 p-4">
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-muted-foreground">
+                Sample · Your link
+              </p>
+              <p className="mt-3 font-mono text-sm text-heading">
+                /r/your-username
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Platform-wide uses your username when set. Host campaigns can
+                add event-specific codes alongside it.
+              </p>
+            </div>
+
+            <div className="rounded-[var(--radius-lg)] border border-border bg-background/60 p-4">
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-muted-foreground">
+                Sample · What you track
+              </p>
+              <ul className="mt-3 space-y-1.5 text-xs text-muted-foreground">
+                <li>Clicks and converted orders</li>
+                <li>Attributed items</li>
+                <li>Pending · approved · payable · paid</li>
+                <li>Host-funded and Pàdéyá-funded pots</li>
+                <li>Reversals after refunds</li>
+              </ul>
+            </div>
           </div>
+
           <p className="text-xs text-muted-foreground">
-            Illustrative layout only — not your live balances.
+            Illustrative layout only — not your live balances or account data.
           </p>
+
+          {signedIn &&
+          (enrollmentState === "platform_only" ||
+            enrollmentState === "host_only" ||
+            enrollmentState === "both" ||
+            enrollmentState === "inactive") ? (
+            <Link
+              href="/dashboard/ambassador"
+              onClick={() =>
+                track("ambassador_dashboard_cta_click", {
+                  metadata: {
+                    location: "dashboard_preview",
+                    enrollment_state: enrollmentState,
+                  },
+                  dedupeTtlMs: 2_000,
+                })
+              }
+            >
+              <Button size="sm">
+                {enrollmentState === "both"
+                  ? "Open unified dashboard"
+                  : "Open ambassador dashboard"}
+              </Button>
+            </Link>
+          ) : null}
         </section>
 
-        <section className="space-y-3 border-y border-border py-10">
-          <h2 className="text-2xl font-extrabold text-heading">
-            Fair attribution
-          </h2>
-          <p className="max-w-2xl text-sm text-body">
-            When you are enrolled in both a host campaign and a Pàdéyá-wide
-            program, an eligible item can earn two commissions — one host-funded
-            and one funded by Pàdéyá. Your platform link uses your username when
-            available.
-          </p>
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            Host enabling alone does not invent a host earner. Platform-only
-            enrollments still earn Pàdéyá-funded commission without reducing
-            host settlement.
-          </p>
+        <section className="space-y-4 border-y border-border py-10">
+          <div>
+            <h2 className="text-2xl font-extrabold text-heading">
+              Fair attribution
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-body">
+              When you are enrolled in both a host campaign and a Pàdéyá-wide
+              program, an eligible ticket or merchandise item can earn two
+              commissions — one host-funded and one funded by Pàdéyá. Your
+              platform link uses your username when available
+              (<span className="whitespace-nowrap"> /r/your-username</span>).
+            </p>
+          </div>
+          <ul className="max-w-2xl space-y-2 text-sm text-muted-foreground">
+            <li>
+              Platform-only enrollment: Pàdéyá pays. Host settlement is not
+              reduced.
+            </li>
+            <li>
+              Host-campaign-only enrollment: the host campaign pays under its
+              rules.
+            </li>
+            <li>
+              Both enrollments on the same event or product: both pots can apply
+              on the same item.
+            </li>
+            <li>
+              A host enabling Ambassadors alone does not create a host earner —
+              you still need an enrollment for that campaign.
+            </li>
+            <li>
+              Refunds may reverse each related commission while your earnings
+              history stays visible.
+            </li>
+          </ul>
         </section>
 
         <section className="rounded-[var(--radius-xl)] border border-border p-6 sm:flex sm:items-center sm:justify-between sm:gap-6">
