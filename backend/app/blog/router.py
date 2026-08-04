@@ -22,6 +22,7 @@ from app.blog.schemas import (
     CommentUpdate,
     PostAdmin,
     PostCreate,
+    PostForceDeleteRequest,
     PostListItem,
     PostPublic,
     PostUpdate,
@@ -38,6 +39,7 @@ from app.blog.document.router import router as document_router
 from app.blog.taxonomy_router import router as taxonomy_router
 from app.core.database import get_db
 from app.users.models import User
+from app.users.schemas import MessageResponse
 
 router = APIRouter(tags=["blog"])
 router.include_router(studio_router)
@@ -319,6 +321,23 @@ def admin_delete_post(
 ) -> Response:
     blog_service.delete_post(db, user=user, post_id=post_id)
     return Response(status_code=204)
+
+
+@router.post(
+    "/admin/blog/posts/{post_id}/force-delete",
+    response_model=MessageResponse,
+)
+def admin_force_delete_post(
+    post_id: UUID,
+    payload: PostForceDeleteRequest,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_permission("admin.blog.delete"))],
+) -> MessageResponse:
+    """Permanently delete a blog post (cascades comments/revisions/etc). For test cleanup."""
+    blog_service.force_delete_post(
+        db, user=user, post_id=post_id, reason=payload.reason
+    )
+    return MessageResponse(message="Blog post permanently deleted")
 
 
 @router.post("/admin/blog/posts/{post_id}/publish", response_model=PostAdmin)

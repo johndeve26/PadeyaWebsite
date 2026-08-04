@@ -114,6 +114,7 @@ export type BlogPost = BlogPostListItem & {
   studio_brief?: Record<string, unknown> | null;
   studio_outline?: Record<string, unknown> | null;
   faqs?: Array<{ id: string; question: string; answer: string }> | null;
+  archived_at?: string | null;
 };
 
 export type BlogComment = {
@@ -333,6 +334,18 @@ export async function unpublishAdminBlogPost(id: string) {
 
 export async function deleteAdminBlogPost(id: string) {
   await apiRequest<void>(`/admin/blog/posts/${id}`, { method: "DELETE" });
+  await revalidatePublicBlog();
+}
+
+/** Admin permanent delete — any status; cascades related rows. Requires reason. */
+export async function forceDeleteAdminBlogPost(id: string, reason: string) {
+  await apiRequest<{ message: string }>(
+    `/admin/blog/posts/${id}/force-delete`,
+    {
+      method: "POST",
+      body: { reason: reason.trim() },
+    },
+  );
   await revalidatePublicBlog();
 }
 

@@ -580,6 +580,11 @@ def delete_post(db: Session, *, user: User, post_id: uuid.UUID) -> None:
     row = db.get(BlogPost, post_id)
     if row is None:
         raise_not_found()
+    if row.archived_at is not None or row.status == "archived":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Post is already archived",
+        )
     row.status = "archived"
     row.archived_at = _utcnow()
     row.archived_by = user.id
@@ -595,6 +600,49 @@ def delete_post(db: Session, *, user: User, post_id: uuid.UUID) -> None:
 
     emit_blog_post_archived(db, post=row, actor=user)
     db.commit()
+
+
+def force_delete_post(
+    db: Session,
+    *,
+    user: User,
+    post_id: uuid.UUID,
+    reason: str,
+) -> None:
+    """Admin permanent delete for any status (test/cleanup). Cascades related rows."""
+    _require_blog_perm(user, "admin.blog.delete")
+    cleaned = (reason or "").strip()
+    if len(cleaned) < 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A reason of at least 3 characters is required",
+        )
+    row = db.get(BlogPost, post_id)
+    if row is None:
+        raise_not_found()
+    slug = row.slug
+    write_audit_log(
+        db,
+        action="blog.post_force_delete",
+        actor_user_id=user.id,
+        resource_type="blog_post",
+        resource_id=str(row.id),
+        details={
+            "title": row.title,
+            "slug": slug,
+            "status": row.status,
+            "reason": cleaned,
+            "force_delete": True,
+        },
+    )
+    db.delete(row)
+    db.commit()
+    try:
+        from app.core.cache_invalidation import invalidate_blog_caches
+
+        invalidate_blog_caches(slug=slug)
+    except Exception:
+        pass
 
 
 def create_category(db: Session, *, user: User, payload: CategoryCreate) -> BlogCategory:

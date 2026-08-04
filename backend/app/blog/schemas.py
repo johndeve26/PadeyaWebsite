@@ -207,6 +207,12 @@ class PostUpdate(BaseModel):
     hero_settings: dict[str, Any] | None = None
 
 
+class PostForceDeleteRequest(BaseModel):
+    """Admin permanent delete (intended for test/cleanup; cascades related rows)."""
+
+    reason: str = Field(min_length=3, max_length=2000)
+
+
 class CategoryCreate(BaseModel):
     name: str = Field(min_length=2, max_length=120)
     slug: str | None = None

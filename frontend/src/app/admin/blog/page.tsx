@@ -19,12 +19,18 @@ import { ApiError } from "@/lib/api";
 import {
   deleteAdminBlogPost,
   fetchAdminBlogPosts,
+  forceDeleteAdminBlogPost,
   publishAdminBlogPost,
   seedAdminBlog,
   unpublishAdminBlogPost,
   type BlogPost,
 } from "@/lib/blog-api";
 import { formatDate } from "@/lib/format";
+import {
+  canArchiveBlogPost,
+  canPublishBlogPost,
+  canUnpublishBlogPost,
+} from "@/lib/blog-admin-lifecycle";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
@@ -155,7 +161,11 @@ export default function AdminBlogListPage() {
     });
   }
 
-  async function runBulkArchive(targets: string[]) {
+  async function runBulk(
+    targets: string[],
+    action: (id: string) => Promise<unknown>,
+    labels: { success: string; fail: string; mixed: string },
+  ) {
     if (targets.length === 0) return;
     setBulkBusy(true);
     let ok = 0;
@@ -164,7 +174,7 @@ export default function AdminBlogListPage() {
     try {
       for (const id of targets) {
         try {
-          await deleteAdminBlogPost(id);
+          await action(id);
           ok += 1;
         } catch (err) {
           fail += 1;
@@ -176,18 +186,18 @@ export default function AdminBlogListPage() {
       if (fail === 0) {
         toast.push({
           tone: "success",
-          title: `${ok} post${ok === 1 ? "" : "s"} archived`,
+          title: `${ok} ${labels.success}`,
         });
       } else if (ok === 0) {
         toast.push({
           tone: "danger",
-          title: "Bulk archive failed",
+          title: labels.fail,
           description: lastError ?? "Try again",
         });
       } else {
         toast.push({
           tone: "danger",
-          title: `${ok} archived, ${fail} failed`,
+          title: labels.mixed.replace("{ok}", String(ok)).replace("{fail}", String(fail)),
           description: lastError ?? "Review remaining posts and retry",
         });
       }
@@ -196,7 +206,47 @@ export default function AdminBlogListPage() {
     }
   }
 
-  async function act(id: string, kind: "publish" | "unpublish" | "delete") {
+  async function onForceDelete(id: string, reason?: string) {
+    setBusyId(id);
+    try {
+      await forceDeleteAdminBlogPost(
+        id,
+        reason?.trim() || "Permanent delete by admin",
+      );
+      toast.push({ tone: "success", title: "Post permanently deleted" });
+      setSelectedIds((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      await load();
+    } catch (e) {
+      toast.push({
+        tone: "danger",
+        title: e instanceof ApiError ? e.message : "Delete failed",
+      });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function onBulkForceDelete(reason?: string) {
+    const targets = [...selectedIds];
+    if (targets.length === 0) return;
+    const cleaned = reason?.trim() || "Bulk permanent delete by admin";
+    await runBulk(
+      targets,
+      (id) => forceDeleteAdminBlogPost(id, cleaned),
+      {
+        success: "post(s) permanently deleted",
+        fail: "Bulk delete failed",
+        mixed: "{ok} deleted, {fail} failed",
+      },
+    );
+  }
+
+  async function act(id: string, kind: "publish" | "unpublish" | "archive") {
     setBusyId(id);
     try {
       if (kind === "publish") await publishAdminBlogPost(id);
@@ -338,19 +388,21 @@ export default function AdminBlogListPage() {
             <span className="text-sm text-muted-foreground">
               {selectedIds.size > 0
                 ? `${selectedIds.size} selected`
-                : "Select posts to archive in bulk"}
+                : "Select posts to delete permanently"}
             </span>
           </div>
           <ConfirmAction
-            label="Archive selected"
-            title={`Archive ${selectedIds.size} post${selectedIds.size === 1 ? "" : "s"}?`}
-            description="Archived posts leave the active list but remain for history. This is soft end-of-life, not a hard delete."
-            confirmLabel="Archive selected"
+            label="Delete permanently"
+            title={`Permanently delete ${selectedIds.size} post${selectedIds.size === 1 ? "" : "s"}?`}
+            description="This cannot be undone. Removes the post and cascades comments, revisions, and related rows."
+            confirmLabel="Delete permanently"
             tone="danger"
             size="sm"
             disabled={selectedIds.size === 0}
             busy={bulkBusy}
-            onConfirm={() => runBulkArchive([...selectedIds])}
+            requireReason
+            reasonLabel="Reason for permanent delete"
+            onConfirm={(reason) => onBulkForceDelete(reason)}
           />
         </div>
       ) : null}
@@ -420,7 +472,7 @@ export default function AdminBlogListPage() {
             className: "text-right",
             cell: (p) => (
               <div className="flex flex-wrap items-center justify-end gap-2">
-                {p.status !== "published" ? (
+                {canPublishBlogPost(p) ? (
                   <Button
                     size="sm"
                     disabled={busy}
@@ -428,7 +480,8 @@ export default function AdminBlogListPage() {
                   >
                     Publish
                   </Button>
-                ) : (
+                ) : null}
+                {canUnpublishBlogPost(p) ? (
                   <Button
                     size="sm"
                     variant="secondary"
@@ -437,17 +490,32 @@ export default function AdminBlogListPage() {
                   >
                     Unpublish
                   </Button>
-                )}
+                ) : null}
+                {canArchiveBlogPost(p) ? (
+                  <ConfirmAction
+                    label="Archive"
+                    title="Archive this post?"
+                    description="Soft end-of-life — hides the post but keeps it for history."
+                    confirmLabel="Archive"
+                    tone="danger"
+                    size="sm"
+                    disabled={busy}
+                    busy={busyId === p.id}
+                    onConfirm={() => act(p.id, "archive")}
+                  />
+                ) : null}
                 <ConfirmAction
-                  label="Archive"
-                  title="Archive this post?"
-                  description="Archived posts are hidden from the active list but kept for history."
-                  confirmLabel="Archive"
+                  label="Delete permanently"
+                  title="Permanently delete this post?"
+                  description="This cannot be undone. Removes the post and cascades comments, revisions, and related rows."
+                  confirmLabel="Delete permanently"
                   tone="danger"
                   size="sm"
                   disabled={busy}
                   busy={busyId === p.id}
-                  onConfirm={() => act(p.id, "delete")}
+                  requireReason
+                  reasonLabel="Reason for permanent delete"
+                  onConfirm={(reason) => onForceDelete(p.id, reason)}
                 />
               </div>
             ),

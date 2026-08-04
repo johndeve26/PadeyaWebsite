@@ -143,3 +143,62 @@ def test_category_and_tag_pages_api(
     if tags.json():
         tslug = tags.json()[0]["slug"]
         assert client.get(f"/api/v1/blog/posts?tag={tslug}").status_code == 200
+
+
+def test_admin_force_delete_post(
+    client: TestClient, db_session: Session, assign_role
+):
+    headers = _admin(client, db_session, assign_role, "blog-force-del@example.com")
+    create = client.post(
+        "/api/v1/admin/blog/posts",
+        headers=headers,
+        json={
+            "title": "Force delete me",
+            "slug": "force-delete-me",
+            "body": "Gone forever",
+        },
+    )
+    assert create.status_code == 201, create.text
+    post_id = create.json()["id"]
+
+    bad = client.post(
+        f"/api/v1/admin/blog/posts/{post_id}/force-delete",
+        headers=headers,
+        json={"reason": "ab"},
+    )
+    assert bad.status_code == 422
+
+    force = client.post(
+        f"/api/v1/admin/blog/posts/{post_id}/force-delete",
+        headers=headers,
+        json={"reason": "Test cleanup"},
+    )
+    assert force.status_code == 200, force.text
+    assert force.json()["message"] == "Blog post permanently deleted"
+
+    gone = client.get(f"/api/v1/admin/blog/posts/{post_id}", headers=headers)
+    assert gone.status_code == 404
+
+
+def test_admin_archive_rejects_already_archived_post(
+    client: TestClient, db_session: Session, assign_role
+):
+    headers = _admin(client, db_session, assign_role, "blog-archive-twice@example.com")
+    create = client.post(
+        "/api/v1/admin/blog/posts",
+        headers=headers,
+        json={
+            "title": "Archive twice",
+            "slug": "archive-twice",
+            "body": "Once is enough",
+        },
+    )
+    assert create.status_code == 201, create.text
+    post_id = create.json()["id"]
+
+    first = client.delete(f"/api/v1/admin/blog/posts/{post_id}", headers=headers)
+    assert first.status_code == 204
+
+    second = client.delete(f"/api/v1/admin/blog/posts/{post_id}", headers=headers)
+    assert second.status_code == 400
+    assert second.json()["detail"] == "Post is already archived"
