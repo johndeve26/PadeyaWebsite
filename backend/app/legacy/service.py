@@ -266,6 +266,14 @@ def _serialize_tier(tier: LegacyTier | None) -> dict | None:
 
 
 def build_tier_progress(db: Session, host_id: UUID) -> dict:
+    from app.legacy.presentation import (
+        build_next_tier_summary,
+        display_score,
+        factor_contributions,
+        provisional_state,
+        public_factor_bands,
+    )
+
     score = refresh_host_legacy_score(db, host_id, reason="progress_view")
     tiers = ensure_tiers(db)
     inputs = collect_host_metrics(db, host_id)
@@ -278,6 +286,7 @@ def build_tier_progress(db: Session, host_id: UUID) -> dict:
         next_tier = next((t for t in tiers if t.is_active and t.rank > 0), None)
 
     current_score = Decimal(score.composite_score)
+    is_top_tier = next_tier is None and current is not None
     if next_tier is None:
         progress_pct = Decimal("100")
     else:
@@ -321,27 +330,48 @@ def build_tier_progress(db: Session, host_id: UUID) -> dict:
         .limit(20)
     ).all()
 
+    metrics = {
+        "events_hosted": score.events_hosted,
+        "completed_events": score.completed_events,
+        "tickets_sold": score.tickets_sold,
+        "verified_checkins": score.verified_checkins,
+        "average_verified_rating": score.average_verified_rating,
+        "review_count": score.review_count,
+        "followers": score.followers,
+        "repeat_buyers_rate": score.repeat_buyers_rate,
+        "refund_dispute_rate": score.refund_dispute_rate,
+    }
+    provisional = provisional_state(
+        completed_events=int(score.completed_events),
+        review_count=int(score.review_count),
+    )
+    next_summary = build_next_tier_summary(
+        composite_score=current_score,
+        current_tier=current,
+        next_tier=next_tier,
+        inputs=inputs,
+    )
+
     return {
         "host_id": host_id,
         "composite_score": score.composite_score,
+        "display_score": display_score(score.composite_score),
         "factor_scores": score.factor_scores or {},
+        "factor_contributions": factor_contributions(
+            score.factor_scores, metrics=metrics
+        ),
+        "factor_bands": public_factor_bands(
+            score.factor_scores,
+            refund_rate_unknown=score.refund_dispute_rate is None,
+        ),
         "current_tier": _serialize_tier(current),
         "next_tier": _serialize_tier(next_tier),
+        "next_tier_summary": next_summary,
         "progress_percentage": progress_pct,
         "requirements_met": met,
         "requirements_remaining": remaining,
         "suggested_actions": suggestions,
-        "metrics": {
-            "events_hosted": score.events_hosted,
-            "completed_events": score.completed_events,
-            "tickets_sold": score.tickets_sold,
-            "verified_checkins": score.verified_checkins,
-            "average_verified_rating": score.average_verified_rating,
-            "review_count": score.review_count,
-            "followers": score.followers,
-            "repeat_buyers_rate": score.repeat_buyers_rate,
-            "refund_dispute_rate": score.refund_dispute_rate,
-        },
+        "metrics": metrics,
         "history": [
             {
                 "id": h.id,
@@ -355,6 +385,11 @@ def build_tier_progress(db: Session, host_id: UUID) -> dict:
             }
             for h in history
         ],
+        "is_provisional": provisional["is_provisional"],
+        "provisional_reasons": provisional["provisional_reasons"],
+        "is_top_tier": is_top_tier,
+        "last_recalculated_at": score.updated_at,
+        "owner_self_actions_excluded": True,
     }
 
 
@@ -438,6 +473,10 @@ def build_legacy_page(
     from app.passport.merch_proof import host_merch_proof_counts, host_merch_proof_summaries
     from app.reviews.service import list_visible_host_reviews
     from app.crm.follower_count import count_host_followers
+    from app.legacy.presentation import (
+        build_legacy_trust_summary,
+        score_inputs_from_metrics,
+    )
 
     merch_counts = host_merch_proof_counts(db, host.id)
     merch_summaries = host_merch_proof_summaries(db, host.id)
@@ -459,6 +498,49 @@ def build_legacy_page(
     else:
         gender_payload = public_cache_safe_gender_payload(owner)
 
+    live_followers = count_host_followers(db, host.id)
+    tiers = ensure_tiers(db)
+    next_tier = None
+    is_top_tier = False
+    if tier is not None:
+        higher = [t for t in tiers if t.is_active and t.rank > tier.rank]
+        next_tier = min(higher, key=lambda t: t.rank) if higher else None
+        is_top_tier = next_tier is None
+    else:
+        next_tier = next((t for t in tiers if t.is_active and t.rank > 0), None)
+
+    trust_inputs = score_inputs_from_metrics(
+        {
+            "events_hosted": score.events_hosted,
+            "completed_events": score.completed_events,
+            "tickets_sold": score.tickets_sold,
+            "verified_checkins": score.verified_checkins,
+            "average_verified_rating": score.average_verified_rating,
+            "review_count": score.review_count,
+            "followers": live_followers,
+            "repeat_buyers_rate": score.repeat_buyers_rate,
+            "refund_dispute_rate": score.refund_dispute_rate,
+        }
+    )
+    legacy_trust = build_legacy_trust_summary(
+        composite_score=score.composite_score,
+        tier=tier,
+        legacy_status=score.legacy_status,
+        factor_scores=score.factor_scores,
+        completed_events=int(score.completed_events),
+        tickets_sold=int(score.tickets_sold),
+        verified_checkins=int(score.verified_checkins),
+        average_verified_rating=score.average_verified_rating,
+        review_count=int(score.review_count),
+        followers=live_followers,
+        repeat_buyers_rate=score.repeat_buyers_rate,
+        refund_dispute_rate=score.refund_dispute_rate,
+        next_tier=next_tier,
+        inputs=trust_inputs,
+        last_recalculated_at=score.updated_at,
+        is_top_tier=is_top_tier,
+    )
+
     return {
         "host_id": host.id,
         "display_name": host.display_name,
@@ -479,7 +561,7 @@ def build_legacy_page(
             "review_count": score.review_count,
             # Live count — denormalized score.followers can lag when public
             # pages assemble with rescore=False after follow/unfollow.
-            "followers": count_host_followers(db, host.id),
+            "followers": live_followers,
             "repeat_buyers_rate": score.repeat_buyers_rate,
             "refund_dispute_rate": score.refund_dispute_rate,
             "legacy_status": score.legacy_status,
@@ -489,6 +571,7 @@ def build_legacy_page(
             "fans_collected_merch": merch_counts["fans_collected_merch"],
             "merch_proof_summaries": merch_summaries,
         },
+        "legacy_trust": legacy_trust,
         "about": profile.bio if profile else None,
         "upcoming_events": upcoming,
         "past_events": past,
@@ -582,18 +665,29 @@ def update_tier(
 
 
 def list_host_tier_summaries(db: Session) -> list[dict]:
+    from app.legacy.presentation import display_score, provisional_state
+
     ensure_tiers(db)
     hosts = db.scalars(select(Host).where(Host.status == "active").order_by(Host.display_name)).all()
     out: list[dict] = []
     for host in hosts:
         score = refresh_host_legacy_score(db, host.id, reason="admin_list")
         tier = db.get(LegacyTier, score.tier_id) if score.tier_id else None
+        provisional = provisional_state(
+            completed_events=int(score.completed_events),
+            review_count=int(score.review_count),
+        )
         out.append(
             {
                 "host_id": host.id,
                 "display_name": host.display_name,
                 "username": host.slug,
                 "composite_score": score.composite_score,
+                "display_score": display_score(score.composite_score),
+                "is_provisional": provisional["is_provisional"],
+                "completed_events": int(score.completed_events),
+                "review_count": int(score.review_count),
+                "factor_scores": score.factor_scores,
                 "tier": _serialize_tier(tier),
                 "legacy_status": score.legacy_status,
                 "updated_at": score.updated_at,

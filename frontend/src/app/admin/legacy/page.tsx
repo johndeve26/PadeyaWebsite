@@ -190,9 +190,15 @@ export default function AdminLegacyPage() {
               key: "score",
               header: "Score",
               cell: (host) => (
-                <span className="font-semibold">
-                  {Number(host.composite_score).toFixed(1)}
-                </span>
+                <div className="space-y-0.5">
+                  <span className="font-semibold tabular-nums">
+                    {Number(host.composite_score).toFixed(2)}
+                  </span>
+                  <p className="text-xs text-muted-foreground">
+                    public {host.display_score ?? Math.round(Number(host.composite_score))}
+                    {host.is_provisional ? " · provisional" : ""}
+                  </p>
+                </div>
               ),
             },
             {
@@ -244,7 +250,8 @@ export default function AdminLegacyPage() {
                 />
               </div>
               <p className="text-sm text-muted-foreground">
-                @{host.username} · score {Number(host.composite_score).toFixed(1)}
+                @{host.username} · score {Number(host.composite_score).toFixed(2)}
+                {host.is_provisional ? " · provisional" : ""}
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" onClick={() => void onRecalcOne(host.host_id)}>

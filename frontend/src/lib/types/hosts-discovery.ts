@@ -13,6 +13,9 @@ export type HostDiscovery = {
   verified: boolean;
   legacy_tier: string;
   legacy_status: string;
+  display_score?: number;
+  is_provisional?: boolean;
+  composite_score?: number | null;
   bio?: string | null;
   tagline?: string | null;
   avatar_url?: string | null;

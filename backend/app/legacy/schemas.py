@@ -32,6 +32,82 @@ class LegacyTierUpdate(BaseModel):
     is_active: bool | None = None
 
 
+class LegacyEvidenceItemPublic(BaseModel):
+    key: str
+    label: str
+    value: float | int
+    display: str
+    suffix: str | None = None
+
+
+class LegacyFactorBandPublic(BaseModel):
+    key: str
+    label: str
+    band: str
+    normalized: float | None = None
+
+
+class LegacyNextTierRequirementPublic(BaseModel):
+    key: str
+    label: str
+    current: float
+    required: float
+    met: bool
+    message: str
+
+
+class LegacyNextTierPublic(BaseModel):
+    key: str | None = None
+    name: str | None = None
+    min_score: float
+    score_remaining: float
+    score_requirement_met: bool
+    gates_met: int
+    gates_total: int
+    gates_remaining: int
+    state: str
+    unmet_requirements: list[LegacyNextTierRequirementPublic] = Field(default_factory=list)
+    additional_requirements_count: int = 0
+    current_tier_key: str | None = None
+    current_tier_name: str | None = None
+
+
+class LegacyTierSummaryPublic(BaseModel):
+    key: str | None = None
+    name: str | None = None
+    description: str | None = None
+    rank: int | None = None
+
+
+class LegacyTrustSummaryPublic(BaseModel):
+    """Public-safe Legacy trust presentation (score, tier, evidence, next tier)."""
+
+    score: float
+    display_score: int
+    tier: LegacyTierSummaryPublic
+    legacy_status: str
+    is_provisional: bool
+    provisional_reasons: list[str] = Field(default_factory=list)
+    is_top_tier: bool = False
+    headline: str
+    evidence: list[LegacyEvidenceItemPublic] = Field(default_factory=list)
+    next_tier: LegacyNextTierPublic | None = None
+    factor_bands: list[LegacyFactorBandPublic] = Field(default_factory=list)
+    last_recalculated_at: datetime | None = None
+    how_it_works_path: str = "/legacy"
+
+
+class LegacyFactorContributionPublic(BaseModel):
+    key: str
+    label: str
+    normalized: float
+    weight: float
+    weight_percent: int
+    contribution: float
+    what_counts: str
+    raw_progress: str | None = None
+
+
 class LegacyStatsPublic(BaseModel):
     events_hosted: int
     tickets_sold: int
@@ -203,6 +279,7 @@ class LegacyPagePublic(BaseModel):
     sponsor_packages: list[LegacySponsorPackageCard] = []
     reviews_block_hidden: bool = False
     trust_note: str | None = None
+    legacy_trust: LegacyTrustSummaryPublic | None = None
 
 
 class LegacyProfileUpdate(BaseModel):
@@ -296,15 +373,24 @@ class ScoreHistoryPublic(BaseModel):
 class TierProgressPublic(BaseModel):
     host_id: UUID
     composite_score: Decimal
+    display_score: int | None = None
     factor_scores: dict[str, Any]
+    factor_contributions: list[LegacyFactorContributionPublic] = Field(default_factory=list)
+    factor_bands: list[LegacyFactorBandPublic] = Field(default_factory=list)
     current_tier: LegacyTierPublic | None
     next_tier: LegacyTierPublic | None
+    next_tier_summary: LegacyNextTierPublic | None = None
     progress_percentage: Decimal
     requirements_met: list[RequirementItem]
     requirements_remaining: list[RequirementItem]
     suggested_actions: list[str]
     metrics: dict[str, Any]
     history: list[ScoreHistoryPublic]
+    is_provisional: bool = False
+    provisional_reasons: list[str] = Field(default_factory=list)
+    is_top_tier: bool = False
+    last_recalculated_at: datetime | None = None
+    owner_self_actions_excluded: bool = True
 
 
 class HostDiscoveryNextEvent(BaseModel):
@@ -323,6 +409,9 @@ class HostDiscoveryPublic(BaseModel):
     verified: bool
     legacy_tier: str
     legacy_status: str
+    display_score: int = 0
+    is_provisional: bool = False
+    composite_score: float | None = None
     bio: str | None = None
     tagline: str | None = None
     avatar_url: str | None = None
@@ -353,6 +442,11 @@ class HostTierSummary(BaseModel):
     display_name: str
     username: str
     composite_score: Decimal
+    display_score: int = 0
+    is_provisional: bool = False
+    completed_events: int = 0
+    review_count: int = 0
+    factor_scores: dict[str, Any] | None = None
     tier: LegacyTierPublic | None
     legacy_status: str
     updated_at: datetime

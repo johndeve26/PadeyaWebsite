@@ -7,6 +7,7 @@ import { HostFollowControls } from "@/components/hosts/HostFollowControls";
 import { StartMessageButton } from "@/components/messaging/StartMessageButton";
 import { LegacyEventCard } from "@/components/legacy/LegacyEventCard";
 import { LegacySocialIcon } from "@/components/legacy/LegacySocialIcon";
+import { LegacyTrustSummaryCard } from "@/components/legacy/LegacyTrustSummaryCard";
 import { GenderBadge } from "@/components/profile/GenderBadge";
 import {
   Badge,
@@ -894,6 +895,11 @@ export function LegacyPublicPageRenderer({ page }: { page: LegacyPage }) {
           <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
             {page.verified ? <Badge tone="accent">Verified host</Badge> : null}
             <LegacyTierBadge tier={tierLabel} />
+            {page.legacy_trust?.is_provisional ? (
+              <Badge tone="outline" className="border-paper/25 text-paper/80">
+                Provisional
+              </Badge>
+            ) : null}
             {location ? (
               <Badge tone="outline" className="border-paper/25 text-paper/80">
                 {location}
@@ -930,9 +936,11 @@ export function LegacyPublicPageRenderer({ page }: { page: LegacyPage }) {
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <p className="text-base font-medium text-paper/75 sm:text-lg">
                   @{page.username}
-                  {page.composite_score != null
-                    ? ` · Legacy score ${Number(page.composite_score).toFixed(1)}`
-                    : ""}
+                  {page.legacy_trust
+                    ? ` · Legacy ${page.legacy_trust.display_score}`
+                    : page.composite_score != null
+                      ? ` · Legacy ${Math.round(Number(page.composite_score))}`
+                      : ""}
                 </p>
                 {page.shows_personal_gender &&
                 page.gender_visible &&
@@ -1081,6 +1089,11 @@ export function LegacyPublicPageRenderer({ page }: { page: LegacyPage }) {
             {page.trust_note}
           </p>
         ) : null}
+        {page.legacy_trust ? (
+          <div className="mb-8 sm:mb-10">
+            <LegacyTrustSummaryCard trust={page.legacy_trust} />
+          </div>
+        ) : null}
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)] lg:gap-9 xl:gap-10">
           <div className="space-y-9 sm:space-y-10">{blocks.map(renderBlock)}</div>
 
@@ -1138,10 +1151,25 @@ export function LegacyPublicPageRenderer({ page }: { page: LegacyPage }) {
 
               <SidebarSection eyebrow="Legacy tier" title={page.legacy_status}>
                 <LegacyTierBadge tier={tierLabel} />
+                {page.legacy_trust ? (
+                  <p className="text-2xl font-extrabold tabular-nums text-heading">
+                    {page.legacy_trust.display_score}
+                    <span className="text-base font-bold text-muted-foreground">
+                      {" "}
+                      / 100
+                    </span>
+                  </p>
+                ) : null}
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   {page.tier?.description ||
-                    "Legacy tiers reward verified delivery, check-ins, reviews, and fan loyalty on Pàdéyá."}
+                    "Legacy Score combines verified reviews, completed events, ticket sales, check-ins, consistency, refund history and community loyalty. Tier requirements also include minimum verified activity."}
                 </p>
+                <Link
+                  href="/legacy"
+                  className="text-sm font-semibold text-primary underline-offset-2 hover:underline"
+                >
+                  Learn how Legacy works
+                </Link>
               </SidebarSection>
 
               <SidebarSection eyebrow="Vault" title="Exclusive fan content">

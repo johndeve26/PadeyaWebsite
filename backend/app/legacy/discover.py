@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.events.models import Event
 from app.hosts.models import Host
 from app.legacy.models import HostLegacyPage, HostLegacyScore, LegacyTier
+from app.legacy.presentation import display_score, provisional_state
 from app.sponsorships.models import HostSponsorshipSettings
 from app.sponsorships.service import host_is_verified
 from app.taxonomy import service as taxonomy_service
@@ -153,6 +154,20 @@ def list_discover_hosts(db: Session, *, limit: int = 60) -> list[dict]:
                 "verified": verified,
                 "legacy_tier": tier.name if tier else (score.legacy_status if score else "New Host"),
                 "legacy_status": score.legacy_status if score else "New Host",
+                "display_score": (
+                    display_score(score.composite_score)
+                    if score and score.composite_score is not None
+                    else 0
+                ),
+                "is_provisional": provisional_state(
+                    completed_events=completed,
+                    review_count=int(score.review_count) if score else 0,
+                )["is_provisional"],
+                "composite_score": (
+                    float(score.composite_score)
+                    if score and score.composite_score is not None
+                    else None
+                ),
                 "bio": profile.bio if profile else None,
                 "tagline": page.tagline if page else None,
                 "avatar_url": profile.avatar_url if profile else None,

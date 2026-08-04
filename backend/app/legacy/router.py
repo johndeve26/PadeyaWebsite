@@ -244,12 +244,23 @@ def admin_recalc_host(
     host = db.get(Host, host_id)
     tier = db.get(LegacyTier, score.tier_id) if score.tier_id else None
     assert host is not None
+    from app.legacy.presentation import display_score, provisional_state
+
+    provisional = provisional_state(
+        completed_events=int(score.completed_events),
+        review_count=int(score.review_count),
+    )
     return HostTierSummary.model_validate(
         {
             "host_id": host.id,
             "display_name": host.display_name,
             "username": host.slug,
             "composite_score": score.composite_score,
+            "display_score": display_score(score.composite_score),
+            "is_provisional": provisional["is_provisional"],
+            "completed_events": int(score.completed_events),
+            "review_count": int(score.review_count),
+            "factor_scores": score.factor_scores,
             "tier": tier,
             "legacy_status": score.legacy_status,
             "updated_at": score.updated_at,

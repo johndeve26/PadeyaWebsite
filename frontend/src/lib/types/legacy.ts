@@ -201,6 +201,7 @@ export type LegacyPage = {
   sponsor_packages?: LegacySponsorPackageCard[];
   reviews_block_hidden?: boolean;
   trust_note?: string | null;
+  legacy_trust?: LegacyTrustSummary | null;
   shows_personal_gender?: boolean;
   gender?: string | null;
   gender_short?: string | null;
@@ -214,6 +215,76 @@ export type RequirementItem = {
   current: number;
   required: number;
   met: boolean;
+  message?: string;
+};
+
+export type LegacyEvidenceItem = {
+  key: string;
+  label: string;
+  value: number;
+  display: string;
+  suffix?: string | null;
+};
+
+export type LegacyFactorBand = {
+  key: string;
+  label: string;
+  band: string;
+  normalized?: number | null;
+};
+
+export type LegacyNextTierRequirement = RequirementItem & {
+  message: string;
+};
+
+export type LegacyNextTierSummary = {
+  key?: string | null;
+  name?: string | null;
+  min_score: number;
+  score_remaining: number;
+  score_requirement_met: boolean;
+  gates_met: number;
+  gates_total: number;
+  gates_remaining: number;
+  state: string;
+  unmet_requirements: LegacyNextTierRequirement[];
+  additional_requirements_count?: number;
+  current_tier_key?: string | null;
+  current_tier_name?: string | null;
+};
+
+export type LegacyTierSummary = {
+  key?: string | null;
+  name?: string | null;
+  description?: string | null;
+  rank?: number | null;
+};
+
+export type LegacyTrustSummary = {
+  score: number;
+  display_score: number;
+  tier: LegacyTierSummary;
+  legacy_status: string;
+  is_provisional: boolean;
+  provisional_reasons: string[];
+  is_top_tier?: boolean;
+  headline: string;
+  evidence: LegacyEvidenceItem[];
+  next_tier?: LegacyNextTierSummary | null;
+  factor_bands: LegacyFactorBand[];
+  last_recalculated_at?: string | null;
+  how_it_works_path?: string;
+};
+
+export type LegacyFactorContribution = {
+  key: string;
+  label: string;
+  normalized: number;
+  weight: number;
+  weight_percent: number;
+  contribution: number;
+  what_counts: string;
+  raw_progress?: string | null;
 };
 
 export type ScoreHistory = {
@@ -232,15 +303,24 @@ export type ScoreHistory = {
 export type TierProgress = {
   host_id: string;
   composite_score: string | number;
+  display_score?: number | null;
   factor_scores: Record<string, number>;
+  factor_contributions?: LegacyFactorContribution[];
+  factor_bands?: LegacyFactorBand[];
   current_tier: LegacyTier | null;
   next_tier: LegacyTier | null;
+  next_tier_summary?: LegacyNextTierSummary | null;
   progress_percentage: string | number;
   requirements_met: RequirementItem[];
   requirements_remaining: RequirementItem[];
   suggested_actions: string[];
   metrics: Record<string, unknown>;
   history: ScoreHistory[];
+  is_provisional?: boolean;
+  provisional_reasons?: string[];
+  is_top_tier?: boolean;
+  last_recalculated_at?: string | null;
+  owner_self_actions_excluded?: boolean;
 };
 
 export type HostTierSummary = {
@@ -248,6 +328,11 @@ export type HostTierSummary = {
   display_name: string;
   username: string;
   composite_score: string | number;
+  display_score?: number;
+  is_provisional?: boolean;
+  completed_events?: number;
+  review_count?: number;
+  factor_scores?: Record<string, number> | null;
   tier: LegacyTier | null;
   legacy_status: string;
   updated_at: string;

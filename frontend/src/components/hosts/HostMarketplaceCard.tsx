@@ -272,6 +272,13 @@ export function HostMarketplaceCard({
               <LegacyTierBadge
                 tier={host.legacy_tier || host.legacy_status || "New Host"}
               />
+              {host.display_score != null ? (
+                <p className="text-xs font-semibold tabular-nums text-muted-foreground">
+                  {host.legacy_tier || host.legacy_status || "Legacy"} ·{" "}
+                  {host.display_score} Legacy Score
+                  {host.is_provisional ? " · Provisional" : ""}
+                </p>
+              ) : null}
             </div>
           </div>
 

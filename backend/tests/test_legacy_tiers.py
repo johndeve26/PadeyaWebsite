@@ -373,3 +373,55 @@ def test_host_tier_progress_endpoint(client: TestClient, db_session: Session):
     assert isinstance(body["requirements_met"], list)
     assert isinstance(body["requirements_remaining"], list)
     assert isinstance(body["suggested_actions"], list)
+    assert "display_score" in body
+    assert "factor_contributions" in body
+    assert "next_tier_summary" in body
+    assert body["owner_self_actions_excluded"] is True
+    total = sum(float(r["contribution"]) for r in body["factor_contributions"])
+    assert abs(total - float(body["composite_score"])) <= 0.05
+
+
+def test_public_legacy_trust_summary_and_no_page_view_rescore(
+    client: TestClient, db_session: Session
+):
+    from sqlalchemy import select
+
+    host = _seed_host_with_metrics(db_session)
+    refresh_host_legacy_score(db_session, host.id, reason="seed", force_history=True)
+    db_session.commit()
+
+    before = len(
+        db_session.scalars(
+            select(HostLegacyScoreHistory).where(
+                HostLegacyScoreHistory.host_id == host.id
+            )
+        ).all()
+    )
+
+    page = client.get(f"/api/v1/u/{host.slug}/legacy")
+    assert page.status_code == 200, page.text
+    body = page.json()
+    trust = body["legacy_trust"]
+    assert trust is not None
+    assert trust["display_score"] == round(float(trust["score"]))
+    assert "evidence" in trust
+    assert "factor_bands" in trust
+    assert "is_provisional" in trust
+    assert trust["how_it_works_path"] == "/legacy"
+    after = len(
+        db_session.scalars(
+            select(HostLegacyScoreHistory).where(
+                HostLegacyScoreHistory.host_id == host.id
+            )
+        ).all()
+    )
+    assert after == before
+    page_view_rows = len(
+        db_session.scalars(
+            select(HostLegacyScoreHistory).where(
+                HostLegacyScoreHistory.host_id == host.id,
+                HostLegacyScoreHistory.reason == "page_view",
+            )
+        ).all()
+    )
+    assert page_view_rows == 0
