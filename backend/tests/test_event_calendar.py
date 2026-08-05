@@ -157,8 +157,14 @@ def test_calendar_groups_by_day(client: TestClient, assign_role, db_session):
     headers = _auth_headers(client, "cal-host@example.com")
     _onboard(client, headers, "Cal Host")
 
-    day_a = datetime.now(UTC) + timedelta(days=25)
-    day_a = day_a.replace(hour=19, minute=0, second=0, microsecond=0)
+    # Anchor mid-month so day_a and day_a+2 stay in the same calendar month
+    # (avoids flake when "now + 25 days" lands near a month boundary).
+    now = datetime.now(UTC)
+    if now.month == 12:
+        anchor_year, anchor_month = now.year + 1, 1
+    else:
+        anchor_year, anchor_month = now.year, now.month + 1
+    day_a = datetime(anchor_year, anchor_month, 10, 19, 0, 0, tzinfo=UTC)
     day_b = day_a + timedelta(days=2)
 
     created = []
@@ -219,8 +225,12 @@ def test_calendar_featured_fallback(client: TestClient, assign_role, db_session)
     headers = _auth_headers(client, "cal-feat-host@example.com")
     _onboard(client, headers, "Feat Host")
 
-    early = datetime.now(UTC) + timedelta(days=18)
-    early = early.replace(hour=17, minute=0, second=0, microsecond=0)
+    now = datetime.now(UTC)
+    if now.month == 12:
+        anchor_year, anchor_month = now.year + 1, 1
+    else:
+        anchor_year, anchor_month = now.year, now.month + 1
+    early = datetime(anchor_year, anchor_month, 8, 17, 0, 0, tzinfo=UTC)
     later = early + timedelta(days=3)
 
     early_res = client.post(

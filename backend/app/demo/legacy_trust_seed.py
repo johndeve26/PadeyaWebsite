@@ -138,6 +138,15 @@ def _clear_host_events(db: Session, host: Host, slug_prefix: str) -> None:
         db.delete(event)
     db.flush()
 
+    # Drop synthetic buyers for this showcase host so they don't linger in admin.
+    for buyer in db.scalars(
+        select(User).where(
+            User.email.like(f"{slug_prefix}-buyer-%@{DEMO_EMAIL_DOMAIN}")
+        )
+    ).all():
+        db.delete(buyer)
+    db.flush()
+
 
 def _seed_host_activity(
     db: Session,
