@@ -15,8 +15,8 @@ export type FanOgStat = {
   key: "events" | "hosts" | "stamps";
   value: string;
   label: string;
-  /** Stamps row is visually emphasized. */
-  emphasize?: boolean;
+  /** Non-zero values use brand green; zeros stay muted. */
+  active: boolean;
 };
 
 export type FanOgStampChip = {
@@ -34,10 +34,34 @@ const STAMP_COLORS = [
   "#63B3ED",
 ] as const;
 
+/**
+ * Use an explicit public verification flag only.
+ * Never infer verification from activity, stamps, superfans, or demo status.
+ * Current FanPassportPublicPage has no verified field — seal stays PUBLIC.
+ */
+export function fanOgShowVerified(
+  page: FanPassportPublicPage | null,
+): boolean {
+  if (!page) return false;
+  const flagged = page as FanPassportPublicPage & {
+    is_verified?: boolean | null;
+    verified?: boolean | null;
+  };
+  return flagged.is_verified === true || flagged.verified === true;
+}
+
+export function fanOgDisplayNameFontSize(name: string): number {
+  const len = name.trim().length;
+  if (len <= 20) return 60;
+  if (len <= 30) return 54;
+  if (len <= 42) return 46;
+  return 40;
+}
+
 export function fanOgDisplayName(
   page: Pick<FanPassportPublicPage, "display_name">,
 ): string {
-  return truncateEllipsis(page.display_name, 35) || "Fan Passport";
+  return truncateEllipsis(page.display_name, 48) || "Fan";
 }
 
 export function fanOgUsername(
@@ -51,15 +75,15 @@ export function fanOgLocation(
   page: Pick<FanPassportPublicPage, "favorite_cities">,
 ): string | null {
   const city = page.favorite_cities?.find((c) => c?.trim())?.trim() || "";
-  return truncateEllipsis(city, 25) || null;
+  return truncateEllipsis(city, 28) || null;
 }
 
 export function fanOgBio(page: FanPassportPublicPage): string {
   const bio =
     page.tagline?.trim() ||
     page.bio?.trim() ||
-    "Building their Fan Passport on Pàdéyá";
-  return truncateEllipsis(bio, 100);
+    "Building a Fan Passport on Pàdéyá.";
+  return truncateEllipsis(bio, 105);
 }
 
 export function fanOgScenes(
@@ -73,56 +97,71 @@ export function fanOgScenes(
   return truncateEllipsis(scenes.join(" · "), 42);
 }
 
-/**
- * Public Fan Passports present verified nightlife history in product UI.
- * Empty brand-new passports keep a neutral seal instead.
- */
-export function fanOgShowVerified(page: FanPassportPublicPage): boolean {
-  return (
-    page.events_attended > 0 ||
-    page.badges_earned_count > 0 ||
-    page.is_superfan ||
-    (page.badges?.length ?? 0) > 0
-  );
+/** Status line under username — never duplicates the FAN PASSPORT heading. */
+export function fanOgStatusLine(page: FanPassportPublicPage): string {
+  if (fanOgShowVerified(page)) return "Verified Passport";
+  if (page.visibility === "unlisted") return "Unlisted Passport";
+  return "Public Passport";
+}
+
+export function fanOgHasActivity(page: FanPassportPublicPage): boolean {
+  return (page.events_attended ?? 0) > 0 || (page.badges_earned_count ?? 0) > 0;
+}
+
+export function fanOgSupportCopy(page: FanPassportPublicPage): string {
+  if (fanOgHasActivity(page)) {
+    return "Verified nights, stamps and scenes on Pàdéyá.";
+  }
+  return "Build your nightlife story on Pàdéyá.";
+}
+
+export function fanOgEmptyStampCopy(page: FanPassportPublicPage): string | null {
+  if ((page.badges_earned_count ?? 0) > 0) return null;
+  if ((page.badges || []).some((b) => b.earned !== false)) return null;
+  return "Your first verified check-in unlocks a passport stamp.";
 }
 
 export function fanOgStats(page: FanPassportPublicPage): FanOgStat[] {
+  const events = page.events_attended ?? 0;
+  const hosts = page.hosts_followed ?? 0;
   const stamps = page.badges_earned_count ?? 0;
   return [
     {
       key: "events",
-      value: formatCompact(page.events_attended ?? 0),
-      label:
-        (page.events_attended ?? 0) === 1
-          ? "EVENT ATTENDED"
-          : "EVENTS ATTENDED",
+      value: formatCompact(events),
+      label: events === 1 ? "EVENT ATTENDED" : "EVENTS ATTENDED",
+      active: events > 0,
     },
     {
       key: "hosts",
-      value: formatCompact(page.hosts_followed ?? 0),
-      label:
-        (page.hosts_followed ?? 0) === 1
-          ? "HOST FOLLOWED"
-          : "HOSTS FOLLOWED",
+      value: formatCompact(hosts),
+      label: hosts === 1 ? "HOST FOLLOWED" : "HOSTS FOLLOWED",
+      active: hosts > 0,
     },
     {
       key: "stamps",
       value: formatCompact(stamps),
       label: stamps === 1 ? "STAMP EARNED" : "STAMPS EARNED",
-      emphasize: true,
+      active: stamps > 0,
     },
   ];
 }
 
 export function fanOgStampChips(
-  page: Pick<FanPassportPublicPage, "badges">,
-): FanOgStampChip[] {
+  page: Pick<FanPassportPublicPage, "badges" | "badges_earned_count">,
+): { chips: FanOgStampChip[]; extra: number; summary: string | null } {
   const earned = (page.badges || []).filter((b) => b.earned !== false);
-  return earned.slice(0, 5).map((badge, i) => fanOgStampChip(badge, i));
+  const total = Math.max(page.badges_earned_count ?? 0, earned.length);
+  if (total <= 0) return { chips: [], extra: 0, summary: null };
+  const chips = earned.slice(0, 4).map((badge, i) => fanOgStampChip(badge, i));
+  const extra = Math.max(0, total - chips.length);
+  const summary =
+    total === 1 ? "1 passport stamp earned" : `${total} passport stamps earned`;
+  return { chips, extra, summary };
 }
 
 function fanOgStampChip(badge: FanBadge, index: number): FanOgStampChip {
-  const name = truncateEllipsis(badge.name || "Stamp", 22) || "Stamp";
+  const name = truncateEllipsis(badge.name || "Stamp", 18) || "Stamp";
   return {
     key: badge.id || badge.slug || `stamp-${index}`,
     label: name,
@@ -157,7 +196,7 @@ export function fanOgDescription(page: FanPassportPublicPage): string {
     return truncateEllipsis(bio, 160);
   }
   return truncateEllipsis(
-    `See ${name}'s verified nights, stamps, favourite scenes and Fan Passport on Pàdéyá.`,
+    `View ${name}'s public Fan Passport, hosts followed, event activity and stamps on Pàdéyá.`,
     160,
   );
 }

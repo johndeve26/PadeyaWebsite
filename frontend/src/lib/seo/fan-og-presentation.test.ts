@@ -4,12 +4,16 @@ import {
   fanOgBio,
   fanOgDescription,
   fanOgDisplayName,
+  fanOgDisplayNameFontSize,
+  fanOgEmptyStampCopy,
   fanOgLocation,
   fanOgScenes,
   fanOgShareHandle,
   fanOgShowVerified,
   fanOgStampChips,
   fanOgStats,
+  fanOgStatusLine,
+  fanOgSupportCopy,
   fanOgTitle,
   fanOgUsername,
   pickFanAvatarUrl,
@@ -20,140 +24,118 @@ function basePage(
   overrides: Partial<FanPassportPublicPage> = {},
 ): FanPassportPublicPage {
   return {
-    username: "toluwave",
+    username: "abiodun",
     user_id: "u1",
-    display_name: "Tolu Nightlife Explorer",
+    display_name: "Abiodun",
     avatar_url: "/media/avatar.jpg",
-    tagline: "Chasing afterparties and verified Detty stamps.",
+    tagline: "Let's get the party started",
     bio: null,
     visibility: "public",
     is_superfan: false,
-    events_attended: 1,
-    hosts_followed: 3,
-    badges_earned_count: 8,
+    events_attended: 0,
+    hosts_followed: 5,
+    badges_earned_count: 0,
     reviews_written: 0,
-    cities_explored: 1,
-    categories_explored: 2,
+    cities_explored: 0,
+    categories_explored: 0,
     connections_count: 0,
-    favorite_categories: ["Nightlife", "Music"],
+    favorite_categories: [],
     favorite_cities: ["Lagos"],
-    badges: [
-      {
-        id: "b1",
-        slug: "first-ticket",
-        name: "First Ticket",
-        description: "x",
-        criteria_key: "first_ticket",
-        awarded_at: "2026-01-01",
-        earned: true,
-      },
-      {
-        id: "b2",
-        slug: "checked-in-attendee",
-        name: "Checked-in Attendee",
-        description: "x",
-        criteria_key: "checked_in_attendee",
-        awarded_at: "2026-01-02",
-        earned: true,
-      },
-      {
-        id: "b3",
-        slug: "nightlife-explorer",
-        name: "Nightlife Explorer",
-        description: "x",
-        criteria_key: "nightlife_explorer",
-        awarded_at: "2026-01-03",
-        earned: true,
-      },
-    ],
+    badges: [],
     attended_events: [],
     followed_hosts: [],
     reviews: [],
     vault_unlocks: [],
-    share_path: "/f/toluwave",
+    share_path: "/f/abiodun",
     ...overrides,
   };
 }
 
-describe("fan OG presentation", () => {
-  it("builds verified title and share handle from share_path", () => {
-    expect(fanOgTitle(basePage())).toBe(
-      "Tolu Nightlife Explorer — Verified Fan Passport | Pàdéyá",
+describe("fan OG presentation (improved card)", () => {
+  it("never infers verification from activity", () => {
+    expect(fanOgShowVerified(basePage({ events_attended: 5, badges_earned_count: 3 }))).toBe(
+      false,
     );
-    expect(fanOgShareHandle(basePage())).toBe("padeya.com/f/toluwave");
+    expect(fanOgTitle(basePage())).toBe("Abiodun's Fan Passport | Pàdéyá");
+    expect(fanOgStatusLine(basePage())).toBe("Public Passport");
   });
 
-  it("uses neutral title when no verified activity", () => {
-    expect(
-      fanOgTitle(
-        basePage({
-          events_attended: 0,
-          hosts_followed: 0,
-          badges_earned_count: 0,
-          badges: [],
-          is_superfan: false,
-        }),
-      ),
-    ).toBe("Tolu Nightlife Explorer's Fan Passport | Pàdéyá");
-    expect(
-      fanOgShowVerified(
-        basePage({
-          events_attended: 0,
-          badges_earned_count: 0,
-          badges: [],
-          is_superfan: false,
-        }),
-      ),
-    ).toBe(false);
+  it("honors an explicit verified flag when present", () => {
+    const verified = {
+      ...basePage(),
+      is_verified: true,
+    } as FanPassportPublicPage & { is_verified: boolean };
+    expect(fanOgShowVerified(verified)).toBe(true);
+    expect(fanOgTitle(verified)).toBe("Abiodun — Verified Fan Passport | Pàdéyá");
+    expect(fanOgStatusLine(verified)).toBe("Verified Passport");
   });
 
-  it("formats identity fields with truncation", () => {
-    expect(fanOgDisplayName(basePage())).toBe("Tolu Nightlife Explorer");
-    expect(fanOgUsername(basePage())).toBe("@toluwave");
+  it("sizes display names and formats identity", () => {
+    expect(fanOgDisplayNameFontSize("Abiodun")).toBe(60);
+    expect(fanOgDisplayNameFontSize("A".repeat(45))).toBe(40);
+    expect(fanOgUsername(basePage())).toBe("@abiodun");
     expect(fanOgLocation(basePage())).toBe("Lagos");
-    expect(fanOgBio(basePage())).toContain("afterparties");
-    expect(fanOgScenes(basePage())).toBe("Nightlife · Music");
+    expect(fanOgBio(basePage())).toContain("party");
+  });
+
+  it("shows progress copy for empty stamps and activity-aware support line", () => {
+    expect(fanOgEmptyStampCopy(basePage())).toContain("unlocks a passport stamp");
+    expect(fanOgSupportCopy(basePage())).toContain("Build your nightlife story");
     expect(
-      fanOgDisplayName(basePage({ display_name: "A".repeat(60) })).length,
-    ).toBeLessThanOrEqual(35);
-  });
-
-  it("hides empty location and scenes", () => {
-    expect(fanOgLocation(basePage({ favorite_cities: [] }))).toBeNull();
-    expect(fanOgScenes(basePage({ favorite_categories: [] }))).toBeNull();
-  });
-
-  it("formats stats and stamp chips from public badges only", () => {
-    const stats = fanOgStats(basePage());
-    expect(stats.map((s) => `${s.value} ${s.label}`)).toEqual([
-      "1 EVENT ATTENDED",
-      "3 HOSTS FOLLOWED",
-      "8 STAMPS EARNED",
-    ]);
-    expect(fanOgStampChips(basePage()).map((c) => c.label)).toEqual([
-      "First Ticket",
-      "Checked-in Attendee",
-      "Nightlife Explorer",
-    ]);
-  });
-
-  it("uses discover fallback description when bio is short", () => {
+      fanOgSupportCopy(basePage({ events_attended: 2 })),
+    ).toContain("Verified nights");
     expect(
-      fanOgDescription(basePage({ tagline: "Hi", bio: null })),
-    ).toContain("See Tolu Nightlife Explorer");
-  });
-
-  it("prefers avatar media og_url", () => {
-    expect(
-      pickFanAvatarUrl(
+      fanOgEmptyStampCopy(
         basePage({
-          avatar_media: {
-            og_url: "/og.webp",
-            display_url: "/d.jpg",
-            url: "/u.jpg",
-          },
+          badges_earned_count: 2,
+          badges: [
+            {
+              id: "b1",
+              slug: "first-ticket",
+              name: "First Ticket",
+              description: "x",
+              criteria_key: "first_ticket",
+              awarded_at: "2026-01-01",
+              earned: true,
+            },
+          ],
         }),
       ),
-    ).toBe("/og.webp");
+    ).toBeNull();
+  });
+
+  it("formats horizontal stats with active flags", () => {
+    const stats = fanOgStats(basePage());
+    expect(stats.map((s) => s.value)).toEqual(["0", "5", "0"]);
+    expect(stats.find((s) => s.key === "hosts")?.active).toBe(true);
+    expect(stats.find((s) => s.key === "events")?.active).toBe(false);
+  });
+
+  it("caps stamp chips and reports extras", () => {
+    const badges = Array.from({ length: 6 }, (_, i) => ({
+      id: `b${i}`,
+      slug: `s${i}`,
+      name: `Stamp ${i}`,
+      description: "x",
+      criteria_key: "first_ticket",
+      awarded_at: "2026-01-01",
+      earned: true,
+    }));
+    const pack = fanOgStampChips(
+      basePage({ badges, badges_earned_count: 6 }),
+    );
+    expect(pack.chips).toHaveLength(4);
+    expect(pack.extra).toBe(2);
+    expect(pack.summary).toContain("6 passport stamps");
+  });
+
+  it("uses public-safe description fallback", () => {
+    expect(fanOgDescription(basePage({ tagline: "Hi", bio: null }))).toContain(
+      "public Fan Passport",
+    );
+    expect(fanOgShareHandle(basePage())).toBe("padeya.com/f/abiodun");
+    expect(fanOgScenes(basePage())).toBeNull();
+    expect(pickFanAvatarUrl(basePage())).toBe("/media/avatar.jpg");
+    expect(fanOgDisplayName(basePage())).toBe("Abiodun");
   });
 });

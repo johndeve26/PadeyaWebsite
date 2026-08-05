@@ -1,6 +1,6 @@
 /**
  * Premium Fan Passport share card (1200×630).
- * Identity / stamps / scenes — no cover banner (distinct from Host Legacy OG).
+ * Identity-first passport card — no cover banner; horizontal stats; progress empty state.
  */
 
 import { ImageResponse } from "next/og";
@@ -12,12 +12,16 @@ import {
   FAN_OG_MUTED,
   fanOgBio,
   fanOgDisplayName,
+  fanOgDisplayNameFontSize,
+  fanOgEmptyStampCopy,
   fanOgLocation,
   fanOgScenes,
   fanOgShareHandle,
   fanOgShowVerified,
   fanOgStampChips,
   fanOgStats,
+  fanOgStatusLine,
+  fanOgSupportCopy,
   fanOgUsername,
   pickFanAvatarUrl,
   type FanOgStampChip,
@@ -36,56 +40,109 @@ import type { FanPassportPublicPage } from "@/lib/types/passport";
 
 export { PROFILE_OG_CONTENT_TYPE, PROFILE_OG_SIZE };
 
-const AVATAR = 230;
-const PAD_X = 56;
-const PAD_Y = 42;
+const AVATAR = 236;
+const PAD_X = 52;
+const PAD_Y = 38;
 
-function StatRow({ stat }: { stat: FanOgStat }) {
-  const accent = stat.emphasize ? FAN_OG_GOLD : brand.colors.green;
+function Seal({ verified }: { verified: boolean }) {
+  const accent = verified ? FAN_OG_GOLD : brand.colors.green;
   return (
     <div
       style={{
         display: "flex",
-        flexDirection: "row",
+        width: 148,
+        height: 148,
+        borderRadius: 74,
+        border: `3px solid ${accent}`,
+        backgroundColor: "rgba(0,0,0,0.45)",
         alignItems: "center",
-        marginBottom: 18,
+        justifyContent: "center",
+        flexDirection: "column",
+        boxShadow: `0 0 24px ${verified ? "rgba(212,175,55,0.25)" : "rgba(142,240,18,0.22)"}`,
       }}
     >
       <div
         style={{
           display: "flex",
-          width: 14,
-          height: 14,
-          borderRadius: stat.key === "stamps" ? 3 : 7,
+          width: 26,
+          height: 26,
+          borderRadius: 6,
           backgroundColor: accent,
-          marginRight: 14,
+          marginBottom: 8,
         }}
       />
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <div
-          style={{
-            display: "flex",
-            fontSize: stat.emphasize ? 42 : 36,
-            fontWeight: 800,
-            color: accent,
-            lineHeight: 1,
-            letterSpacing: -0.8,
-          }}
-        >
-          {stat.value}
-        </div>
-        <div
-          style={{
-            display: "flex",
-            fontSize: 14,
-            fontWeight: 700,
-            letterSpacing: 1.2,
-            color: FAN_OG_MUTED,
-            marginTop: 4,
-          }}
-        >
-          {stat.label}
-        </div>
+      <div
+        style={{
+          display: "flex",
+          fontSize: 12,
+          fontWeight: 800,
+          letterSpacing: 1.2,
+          color: accent,
+        }}
+      >
+        {verified ? "VERIFIED" : "PUBLIC"}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: 1,
+          color: brand.colors.paper,
+          marginTop: 2,
+        }}
+      >
+        FAN PASSPORT
+      </div>
+      <div
+        style={{
+          display: "flex",
+          fontSize: 10,
+          fontWeight: 700,
+          color: FAN_OG_DIM,
+          marginTop: 2,
+        }}
+      >
+        ON PÀDÉYÁ
+      </div>
+    </div>
+  );
+}
+
+function StatColumn({ stat }: { stat: FanOgStat }) {
+  const color = stat.active ? brand.colors.green : FAN_OG_MUTED;
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        flex: 1,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          fontSize: 48,
+          fontWeight: 800,
+          color,
+          lineHeight: 1,
+          letterSpacing: -1,
+        }}
+      >
+        {stat.value}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          fontSize: 15,
+          fontWeight: 700,
+          letterSpacing: 1.1,
+          color: FAN_OG_DIM,
+          marginTop: 8,
+        }}
+      >
+        {stat.label}
       </div>
     </div>
   );
@@ -96,24 +153,22 @@ function StampChip({ chip }: { chip: FanOgStampChip }) {
     <div
       style={{
         display: "flex",
-        flexDirection: "column",
+        flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center",
-        width: 72,
-        height: 72,
-        borderRadius: 36,
         border: `2px solid ${chip.color}`,
-        backgroundColor: "rgba(0,0,0,0.45)",
-        marginRight: 10,
-        opacity: 0.92,
+        borderRadius: 999,
+        padding: "6px 12px",
+        marginRight: 8,
+        backgroundColor: "rgba(0,0,0,0.4)",
       }}
     >
       <div
         style={{
           display: "flex",
-          fontSize: 16,
+          fontSize: 14,
           fontWeight: 800,
           color: chip.color,
+          marginRight: 6,
         }}
       >
         {chip.initials}
@@ -121,13 +176,9 @@ function StampChip({ chip }: { chip: FanOgStampChip }) {
       <div
         style={{
           display: "flex",
-          fontSize: 8,
-          fontWeight: 700,
+          fontSize: 12,
+          fontWeight: 600,
           color: FAN_OG_MUTED,
-          marginTop: 2,
-          maxWidth: 60,
-          textAlign: "center",
-          justifyContent: "center",
         }}
       >
         {chip.label}
@@ -139,17 +190,30 @@ function StampChip({ chip }: { chip: FanOgStampChip }) {
 export async function buildFanPassportOgImage(
   page: FanPassportPublicPage | null,
 ): Promise<Response> {
-  const displayName = page ? fanOgDisplayName(page) : "Fan Passport";
-  const username = page ? fanOgUsername(page) : "";
-  const location = page ? fanOgLocation(page) : null;
-  const bio = page ? fanOgBio(page) : "Verified nights, stamps and scenes on Pàdéyá";
-  const scenes = page ? fanOgScenes(page) : null;
-  const verified = page ? fanOgShowVerified(page) : false;
-  const stats = page ? fanOgStats(page) : [];
-  const stamps = page ? fanOgStampChips(page) : [];
-  const shareHandle = page ? fanOgShareHandle(page) : "padeya.com";
+  if (!page) {
+    const { buildProfileOgImage } = await import("@/lib/seo/profile-og-image");
+    return buildProfileOgImage({
+      displayName: "Fan Passport",
+      subtitle: "Pàdéyá",
+      avatarUrl: null,
+    });
+  }
+
+  const displayName = fanOgDisplayName(page);
+  const nameSize = fanOgDisplayNameFontSize(displayName);
+  const username = fanOgUsername(page);
+  const location = fanOgLocation(page);
+  const bio = fanOgBio(page);
+  const scenes = fanOgScenes(page);
+  const verified = fanOgShowVerified(page);
+  const statusLine = fanOgStatusLine(page);
+  const stats = fanOgStats(page);
+  const stampPack = fanOgStampChips(page);
+  const emptyStamp = fanOgEmptyStampCopy(page);
+  const support = fanOgSupportCopy(page);
+  const shareHandle = fanOgShareHandle(page);
   const handleLine = [username, location].filter(Boolean).join(" · ");
-  const avatarUrl = page ? pickFanAvatarUrl(page) : null;
+  const avatarUrl = pickFanAvatarUrl(page);
   const initials = initialsFromName(displayName);
 
   const [avatar, logo] = await Promise.all([
@@ -165,7 +229,7 @@ export async function buildFanPassportOgImage(
           height: "100%",
           display: "flex",
           position: "relative",
-          backgroundColor: "#0A0A0A",
+          backgroundColor: "#080808",
           color: brand.colors.paper,
           fontFamily: "ui-sans-serif, system-ui, sans-serif",
           overflow: "hidden",
@@ -178,37 +242,37 @@ export async function buildFanPassportOgImage(
             inset: 0,
             display: "flex",
             backgroundImage:
-              "radial-gradient(circle at 12% 18%, rgba(142,240,18,0.16) 0%, transparent 42%), radial-gradient(circle at 88% 78%, rgba(212,175,55,0.12) 0%, transparent 40%), linear-gradient(135deg, #111111 0%, #050505 55%, #0b1208 100%)",
+              "radial-gradient(circle at 14% 22%, rgba(142,240,18,0.14) 0%, transparent 40%), radial-gradient(circle at 90% 12%, rgba(212,175,55,0.10) 0%, transparent 36%), linear-gradient(160deg, #101010 0%, #070707 55%, #0a1208 100%)",
           }}
         />
 
-        {/* Soft passport ring behind avatar */}
+        {/* Contour rings behind avatar */}
         <div
           style={{
             position: "absolute",
-            left: PAD_X - 18,
-            top: 150,
-            width: AVATAR + 56,
-            height: AVATAR + 56,
-            borderRadius: (AVATAR + 56) / 2,
+            left: PAD_X - 10,
+            top: 118,
+            width: AVATAR + 48,
+            height: AVATAR + 48,
+            borderRadius: (AVATAR + 48) / 2,
             display: "flex",
-            border: "2px solid rgba(142,240,18,0.18)",
+            border: "2px solid rgba(142,240,18,0.16)",
           }}
         />
         <div
           style={{
             position: "absolute",
-            left: PAD_X - 4,
-            top: 164,
-            width: AVATAR + 28,
-            height: AVATAR + 28,
-            borderRadius: (AVATAR + 28) / 2,
+            left: PAD_X + 4,
+            top: 132,
+            width: AVATAR + 20,
+            height: AVATAR + 20,
+            borderRadius: (AVATAR + 20) / 2,
             display: "flex",
             border: "1px solid rgba(212,175,55,0.28)",
           }}
         />
 
-        {/* Brand logo */}
+        {/* Top: logo + seal */}
         <div
           style={{
             position: "absolute",
@@ -222,39 +286,49 @@ export async function buildFanPassportOgImage(
             // eslint-disable-next-line @next/next/no-img-element -- ImageResponse
             <img
               src={logo}
-              height={40}
-              width={122}
+              height={36}
+              width={110}
               alt=""
-              style={{ height: 40, width: 122, objectFit: "contain" }}
+              style={{ height: 36, width: 110, objectFit: "contain" }}
             />
           ) : (
             <div
               style={{
                 display: "flex",
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: 800,
                 letterSpacing: 3,
                 color: brand.colors.green,
-                textTransform: "uppercase",
               }}
             >
-              {brand.name}
+              {brand.name.toUpperCase()}
             </div>
           )}
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            top: 28,
+            right: PAD_X,
+            display: "flex",
+          }}
+        >
+          <Seal verified={verified} />
         </div>
 
         {/* Avatar */}
         <div
           style={{
             position: "absolute",
-            left: PAD_X + 10,
-            top: 178,
+            left: PAD_X + 14,
+            top: 142,
             width: AVATAR,
             height: AVATAR,
             display: "flex",
             borderRadius: AVATAR / 2,
             border: `6px solid ${FAN_OG_GOLD}`,
-            boxShadow: "0 0 0 3px rgba(142,240,18,0.55), 0 18px 40px rgba(0,0,0,0.55)",
+            boxShadow:
+              "0 0 0 3px rgba(142,240,18,0.45), 0 16px 36px rgba(0,0,0,0.55)",
             overflow: "hidden",
             backgroundColor: "#111",
           }}
@@ -297,11 +371,11 @@ export async function buildFanPassportOgImage(
           <div
             style={{
               position: "absolute",
-              left: PAD_X + 10 + AVATAR - 48,
-              top: 178 + AVATAR - 44,
-              width: 44,
-              height: 44,
-              borderRadius: 22,
+              left: PAD_X + 14 + AVATAR - 46,
+              top: 142 + AVATAR - 42,
+              width: 42,
+              height: 42,
+              borderRadius: 21,
               backgroundColor: brand.colors.green,
               border: "3px solid #000",
               display: "flex",
@@ -321,13 +395,13 @@ export async function buildFanPassportOgImage(
           </div>
         ) : null}
 
-        {/* Centre identity */}
+        {/* Identity column */}
         <div
           style={{
             position: "absolute",
-            left: PAD_X + AVATAR + 56,
+            left: PAD_X + AVATAR + 48,
             top: 118,
-            width: 430,
+            width: 520,
             display: "flex",
             flexDirection: "column",
           }}
@@ -337,13 +411,13 @@ export async function buildFanPassportOgImage(
               display: "flex",
               flexDirection: "row",
               alignItems: "center",
-              marginBottom: 12,
+              marginBottom: 10,
             }}
           >
             <div
               style={{
                 display: "flex",
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: 800,
                 letterSpacing: 3,
                 color: brand.colors.green,
@@ -358,6 +432,7 @@ export async function buildFanPassportOgImage(
                 height: 2,
                 backgroundColor: "rgba(142,240,18,0.35)",
                 marginLeft: 12,
+                maxWidth: 180,
               }}
             />
           </div>
@@ -365,13 +440,13 @@ export async function buildFanPassportOgImage(
           <div
             style={{
               display: "flex",
-              fontSize: 40,
+              fontSize: nameSize,
               fontWeight: 800,
               letterSpacing: -1,
-              lineHeight: 1.08,
+              lineHeight: 1.05,
               color: brand.colors.paper,
               marginBottom: 8,
-              maxWidth: 420,
+              maxWidth: 500,
             }}
           >
             {displayName}
@@ -381,9 +456,9 @@ export async function buildFanPassportOgImage(
             <div
               style={{
                 display: "flex",
-                fontSize: 22,
+                fontSize: 24,
                 color: FAN_OG_MUTED,
-                marginBottom: 10,
+                marginBottom: 8,
               }}
             >
               {handleLine}
@@ -393,97 +468,50 @@ export async function buildFanPassportOgImage(
           <div
             style={{
               display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 12,
+              fontSize: 18,
+              fontWeight: 700,
+              color: verified ? brand.colors.green : FAN_OG_MUTED,
+              marginBottom: 10,
             }}
           >
-            {verified ? (
-              <>
-                <div
-                  style={{
-                    display: "flex",
-                    width: 16,
-                    height: 16,
-                    borderRadius: 8,
-                    backgroundColor: brand.colors.green,
-                    marginRight: 8,
-                  }}
-                />
-                <div
-                  style={{
-                    display: "flex",
-                    fontSize: 18,
-                    fontWeight: 700,
-                    color: brand.colors.green,
-                  }}
-                >
-                  Verified on {brand.name}
-                </div>
-              </>
-            ) : (
-              <div
-                style={{
-                  display: "flex",
-                  fontSize: 18,
-                  fontWeight: 700,
-                  color: FAN_OG_MUTED,
-                }}
-              >
-                Fan Passport
-              </div>
-            )}
+            {statusLine}
           </div>
 
           <div
             style={{
               display: "flex",
-              fontSize: 20,
+              fontSize: 24,
               color: FAN_OG_MUTED,
-              lineHeight: 1.35,
-              marginBottom: scenes ? 14 : 0,
-              maxWidth: 420,
+              lineHeight: 1.3,
+              maxWidth: 500,
+              marginBottom: scenes ? 10 : 0,
             }}
           >
             {bio}
           </div>
 
           {scenes ? (
-            <div style={{ display: "flex", flexDirection: "column" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
               <div
                 style={{
                   display: "flex",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 4,
+                  width: 10,
+                  height: 10,
+                  borderRadius: 5,
+                  backgroundColor: brand.colors.green,
+                  marginRight: 8,
                 }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    width: 10,
-                    height: 10,
-                    borderRadius: 5,
-                    backgroundColor: brand.colors.green,
-                    marginRight: 8,
-                  }}
-                />
-                <div
-                  style={{
-                    display: "flex",
-                    fontSize: 12,
-                    fontWeight: 800,
-                    letterSpacing: 1.4,
-                    color: brand.colors.green,
-                  }}
-                >
-                  FAVORITE SCENE
-                </div>
-              </div>
+              />
               <div
                 style={{
                   display: "flex",
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: 600,
                   color: brand.colors.paper,
                 }}
@@ -494,197 +522,204 @@ export async function buildFanPassportOgImage(
           ) : null}
         </div>
 
-        {/* Right seal + stats */}
-        <div
-          style={{
-            position: "absolute",
-            right: PAD_X,
-            top: 96,
-            width: 250,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              width: 132,
-              height: 132,
-              borderRadius: 66,
-              border: `3px solid ${verified ? FAN_OG_GOLD : "rgba(255,255,255,0.25)"}`,
-              backgroundColor: "rgba(0,0,0,0.35)",
-              alignItems: "center",
-              justifyContent: "center",
-              flexDirection: "column",
-              marginBottom: 22,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                backgroundColor: verified ? FAN_OG_GOLD : brand.colors.green,
-                marginBottom: 8,
-              }}
-            />
-            <div
-              style={{
-                display: "flex",
-                fontSize: 11,
-                fontWeight: 800,
-                letterSpacing: 1,
-                color: verified ? FAN_OG_GOLD : FAN_OG_MUTED,
-                textAlign: "center",
-                maxWidth: 100,
-                justifyContent: "center",
-              }}
-            >
-              {verified ? "VERIFIED PASSPORT" : "FAN PASSPORT"}
-            </div>
-            <div
-              style={{
-                display: "flex",
-                fontSize: 10,
-                fontWeight: 700,
-                color: FAN_OG_DIM,
-                marginTop: 2,
-              }}
-            >
-              ON PÀDÉYÁ
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              width: "100%",
-              paddingLeft: 12,
-            }}
-          >
-            {stats.map((stat) => (
-              <StatRow key={stat.key} stat={stat} />
-            ))}
-          </div>
-        </div>
-
-        {/* Bottom stamp row */}
-        {stamps.length > 0 ? (
-          <div
-            style={{
-              position: "absolute",
-              left: PAD_X,
-              bottom: 92,
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            {stamps.map((chip) => (
-              <StampChip key={chip.key} chip={chip} />
-            ))}
-          </div>
-        ) : page ? (
-          <div
-            style={{
-              position: "absolute",
-              left: PAD_X,
-              bottom: 110,
-              display: "flex",
-              fontSize: 18,
-              color: FAN_OG_DIM,
-            }}
-          >
-            No stamps yet
-          </div>
-        ) : null}
-
-        {/* Footer CTA */}
+        {/* Horizontal stats bar */}
         <div
           style={{
             position: "absolute",
             left: PAD_X,
             right: PAD_X,
-            bottom: PAD_Y - 4,
+            top: 400,
             display: "flex",
             flexDirection: "row",
-            alignItems: "flex-end",
+            alignItems: "center",
             justifyContent: "space-between",
+            padding: "18px 28px",
+            borderRadius: 18,
+            border: "1px solid rgba(255,255,255,0.10)",
+            backgroundColor: "rgba(0,0,0,0.42)",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              fontSize: 16,
-              color: FAN_OG_DIM,
-              maxWidth: 520,
-            }}
-          >
-            Verified nights, stamps and scenes on {brand.name}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-end",
-            }}
-          >
+          {stats.map((stat, i) => (
+            <div
+              key={stat.key}
+              style={{
+                display: "flex",
+                flex: 1,
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              {i > 0 ? (
+                <div
+                  style={{
+                    display: "flex",
+                    width: 1,
+                    height: 56,
+                    backgroundColor: "rgba(142,240,18,0.25)",
+                    marginRight: 8,
+                  }}
+                />
+              ) : null}
+              <StatColumn stat={stat} />
+            </div>
+          ))}
+        </div>
+
+        {/* Stamp progress / chips */}
+        <div
+          style={{
+            position: "absolute",
+            left: PAD_X,
+            right: 420,
+            top: 508,
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          {emptyStamp ? (
             <div
               style={{
                 display: "flex",
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 4,
+                border: `1px solid rgba(212,175,55,0.45)`,
+                borderRadius: 14,
+                padding: "12px 16px",
+                backgroundColor: "rgba(0,0,0,0.4)",
+                maxWidth: 520,
               }}
             >
               <div
                 style={{
                   display: "flex",
-                  width: 14,
-                  height: 14,
-                  borderRadius: 7,
-                  backgroundColor: brand.colors.green,
-                  marginRight: 8,
+                  width: 18,
+                  height: 18,
+                  borderRadius: 4,
+                  backgroundColor: FAN_OG_GOLD,
+                  marginRight: 12,
                 }}
               />
               <div
                 style={{
                   display: "flex",
                   fontSize: 18,
-                  fontWeight: 800,
-                  letterSpacing: 0.6,
-                  color: brand.colors.green,
+                  color: FAN_OG_MUTED,
+                  lineHeight: 1.25,
                 }}
               >
-                VIEW FAN PASSPORT
+                {emptyStamp}
               </div>
             </div>
+          ) : (
             <div
               style={{
                 display: "flex",
-                fontSize: 18,
-                color: brand.colors.paper,
+                flexDirection: "column",
               }}
             >
-              {shareHandle}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 6,
+                }}
+              >
+                {stampPack.chips.map((chip) => (
+                  <StampChip key={chip.key} chip={chip} />
+                ))}
+                {stampPack.extra > 0 ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      fontSize: 16,
+                      fontWeight: 800,
+                      color: brand.colors.green,
+                    }}
+                  >
+                    +{stampPack.extra}
+                  </div>
+                ) : null}
+              </div>
+              {stampPack.summary ? (
+                <div
+                  style={{
+                    display: "flex",
+                    fontSize: 15,
+                    color: FAN_OG_DIM,
+                  }}
+                >
+                  {stampPack.summary}
+                </div>
+              ) : null}
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Subtle outer frame */}
+        {/* Bottom support + CTA */}
         <div
           style={{
             position: "absolute",
-            left: 18,
-            top: 18,
-            right: 18,
-            bottom: 18,
+            left: PAD_X,
+            bottom: PAD_Y - 2,
             display: "flex",
-            borderRadius: 22,
-            border: "1px solid rgba(255,255,255,0.08)",
+            fontSize: 16,
+            color: FAN_OG_DIM,
+            maxWidth: 380,
+          }}
+        >
+          {support}
+        </div>
+
+        <div
+          style={{
+            position: "absolute",
+            right: PAD_X,
+            bottom: PAD_Y - 6,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            border: `2px solid rgba(142,240,18,0.55)`,
+            borderRadius: 16,
+            padding: "12px 18px",
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              fontSize: 18,
+              fontWeight: 800,
+              letterSpacing: 0.8,
+              color: brand.colors.green,
+              marginBottom: 4,
+            }}
+          >
+            VIEW FAN PASSPORT →
+          </div>
+          <div
+            style={{
+              display: "flex",
+              fontSize: 17,
+              color: brand.colors.paper,
+            }}
+          >
+            {shareHandle}
+          </div>
+        </div>
+
+        {/* Outer frame */}
+        <div
+          style={{
+            position: "absolute",
+            left: 16,
+            top: 16,
+            right: 16,
+            bottom: 16,
+            display: "flex",
+            borderRadius: 20,
+            border: "1px solid rgba(255,255,255,0.07)",
           }}
         />
       </div>

@@ -321,7 +321,7 @@ describe("fan passport SEO", () => {
           ? String(first.url)
           : "";
     expect(url).toBe("https://padeya.com/f/ada/opengraph-image");
-    expect(meta.title).toBe("Ada — Verified Fan Passport | Pàdéyá");
+    expect(meta.title).toBe("Ada's Fan Passport | Pàdéyá");
     expect(
       (meta.openGraph as { type?: string } | undefined)?.type,
     ).toBe("profile");

@@ -54,7 +54,7 @@ function page(
 }
 
 describe("buildFanPassportOgImage", () => {
-  it("returns a PNG for a verified fan", async () => {
+  it("returns a PNG for an active fan passport", async () => {
     const res = await buildFanPassportOgImage(page());
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("image/png");
