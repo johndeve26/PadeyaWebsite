@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 
 import type { LegacyPage } from "@/lib/types/legacy";
+import {
+  hostOgDescription,
+  hostOgTitle,
+} from "@/lib/seo/host-og-presentation";
 import { PROFILE_OG_SIZE } from "@/lib/seo/profile-og-size";
 import { resolvePublicAssetUrl } from "@/lib/seo/public-asset";
 import { absoluteUrl, buildPageMetadata } from "@/lib/seo/site";
@@ -25,16 +29,22 @@ export function buildHostMetadata(opts: {
   noIndex?: boolean;
   ogImageWidth?: number;
   ogImageHeight?: number;
+  /** Override default title derived from displayName. */
+  title?: string;
+  /** Override default description. */
+  description?: string;
+  imageAlt?: string;
 }): Metadata {
   const locationBit = opts.location?.trim();
   const categoryBit = opts.category?.trim();
   const extras = [categoryBit, locationBit].filter(Boolean).join(" · ");
   const description =
+    opts.description?.trim() ||
     opts.bio?.trim().slice(0, 160) ||
     `${opts.displayName} on Pàdéyá${extras ? ` — ${extras}` : ""} — upcoming events, Memories, and Vault.`;
 
-  return buildPageMetadata({
-    title: opts.displayName,
+  const meta = buildPageMetadata({
+    title: opts.title?.trim() || opts.displayName,
     description,
     path: hostLegacyCanonicalPath(opts.slug),
     image: resolvePublicAssetUrl(opts.image) ?? opts.image,
@@ -42,6 +52,24 @@ export function buildHostMetadata(opts: {
     ogImageHeight: opts.ogImageHeight,
     noIndex: opts.noIndex,
   });
+
+  const ogImages = meta.openGraph?.images;
+  const first = Array.isArray(ogImages) ? ogImages[0] : ogImages;
+  const withAlt =
+    first && typeof first === "object" && opts.imageAlt
+      ? Array.isArray(ogImages)
+        ? [{ ...first, alt: opts.imageAlt }]
+        : { ...first, alt: opts.imageAlt }
+      : ogImages;
+
+  return {
+    ...meta,
+    openGraph: {
+      ...meta.openGraph,
+      type: "profile",
+      images: withAlt,
+    } as Metadata["openGraph"],
+  };
 }
 
 export function buildHostMetadataFromPage(page: LegacyPage): Metadata {
@@ -65,10 +93,13 @@ export function buildHostMetadataFromPage(page: LegacyPage): Metadata {
     slug: page.username,
     category,
     location,
-    // Same-origin DP card from avatar (not cover/logo).
+    title: hostOgTitle(page),
+    description: hostOgDescription(page),
+    // Same-origin dynamic share card (cover + DP + trust stats).
     image: hostLegacyOgImagePath(page.username),
     ogImageWidth: PROFILE_OG_SIZE.width,
     ogImageHeight: PROFILE_OG_SIZE.height,
+    imageAlt: `${page.display_name.trim() || "Host"} on Pàdéyá`,
   });
 }
 

@@ -183,6 +183,31 @@ describe("host Legacy SEO", () => {
     expect(url).toBe("https://padeya.com/u/djmaze/opengraph-image");
   });
 
+  it("emits premium share title and profile OG type", () => {
+    const meta = buildHostMetadataFromPage({
+      ...page,
+      verified: true,
+      legacy_trust: {
+        score: 92,
+        display_score: 92,
+        tier: { key: "rising", name: "Rising", description: "", rank: 2 },
+        legacy_status: "Rising",
+        is_provisional: false,
+        provisional_reasons: [],
+        headline: "",
+        evidence: [],
+        factor_bands: [],
+      },
+    } as LegacyPage);
+    expect(meta.title).toBe(
+      "DJ Maze — Verified Host & Legacy 92 | Pàdéyá",
+    );
+    expect(
+      (meta.openGraph as { type?: string } | undefined)?.type,
+    ).toBe("profile");
+    expect(String(meta.description)).toContain("Nights that move");
+  });
+
   it("prefers avatar over cover in host JSON-LD", () => {
     const ld = hostLegacyJsonLd(page);
     const org = ld.mainEntity as Record<string, unknown>;

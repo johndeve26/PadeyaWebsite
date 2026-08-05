@@ -1,55 +1,19 @@
 /**
  * Profile share cards — image-first DP showcase (1200×630).
  *
- * WhatsApp/iMessage need a bounded raster; the composed “passport badge”
- * layout felt mild. Prefer a full-bleed avatar with a light bottom identity
- * strip so the photo remains the hero.
+ * Used by Fan Passport. Host Legacy uses the richer `host-og-image` card.
  */
 
 import { ImageResponse } from "next/og";
 
 import { brand } from "@/lib/brand";
-import { resolvePublicAssetUrl } from "@/lib/seo/public-asset";
+import {
+  fetchRasterAsDataUrl,
+  initialsFromName,
+} from "@/lib/seo/og-raster";
 import { PROFILE_OG_SIZE } from "@/lib/seo/profile-og-size";
 
 export { PROFILE_OG_CONTENT_TYPE, PROFILE_OG_SIZE } from "@/lib/seo/profile-og-size";
-
-async function avatarDataUrl(
-  avatarUrl: string | null | undefined,
-): Promise<string | null> {
-  const absolute = resolvePublicAssetUrl(avatarUrl);
-  if (!absolute) return null;
-  try {
-    const pathname = new URL(absolute).pathname.toLowerCase();
-    if (pathname.endsWith(".svg") || pathname.includes(".svg/")) return null;
-
-    const res = await fetch(absolute, {
-      next: { revalidate: 3600 },
-      headers: { Accept: "image/*,*/*;q=0.8" },
-    });
-    if (!res.ok) return null;
-    const contentType = (res.headers.get("content-type") || "").toLowerCase();
-    if (contentType.includes("svg")) return null;
-
-    const bytes = await res.arrayBuffer();
-    if (bytes.byteLength === 0 || bytes.byteLength > 8_000_000) return null;
-
-    const mime = contentType.startsWith("image/")
-      ? contentType.split(";")[0]!.trim()
-      : "image/png";
-    const b64 = Buffer.from(bytes).toString("base64");
-    return `data:${mime};base64,${b64}`;
-  } catch {
-    return null;
-  }
-}
-
-function initialsFromName(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return "P";
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
-}
 
 export async function buildProfileOgImage(opts: {
   displayName: string;
@@ -58,7 +22,7 @@ export async function buildProfileOgImage(opts: {
 }): Promise<ImageResponse> {
   const name = opts.displayName.trim() || brand.name;
   const subtitle = opts.subtitle.trim();
-  const avatar = await avatarDataUrl(opts.avatarUrl);
+  const avatar = await fetchRasterAsDataUrl(opts.avatarUrl);
   const initials = initialsFromName(name);
 
   return new ImageResponse(
