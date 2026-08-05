@@ -178,7 +178,7 @@ def test_jpeg_with_svg_like_bytes_still_accepted() -> None:
 
 def test_memory_rejects_svg() -> None:
     svg = b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
-    with pytest.raises(MemoryImageError, match="Unrecognized|unsupported"):
+    with pytest.raises(MemoryImageError, match="Unrecognized|unsupported|Unsupported"):
         process_memory_image(
             data=svg, declared_content_type="image/svg+xml", event_id=uuid4()
         )

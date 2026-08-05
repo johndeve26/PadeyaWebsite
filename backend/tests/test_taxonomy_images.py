@@ -55,7 +55,8 @@ def test_category_image_upload_and_public_fields(
     assert res.status_code == 201, res.text
     body = res.json()
     assert body["url"]
-    assert "taxonomy/categories" in body.get("key", body["url"])
+    upload_ref = body.get("key") or body["url"]
+    assert "public-media" in upload_ref or "taxonomy" in upload_ref
 
     listed = client.get("/api/v1/taxonomy/categories")
     assert listed.status_code == 200

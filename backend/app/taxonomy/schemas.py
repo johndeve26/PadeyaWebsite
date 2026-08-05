@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -234,10 +235,15 @@ class LocationPublic(BaseModel):
 
 class TaxonomyImageUploadResponse(BaseModel):
     url: str
-    key: str
+    key: str | None = None
     kind: str
     term_id: UUID
     image_role: str
+    thumbnail_url: str | None = None
+    card_url: str | None = None
+    display_url: str | None = None
+    full_url: str | None = None
+    media: dict[str, Any] | None = None
 
 
 class TaxonomyVisualUpdate(BaseModel):

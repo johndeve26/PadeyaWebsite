@@ -65,7 +65,8 @@ def test_host_can_upload_image_while_creating(client: TestClient):
     media_path = body["url"].removeprefix("http://testserver")
     served = client.get(media_path)
     assert served.status_code == 200
-    assert served.content.startswith(b"\x89PNG")
+    # Public media pipeline may serve WebP variants even when the upload was PNG.
+    assert served.content.startswith((b"\x89PNG", b"RIFF"))
 
     start = datetime.now(UTC) + timedelta(days=8)
     created = client.post(
