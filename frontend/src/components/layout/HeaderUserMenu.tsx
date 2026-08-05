@@ -3,9 +3,11 @@
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Media } from "@/components/ui";
 import type { User } from "@/lib/auth/types";
 import { userHasRole } from "@/lib/auth/permissions";
 import { cn } from "@/lib/cn";
+import { resolveMediaUrl } from "@/lib/media";
 
 import { HeaderDropdown, type HeaderMenuItem } from "./HeaderDropdown";
 import { useHeaderAccess } from "./HeaderWorkspaceButton";
@@ -15,6 +17,43 @@ function initials(name: string): string {
   if (parts.length === 0) return "?";
   if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
   return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
+}
+
+function HeaderAccountAvatar({
+  user,
+  tone,
+}: {
+  user: User;
+  tone: "default" | "onDark";
+}) {
+  const avatarSrc = resolveMediaUrl(user.avatar_url);
+  if (avatarSrc) {
+    return (
+      <span
+        className="relative flex h-7 w-7 shrink-0 overflow-hidden rounded-full border border-white/25 bg-ink"
+        aria-hidden
+      >
+        <Media
+          src={avatarSrc}
+          alt=""
+          className="h-full w-full object-cover"
+          sizes="28px"
+          enlargeable={false}
+        />
+      </span>
+    );
+  }
+  return (
+    <span
+      className={cn(
+        "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-bold",
+        tone === "onDark" ? "bg-paper text-ink" : "bg-ink text-primary",
+      )}
+      aria-hidden
+    >
+      {initials(user.full_name)}
+    </span>
+  );
 }
 
 export function HeaderUserMenu({
@@ -64,19 +103,7 @@ export function HeaderUserMenu({
       ariaLabel="Account menu"
       align="right"
       tone={tone}
-      label={
-        <span
-          className={cn(
-            "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-bold",
-            tone === "onDark"
-              ? "bg-paper text-ink"
-              : "bg-ink text-primary",
-          )}
-          aria-hidden
-        >
-          {initials(user.full_name)}
-        </span>
-      }
+      label={<HeaderAccountAvatar user={user} tone={tone} />}
       items={items}
     />
   );
