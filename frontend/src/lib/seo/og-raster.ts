@@ -1,6 +1,7 @@
 /**
  * Raster helpers for next/og ImageResponse cards.
- * WhatsApp/iMessage reject SVG; broken remote URLs must not crash generation.
+ * WhatsApp/iMessage reject SVG; @vercel/og (Satori/resvg) rejects WebP/AVIF —
+ * convert those to PNG. Broken remote URLs must not crash generation.
  */
 
 import { readFile } from "node:fs/promises";
@@ -8,14 +9,47 @@ import path from "node:path";
 
 import { brand } from "@/lib/brand";
 import { resolvePublicAssetUrl } from "@/lib/seo/public-asset";
+import { absoluteUrl } from "@/lib/seo/site";
 
 const MAX_BYTES = 8_000_000;
+
+/** Formats Satori/resvg cannot decode into ImageResponse. */
+const NEEDS_PNG_REENCODE = /image\/(webp|avif|heic|heif)/i;
 
 export function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return "P";
   if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
   return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
+}
+
+async function toPngDataUrl(bytes: ArrayBuffer): Promise<string | null> {
+  try {
+    const sharp = (await import("sharp")).default;
+    const png = await sharp(Buffer.from(bytes))
+      .rotate()
+      .resize({
+        width: 1200,
+        height: 1200,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .png({ compressionLevel: 8 })
+      .toBuffer();
+    if (!png.byteLength || png.byteLength > MAX_BYTES) return null;
+    return `data:image/png;base64,${png.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
+function looksLikeWebpPath(url: string): boolean {
+  try {
+    const pathname = new URL(url).pathname.toLowerCase();
+    return pathname.endsWith(".webp") || pathname.endsWith(".avif");
+  } catch {
+    return /\.webp($|\?)/i.test(url) || /\.avif($|\?)/i.test(url);
+  }
 }
 
 /** Fetch a remote/absolute raster into a data URL for ImageResponse. */
@@ -39,9 +73,19 @@ export async function fetchRasterAsDataUrl(
     const bytes = await res.arrayBuffer();
     if (bytes.byteLength === 0 || bytes.byteLength > MAX_BYTES) return null;
 
+    const needsReencode =
+      NEEDS_PNG_REENCODE.test(contentType) || looksLikeWebpPath(absolute);
+    if (needsReencode) {
+      return toPngDataUrl(bytes);
+    }
+
     const mime = contentType.startsWith("image/")
       ? contentType.split(";")[0]!.trim()
       : "image/png";
+    // JPEG/PNG/GIF — pass through. Still clamp huge rasters via sharp when big.
+    if (bytes.byteLength > 1_500_000) {
+      return toPngDataUrl(bytes);
+    }
     const b64 = Buffer.from(bytes).toString("base64");
     return `data:${mime};base64,${b64}`;
   } catch {
@@ -65,9 +109,16 @@ export async function loadPublicAssetDataUrl(
         : ext === ".webp"
           ? "image/webp"
           : "image/png";
+    if (mime === "image/webp") {
+      return toPngDataUrl(bytes.buffer.slice(
+        bytes.byteOffset,
+        bytes.byteOffset + bytes.byteLength,
+      ));
+    }
     return `data:${mime};base64,${bytes.toString("base64")}`;
   } catch {
-    return null;
+    // Vercel serverless may omit public/ from the function FS — fall back to HTTP.
+    return fetchRasterAsDataUrl(absoluteUrl(`/${rel}`));
   }
 }
 

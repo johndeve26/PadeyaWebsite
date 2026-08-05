@@ -56,10 +56,9 @@ function StatGlyph({
           display: "flex",
           width: 14,
           height: 14,
+          borderRadius: 7,
           backgroundColor: color,
-          transform: "rotate(45deg)",
-          marginRight: 12,
-          marginLeft: 2,
+          marginRight: 10,
         }}
       />
     );
@@ -107,7 +106,7 @@ function BadgePill({
       style={{
         display: "flex",
         alignItems: "center",
-        border: `1.5px solid ${color}`,
+        border: `2px solid ${color}`,
         borderRadius: 999,
         padding: "6px 14px",
         marginRight: 10,
@@ -134,8 +133,8 @@ function BadgePill({
             display: "flex",
             width: 12,
             height: 12,
+            borderRadius: 2,
             backgroundColor: color,
-            transform: "rotate(45deg)",
             marginRight: 10,
           }}
         />
@@ -147,7 +146,7 @@ function BadgePill({
 
 export async function buildHostLegacyOgImage(
   page: LegacyPage | null,
-): Promise<ImageResponse> {
+): Promise<Response> {
   const displayName = page ? hostOgDisplayName(page) : "Host";
   const { lead, accent } = splitDisplayNameTone(displayName);
   const username = page ? hostOgUsername(page) : "";
@@ -174,7 +173,7 @@ export async function buildHostLegacyOgImage(
 
   const initials = initialsFromName(displayName);
 
-  return new ImageResponse(
+  const response = new ImageResponse(
     (
       <div
         style={{
@@ -379,12 +378,10 @@ export async function buildHostLegacyOgImage(
             <div
               style={{
                 display: "flex",
-                width: 14,
-                height: 8,
-                borderLeft: "3px solid #000",
-                borderBottom: "3px solid #000",
-                transform: "rotate(-45deg)",
-                marginTop: -2,
+                width: 12,
+                height: 12,
+                borderRadius: 6,
+                backgroundColor: "#000",
               }}
             />
           </div>
@@ -580,12 +577,10 @@ export async function buildHostLegacyOgImage(
               <div
                 style={{
                   display: "flex",
-                  width: 10,
-                  height: 10,
-                  borderTop: "3px solid #000",
-                  borderRight: "3px solid #000",
-                  transform: "rotate(45deg)",
-                  marginLeft: -2,
+                  width: 12,
+                  height: 12,
+                  borderRadius: 2,
+                  backgroundColor: "#000",
                 }}
               />
             </div>
@@ -621,8 +616,29 @@ export async function buildHostLegacyOgImage(
     {
       ...PROFILE_OG_SIZE,
       headers: {
-        "Cache-Control": "public, max-age=120, s-maxage=120, stale-while-revalidate=3600",
+        "Cache-Control":
+          "public, max-age=120, s-maxage=120, stale-while-revalidate=3600",
       },
     },
   );
+
+  // Render eagerly so WebP/Satori failures can fall back (lazy body read would 500).
+  try {
+    const buf = await response.arrayBuffer();
+    return new Response(buf, {
+      status: 200,
+      headers: {
+        "Content-Type": PROFILE_OG_CONTENT_TYPE,
+        "Cache-Control":
+          "public, max-age=120, s-maxage=120, stale-while-revalidate=3600",
+      },
+    });
+  } catch {
+    const { buildProfileOgImage } = await import("@/lib/seo/profile-og-image");
+    return buildProfileOgImage({
+      displayName,
+      subtitle: "Host on Pàdéyá",
+      avatarUrl,
+    });
+  }
 }
