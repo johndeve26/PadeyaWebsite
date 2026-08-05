@@ -4,7 +4,7 @@ import { defineConfig, devices } from "@playwright/test";
 const FE_PORT = process.env.PLAYWRIGHT_FE_PORT ?? "3000";
 const API_PORT = process.env.PLAYWRIGHT_API_PORT ?? "8000";
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${FE_PORT}`;
-const apiURL = process.env.PLAYWRIGHT_API_URL ?? `http://localhost:${API_PORT}`;
+const apiURL = process.env.PLAYWRIGHT_API_URL ?? `http://127.0.0.1:${API_PORT}`;
 
 // Whether to let Playwright start the dev server itself.
 // Set PLAYWRIGHT_SKIP_WEBSERVER=1 when the server is already running (e.g. this session).

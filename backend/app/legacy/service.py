@@ -97,12 +97,10 @@ def collect_host_metrics(db: Session, host_id: UUID) -> ScoreInputs:
             )
         )
     )
-    from app.hosts.fan_self_abuse import (
-        is_user_owner_of_host,
-        order_excluded_from_public_metrics,
-    )
+    from app.hosts.fan_self_abuse import order_excluded_from_public_metrics
     from app.payments.models import Order
 
+    owner_user_id = db.scalar(select(Host.user_id).where(Host.id == host_id))
     order_ids = {t.order_id for t in tickets if t.order_id}
     orders_by_id = {
         o.id: o
@@ -112,9 +110,7 @@ def collect_host_metrics(db: Session, host_id: UUID) -> ScoreInputs:
     external_tickets = [
         t
         for t in tickets
-        if not is_user_owner_of_host(
-            db, user_id=t.buyer_user_id, host_profile_id=host_id
-        )
+        if t.buyer_user_id != owner_user_id
         and not order_excluded_from_public_metrics(
             orders_by_id.get(t.order_id) if t.order_id else None
         )
@@ -133,9 +129,7 @@ def collect_host_metrics(db: Session, host_id: UUID) -> ScoreInputs:
     external_reviews = [
         r
         for r in review_rows
-        if not is_user_owner_of_host(
-            db, user_id=r.reviewer_user_id, host_profile_id=host_id
-        )
+        if r.reviewer_user_id != owner_user_id
     ]
     review_count = len(external_reviews)
     if external_reviews:
@@ -143,13 +137,15 @@ def collect_host_metrics(db: Session, host_id: UUID) -> ScoreInputs:
     else:
         avg_rating = None
 
-    score_row = db.scalar(select(HostLegacyScore).where(HostLegacyScore.host_id == host_id))
-
     from app.crm.follower_count import count_host_followers
+    from app.legacy.metrics_inputs import (
+        compute_refund_dispute_rate,
+        compute_repeat_buyers_rate,
+    )
 
     followers = count_host_followers(db, host_id)
-    repeat_buyers_rate = score_row.repeat_buyers_rate if score_row else None
-    refund_dispute_rate = score_row.refund_dispute_rate if score_row else None
+    repeat_buyers_rate = compute_repeat_buyers_rate(db, host_id)
+    refund_dispute_rate = compute_refund_dispute_rate(db, host_id)
 
     return ScoreInputs(
         average_verified_rating=(

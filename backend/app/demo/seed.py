@@ -3381,6 +3381,9 @@ def seed_demo_data(
         placement_counts = apply_demo_featured_placements(db)
         _force_legacy_tiers(db, hosts)
         _seed_legacy_studio(db, hosts)
+        from app.demo.legacy_trust_seed import seed_legacy_trust_showcase_hosts
+
+        seed_legacy_trust_showcase_hosts(db)
         log_seed_phase("starting sponsorship slots", script="demo")
         slot_count = _seed_sponsorships(db, hosts)
         fan_users = _ensure_demo_fan_users(db)
@@ -3504,6 +3507,9 @@ def seed_demo_data(
     _seed_support_cases(db)
     _force_legacy_tiers(db, hosts)
     _seed_legacy_studio(db, hosts)
+    from app.demo.legacy_trust_seed import seed_legacy_trust_showcase_hosts
+
+    seed_legacy_trust_showcase_hosts(db)
 
     _mark(db, "seed", "complete", meta={"version": 1})
     db.commit()
