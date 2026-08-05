@@ -13,8 +13,9 @@ import { truncateEllipsis } from "@/lib/seo/host-og-presentation";
 import type { EventItem, EventMedia } from "@/lib/types/events";
 
 export const EVENT_OG_GOLD = "#D4AF37";
-export const EVENT_OG_MUTED = "rgba(255,255,255,0.78)";
-export const EVENT_OG_DIM = "rgba(255,255,255,0.55)";
+/** Near-solid paper for secondary OG copy over busy flyers. */
+export const EVENT_OG_MUTED = "rgba(255,255,255,0.94)";
+export const EVENT_OG_DIM = "rgba(255,255,255,0.82)";
 
 export type EventOgLayoutVariant =
   | "standard"

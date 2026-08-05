@@ -139,7 +139,7 @@ function DateBlock({
         height: h,
         borderRadius: 22,
         border: `4px solid ${brand.colors.green}`,
-        backgroundColor: "rgba(0,0,0,0.55)",
+        backgroundColor: "rgba(0,0,0,0.78)",
         boxShadow: `0 0 28px rgba(142,240,18,0.28)`,
       }}
     >
@@ -212,8 +212,8 @@ function DetailRow({
         style={{
           display: "flex",
           fontSize: 20,
-          color: gold ? EVENT_OG_GOLD : EVENT_OG_MUTED,
-          fontWeight: gold ? 600 : 500,
+          color: gold ? EVENT_OG_GOLD : brand.colors.paper,
+          fontWeight: gold ? 700 : 600,
         }}
       >
         {label}
@@ -315,14 +315,14 @@ export async function buildEventOgImage(
           />
         )}
 
-        {/* Readability overlays — keep flyer visible, darken text zones */}
+        {/* Readability overlays — photo stays visible, copy stays dominant */}
         {bg ? (
           <div
             style={{
               position: "absolute",
               inset: 0,
               display: "flex",
-              backgroundColor: "rgba(0,0,0,0.38)",
+              backgroundColor: "rgba(0,0,0,0.58)",
             }}
           />
         ) : null}
@@ -332,7 +332,7 @@ export async function buildEventOgImage(
             inset: 0,
             display: "flex",
             backgroundImage:
-              "linear-gradient(to right, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.62) 42%, rgba(0,0,0,0.28) 72%, rgba(0,0,0,0.42) 100%), linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.45) 38%, rgba(0,0,0,0.22) 68%, rgba(0,0,0,0.40) 100%)",
+              "linear-gradient(to right, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.78) 38%, rgba(0,0,0,0.45) 68%, rgba(0,0,0,0.55) 100%), linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.62) 36%, rgba(0,0,0,0.40) 62%, rgba(0,0,0,0.55) 100%)",
           }}
         />
         <div
@@ -341,7 +341,7 @@ export async function buildEventOgImage(
             inset: 0,
             display: "flex",
             backgroundImage:
-              "radial-gradient(ellipse at 22% 58%, rgba(0,0,0,0.35) 0%, transparent 55%), radial-gradient(ellipse at 88% 18%, rgba(0,0,0,0.25) 0%, transparent 45%)",
+              "radial-gradient(ellipse at 20% 55%, rgba(0,0,0,0.55) 0%, transparent 52%), radial-gradient(ellipse at 78% 42%, rgba(0,0,0,0.28) 0%, transparent 48%)",
           }}
         />
 
@@ -355,7 +355,7 @@ export async function buildEventOgImage(
             height: 200,
             display: "flex",
             backgroundImage:
-              "linear-gradient(45deg, rgba(142,240,18,0.07) 0%, transparent 65%)",
+              "linear-gradient(45deg, rgba(142,240,18,0.05) 0%, transparent 65%)",
           }}
         />
 
@@ -428,10 +428,10 @@ export async function buildEventOgImage(
                 display: "flex",
                 flexDirection: "row",
                 alignItems: "center",
-                border: "2px solid rgba(255,255,255,0.55)",
+                border: "2px solid rgba(255,255,255,0.72)",
                 borderRadius: 999,
                 padding: "8px 16px",
-                backgroundColor: "rgba(0,0,0,0.45)",
+                backgroundColor: "rgba(0,0,0,0.78)",
               }}
             >
               <div
@@ -512,15 +512,19 @@ export async function buildEventOgImage(
           </div>
         ) : null}
 
-        {/* Title + copy */}
+        {/* Title + copy — panel behind text when photo is full-bleed */}
         <div
           style={{
             position: "absolute",
-            left: PAD_X,
-            top: 118,
-            width: titleWidth,
+            left: PAD_X - 18,
+            top: 108,
+            width: titleWidth + 36,
             display: "flex",
             flexDirection: "column",
+            padding: bg && !flyer ? "18px 20px 20px" : "0",
+            borderRadius: 20,
+            backgroundColor:
+              bg && !flyer ? "rgba(0,0,0,0.42)" : "transparent",
           }}
         >
           <TitleLines
@@ -535,6 +539,7 @@ export async function buildEventOgImage(
               style={{
                 display: "flex",
                 fontSize: 22,
+                fontWeight: 600,
                 color: EVENT_OG_MUTED,
                 marginTop: 14,
                 maxWidth: titleWidth,
@@ -590,9 +595,9 @@ export async function buildEventOgImage(
                 border: `2px solid ${EVENT_OG_GOLD}`,
                 borderRadius: 999,
                 padding: "8px 18px",
-                backgroundColor: "rgba(0,0,0,0.55)",
+                backgroundColor: "rgba(0,0,0,0.82)",
                 fontSize: 18,
-                fontWeight: 600,
+                fontWeight: 700,
                 color: brand.colors.paper,
               }}
             >
