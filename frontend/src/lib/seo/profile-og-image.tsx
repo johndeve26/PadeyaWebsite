@@ -1,7 +1,8 @@
 /**
  * Profile share cards — image-first DP showcase (1200×630).
  *
- * Used by Fan Passport. Host Legacy uses the richer `host-og-image` card.
+ * Used as a fallback when richer Host/Fan OG cards fail to render.
+ * Host Legacy → `host-og-image`. Fan Passport → `fan-og-image`.
  */
 
 import { ImageResponse } from "next/og";

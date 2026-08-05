@@ -2,7 +2,7 @@
  * Premium Host Legacy share card (1200×630) for WhatsApp / X / Facebook / etc.
  *
  * Cover + avatar + trust stats — live data from the public Legacy payload.
- * Fan Passport continues to use the simpler profile-og-image DP card.
+ * Distinct from Fan Passport OG (`fan-og-image`).
  */
 
 import { ImageResponse } from "next/og";

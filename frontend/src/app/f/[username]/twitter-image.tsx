@@ -4,9 +4,10 @@ import {
   PROFILE_OG_SIZE,
 } from "@/lib/seo/profile-og-size";
 
-export const alt = "Fan Passport profile";
+export const alt = "Fan Passport on Pàdéyá";
 export const size = PROFILE_OG_SIZE;
 export const contentType = PROFILE_OG_CONTENT_TYPE;
 export const runtime = "nodejs";
+export const revalidate = 120;
 
 export default FanOpenGraphImage;

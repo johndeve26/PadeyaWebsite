@@ -1,31 +1,22 @@
 import { getPublicFanPassport } from "@/lib/public-loaders/entities";
+import { buildFanPassportOgImage } from "@/lib/seo/fan-og-image";
 import {
-  buildProfileOgImage,
   PROFILE_OG_CONTENT_TYPE,
   PROFILE_OG_SIZE,
-} from "@/lib/seo/profile-og-image";
+} from "@/lib/seo/profile-og-size";
 
-export const alt = "Fan Passport profile";
+export const alt = "Fan Passport on Pàdéyá";
 export const size = PROFILE_OG_SIZE;
 export const contentType = PROFILE_OG_CONTENT_TYPE;
 export const runtime = "nodejs";
+/** Align with public fan loader freshness; avoid indefinitely stale cards. */
+export const revalidate = 120;
 
 type Props = { params: Promise<{ username: string }> };
 
 export default async function FanOpenGraphImage({ params }: Props) {
   const { username } = await params;
   const page = await getPublicFanPassport(decodeURIComponent(username));
-  const displayName = page?.display_name?.trim() || "Fan Passport";
-  const media = page?.avatar_media as
-    | { display_url?: string | null; url?: string | null }
-    | null
-    | undefined;
-  // Prefer compressed display variant when the media pipeline has run.
-  const avatarUrl =
-    media?.display_url || media?.url || page?.avatar_url || null;
-  return buildProfileOgImage({
-    displayName,
-    subtitle: "Fan Passport",
-    avatarUrl,
-  });
+  // Private / missing / suspended → branded fallback, no private fields.
+  return buildFanPassportOgImage(page);
 }

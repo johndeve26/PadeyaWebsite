@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 
+import {
+  fanOgDescription,
+  fanOgTitle,
+} from "@/lib/seo/fan-og-presentation";
 import { PROFILE_OG_SIZE } from "@/lib/seo/profile-og-size";
 import { absoluteUrl, buildPageMetadata } from "@/lib/seo/site";
 import { resolvePublicAssetUrl } from "@/lib/seo/public-asset";
@@ -20,21 +24,35 @@ export function isFanPassportIndexable(
 }
 
 export function buildFanMetadata(page: FanPassportPublicPage): Metadata {
-  const description =
-    page.tagline?.trim().slice(0, 160) ||
-    page.bio?.trim().slice(0, 160) ||
-    `${page.display_name}'s Fan Passport on Pàdéyá — verified nights, badges, and hosts.`;
-
-  return buildPageMetadata({
-    title: `${page.display_name} · Fan Passport`,
-    description,
+  const meta = buildPageMetadata({
+    title: fanOgTitle(page),
+    description: fanOgDescription(page),
     path: fanPassportCanonicalPath(page.username),
-    // Same-origin DP card (never raw multi‑MB avatar or brand logo).
+    // Same-origin dynamic passport card (never raw multi‑MB avatar).
     image: fanPassportOgImagePath(page.username),
     ogImageWidth: PROFILE_OG_SIZE.width,
     ogImageHeight: PROFILE_OG_SIZE.height,
     noIndex: !isFanPassportIndexable(page),
   });
+
+  const ogImages = meta.openGraph?.images;
+  const first = Array.isArray(ogImages) ? ogImages[0] : ogImages;
+  const alt = `${page.display_name.trim() || "Fan"}'s Fan Passport on Pàdéyá`;
+  const withAlt =
+    first && typeof first === "object"
+      ? Array.isArray(ogImages)
+        ? [{ ...first, alt }]
+        : { ...first, alt }
+      : ogImages;
+
+  return {
+    ...meta,
+    openGraph: {
+      ...meta.openGraph,
+      type: "profile",
+      images: withAlt,
+    } as Metadata["openGraph"],
+  };
 }
 
 /** ProfilePage → Person for genuinely public Fan Passports only. */
