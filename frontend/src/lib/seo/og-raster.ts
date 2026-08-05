@@ -23,21 +23,70 @@ export function initialsFromName(name: string): string {
   return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
 }
 
-async function toPngDataUrl(bytes: ArrayBuffer): Promise<string | null> {
+async function toPngBuffer(
+  bytes: ArrayBuffer,
+): Promise<{ png: Buffer; width: number; height: number } | null> {
   try {
     const sharp = (await import("sharp")).default;
-    const png = await sharp(Buffer.from(bytes))
-      .rotate()
-      .resize({
-        width: 1200,
-        height: 1200,
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .png({ compressionLevel: 8 })
-      .toBuffer();
+    const pipeline = sharp(Buffer.from(bytes)).rotate().resize({
+      width: 1600,
+      height: 1600,
+      fit: "inside",
+      withoutEnlargement: true,
+    });
+    const meta = await pipeline.metadata();
+    const png = await pipeline.png({ compressionLevel: 8 }).toBuffer();
     if (!png.byteLength || png.byteLength > MAX_BYTES) return null;
-    return `data:image/png;base64,${png.toString("base64")}`;
+    return {
+      png,
+      width: meta.width || 0,
+      height: meta.height || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function toPngDataUrl(bytes: ArrayBuffer): Promise<string | null> {
+  const converted = await toPngBuffer(bytes);
+  if (!converted) return null;
+  return `data:image/png;base64,${converted.png.toString("base64")}`;
+}
+
+export type RasterWithMeta = {
+  dataUrl: string;
+  width: number;
+  height: number;
+};
+
+/** Fetch + decode to PNG data URL with dimensions (for flyer aspect decisions). */
+export async function fetchRasterWithMeta(
+  imageUrl: string | null | undefined,
+): Promise<RasterWithMeta | null> {
+  const absolute = resolvePublicAssetUrl(imageUrl);
+  if (!absolute) return null;
+  try {
+    const pathname = new URL(absolute).pathname.toLowerCase();
+    if (pathname.endsWith(".svg") || pathname.includes(".svg/")) return null;
+
+    const res = await fetch(absolute, {
+      next: { revalidate: 3600 },
+      headers: { Accept: "image/*,*/*;q=0.8" },
+    });
+    if (!res.ok) return null;
+    const contentType = (res.headers.get("content-type") || "").toLowerCase();
+    if (contentType.includes("svg")) return null;
+
+    const bytes = await res.arrayBuffer();
+    if (bytes.byteLength === 0 || bytes.byteLength > MAX_BYTES) return null;
+
+    const converted = await toPngBuffer(bytes);
+    if (!converted) return null;
+    return {
+      dataUrl: `data:image/png;base64,${converted.png.toString("base64")}`,
+      width: converted.width,
+      height: converted.height,
+    };
   } catch {
     return null;
   }

@@ -1,7 +1,15 @@
+import type { Metadata } from "next";
+
 import type { EventItem } from "@/lib/types/events";
 import { formatPublicPlaceLabel, locationVisibilityOf } from "@/lib/event-privacy";
 
 import type { SeoEnvInput } from "./env-policy";
+import {
+  eventOgImagePath,
+  eventOgPageDescription,
+  eventOgPageTitle,
+} from "./event-og-presentation";
+import { PROFILE_OG_SIZE } from "./profile-og-size";
 import { resolveOgImageUrl } from "./public-asset";
 import { absoluteUrl, buildPageMetadata, siteOrigin } from "./site";
 
@@ -67,37 +75,48 @@ export function buildEventMetadata(event: EventItem, env?: SeoEnvInput) {
       description: `Password-protected event on Pàdéyá.`,
       path: `/events/${event.slug}`,
       // Prefer explicit social share art only; avoid treating body media as public.
-      // SVG / unsafe formats fall back to brand OG inside buildPageMetadata.
       image: resolveOgImageUrl(event.social_share_image_url),
       noIndex: true,
       env,
     });
   }
 
-  const title = scrubPrivateAddress(
-    event.seo_title || event.social_share_title || event.title,
+  const title = scrubPrivateAddress(eventOgPageTitle(event), event, place);
+  const description = scrubPrivateAddress(
+    eventOgPageDescription(event),
     event,
     place,
   );
-  const rawDescription =
-    event.seo_description ||
-    event.social_share_description ||
-    event.short_tagline ||
-    event.description.slice(0, 160);
-  const description = scrubPrivateAddress(rawDescription, event, place);
-  const image =
-    resolveOgImageUrl(event.social_share_image_url) ||
-    resolveOgImageUrl(event.banner_url) ||
-    resolveOgImageUrl(event.mobile_banner_url);
 
-  return buildPageMetadata({
+  const meta = buildPageMetadata({
     title,
     description,
     path: `/events/${event.slug}`,
-    image,
+    // Same-origin dynamic event card (flyer/cover composed at 1200×630).
+    image: eventOgImagePath(event.slug),
+    ogImageWidth: PROFILE_OG_SIZE.width,
+    ogImageHeight: PROFILE_OG_SIZE.height,
     noIndex: !indexable,
     env,
   });
+
+  const ogImages = meta.openGraph?.images;
+  const first = Array.isArray(ogImages) ? ogImages[0] : ogImages;
+  const alt = `${event.title.trim() || "Event"} on Pàdéyá`;
+  const withAlt =
+    first && typeof first === "object"
+      ? Array.isArray(ogImages)
+        ? [{ ...first, alt }]
+        : { ...first, alt }
+      : ogImages;
+
+  return {
+    ...meta,
+    openGraph: {
+      ...meta.openGraph,
+      images: withAlt,
+    },
+  } as Metadata;
 }
 
 /**
