@@ -315,40 +315,47 @@ export async function buildEventOgImage(
           />
         )}
 
-        {/* Scrims */}
+        {/* Readability overlays — keep flyer visible, darken text zones */}
+        {bg ? (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              backgroundColor: "rgba(0,0,0,0.38)",
+            }}
+          />
+        ) : null}
         <div
           style={{
             position: "absolute",
             inset: 0,
             display: "flex",
             backgroundImage:
-              "linear-gradient(to right, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.55) 48%, rgba(0,0,0,0.35) 100%), linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.25) 45%, rgba(0,0,0,0.35) 100%)",
+              "linear-gradient(to right, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.62) 42%, rgba(0,0,0,0.28) 72%, rgba(0,0,0,0.42) 100%), linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.45) 38%, rgba(0,0,0,0.22) 68%, rgba(0,0,0,0.40) 100%)",
           }}
         />
-
-        {/* Geometric accents */}
         <div
           style={{
             position: "absolute",
-            right: -40,
-            top: -60,
-            width: 320,
-            height: 320,
+            inset: 0,
             display: "flex",
             backgroundImage:
-              "linear-gradient(135deg, rgba(0,0,0,0.55) 0%, transparent 70%)",
+              "radial-gradient(ellipse at 22% 58%, rgba(0,0,0,0.35) 0%, transparent 55%), radial-gradient(ellipse at 88% 18%, rgba(0,0,0,0.25) 0%, transparent 45%)",
           }}
         />
+
+        {/* Soft brand wash (subtle, never brighter than copy) */}
         <div
           style={{
             position: "absolute",
             left: 0,
             bottom: 0,
-            width: 280,
-            height: 180,
+            width: 320,
+            height: 200,
             display: "flex",
             backgroundImage:
-              "linear-gradient(45deg, rgba(142,240,18,0.08) 0%, transparent 60%)",
+              "linear-gradient(45deg, rgba(142,240,18,0.07) 0%, transparent 65%)",
           }}
         />
 
