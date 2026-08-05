@@ -554,7 +554,7 @@ function HostsMarketplaceInner({
             </form>
             <div className="space-y-2">
               <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
-                Try a demo host
+                Check a host
               </p>
               <div className="flex flex-wrap gap-2">
                 {DEMO_LEGACY_QUICK_LINKS.map((link) => (
