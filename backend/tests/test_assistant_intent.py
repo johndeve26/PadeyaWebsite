@@ -137,3 +137,41 @@ def test_event_tickets_sold_uses_analytics_tool():
     )
     assert r.intent == INTENT_INSIGHTS
     assert "get_my_event_analytics" in r.tool_hints
+
+
+def test_ambassador_referral_uses_ambassador_tools():
+    r = classify_intent("show my referral earnings", authenticated=True)
+    assert r.intent == INTENT_INSIGHTS
+    assert "get_my_ambassador_earnings" in r.tool_hints
+    assert r.path == "/ambassador"
+
+
+def test_sponsor_overview_uses_sponsor_tools():
+    r = classify_intent("sponsor dashboard overview", authenticated=True)
+    assert r.intent == INTENT_INSIGHTS
+    assert "get_my_sponsor_overview" in r.tool_hints
+    assert r.path == "/sponsor"
+
+
+def test_host_segments_uses_crm_tools():
+    r = classify_intent("how many audience segments do i have", authenticated=True)
+    assert r.intent == INTENT_INSIGHTS
+    assert "list_my_audience_segments" in r.tool_hints
+
+
+def test_fan_connect_inbox_uses_inbox_tool():
+    r = classify_intent("fan connect pending requests", authenticated=True)
+    assert r.intent == INTENT_INSIGHTS
+    assert "get_my_fan_connect_inbox_summary" in r.tool_hints
+
+
+def test_past_tickets_uses_past_ticket_tool():
+    r = classify_intent("show my past tickets", authenticated=True)
+    assert r.intent == INTENT_TICKETS
+    assert "list_my_past_tickets" in r.tool_hints
+
+
+def test_public_sponsor_search():
+    r = classify_intent("find sponsors for events", authenticated=False)
+    assert r.intent == INTENT_SEARCH_PAGES
+    assert "search_public_sponsors" in r.tool_hints

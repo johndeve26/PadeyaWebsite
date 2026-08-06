@@ -152,6 +152,46 @@ def get_public_pricing(
         }
 
 
+def search_public_sponsors(
+    db: Session, *, args: dict[str, Any] | None = None, **_: Any
+) -> dict[str, Any]:
+    q = str((args or {}).get("query") or (args or {}).get("q") or "").strip()[:120]
+    limit = min(int((args or {}).get("limit") or 8), 20)
+    results: list[dict[str, Any]] = []
+    try:
+        from app.sponsor_profiles.service import list_public_sponsors
+
+        rows = list_public_sponsors(db)
+        ql = q.lower()
+        for sponsor in rows:
+            name = (getattr(sponsor, "display_name", None) or getattr(sponsor, "company_name", "") or "")
+            slug = getattr(sponsor, "slug", "") or ""
+            industry = getattr(sponsor, "industry", "") or ""
+            blob = f"{name} {slug} {industry}".lower()
+            if ql and ql not in blob and not any(t in blob for t in _query_tokens(q)):
+                continue
+            results.append(
+                {
+                    "display_name": name,
+                    "slug": slug,
+                    "industry": industry,
+                    "url": f"/sponsors/{slug}" if slug else "/sponsors",
+                    "verified": getattr(sponsor, "verification_status", None) == "verified",
+                }
+            )
+            if len(results) >= limit:
+                break
+    except Exception:
+        results = []
+    return {
+        "ok": True,
+        "query": q,
+        "results": results,
+        "count": len(results),
+        "summary": f"Found {len(results)} public sponsor profile(s).",
+    }
+
+
 def search_public_pages(
     db: Session, *, args: dict[str, Any], **_: Any
 ) -> dict[str, Any]:

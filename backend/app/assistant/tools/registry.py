@@ -99,6 +99,11 @@ TOOL_REGISTRY: dict[str, ToolDefinition] = {
         "Get public fee structure for hosts and buyers from live pricing settings.",
         SAFETY_LEVEL_PUBLIC_READ,
     ),
+    "search_public_sponsors": _t(
+        "search_public_sponsors",
+        "Search verified public sponsor brand profiles.",
+        SAFETY_LEVEL_PUBLIC_READ,
+    ),
     # Navigation
     "navigate_to_route": _t(
         "navigate_to_route",
@@ -172,6 +177,19 @@ TOOL_REGISTRY: dict[str, ToolDefinition] = {
         requires_auth=True,
         required_permissions=("fan_connect.use",),
     ),
+    "get_my_fan_connect_inbox_summary": _t(
+        "get_my_fan_connect_inbox_summary",
+        "Fan Connect connection and pending request counts.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+        required_permissions=("fan_connect.use",),
+    ),
+    "list_my_past_tickets": _t(
+        "list_my_past_tickets",
+        "List past tickets for the signed-in fan.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+    ),
     # Host
     "list_my_events": _t(
         "list_my_events",
@@ -201,6 +219,27 @@ TOOL_REGISTRY: dict[str, ToolDefinition] = {
         requires_auth=True,
         required_roles=("host",),
     ),
+    "list_my_audience_segments": _t(
+        "list_my_audience_segments",
+        "List host audience segments with member counts.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+        required_roles=("host",),
+    ),
+    "get_my_announcements_summary": _t(
+        "get_my_announcements_summary",
+        "Summarize host announcements and recipient counts.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+        required_roles=("host",),
+    ),
+    "get_my_host_ambassador_analytics": _t(
+        "get_my_host_ambassador_analytics",
+        "Host ambassador program clicks, participants, and conversions.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+        required_roles=("host",),
+    ),
     "create_event_draft": _t(
         "create_event_draft",
         "Create an event draft (confirmation required). Never publishes.",
@@ -221,22 +260,67 @@ TOOL_REGISTRY: dict[str, ToolDefinition] = {
     # Ambassador
     "get_my_referral_summary": _t(
         "get_my_referral_summary",
-        "Referral summary for the signed-in ambassador.",
+        "Referral clicks, conversions, and campaign summary for ambassadors.",
         SAFETY_LEVEL_AUTH_READ,
         requires_auth=True,
-        required_roles=("ambassador",),
+    ),
+    "get_my_ambassador_earnings": _t(
+        "get_my_ambassador_earnings",
+        "Ambassador earnings and tickets sold via referral links.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+    ),
+    "list_my_ambassador_campaigns": _t(
+        "list_my_ambassador_campaigns",
+        "List ambassador campaigns the user joined.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+    ),
+    "list_my_referral_links": _t(
+        "list_my_referral_links",
+        "List active ambassador referral share links.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
     ),
     # Sponsor
+    "get_my_sponsor_overview": _t(
+        "get_my_sponsor_overview",
+        "Sponsor workspace overview: inquiries, deals, saved items.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+        required_roles=("sponsor",),
+    ),
+    "list_my_sponsor_campaigns": _t(
+        "list_my_sponsor_campaigns",
+        "List sponsorship campaigns in the sponsor workspace.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+        required_roles=("sponsor",),
+    ),
+    "list_my_sponsor_deals": _t(
+        "list_my_sponsor_deals",
+        "List sponsorship deals for the sponsor workspace.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+        required_roles=("sponsor",),
+    ),
+    "list_my_sponsor_workspaces": _t(
+        "list_my_sponsor_workspaces",
+        "List sponsor workspaces the user can access.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+        required_roles=("sponsor",),
+    ),
     "list_my_sponsor_opportunities": _t(
         "list_my_sponsor_opportunities",
-        "List sponsorship opportunities visible to the sponsor.",
+        "List sponsorship campaigns (alias).",
         SAFETY_LEVEL_AUTH_READ,
         requires_auth=True,
         required_roles=("sponsor",),
     ),
     "list_my_sponsor_applications": _t(
         "list_my_sponsor_applications",
-        "List the sponsor's own applications.",
+        "Sponsorship deals and pending inquiries pipeline.",
         SAFETY_LEVEL_AUTH_READ,
         requires_auth=True,
         required_roles=("sponsor",),

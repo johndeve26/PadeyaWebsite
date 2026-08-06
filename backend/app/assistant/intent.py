@@ -120,6 +120,47 @@ _FAN_CONNECT_PATTERNS = (
     r"\bfan connect\b",
     r"\bhow many connections?\b",
     r"\bconnections do i have\b",
+    r"\b(?:incoming|outgoing) requests?\b",
+    r"\bpending (?:fan )?connect\b",
+)
+
+_AMBASSADOR_PATTERNS = (
+    r"\bmy referral\b",
+    r"\breferral (?:link|code|earnings|commission|stats)\b",
+    r"\bambassador earnings\b",
+    r"\bmy ambassador campaigns?\b",
+    r"\bhow much (?:have i|did i) earn\b",
+    r"\bcommission (?:owed|earned|paid)\b",
+)
+
+_SPONSOR_PATTERNS = (
+    r"\bmy sponsorship\b",
+    r"\bsponsor(?:ship)? (?:deal|deals|application|applications|inquir)\b",
+    r"\bhow many (?:deals|inquiries|applications)\b",
+    r"\bsponsor (?:overview|dashboard|workspace|campaigns?)\b",
+    r"\bsaved opportunities\b",
+)
+
+_HOST_CRM_PATTERNS = (
+    r"\baudience segments?\b",
+    r"\bmy segments?\b",
+    r"\bannouncements?\b",
+    r"\bambassador program\b",
+    r"\bmy ambassadors\b",
+    r"\bambassador analytics\b",
+)
+
+_PAST_TICKET_PATTERNS = (
+    r"\bpast tickets?\b",
+    r"\bprevious tickets?\b",
+    r"\btickets? i (?:attended|went to)\b",
+    r"\bevents? i (?:attended|went to)\b",
+)
+
+_PUBLIC_SPONSOR_PATTERNS = (
+    r"\bfind sponsors?\b",
+    r"\bsearch sponsors?\b",
+    r"\bbrand partners?\b",
 )
 
 _TICKET_COUNT_PATTERNS = (
@@ -165,6 +206,26 @@ def _matches_event_sales_query(lower: str) -> bool:
 
 def _matches_fan_connect_query(lower: str) -> bool:
     return _match_any(lower, _FAN_CONNECT_PATTERNS)
+
+
+def _matches_ambassador_query(lower: str) -> bool:
+    return _match_any(lower, _AMBASSADOR_PATTERNS)
+
+
+def _matches_sponsor_query(lower: str) -> bool:
+    return _match_any(lower, _SPONSOR_PATTERNS)
+
+
+def _matches_host_crm_query(lower: str) -> bool:
+    return _match_any(lower, _HOST_CRM_PATTERNS)
+
+
+def _matches_past_ticket_query(lower: str) -> bool:
+    return _match_any(lower, _PAST_TICKET_PATTERNS)
+
+
+def _matches_public_sponsor_query(lower: str) -> bool:
+    return _match_any(lower, _PUBLIC_SPONSOR_PATTERNS)
 
 
 def _matches_ticket_count_query(lower: str) -> bool:
@@ -234,6 +295,92 @@ def classify_intent(
             tool_hints=["search_help", "search_public_pages", "navigate_to_route"],
         )
 
+    if _matches_public_sponsor_query(lower) and not authenticated:
+        return IntentResult(
+            intent=INTENT_SEARCH_PAGES,
+            confidence=0.8,
+            route_key="sponsors",
+            path="/sponsors",
+            tool_hints=["search_public_sponsors", "search_public_pages"],
+        )
+
+    if _matches_ambassador_query(lower):
+        if not authenticated:
+            return IntentResult(
+                intent=INTENT_INSIGHTS,
+                confidence=0.9,
+                tool_hints=[],
+                reason="auth_required_for_intent",
+            )
+        return IntentResult(
+            intent=INTENT_INSIGHTS,
+            confidence=0.9,
+            tool_hints=[
+                "get_my_referral_summary",
+                "get_my_ambassador_earnings",
+                "list_my_ambassador_campaigns",
+                "list_my_referral_links",
+            ],
+            route_key="ambassador_dashboard",
+            path="/ambassador",
+        )
+
+    if _matches_sponsor_query(lower):
+        if not authenticated:
+            return IntentResult(
+                intent=INTENT_INSIGHTS,
+                confidence=0.9,
+                tool_hints=[],
+                reason="auth_required_for_intent",
+            )
+        return IntentResult(
+            intent=INTENT_INSIGHTS,
+            confidence=0.9,
+            tool_hints=[
+                "get_my_sponsor_overview",
+                "list_my_sponsor_deals",
+                "list_my_sponsor_campaigns",
+                "list_my_sponsor_applications",
+            ],
+            route_key="sponsor_dashboard",
+            path="/sponsor",
+        )
+
+    if _matches_host_crm_query(lower):
+        if not authenticated:
+            return IntentResult(
+                intent=INTENT_INSIGHTS,
+                confidence=0.88,
+                tool_hints=[],
+                reason="auth_required_for_intent",
+            )
+        tools = ["list_my_audience_segments", "get_my_announcements_summary"]
+        if "ambassador" in lower:
+            tools.insert(0, "get_my_host_ambassador_analytics")
+        return IntentResult(
+            intent=INTENT_INSIGHTS,
+            confidence=0.88,
+            tool_hints=tools,
+            route_key="host_audience",
+            path="/host/audience",
+        )
+
+    if _matches_past_ticket_query(lower):
+        if not authenticated:
+            return IntentResult(
+                intent=INTENT_TICKETS,
+                confidence=0.85,
+                tool_hints=[],
+                reason="auth_required_for_intent",
+            )
+        return IntentResult(
+            intent=INTENT_TICKETS,
+            confidence=0.85,
+            tool_hints=["list_my_past_tickets", "get_my_ticket_summary"],
+            route_key="fan_tickets",
+            path="/dashboard/tickets",
+        )
+
     if _matches_following_query(lower):
         if not authenticated:
             return IntentResult(
@@ -259,7 +406,7 @@ def classify_intent(
         return IntentResult(
             intent=INTENT_INSIGHTS,
             confidence=0.85,
-            tool_hints=["get_my_fan_connect_summary"],
+            tool_hints=["get_my_fan_connect_inbox_summary", "get_my_fan_connect_summary"],
         )
 
     if _matches_event_sales_query(lower):

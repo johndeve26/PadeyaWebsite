@@ -290,3 +290,145 @@ def get_my_event_analytics(
             f"{check_ins} check-ins, {unique_visitors} unique visitors."
         ),
     }
+
+
+def get_my_fan_connect_inbox_summary(
+    db: Session,
+    *,
+    user: User | None,
+    args: dict[str, Any] | None = None,
+    **_: Any,
+) -> dict[str, Any]:
+    if user is None:
+        return {"ok": False, "error": "auth_required"}
+    if not user_has_permission(user, "fan_connect.use"):
+        return {"ok": False, "error": "forbidden", "detail": "Fan Connect not enabled."}
+    incoming = outgoing = 0
+    try:
+        from app.fan_connect.service import list_connections, list_requests
+
+        incoming = len((list_requests(db, user, box="incoming") or {}).get("items") or [])
+        outgoing = len((list_requests(db, user, box="outgoing") or {}).get("items") or [])
+        connected = len((list_connections(db, user) or {}).get("items") or [])
+    except Exception:
+        connected = 0
+    return {
+        "ok": True,
+        "incoming_requests": incoming,
+        "outgoing_requests": outgoing,
+        "connection_count": connected,
+        "summary": (
+            f"Fan Connect: {connected} connection(s), "
+            f"{incoming} incoming request(s), {outgoing} outgoing request(s)."
+        ),
+    }
+
+
+def list_my_audience_segments(
+    db: Session,
+    *,
+    user: User | None,
+    args: dict[str, Any] | None = None,
+    **_: Any,
+) -> dict[str, Any]:
+    if user is None:
+        return {"ok": False, "error": "auth_required", "results": []}
+    if not user_has_role(user, "host", "super_admin"):
+        return {"ok": False, "error": "forbidden", "results": []}
+    results: list[dict[str, Any]] = []
+    try:
+        from app.crm.service import list_segments
+
+        for row in list_segments(db, user):
+            results.append(
+                {
+                    "name": row.get("name"),
+                    "segment_key": row.get("segment_key"),
+                    "member_count": int(row.get("member_count") or 0),
+                    "is_system": bool(row.get("is_system")),
+                }
+            )
+    except Exception:
+        results = []
+    total_members = sum(int(r.get("member_count") or 0) for r in results)
+    return {
+        "ok": True,
+        "results": results,
+        "count": len(results),
+        "summary": f"You have {len(results)} audience segment(s) ({total_members} total segment memberships).",
+    }
+
+
+def get_my_announcements_summary(
+    db: Session,
+    *,
+    user: User | None,
+    args: dict[str, Any] | None = None,
+    **_: Any,
+) -> dict[str, Any]:
+    if user is None:
+        return {"ok": False, "error": "auth_required"}
+    if not user_has_role(user, "host", "super_admin"):
+        return {"ok": False, "error": "forbidden"}
+    rows: list[dict[str, Any]] = []
+    try:
+        from app.crm.service import list_announcements
+
+        for row in list_announcements(db, user)[:20]:
+            rows.append(
+                {
+                    "title": row.get("title"),
+                    "status": row.get("status"),
+                    "delivery_status": row.get("delivery_status"),
+                    "recipient_count": int(row.get("recipient_count") or 0),
+                    "channel": row.get("channel"),
+                }
+            )
+    except Exception:
+        rows = []
+    sent = sum(int(r.get("recipient_count") or 0) for r in rows)
+    return {
+        "ok": True,
+        "announcements": rows,
+        "count": len(rows),
+        "total_recipients": sent,
+        "summary": f"You have {len(rows)} announcement(s) reaching {sent} recipients in total.",
+    }
+
+
+def get_my_host_ambassador_analytics(
+    db: Session,
+    *,
+    user: User | None,
+    args: dict[str, Any] | None = None,
+    **_: Any,
+) -> dict[str, Any]:
+    if user is None:
+        return {"ok": False, "error": "auth_required"}
+    if not user_has_role(user, "host", "super_admin"):
+        return {"ok": False, "error": "forbidden"}
+    try:
+        from app.ambassadors.host_service import host_analytics
+
+        stats = host_analytics(db, user)
+    except HTTPException as exc:
+        return {
+            "ok": False,
+            "error": "forbidden" if exc.status_code == 403 else "not_found",
+            "detail": str(getattr(exc, "detail", "") or ""),
+        }
+    except Exception:
+        return {"ok": False, "error": "lookup_failed"}
+
+    campaigns = int(stats.get("campaigns") or 0)
+    participants = int(stats.get("active_participants") or 0)
+    clicks = int(stats.get("clicks") or stats.get("total_clicks") or 0)
+    conversions = int(stats.get("conversions") or 0)
+    return {
+        "ok": True,
+        "stats": stats,
+        "summary": (
+            f"Ambassador program: {campaigns} campaign(s), {participants} active participant(s), "
+            f"{clicks} clicks, {conversions} conversion(s)."
+        ),
+    }

@@ -140,6 +140,52 @@ def get_my_order_summary(
     return {"ok": True, "results": results, "count": len(results)}
 
 
+def list_my_past_tickets(
+    db: Session, *, user: User | None, args: dict[str, Any] | None = None, **_: Any
+) -> dict[str, Any]:
+    if user is None:
+        return {"ok": False, "error": "auth_required", "results": []}
+    limit = min(int((args or {}).get("limit") or 10), 25)
+    results: list[dict[str, Any]] = []
+    try:
+        from app.events.models import Event
+        from app.tickets.service import list_buyer_tickets
+
+        tickets = list_buyer_tickets(db, user)
+        event_ids = {t.event_id for t in tickets if getattr(t, "event_id", None)}
+        events_by_id = {
+            row.id: row
+            for row in db.scalars(select(Event).where(Event.id.in_(event_ids))).all()
+        } if event_ids else {}
+        now = datetime.now(UTC)
+        for ticket in tickets:
+            event = events_by_id.get(getattr(ticket, "event_id", None))
+            start = getattr(event, "start_datetime", None) if event else None
+            if start is not None and start.tzinfo is None:
+                start = start.replace(tzinfo=UTC)
+            if start is None or start >= now:
+                continue
+            results.append(
+                {
+                    "ticket_id": str(ticket.id),
+                    "status": getattr(ticket, "status", None),
+                    "event_title": getattr(event, "title", None) if event else None,
+                    "event_slug": getattr(event, "slug", None) if event else None,
+                    "start_datetime": start.isoformat() if start else None,
+                }
+            )
+            if len(results) >= limit:
+                break
+    except Exception:
+        results = []
+    return {
+        "ok": True,
+        "results": results,
+        "count": len(results),
+        "summary": f"You have {len(results)} past ticket(s) in recent history.",
+    }
+
+
 def list_my_saved_events(
     db: Session, *, user: User | None, args: dict[str, Any] | None = None, **_: Any
 ) -> dict[str, Any]:

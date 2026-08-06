@@ -287,6 +287,50 @@ def _fallback_text(
             return str(tr.get("summary") or "Event analytics loaded.")
         if tr.get("tool_name") == "get_my_fan_connect_summary" and tr.get("ok"):
             return str(tr.get("summary") or "Fan Connect summary loaded.")
+        if tr.get("tool_name") == "get_my_fan_connect_inbox_summary" and tr.get("ok"):
+            return str(tr.get("summary") or "Fan Connect inbox summary loaded.")
+        if tr.get("tool_name") == "list_my_past_tickets" and tr.get("ok"):
+            count = tr.get("count") or len(tr.get("results") or [])
+            if count:
+                return str(
+                    tr.get("summary")
+                    or f"You have {count} past ticket(s) on your account."
+                )
+            return "You have no past tickets on your account yet."
+        if tr.get("tool_name") == "list_my_audience_segments" and tr.get("ok"):
+            return str(tr.get("summary") or "Audience segments loaded.")
+        if tr.get("tool_name") == "get_my_announcements_summary" and tr.get("ok"):
+            return str(tr.get("summary") or "Announcements summary loaded.")
+        if tr.get("tool_name") == "get_my_host_ambassador_analytics" and tr.get("ok"):
+            return str(tr.get("summary") or "Ambassador program analytics loaded.")
+        if tr.get("tool_name") == "get_my_referral_summary" and tr.get("ok"):
+            return str(tr.get("summary") or "Referral summary loaded.")
+        if tr.get("tool_name") == "get_my_ambassador_earnings" and tr.get("ok"):
+            return str(tr.get("summary") or "Ambassador earnings loaded.")
+        if tr.get("tool_name") == "list_my_ambassador_campaigns" and tr.get("ok"):
+            return str(tr.get("summary") or "Ambassador campaigns loaded.")
+        if tr.get("tool_name") == "list_my_referral_links" and tr.get("ok"):
+            return str(tr.get("summary") or "Referral links loaded.")
+        if tr.get("tool_name") == "get_my_sponsor_overview" and tr.get("ok"):
+            return str(tr.get("summary") or "Sponsor overview loaded.")
+        if tr.get("tool_name") == "list_my_sponsor_campaigns" and tr.get("ok"):
+            return str(tr.get("summary") or "Sponsor campaigns loaded.")
+        if tr.get("tool_name") == "list_my_sponsor_deals" and tr.get("ok"):
+            return str(tr.get("summary") or "Sponsor deals loaded.")
+        if tr.get("tool_name") == "list_my_sponsor_applications" and tr.get("ok"):
+            return str(tr.get("summary") or "Sponsor applications pipeline loaded.")
+        if tr.get("tool_name") == "list_my_sponsor_workspaces" and tr.get("ok"):
+            return str(tr.get("summary") or "Sponsor workspaces loaded.")
+        if tr.get("tool_name") == "search_public_sponsors" and tr.get("ok"):
+            count = tr.get("count") or len(tr.get("results") or [])
+            if count:
+                names = ", ".join(
+                    str(r.get("display_name"))
+                    for r in (tr.get("results") or [])[:3]
+                    if r.get("display_name")
+                )
+                return f"Found {count} sponsor profile(s): {names}."
+            return "No public sponsor profiles matched that search."
         if tr.get("tool_name") == "get_public_pricing" and tr.get("ok"):
             summary = tr.get("summary")
             if summary:
