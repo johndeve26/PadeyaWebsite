@@ -79,7 +79,8 @@ _FEE_PRICING_PATTERNS = (
     r"\bhost(?:ing)? fee\b",
     r"\bfor event hosting\b",
     r"\bi mean\b.{0,40}\bhosting\b",
-    r"\bhosting events?\b",
+    r"\bhosting events?\b.{0,30}\b(fee|fees|cost|price|pricing|pay|charge)\b",
+    r"\b(fee|fees|cost|price|pricing)\b.{0,30}\bhosting events?\b",
 )
 
 _BECOME_HOST_PATTERNS = (
@@ -93,6 +94,15 @@ _FOLLOWING_PATTERNS = (
     r"\bhow many hosts?\b.{0,40}\b(follow|following)\b",
     r"\bhosts? (?:am i|i'?m|i am) following\b",
     r"\bhow many (?:people|hosts?) (?:do )?i follow\b",
+)
+
+_FOLLOWED_HOST_EVENTS_PATTERNS = (
+    r"\b(?:which|what) (?:of )?(?:the )?hosts?\b.{0,40}\b(hosting|event|soon|upcoming)\b",
+    r"\bhosts? (?:i|you) follow\b.{0,60}\b(event|upcoming|soon|hosting)\b",
+    r"\bevents? from (?:hosts? )?(?:i|you) follow\b",
+    r"\bfollowed hosts?\b.{0,40}\b(event|upcoming|soon|hosting)\b",
+    r"\bupcoming events? from (?:my )?followed\b",
+    r"\bwhich host\b.{0,30}\b(hosting|event|soon)\b",
 )
 
 _FOLLOWER_PATTERNS = (
@@ -192,6 +202,10 @@ def _matches_following_query(lower: str) -> bool:
     return _match_any(lower, _FOLLOWING_PATTERNS)
 
 
+def _matches_followed_host_events_query(lower: str) -> bool:
+    return _match_any(lower, _FOLLOWED_HOST_EVENTS_PATTERNS)
+
+
 def _matches_follower_query(lower: str) -> bool:
     return _match_any(lower, _FOLLOWER_PATTERNS)
 
@@ -276,6 +290,25 @@ def classify_intent(
 
     lower = text.lower()
     public = resolve_public_route(text)
+
+    if _matches_followed_host_events_query(lower):
+        if not authenticated:
+            return IntentResult(
+                intent=INTENT_SEARCH_EVENTS,
+                confidence=0.9,
+                tool_hints=[],
+                reason="auth_required_for_intent",
+            )
+        return IntentResult(
+            intent=INTENT_SEARCH_EVENTS,
+            confidence=0.9,
+            tool_hints=[
+                "list_upcoming_events_from_followed_hosts",
+                "get_my_following_summary",
+            ],
+            route_key="fan_saved",
+            path="/dashboard/saved",
+        )
 
     if _matches_fee_pricing_query(lower):
         return IntentResult(

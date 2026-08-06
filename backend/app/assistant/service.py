@@ -281,6 +281,11 @@ def _fallback_text(
             )
         if tr.get("tool_name") == "get_my_following_summary" and tr.get("ok"):
             return str(tr.get("summary") or "You are not following any hosts yet.")
+        if tr.get("tool_name") == "list_upcoming_events_from_followed_hosts" and tr.get("ok"):
+            return str(
+                tr.get("summary")
+                or "No upcoming events from hosts you follow right now."
+            )
         if tr.get("tool_name") == "get_my_audience_summary" and tr.get("ok"):
             return str(tr.get("summary") or "Audience stats loaded.")
         if tr.get("tool_name") == "get_my_event_analytics" and tr.get("ok"):
@@ -564,7 +569,11 @@ def run_chat_turn(
                         Card(
                             type="result",
                             title=str(title),
-                            subtitle=item.get("city") or item.get("status"),
+                            subtitle=(
+                                item.get("host_display_name")
+                                or item.get("city")
+                                or item.get("status")
+                            ),
                             url=str(url),
                         )
                     )

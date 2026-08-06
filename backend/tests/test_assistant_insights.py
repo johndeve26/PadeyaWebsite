@@ -123,3 +123,17 @@ def test_past_tickets_for_fan(db_session, monkeypatch):
     )
     assert result["ok"] is True
     assert result["count"] == 0
+
+
+def test_followed_host_events_empty_when_not_following(db_session, monkeypatch):
+    enable_assistant(monkeypatch)
+    fan = seed_user(db_session, email="ins-fan6@example.com", role="buyer")
+    result = execute_tool(
+        db_session,
+        tool_name="list_upcoming_events_from_followed_hosts",
+        args={},
+        user=fan,
+    )
+    assert result["ok"] is True
+    assert result["count"] == 0
+    assert "not following" in result["summary"].lower()

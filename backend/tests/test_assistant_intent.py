@@ -175,3 +175,17 @@ def test_public_sponsor_search():
     r = classify_intent("find sponsors for events", authenticated=False)
     assert r.intent == INTENT_SEARCH_PAGES
     assert "search_public_sponsors" in r.tool_hints
+
+
+def test_followed_host_events_requires_auth():
+    r = classify_intent("which of the host is hosting event soon?", authenticated=False)
+    assert r.intent == INTENT_SEARCH_EVENTS
+    assert r.reason == "auth_required_for_intent"
+
+
+def test_followed_host_events_uses_followed_hosts_tool():
+    r = classify_intent(
+        "which of the host is hosting event soon?", authenticated=True
+    )
+    assert r.intent == INTENT_SEARCH_EVENTS
+    assert "list_upcoming_events_from_followed_hosts" in r.tool_hints

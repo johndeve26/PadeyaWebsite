@@ -50,6 +50,7 @@ _HANDLERS: dict[str, Handler] = {
     "list_my_upcoming_tickets": fan.list_my_upcoming_tickets,
     "get_my_order_summary": fan.get_my_order_summary,
     "list_my_saved_events": fan.list_my_saved_events,
+    "list_upcoming_events_from_followed_hosts": fan.list_upcoming_events_from_followed_hosts,
     "list_my_past_tickets": fan.list_my_past_tickets,
     "get_my_following_summary": insights.get_my_following_summary,
     "get_my_fan_connect_summary": insights.get_my_fan_connect_summary,

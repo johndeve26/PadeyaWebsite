@@ -210,3 +210,95 @@ def list_my_saved_events(
         "count": summary.get("following_count", len(results)),
         "summary": summary.get("summary"),
     }
+
+
+def list_upcoming_events_from_followed_hosts(
+    db: Session, *, user: User | None, args: dict[str, Any] | None = None, **_: Any
+) -> dict[str, Any]:
+    if user is None:
+        return {"ok": False, "error": "auth_required", "results": []}
+
+    limit = min(int((args or {}).get("limit") or 10), 25)
+    try:
+        from app.crm.service import list_my_following
+        from app.events.models import Event
+
+        following = list_my_following(db, user)
+        host_ids = [row["host_id"] for row in following if row.get("host_id")]
+        if not host_ids:
+            return {
+                "ok": True,
+                "results": [],
+                "count": 0,
+                "following_count": 0,
+                "summary": (
+                    "You are not following any hosts yet, "
+                    "so there are no upcoming events from followed hosts."
+                ),
+            }
+
+        hosts_by_id = {row["host_id"]: row for row in following}
+        now = datetime.now(UTC)
+        events = list(
+            db.scalars(
+                select(Event)
+                .where(Event.host_id.in_(host_ids))
+                .where(Event.status == "published")
+                .where(Event.visibility.in_(("listed", "approval_required")))
+                .where(Event.end_datetime.is_not(None))
+                .where(Event.end_datetime >= now)
+                .order_by(Event.start_datetime.asc())
+                .limit(limit)
+            ).all()
+        )
+
+        results: list[dict[str, Any]] = []
+        for event in events:
+            host = hosts_by_id.get(event.host_id, {})
+            results.append(
+                {
+                    "event_id": str(event.id),
+                    "title": event.title,
+                    "slug": event.slug,
+                    "host_display_name": host.get("display_name"),
+                    "host_slug": host.get("username"),
+                    "city": getattr(event, "city", None),
+                    "start_datetime": (
+                        event.start_datetime.isoformat()
+                        if event.start_datetime
+                        else None
+                    ),
+                    "url": f"/events/{event.slug}" if event.slug else None,
+                }
+            )
+
+        following_count = len(host_ids)
+        if not results:
+            summary = (
+                f"You follow {following_count} host(s), "
+                "but none have upcoming published events right now."
+            )
+        elif len(results) == 1:
+            row = results[0]
+            host_name = row.get("host_display_name") or "A host you follow"
+            summary = f"{host_name} is hosting {row.get('title')} soon."
+        else:
+            bits = [
+                f"{r.get('host_display_name') or 'Host'}: {r.get('title')}"
+                for r in results[:3]
+            ]
+            summary = (
+                f"{len(results)} upcoming event(s) from hosts you follow: "
+                + "; ".join(bits)
+                + "."
+            )
+
+        return {
+            "ok": True,
+            "results": results,
+            "count": len(results),
+            "following_count": following_count,
+            "summary": summary,
+        }
+    except Exception:
+        return {"ok": False, "error": "lookup_failed", "results": []}

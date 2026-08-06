@@ -164,6 +164,12 @@ TOOL_REGISTRY: dict[str, ToolDefinition] = {
         SAFETY_LEVEL_AUTH_READ,
         requires_auth=True,
     ),
+    "list_upcoming_events_from_followed_hosts": _t(
+        "list_upcoming_events_from_followed_hosts",
+        "Upcoming published events from hosts the signed-in fan follows.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+    ),
     "get_my_following_summary": _t(
         "get_my_following_summary",
         "Count hosts the signed-in fan follows and marketing opt-ins.",
