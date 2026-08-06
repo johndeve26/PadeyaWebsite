@@ -11,6 +11,63 @@ from sqlalchemy.orm import Session
 from app.users.models import User
 
 
+def get_my_ticket_summary(
+    db: Session, *, user: User | None, args: dict[str, Any] | None = None, **_: Any
+) -> dict[str, Any]:
+    if user is None:
+        return {"ok": False, "error": "auth_required"}
+    try:
+        from app.events.models import Event
+        from app.tickets.service import list_buyer_tickets
+
+        tickets = list_buyer_tickets(db, user)
+    except Exception:
+        return {
+            "ok": True,
+            "total_tickets": 0,
+            "upcoming_count": 0,
+            "past_count": 0,
+            "summary": "You have 0 tickets on your account.",
+        }
+
+    event_ids = {t.event_id for t in tickets if getattr(t, "event_id", None)}
+    events_by_id: dict[Any, Any] = {}
+    if event_ids:
+        events_by_id = {
+            row.id: row
+            for row in db.scalars(select(Event).where(Event.id.in_(event_ids))).all()
+        }
+
+    now = datetime.now(UTC)
+    upcoming = 0
+    past = 0
+    for ticket in tickets:
+        event = events_by_id.get(getattr(ticket, "event_id", None))
+        start = getattr(event, "start_datetime", None) if event else None
+        if start is not None and start.tzinfo is None:
+            start = start.replace(tzinfo=UTC)
+        if start is not None and start < now:
+            past += 1
+        else:
+            upcoming += 1
+
+    total = len(tickets)
+    if total == 0:
+        summary = "You have 0 tickets on your account."
+    elif total == 1:
+        summary = f"You have 1 ticket ({upcoming} upcoming, {past} past)."
+    else:
+        summary = f"You have {total} tickets ({upcoming} upcoming, {past} past)."
+
+    return {
+        "ok": True,
+        "total_tickets": total,
+        "upcoming_count": upcoming,
+        "past_count": past,
+        "summary": summary,
+    }
+
+
 def list_my_upcoming_tickets(
     db: Session, *, user: User | None, args: dict[str, Any] | None = None, **_: Any
 ) -> dict[str, Any]:

@@ -17,6 +17,7 @@ from app.assistant.constants import (
     INTENT_INJECTION,
     INTENT_NAVIGATE,
     INTENT_ORDERS,
+    INTENT_PRICING,
     INTENT_SEARCH_EVENTS,
     INTENT_SEARCH_HOSTS,
     INTENT_SEARCH_MEMORIES,
@@ -70,6 +71,56 @@ def _match_any(text: str, patterns: tuple[str, ...]) -> bool:
     return any(re.search(p, text, flags=re.I) for p in patterns)
 
 
+_FEE_PRICING_PATTERNS = (
+    r"\b(fee|fees|commission|pricing|platform fee|service fee|processing fee)\b",
+    r"\bhow much (does|do|is|are)\b.{0,40}\b(cost|charge|fee|fees|pay|take)\b",
+    r"\bwhat (?:do|does|are) (?:hosts?|hosting) (?:pay|cost|charge)\b",
+    r"\bhost(?:ing)? fee\b",
+    r"\bfor event hosting\b",
+    r"\bi mean\b.{0,40}\bhosting\b",
+    r"\bhosting events?\b",
+)
+
+_BECOME_HOST_PATTERNS = (
+    r"\bhow (?:to|do i) become a host\b",
+    r"\bbecome a host\b",
+    r"\bstart hosting\b",
+    r"\bhost on p[aà]d[eé]y[aá]\b",
+)
+
+_TICKET_COUNT_PATTERNS = (
+    r"\bhow many tickets?\b",
+    r"\bnumber of tickets?\b",
+    r"\bticket count\b",
+    r"\btickets? (?:have|has|did|i'?ve|i have) (?:i )?(?:purchased|bought)\b",
+    r"\bhow many (?:events?|shows?) (?:have|has|did) i (?:purchased|bought|attended)\b",
+)
+
+_TICKET_WALLET_PATTERNS = (
+    r"\bmy tickets?\b",
+    r"\bupcoming tickets?\b",
+    r"\bticket wallet\b",
+    r"\bwhere is my ticket\b",
+    r"\bshow (?:me )?my tickets?\b",
+)
+
+
+def _matches_fee_pricing_query(lower: str) -> bool:
+    return _match_any(lower, _FEE_PRICING_PATTERNS)
+
+
+def _matches_become_host_query(lower: str) -> bool:
+    return _match_any(lower, _BECOME_HOST_PATTERNS)
+
+
+def _matches_ticket_count_query(lower: str) -> bool:
+    return _match_any(lower, _TICKET_COUNT_PATTERNS)
+
+
+def _matches_ticket_wallet_query(lower: str) -> bool:
+    return _match_any(lower, _TICKET_WALLET_PATTERNS)
+
+
 def classify_intent(
     message: str,
     *,
@@ -111,6 +162,45 @@ def classify_intent(
     lower = text.lower()
     public = resolve_public_route(text)
 
+    if _matches_fee_pricing_query(lower):
+        return IntentResult(
+            intent=INTENT_PRICING,
+            confidence=0.88,
+            route_key="pricing",
+            path="/pricing",
+            tool_hints=["get_public_pricing", "search_help", "search_public_pages"],
+        )
+
+    if _matches_become_host_query(lower):
+        return IntentResult(
+            intent=INTENT_SEARCH_PAGES,
+            confidence=0.88,
+            route_key="for_hosts",
+            path="/for-hosts",
+            tool_hints=["search_help", "search_public_pages", "navigate_to_route"],
+        )
+
+    if _matches_ticket_count_query(lower) or _matches_ticket_wallet_query(lower):
+        tools = (
+            ["get_my_ticket_summary", "list_my_upcoming_tickets"]
+            if _matches_ticket_count_query(lower)
+            else ["list_my_upcoming_tickets", "get_my_ticket_summary"]
+        )
+        if not authenticated:
+            return IntentResult(
+                intent=INTENT_TICKETS,
+                confidence=0.9,
+                tool_hints=[],
+                reason="auth_required_for_intent",
+            )
+        return IntentResult(
+            intent=INTENT_TICKETS,
+            confidence=0.9,
+            tool_hints=tools,
+            route_key="fan_tickets",
+            path="/dashboard/tickets",
+        )
+
     if page_context and any(
         w in lower for w in ("this page", "current page", "what is this", "explain this", "help with this")
     ):
@@ -123,8 +213,8 @@ def classify_intent(
 
     # Auth-sensitive intents before navigate shortcuts ("where is my ticket?")
     auth_rules: list[tuple[str, tuple[str, ...], list[str], float]] = [
-        (INTENT_TICKETS, ("my ticket", "upcoming ticket", "ticket wallet", "where is my ticket"), ["list_my_upcoming_tickets"], 0.9),
-        (INTENT_ORDERS, ("my order", "order history", "my purchase"), ["get_my_order_summary"], 0.85),
+        (INTENT_TICKETS, ("my ticket", "upcoming ticket", "ticket wallet", "where is my ticket"), ["list_my_upcoming_tickets", "get_my_ticket_summary"], 0.9),
+        (INTENT_ORDERS, ("my order", "order history", "my purchase", "purchased", "my purchases"), ["get_my_order_summary", "get_my_ticket_summary"], 0.85),
         (INTENT_HOST_EVENTS, ("my events", "host studio", "manage events"), ["list_my_events"], 0.8),
         (INTENT_ACCOUNT, ("my account", "my roles", "who am i"), ["get_my_account_summary", "get_my_roles"], 0.75),
         (INTENT_CREATE_DRAFT, ("draft description", "create event", "write description"), ["draft_event_description", "create_event_draft"], 0.7),
@@ -170,8 +260,8 @@ def classify_intent(
             )
 
     rules: list[tuple[str, tuple[str, ...], list[str], float]] = [
-        (INTENT_SEARCH_EVENTS, ("event", "what's on", "tonight", "concert", "party"), ["search_public_events"], 0.8),
-        (INTENT_SEARCH_HOSTS, ("host", "promoter", "legacy page"), ["search_public_hosts"], 0.75),
+        (INTENT_SEARCH_EVENTS, ("what's on", "tonight", "concert", "party", "find events", "events in", "upcoming events"), ["search_public_events"], 0.8),
+        (INTENT_SEARCH_HOSTS, ("find hosts", "host directory", "discover hosts", "promoter", "legacy page"), ["search_public_hosts"], 0.75),
         (INTENT_SEARCH_PRODUCTS, ("merch", "shop", "store", "buy hoodie"), ["search_public_products"], 0.75),
         (INTENT_SEARCH_MEMORIES, ("memory", "memories", "photos", "album"), ["search_public_memories"], 0.75),
         (INTENT_SEARCH_RESOURCES, ("blog", "article", "guide", "resource"), ["search_public_resources"], 0.7),

@@ -89,6 +89,7 @@ def test_host_cannot_access_another_hosts_event(db_session: Session, assistant_o
 def test_unauthenticated_denied_for_private_tools(db_session: Session, assistant_on):
     for name in (
         "list_my_upcoming_tickets",
+        "get_my_ticket_summary",
         "get_my_account_summary",
         "list_my_events",
         "create_event_draft",
@@ -98,6 +99,31 @@ def test_unauthenticated_denied_for_private_tools(db_session: Session, assistant
         )
         assert result["ok"] is False
         assert result["error"] == "auth_required"
+
+
+def test_ticket_summary_returns_counts_for_fan(db_session: Session, assistant_on):
+    fan = seed_user(db_session, email="asst-ticket-sum@example.com", role="buyer")
+    result = execute_tool(
+        db_session,
+        tool_name="get_my_ticket_summary",
+        args={},
+        user=fan,
+    )
+    assert result["ok"] is True
+    assert result["total_tickets"] == 0
+    assert "0 tickets" in result["summary"]
+
+
+def test_public_pricing_tool_returns_structure(db_session: Session, assistant_on):
+    result = execute_tool(
+        db_session,
+        tool_name="get_public_pricing",
+        args={},
+        user=None,
+    )
+    assert result["ok"] is True
+    assert result.get("summary")
+    assert result.get("url") == "/pricing"
 
 
 def test_high_risk_tools_refused_not_executed(db_session: Session, assistant_on):

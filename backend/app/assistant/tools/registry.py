@@ -94,6 +94,11 @@ TOOL_REGISTRY: dict[str, ToolDefinition] = {
         "Search public memory albums.",
         SAFETY_LEVEL_PUBLIC_READ,
     ),
+    "get_public_pricing": _t(
+        "get_public_pricing",
+        "Get public fee structure for hosts and buyers from live pricing settings.",
+        SAFETY_LEVEL_PUBLIC_READ,
+    ),
     # Navigation
     "navigate_to_route": _t(
         "navigate_to_route",
@@ -133,6 +138,12 @@ TOOL_REGISTRY: dict[str, ToolDefinition] = {
     "list_my_upcoming_tickets": _t(
         "list_my_upcoming_tickets",
         "List upcoming tickets owned by the signed-in user.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+    ),
+    "get_my_ticket_summary": _t(
+        "get_my_ticket_summary",
+        "Count total, upcoming, and past tickets for the signed-in user.",
         SAFETY_LEVEL_AUTH_READ,
         requires_auth=True,
     ),

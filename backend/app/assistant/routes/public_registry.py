@@ -45,6 +45,19 @@ PUBLIC_ROUTE_REGISTRY: dict[str, PublicRouteEntry] = {
         common_questions=("How do I find a host?", "What is a Legacy Page?"),
         route_group="hosts",
     ),
+    "for_hosts": PublicRouteEntry(
+        key="for_hosts",
+        path="/for-hosts",
+        title="For hosts",
+        description="Start hosting events on Pàdéyá — requirements, fees overview, and onboarding.",
+        synonyms=("for hosts", "become a host", "start hosting", "host on padeya"),
+        common_questions=(
+            "How do I become a host?",
+            "How to become a host on Pàdéyá?",
+            "What does it take to host events?",
+        ),
+        route_group="hosts",
+    ),
     "fans": PublicRouteEntry(
         key="fans",
         path="/fans",
@@ -170,6 +183,19 @@ PUBLIC_ROUTE_REGISTRY: dict[str, PublicRouteEntry] = {
         synonyms=("report", "report abuse", "safety report"),
         common_questions=("How do I report something?",),
         route_group="safety",
+    ),
+    "pricing": PublicRouteEntry(
+        key="pricing",
+        path="/pricing",
+        title="Pricing",
+        description="Public overview of Pàdéyá platform fees for hosts and buyers.",
+        synonyms=("pricing", "fees", "fee", "commission", "host fees", "platform fees", "cost"),
+        common_questions=(
+            "What are the fees for hosts?",
+            "How much does Pàdéyá charge?",
+            "What is the platform fee?",
+        ),
+        route_group="marketing",
     ),
 }
 

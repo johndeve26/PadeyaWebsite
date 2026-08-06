@@ -101,6 +101,7 @@ INTENT_TICKETS = "tickets"
 INTENT_ORDERS = "orders"
 INTENT_HOST_EVENTS = "host_events"
 INTENT_SUPPORT = "support"
+INTENT_PRICING = "pricing"
 INTENT_CREATE_DRAFT = "create_draft"
 INTENT_CONFIRM_ACTION = "confirm_action"
 INTENT_HIGH_RISK = "high_risk"
@@ -124,6 +125,7 @@ INTENT_VALUES = frozenset(
         INTENT_ORDERS,
         INTENT_HOST_EVENTS,
         INTENT_SUPPORT,
+        INTENT_PRICING,
         INTENT_CREATE_DRAFT,
         INTENT_CONFIRM_ACTION,
         INTENT_HIGH_RISK,

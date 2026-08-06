@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from sqlalchemy import select
@@ -10,6 +11,18 @@ from sqlalchemy.orm import Session
 from app.assistant.privacy import redact_dict
 from app.assistant.routes.public_registry import PUBLIC_ROUTE_REGISTRY, resolve_public_route
 from app.events.service import get_event_by_slug, list_published_events
+
+
+def _query_tokens(q: str) -> set[str]:
+    return {t for t in re.findall(r"[a-z0-9']+", (q or "").lower()) if len(t) >= 3}
+
+
+def _text_matches_query(q: str, *fields: str) -> bool:
+    tokens = _query_tokens(q)
+    if not tokens:
+        return True
+    blob = " ".join(fields).lower()
+    return any(token in blob for token in tokens)
 
 
 def search_public_events(
@@ -93,6 +106,52 @@ def search_public_hosts(
     return {"ok": True, "query": q, "results": results, "count": len(results)}
 
 
+def get_public_pricing(
+    db: Session, *, args: dict[str, Any] | None = None, **_: Any
+) -> dict[str, Any]:
+    """Public fee structure from live pricing settings (no invented rates)."""
+    try:
+        from app.pricing.service import build_public_pricing
+
+        payload = build_public_pricing(db)
+        categories = [
+            {
+                "label": row.label,
+                "payer": row.payer,
+                "description": row.public_description,
+                "display_rate": row.display_rate,
+                "may_vary_by_host": row.may_vary_by_host,
+            }
+            for row in payload.categories
+        ]
+        host_rows = [c for c in categories if c.get("payer") == "host"]
+        buyer_rows = [c for c in categories if c.get("payer") == "buyer"]
+        return {
+            "ok": True,
+            "note": payload.note,
+            "url": "/pricing",
+            "host_fee_categories": host_rows,
+            "buyer_fee_categories": buyer_rows,
+            "summary": (
+                "Pàdéyá charges hosts platform fees on successful sales "
+                "(tickets, merch, Vault) deducted from host earnings. "
+                "Buyers may see separate service/processing fees at checkout. "
+                "Exact host rates may vary and appear in Host → Earnings."
+            ),
+        }
+    except Exception:
+        return {
+            "ok": True,
+            "url": "/pricing",
+            "summary": (
+                "Hosts pay configurable platform fees on successful sales, "
+                "deducted from earnings. See /pricing and Help for details."
+            ),
+            "host_fee_categories": [],
+            "buyer_fee_categories": [],
+        }
+
+
 def search_public_pages(
     db: Session, *, args: dict[str, Any], **_: Any
 ) -> dict[str, Any]:
@@ -161,7 +220,7 @@ def search_public_resources(
         for post in posts:
             title = getattr(post, "title", "") or ""
             slug = getattr(post, "slug", "") or ""
-            if ql and ql not in title.lower() and ql not in slug.lower():
+            if ql and not _text_matches_query(q, title, slug):
                 continue
             results.append(
                 {
@@ -188,7 +247,8 @@ def search_public_resources(
             for row in rows:
                 title = getattr(row, "title", "") or ""
                 slug = getattr(row, "slug", "") or ""
-                if ql and ql not in title.lower() and ql not in slug.lower():
+                excerpt = getattr(row, "excerpt", "") or ""
+                if ql and not _text_matches_query(q, title, slug, excerpt):
                     continue
                 results.append(
                     {

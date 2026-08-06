@@ -5,6 +5,7 @@ from __future__ import annotations
 from app.assistant.constants import (
     INTENT_HIGH_RISK,
     INTENT_INJECTION,
+    INTENT_PRICING,
     INTENT_SEARCH_EVENTS,
     INTENT_SEARCH_PAGES,
     INTENT_TICKETS,
@@ -74,3 +75,37 @@ def test_publish_my_event_high_risk_navigate_only():
         )
     }
     assert "publish_event" not in allowed
+
+
+def test_host_fee_question_routes_to_pricing():
+    r = classify_intent("What's the fee for hosts?")
+    assert r.intent == INTENT_PRICING
+    assert "get_public_pricing" in r.tool_hints
+    assert r.route_key == "pricing"
+
+
+def test_ticket_count_requires_auth():
+    r = classify_intent("How many tickets have I purchased?", authenticated=False)
+    assert r.intent == INTENT_TICKETS
+    assert r.reason == "auth_required_for_intent"
+    assert r.tool_hints == []
+
+
+def test_ticket_count_uses_summary_tool_when_authenticated():
+    r = classify_intent("How many tickets have I purchased?", authenticated=True)
+    assert r.intent == INTENT_TICKETS
+    assert "get_my_ticket_summary" in r.tool_hints
+    assert r.path == "/dashboard/tickets"
+
+
+def test_event_hosting_clarification_routes_to_pricing():
+    r = classify_intent("i mean for event hosting")
+    assert r.intent == INTENT_PRICING
+    assert "get_public_pricing" in r.tool_hints
+
+
+def test_become_host_routes_to_for_hosts():
+    r = classify_intent("how to become a host")
+    assert r.intent == INTENT_SEARCH_PAGES
+    assert r.route_key == "for_hosts"
+    assert r.path == "/for-hosts"

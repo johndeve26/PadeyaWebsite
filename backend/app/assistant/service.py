@@ -196,26 +196,51 @@ def _build_user_prompt(
     if page_context:
         parts.append(f"\nPage context (safe): {page_context}")
     if tool_results:
-        # Keep tool payloads compact and already sanitized
         compact = []
         for tr in tool_results[:4]:
-            compact.append(
-                {
-                    "tool": tr.get("tool_name"),
-                    "ok": tr.get("ok"),
-                    "count": tr.get("count"),
-                    "results": (tr.get("results") or tr.get("result") or tr.get("summary")) ,
-                    "error": tr.get("error"),
+            row: dict[str, Any] = {
+                "tool": tr.get("tool_name"),
+                "ok": tr.get("ok"),
+                "count": tr.get("count"),
+                "error": tr.get("error"),
+            }
+            if tr.get("summary"):
+                row["summary"] = tr.get("summary")
+            if tr.get("note"):
+                row["note"] = tr.get("note")
+            if tr.get("host_fee_categories"):
+                row["host_fee_categories"] = tr.get("host_fee_categories")
+            if tr.get("buyer_fee_categories"):
+                row["buyer_fee_categories"] = tr.get("buyer_fee_categories")
+            if tr.get("total_tickets") is not None:
+                row["total_tickets"] = tr.get("total_tickets")
+                row["upcoming_count"] = tr.get("upcoming_count")
+                row["past_count"] = tr.get("past_count")
+            if tr.get("results") is not None:
+                row["results"] = tr.get("results")
+            elif tr.get("result") is not None:
+                row["result"] = tr.get("result")
+            elif tr.get("knowledge"):
+                row["knowledge"] = tr.get("knowledge")
+            if tr.get("hub") or tr.get("support"):
+                row["links"] = {
+                    k: tr[k]
+                    for k in ("hub", "support", "url")
+                    if tr.get(k)
                 }
-            )
+            compact.append(row)
         parts.append(f"\nTool results:\n{compact}")
     if citations:
-        parts.append(
-            "\nCitations:\n"
-            + "\n".join(f"- {c.title}: {c.url}" for c in citations[:6])
-        )
+        lines = []
+        for c in citations[:6]:
+            line = f"- {c.title}: {c.url}"
+            if c.snippet:
+                line += f"\n  excerpt: {c.snippet[:400]}"
+            lines.append(line)
+        parts.append("\nCitations:\n" + "\n".join(lines))
     parts.append(
         "\nRespond helpfully. Do not invent prices, routes, or private data. "
+        "When tool results include summary fields or counts, use them directly in your answer. "
         "Cite sources when using knowledge. Prefer short actionable answers."
     )
     return "\n".join(parts)
@@ -239,6 +264,55 @@ def _fallback_text(
             "or contact Support if you're stuck."
         )
     for tr in tool_results:
+        if tr.get("tool_name") == "get_my_ticket_summary" and tr.get("ok"):
+            return str(
+                tr.get("summary")
+                or f"You have {tr.get('total_tickets', 0)} ticket(s) on your account."
+            )
+        if tr.get("tool_name") == "get_public_pricing" and tr.get("ok"):
+            summary = tr.get("summary")
+            if summary:
+                return str(summary)
+            host_rows = tr.get("host_fee_categories") or []
+            if host_rows:
+                bits = [
+                    f"{row.get('label')}: {row.get('description')}"
+                    for row in host_rows[:3]
+                    if isinstance(row, dict)
+                ]
+                return (
+                    "Host fees on Pàdéyá are deducted from earnings on successful sales. "
+                    + " ".join(bits)
+                    + " See /pricing for the full public breakdown."
+                )
+        if tr.get("tool_name") == "get_my_order_summary" and tr.get("ok"):
+            count = tr.get("count") or len(tr.get("results") or [])
+            return f"You have {count} recent order(s) on your account."
+        if tr.get("tool_name") == "list_my_upcoming_tickets" and tr.get("ok"):
+            count = tr.get("count") or len(tr.get("results") or [])
+            if count:
+                titles = ", ".join(
+                    str(r.get("event_title"))
+                    for r in (tr.get("results") or [])[:3]
+                    if r.get("event_title")
+                )
+                return f"You have {count} upcoming ticket(s): {titles}."
+            return "You have no upcoming tickets right now."
+        if tr.get("tool_name") == "search_help" and tr.get("ok"):
+            support = tr.get("support") or {}
+            hub = tr.get("hub") or {}
+            support_url = support.get("url") or "/support"
+            help_url = hub.get("url") or "/help"
+            results = tr.get("results") or []
+            if results:
+                first = results[0]
+                return (
+                    f"Browse Help at {help_url} or contact Support at {support_url}. "
+                    f"Relevant article: {first.get('title')} ({first.get('url')})."
+                )
+            return (
+                f"Contact Support at {support_url}, or browse the Help Center at {help_url}."
+            )
         if tr.get("tool_name") == "search_public_events" and tr.get("results"):
             titles = ", ".join(
                 str(r.get("title")) for r in tr["results"][:3] if r.get("title")
@@ -441,6 +515,28 @@ def run_chat_turn(
                         url=result.get("path"),
                     )
                 )
+            if (
+                name == "get_my_ticket_summary"
+                and result.get("ok")
+                and intent.path
+            ):
+                actions.append(
+                    Action(
+                        type="navigate",
+                        label="Open My tickets",
+                        route_key=intent.route_key or "fan_tickets",
+                        url=intent.path or "/dashboard/tickets",
+                    )
+                )
+            if name == "get_public_pricing" and result.get("ok"):
+                actions.append(
+                    Action(
+                        type="navigate",
+                        label="Open Pricing",
+                        route_key="pricing",
+                        url=result.get("url") or "/pricing",
+                    )
+                )
 
         # Knowledge retrieval for informational intents
         if intent.intent in {
@@ -449,6 +545,10 @@ def run_chat_turn(
             "unknown",
             "explain_page",
             "chitchat",
+            "pricing",
+            "tickets",
+            "orders",
+            "support",
         }:
             for hit in retrieve_knowledge(db, query=clean_message, top_k=4):
                 cit = Citation(
