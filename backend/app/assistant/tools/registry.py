@@ -63,6 +63,13 @@ TOOL_REGISTRY: dict[str, ToolDefinition] = {
         SAFETY_LEVEL_PUBLIC_READ,
         feature_flag="assistant_event_search_enabled",
     ),
+    "get_my_event_recommendations": _t(
+        "get_my_event_recommendations",
+        "Personalized upcoming event recommendations for the signed-in fan.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+        feature_flag="assistant_event_search_enabled",
+    ),
     "get_public_event": _t(
         "get_public_event",
         "Get a public event by slug or public id.",

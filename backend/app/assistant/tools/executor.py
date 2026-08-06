@@ -32,6 +32,7 @@ Handler = Callable[..., dict[str, Any]]
 
 _HANDLERS: dict[str, Handler] = {
     "search_public_events": public_search.search_public_events,
+    "get_my_event_recommendations": public_search.get_my_event_recommendations,
     "get_public_event": public_search.get_public_event,
     "search_public_hosts": public_search.search_public_hosts,
     "search_public_pages": public_search.search_public_pages,

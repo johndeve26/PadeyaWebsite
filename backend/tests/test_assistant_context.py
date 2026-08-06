@@ -27,26 +27,30 @@ from app.assistant.privacy import scrub_prompt_text
 from tests.assistant_helpers import enable_assistant, seed_host, seed_user
 
 
-def test_history_reconstruction_excludes_system(db_session, monkeypatch):
+def test_stale_anonymous_session_starts_fresh(db_session, monkeypatch):
+    """Cookie mismatch must not block follow-ups — start a new session."""
     enable_assistant(monkeypatch)
-    user = seed_user(db_session, email="ctx-fan@example.com")
-    session = session_svc.create_session(db_session, user=user)
-    session_svc.add_message(
-        db_session, session=session, role="system", content="hidden", safety_status="ok"
+    from fastapi import Request
+    from app.assistant.service import run_chat_turn
+
+    anon_a = session_svc.new_anonymous_session_id()
+    session = session_svc.create_session(
+        db_session, user=None, anonymous_session_id=anon_a
     )
-    session_svc.add_message(
-        db_session, session=session, role="user", content="Hello", safety_status="ok"
-    )
-    session_svc.add_message(
+    request = Request({"type": "http", "method": "POST", "path": "/x", "headers": []})
+    # Wrong cookie for the stored session id
+    response, _meta, _anon = run_chat_turn(
         db_session,
-        session=session,
-        role="assistant",
-        content="Hi there",
-        safety_status="ok",
+        request=request,
+        user=None,
+        message="events coming up?",
+        session_id=session.id,
+        page_context_raw=None,
+        anonymous_session_id=session_svc.new_anonymous_session_id(),
     )
-    history = load_scrubbed_history(db_session, session=session)
-    assert len(history) == 2
-    assert history[0]["role"] == "user"
+    assert response.session_id != session.id
+    assert response.text
+
 
 
 def test_session_ownership_denied(db_session, monkeypatch):

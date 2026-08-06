@@ -105,6 +105,27 @@ _FOLLOWED_HOST_EVENTS_PATTERNS = (
     r"\bwhich host\b.{0,30}\b(hosting|event|soon)\b",
 )
 
+_EVENT_DISCOVERY_PATTERNS = (
+    r"\bevents?\b.{0,40}\b(coming up|upcoming|soon|near me|tonight|this weekend|this week|next week)\b",
+    r"\b(coming up|upcoming|any|show(?:\s+me)?|list)\b.{0,20}\bevents?\b",
+    r"\b(next week|this week|this weekend|tonight)\b.{0,40}\bevents?\b",
+    r"\bevents?\b.{0,40}\b(to )?attend\b",
+    r"\b(to )?attend\b.{0,40}\bevents?\b",
+    r"\bevent to attend\b",
+    r"\bfind events?\b",
+    r"\bwhat(?:'s|s)? on\b",
+    r"\bwhat(?:'s|s)? happening\b",
+    r"\bhow about (?:upcoming|some )?events?\b",
+    r"\bhow about upcoming\b",
+    r"\bupcoming even",  # typos: eveng, event, events
+    r"\brecommend(?:ations?)?\b.{0,40}\b(event|me|for me)?\b",
+    r"\brecommend (?:for |or )?me\b",
+    r"\bsuggest (?:an |some )?events?\b",
+    r"\banything (?:on|happening|fun)\b",
+    r"\bthings to do\b",
+    r"\bdiscover events?\b",
+)
+
 _FOLLOWER_PATTERNS = (
     r"\bhow many followers?\b",
     r"\bfollower count\b",
@@ -206,6 +227,10 @@ def _matches_followed_host_events_query(lower: str) -> bool:
     return _match_any(lower, _FOLLOWED_HOST_EVENTS_PATTERNS)
 
 
+def _matches_event_discovery_query(lower: str) -> bool:
+    return _match_any(lower, _EVENT_DISCOVERY_PATTERNS)
+
+
 def _matches_follower_query(lower: str) -> bool:
     return _match_any(lower, _FOLLOWER_PATTERNS)
 
@@ -291,6 +316,15 @@ def classify_intent(
     lower = text.lower()
     public = resolve_public_route(text)
 
+    if _matches_public_sponsor_query(lower) and not authenticated:
+        return IntentResult(
+            intent=INTENT_SEARCH_PAGES,
+            confidence=0.8,
+            route_key="sponsors",
+            path="/sponsors",
+            tool_hints=["search_public_sponsors", "search_public_pages"],
+        )
+
     if _matches_followed_host_events_query(lower):
         if not authenticated:
             return IntentResult(
@@ -310,6 +344,18 @@ def classify_intent(
             path="/dashboard/saved",
         )
 
+    if _matches_event_discovery_query(lower):
+        tools = ["search_public_events"]
+        if authenticated:
+            tools.insert(0, "get_my_event_recommendations")
+        return IntentResult(
+            intent=INTENT_SEARCH_EVENTS,
+            confidence=0.9,
+            tool_hints=tools,
+            route_key="events",
+            path="/events",
+        )
+
     if _matches_fee_pricing_query(lower):
         return IntentResult(
             intent=INTENT_PRICING,
@@ -326,15 +372,6 @@ def classify_intent(
             route_key="for_hosts",
             path="/for-hosts",
             tool_hints=["search_help", "search_public_pages", "navigate_to_route"],
-        )
-
-    if _matches_public_sponsor_query(lower) and not authenticated:
-        return IntentResult(
-            intent=INTENT_SEARCH_PAGES,
-            confidence=0.8,
-            route_key="sponsors",
-            path="/sponsors",
-            tool_hints=["search_public_sponsors", "search_public_pages"],
         )
 
     if _matches_ambassador_query(lower):
@@ -554,7 +591,7 @@ def classify_intent(
             )
 
     rules: list[tuple[str, tuple[str, ...], list[str], float]] = [
-        (INTENT_SEARCH_EVENTS, ("what's on", "tonight", "concert", "party", "find events", "events in", "upcoming events"), ["search_public_events"], 0.8),
+        (INTENT_SEARCH_EVENTS, ("what's on", "whats on", "tonight", "concert", "party", "find events", "events in", "upcoming events", "coming up", "recommend", "next week", "to attend"), ["search_public_events"], 0.8),
         (INTENT_SEARCH_HOSTS, ("find hosts", "host directory", "discover hosts", "promoter", "legacy page"), ["search_public_hosts"], 0.75),
         (INTENT_SEARCH_PRODUCTS, ("merch", "shop", "store", "buy hoodie"), ["search_public_products"], 0.75),
         (INTENT_SEARCH_MEMORIES, ("memory", "memories", "photos", "album"), ["search_public_memories"], 0.75),

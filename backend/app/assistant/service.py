@@ -19,6 +19,7 @@ from app.assistant.constants import (
     FLAG_ASSISTANT_ENABLED,
     FLAG_ASSISTANT_EVENT_SEARCH_ENABLED,
     FLAG_ASSISTANT_PUBLIC_ENABLED,
+    INTENT_SEARCH_EVENTS,
     MODE_AUTHENTICATED,
     MODE_PUBLIC,
     PUBLIC_PRODUCT_NAME,
@@ -326,11 +327,23 @@ def _fallback_text(
             return (
                 f"Contact Support at {support_url}, or browse the Help Center at {help_url}."
             )
-        if tr.get("tool_name") == "search_public_events" and tr.get("results"):
-            titles = ", ".join(
-                str(r.get("title")) for r in tr["results"][:3] if r.get("title")
+        if tr.get("tool_name") == "search_public_events" and tr.get("ok"):
+            if tr.get("summary"):
+                return str(tr["summary"])
+            if tr.get("results"):
+                titles = ", ".join(
+                    str(r.get("title")) for r in tr["results"][:3] if r.get("title")
+                )
+                return f"Here are some upcoming events I found: {titles}."
+            return (
+                "I could not find matching upcoming events. "
+                "Tell me a city, when (tonight / this weekend), or a vibe and I will search again."
             )
-            return f"Here are some upcoming events I found: {titles}."
+        if tr.get("tool_name") == "get_my_event_recommendations" and tr.get("ok"):
+            return str(
+                tr.get("summary")
+                or "Tell me your city and vibe so I can recommend better events."
+            )
         if tr.get("path"):
             return f"You can open {tr.get('title') or 'that page'} at {tr.get('path')}."
         if tr.get("summary"):
@@ -380,12 +393,35 @@ def run_chat_turn(
         raise HTTPException(status_code=400, detail="Message required")
 
     if session_id:
-        session = session_svc.get_session_for_actor(
-            db,
-            session_id=session_id,
-            user=user,
-            anonymous_session_id=anon_sid,
-        )
+        try:
+            session = session_svc.get_session_for_actor(
+                db,
+                session_id=session_id,
+                user=user,
+                anonymous_session_id=anon_sid,
+            )
+        except HTTPException as exc:
+            # Stale browser session_id + rotated anonymous cookie → start fresh
+            # instead of failing the follow-up turn.
+            if exc.status_code in {403, 404, 410} and user is None:
+                session = session_svc.create_session(
+                    db,
+                    user=None,
+                    anonymous_session_id=anon_sid,
+                    active_role=page_context.get("role"),
+                    metadata_json={"timezone": timezone} if timezone else None,
+                )
+                anon_sid = session.anonymous_session_id or anon_sid
+            elif exc.status_code in {403, 404, 410} and user is not None:
+                session = session_svc.create_session(
+                    db,
+                    user=user,
+                    anonymous_session_id=None,
+                    active_role=page_context.get("role"),
+                    metadata_json={"timezone": timezone} if timezone else None,
+                )
+            else:
+                raise
     else:
         session = session_svc.create_session(
             db,
@@ -509,7 +545,12 @@ def run_chat_turn(
         ]:
             if "search_public_events" not in hints:
                 hints.insert(0, "search_public_events")
-        if intent.route_key and "navigate_to_route" not in hints:
+        # Prefer live search over bare navigation for event discovery.
+        if (
+            intent.route_key
+            and "navigate_to_route" not in hints
+            and intent.intent != INTENT_SEARCH_EVENTS
+        ):
             hints.append("navigate_to_route")
 
         allowed = {
@@ -522,13 +563,23 @@ def run_chat_turn(
             )
         }
 
+        from app.assistant.tools.public_search import extract_event_search_query
+
         for name in hints[:max_steps]:
             if name not in allowed:
                 continue
             args: dict[str, Any] = {"query": clean_message, "q": clean_message}
+            if name in {"search_public_events", "get_my_event_recommendations"}:
+                needle, needs_prefs, filters = extract_event_search_query(clean_message)
+                args = {
+                    "query": needle,
+                    "q": needle,
+                    "browse_upcoming": needs_prefs,
+                    **filters,
+                }
             if follow_up.tool_args:
                 args.update(follow_up.tool_args)
-            if intent.route_key:
+            if intent.route_key and name == "navigate_to_route":
                 args["route_key"] = intent.route_key
             tool_args_by_name[name] = args
             stream_meta.append({"event": "tool_started", "data": {"tool_name": name}})

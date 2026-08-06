@@ -177,6 +177,39 @@ def test_public_sponsor_search():
     assert "search_public_sponsors" in r.tool_hints
 
 
+def test_events_coming_up_searches_not_navigates():
+    r = classify_intent("events coming up?", authenticated=False)
+    assert r.intent == INTENT_SEARCH_EVENTS
+    assert "search_public_events" in r.tool_hints
+
+
+def test_recommend_for_me_routes_to_event_discovery():
+    r = classify_intent("recommend for me", authenticated=False)
+    assert r.intent == INTENT_SEARCH_EVENTS
+    assert "search_public_events" in r.tool_hints
+
+    auth = classify_intent("recommend for me", authenticated=True)
+    assert "get_my_event_recommendations" in auth.tool_hints
+
+
+def test_whats_on_this_weekend():
+    r = classify_intent("whats on this weekend", authenticated=False)
+    assert r.intent == INTENT_SEARCH_EVENTS
+    assert "search_public_events" in r.tool_hints
+
+
+def test_event_to_attend_next_week():
+    r = classify_intent("event to attend next week", authenticated=False)
+    assert r.intent == INTENT_SEARCH_EVENTS
+    assert "search_public_events" in r.tool_hints
+
+
+def test_upcoming_typo_follow_up():
+    r = classify_intent("how about upcoming eveng", authenticated=False)
+    assert r.intent == INTENT_SEARCH_EVENTS
+    assert "search_public_events" in r.tool_hints
+
+
 def test_followed_host_events_requires_auth():
     r = classify_intent("which of the host is hosting event soon?", authenticated=False)
     assert r.intent == INTENT_SEARCH_EVENTS

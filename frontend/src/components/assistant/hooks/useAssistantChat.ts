@@ -248,6 +248,10 @@ export function useAssistantChat(options: UseAssistantChatOptions = {}) {
         typeof data.detail === "string"
           ? data.detail
           : "Something went wrong. Please try again.";
+      if (/session not owned|session expired|session not found/i.test(detail)) {
+        setSessionId(null);
+        writeStoredSessionId(null);
+      }
       setMessages((prev) =>
         prev.map((m) =>
           m.id === draftId
@@ -266,7 +270,10 @@ export function useAssistantChat(options: UseAssistantChatOptions = {}) {
 
     if (type === "done") {
       const done = data as AssistantDonePayload;
-      if (typeof done.session_id === "string") setSessionId(done.session_id);
+      if (typeof done.session_id === "string") {
+        setSessionId(done.session_id);
+        writeStoredSessionId(done.session_id);
+      }
       if (typeof done.product_name === "string") {
         setProductName(done.product_name);
       }
@@ -330,18 +337,32 @@ export function useAssistantChat(options: UseAssistantChatOptions = {}) {
             ? Intl.DateTimeFormat().resolvedOptions().timeZone
             : null;
 
-        await streamAssistantChat(
-          {
-            message: trimmed,
-            session_id: sessionId,
-            page_context: pageContextRef.current ?? null,
-            timezone,
-          },
-          {
-            signal: controller.signal,
-            onEvent: (ev) => applySseEvent(ev, draftId),
-          },
-        );
+        const run = async (sid: string | null) =>
+          streamAssistantChat(
+            {
+              message: trimmed,
+              session_id: sid,
+              page_context: pageContextRef.current ?? null,
+              timezone,
+            },
+            {
+              signal: controller.signal,
+              onEvent: (ev) => applySseEvent(ev, draftId),
+            },
+          );
+
+        try {
+          await run(sessionId);
+        } catch (err) {
+          const detail = err instanceof Error ? err.message : "";
+          if (/session not owned|session expired|session not found/i.test(detail)) {
+            setSessionId(null);
+            writeStoredSessionId(null);
+            await run(null);
+          } else {
+            throw err;
+          }
+        }
       } catch (err) {
         if (controller.signal.aborted) {
           setMessages((prev) =>

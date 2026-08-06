@@ -85,8 +85,11 @@ def chat_stream(
         anonymous_session_id=anon,
         timezone=payload.timezone,
     )
-    if set_cookie and anon:
+    # Always refresh anonymous cookie when present so follow-ups stay bound.
+    if user is None and anon:
         _set_anon_cookie(stream, anon)
+        set_cookie = True
+    _ = set_cookie
     return stream
 
 

@@ -151,7 +151,12 @@ def _result_from_row(row: dict[str, Any], *, position: int, entity_type: str) ->
 
 
 def _infer_entity_type(tool_name: str, row: dict[str, Any]) -> str:
-    if tool_name in {"search_public_events", "get_public_event", "list_upcoming_events_from_followed_hosts"}:
+    if tool_name in {
+        "search_public_events",
+        "get_public_event",
+        "list_upcoming_events_from_followed_hosts",
+        "get_my_event_recommendations",
+    }:
         return "event"
     if tool_name in {"search_public_hosts", "get_my_following_summary", "list_my_saved_events"}:
         return "host"

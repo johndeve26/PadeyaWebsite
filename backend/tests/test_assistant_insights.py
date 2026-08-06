@@ -112,6 +112,39 @@ def test_host_segments_for_host(db_session, monkeypatch):
     assert "count" in result
 
 
+def test_extract_event_search_query_vague():
+    from app.assistant.tools.public_search import extract_event_search_query
+
+    q, needs, filters = extract_event_search_query("events coming up?")
+    assert q == ""
+    assert needs is True
+    assert filters == {}
+
+    q2, needs2, filters2 = extract_event_search_query("events in Lagos this weekend")
+    assert "lagos" in q2.lower() or filters2.get("city") == "Lagos"
+    assert filters2.get("when") == "weekend"
+    assert needs2 is False
+
+
+def test_search_public_events_vague_lists_upcoming(db_session, monkeypatch):
+    enable_assistant(monkeypatch)
+    from app.assistant.tools.executor import execute_tool
+    from tests.assistant_helpers import seed_host, seed_published_event
+
+    host, _ = seed_host(db_session, email="disc-host@example.com", slug="disc-host")
+    seed_published_event(db_session, host, title="Discovery Night", slug="discovery-night")
+    result = execute_tool(
+        db_session,
+        tool_name="search_public_events",
+        args={"query": "events coming up?", "browse_upcoming": True},
+        user=None,
+    )
+    assert result["ok"] is True
+    assert result["count"] >= 1
+    assert result.get("needs_preferences") is True
+    assert "city" in (result.get("preference_prompt") or "").lower()
+
+
 def test_past_tickets_for_fan(db_session, monkeypatch):
     enable_assistant(monkeypatch)
     fan = seed_user(db_session, email="ins-fan5@example.com", role="buyer")
