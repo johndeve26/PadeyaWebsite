@@ -23,6 +23,7 @@ from app.ai.constants import (
     FEATURE_HOST_MERCH_DESCRIPTION,
     FEATURE_HOST_MERCH_TAGS,
     FEATURE_HOST_MERCH_TITLE,
+    FEATURE_PLATFORM_ASSISTANT_CHAT,
     FEATURE_TEMPLATE_SLUG,
     FUTURE_AI_FEATURES,
     SUPPORT_FEATURES,
@@ -61,6 +62,9 @@ MERCH_FEATURES = frozenset(
 )
 
 
+PLATFORM_FEATURES = frozenset({FEATURE_PLATFORM_ASSISTANT_CHAT})
+
+
 def _on_generate_allowlist(feature_key: str) -> bool:
     if feature_key in LEGACY_HOST_AI_FEATURES or feature_key in ADMIN_QUARANTINED_AI_FEATURES:
         return False
@@ -88,6 +92,8 @@ def _has_dedicated_context(feature_key: str) -> bool:
         return True
     if feature_key in PASSPORT_FEATURES:
         return True
+    if feature_key in PLATFORM_FEATURES:
+        return True
     return False
 
 
@@ -103,6 +109,8 @@ def _has_feature_validation(feature_key: str) -> bool:
     if feature_key in SPONSORSHIP_FEATURES:
         return True
     if feature_key in PASSPORT_FEATURES:
+        return True
+    if feature_key in PLATFORM_FEATURES:
         return True
     return False
 
@@ -132,7 +140,11 @@ def _readiness_for_active(
     feature_key: str, *, template_slugs: set[str]
 ) -> dict[str, bool]:
     slug = FEATURE_TEMPLATE_SLUG.get(feature_key, feature_key)
-    has_template = slug in template_slugs or feature_key in template_slugs
+    has_template = (
+        slug in template_slugs
+        or feature_key in template_slugs
+        or feature_key in PLATFORM_FEATURES
+    )
     allowlist = _on_generate_allowlist(feature_key)
     context = _has_dedicated_context(feature_key)
     redaction = _has_redaction_path(feature_key)

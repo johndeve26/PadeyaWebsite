@@ -70,6 +70,13 @@ const SECTIONS: SectionDef[] = [
     filter: (r) => !r.future && r.category === "blog" && r.product_status === "active",
   },
   {
+    id: "platform",
+    title: "Active Platform features",
+    description: "Site-wide conversational assistant (Ask Pàdéyá / Pàdéyá Copilot).",
+    filter: (r) =>
+      !r.future && r.category === "platform" && r.product_status === "active",
+  },
+  {
     id: "future",
     title: "Future & planned AI",
     description:

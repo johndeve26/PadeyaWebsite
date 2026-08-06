@@ -79,7 +79,7 @@ def test_templates_and_routes_seeded(db_session: Session):
         assert row["routing_editable"] is False
         assert row["enabled"] is False
 
-    assert len(ADMIN_CONTROL_FEATURES) == 34
+    assert len(ADMIN_CONTROL_FEATURES) == 35
 
 
 def test_provider_profiles_exist(db_session: Session):
@@ -102,6 +102,10 @@ def test_admin_ai_overview_and_routes(client: TestClient, db_session: Session):
     fan_bio = next(i for i in items if i["feature_key"] == "fan.passport.bio")
     assert fan_bio["category"] == "fan"
     assert fan_bio["product_status"] == "active"
+    assistant = next(i for i in items if i["feature_key"] == "platform.assistant.chat")
+    assert assistant["category"] == "platform"
+    assert assistant["product_status"] == "active"
+    assert assistant["routing_editable"] is True
 
 
 def test_kill_switch_blocks_generate(client: TestClient, db_session: Session):

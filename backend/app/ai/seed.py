@@ -35,6 +35,7 @@ from app.ai.constants import (
     FEATURE_HOST_ANNOUNCEMENTS_DRAFT,
     FEATURE_HOST_SPONSORSHIP_PITCH,
     FEATURE_FAN_PASSPORT_BIO,
+    FEATURE_PLATFORM_ASSISTANT_CHAT,
     FEATURE_SUPPORT_ARTICLES,
     FEATURE_SUPPORT_PRIORITY,
     FEATURE_SUPPORT_REPLY_DRAFT,
@@ -51,6 +52,7 @@ from app.ai.constants import (
     SYSTEM_SUPPORT_SAFE,
 )
 from app.ai.models import AIPromptTemplate
+from app.assistant.prompts import ASSISTANT_SYSTEM_PROMPT_V1
 
 SYSTEM_HOST = SYSTEM_HOST_SAFE
 SYSTEM_ADMIN = SYSTEM_ADMIN_SAFE
@@ -746,6 +748,17 @@ TEMPLATES: list[dict[str, str]] = [
             "Fraud signals: {fraud_signals}\nNotes: {notes}\n"
             "Placeholder only — no automated enforcement."
         ),
+    },
+    {
+        "slug": FEATURE_PLATFORM_ASSISTANT_CHAT,
+        "name": "Conversational assistant chat",
+        "audience": "admin",
+        "system_prompt": ASSISTANT_SYSTEM_PROMPT_V1,
+        "user_template": (
+            "User message and tool context are assembled by the assistant service.\n"
+            "{message}"
+        ),
+        "description": "Registry mirror of app/assistant/prompts.py — live chat uses that module.",
     },
 ]
 
