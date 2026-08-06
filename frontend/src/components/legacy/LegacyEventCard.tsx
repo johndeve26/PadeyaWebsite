@@ -30,11 +30,17 @@ export function LegacyEventCard({
   const category = inferEventCategory(event.title, event.slug);
   const isUpcoming = variant === "upcoming";
   const listContext = isUpcoming ? "legacy_upcoming" : "legacy_upcoming";
-  const statusLabel = event.status
-    ? event.status.replace(/_/g, " ")
-    : isUpcoming
-      ? "Upcoming"
-      : "Completed";
+  const lifecycleLabel = isUpcoming ? "Upcoming" : "Completed";
+  const normalizedStatus = event.status
+    ? event.status.toLowerCase().replace(/_/g, " ").trim()
+    : "";
+  // Avoid duplicating the lifecycle chip (e.g. past + status "completed").
+  const showStatusBadge =
+    Boolean(normalizedStatus) &&
+    normalizedStatus !== "published" &&
+    normalizedStatus !== lifecycleLabel.toLowerCase();
+  const overlayChipClass =
+    "border-paper/35 bg-ink/55 text-paper ring-paper/25";
 
   return (
     <TrackImpression
@@ -70,15 +76,22 @@ export function LegacyEventCard({
             <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/10 to-transparent" />
             <div className="absolute left-3 top-3 flex flex-wrap gap-2">
               <Badge tone="accent">{category}</Badge>
-              <Badge tone={isUpcoming ? "dark" : "outline"}>
-                {isUpcoming ? "Upcoming" : "Completed"}
+              <Badge
+                tone={isUpcoming ? "dark" : "outline"}
+                className={isUpcoming ? undefined : overlayChipClass}
+              >
+                {lifecycleLabel}
               </Badge>
-              {event.status && event.status.toLowerCase() !== "published" ? (
-                <Badge tone="outline" className="capitalize">
-                  {statusLabel}
+              {showStatusBadge ? (
+                <Badge tone="outline" className={cn("capitalize", overlayChipClass)}>
+                  {normalizedStatus}
                 </Badge>
               ) : null}
-              {event.memory_path ? <Badge tone="outline">Memory</Badge> : null}
+              {event.memory_path ? (
+                <Badge tone="outline" className={overlayChipClass}>
+                  Memory
+                </Badge>
+              ) : null}
             </div>
           </div>
           <div className="flex flex-1 flex-col gap-2.5 p-5 sm:p-6">
