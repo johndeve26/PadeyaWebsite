@@ -85,21 +85,68 @@ def public_status() -> dict[str, Any]:
     }
 
 
-def _call_provider(system_prompt: str, user_prompt: str) -> tuple[str, str | None, str | None, bool]:
-    settings = get_settings()
-    try:
-        from app.ai.providers import get_ai_provider
+def _call_provider(
+    db: Session,
+    *,
+    system_prompt: str,
+    user_prompt: str,
+) -> tuple[str, str | None, str | None, bool]:
+    """Route through AI Control Center (provider profiles + runtime settings)."""
+    import os
 
-        provider = get_ai_provider(settings)
-        completion = provider.complete(
-            system_prompt=system_prompt, user_prompt=user_prompt
+    from app.ai.admin_controls import assert_spend_allows_network
+    from app.ai.constants import FEATURE_PLATFORM_ASSISTANT_CHAT
+    from app.ai.feature_routing import complete_for_feature
+    from app.ai.feature_toggles import is_feature_enabled
+    from app.ai.runtime_config import resolve_ai_settings
+
+    if (os.environ.get("AI_KILL_SWITCH") or "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }:
+        logger.info("assistant.provider_skipped kill_switch")
+        return "", "none", None, True
+
+    runtime = resolve_ai_settings(db)
+    if not runtime.ai_enabled:
+        logger.info("assistant.provider_skipped ai_disabled")
+        return "", "none", None, True
+
+    if not is_feature_enabled(FEATURE_PLATFORM_ASSISTANT_CHAT, db=db):
+        logger.info("assistant.provider_skipped feature_disabled")
+        return "", "none", None, True
+
+    force_template = False
+    try:
+        spend = assert_spend_allows_network(db)
+        force_template = bool(spend.get("force_template_fallback"))
+    except Exception as exc:
+        logger.warning("assistant.spend_gate_blocked: %s", exc)
+        return "", "none", None, True
+
+    try:
+        routed = complete_for_feature(
+            db,
+            feature_key=FEATURE_PLATFORM_ASSISTANT_CHAT,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            force_template_only=force_template,
         )
-        text = (completion.text or "").strip()
+        result = routed.result
+        text = (result.text or "").strip()
+        if result.used_fallback and result.error_message:
+            logger.warning(
+                "assistant.provider_fallback provider=%s error=%s chain=%s",
+                result.provider,
+                result.error_message,
+                ",".join(routed.chain[-3:]),
+            )
         return (
             text,
-            completion.provider,
-            completion.model_name,
-            bool(completion.used_fallback),
+            result.provider,
+            result.model_name,
+            bool(result.used_fallback),
         )
     except Exception:
         logger.exception("assistant.provider_failed")
@@ -403,7 +450,11 @@ def run_chat_turn(
     model = None
     used_fallback = True
     if not intent.refuse:
-        text, provider, model, used_fallback = _call_provider(system_prompt, user_prompt)
+        text, provider, model, used_fallback = _call_provider(
+            db,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+        )
     if not text:
         text = _fallback_text(
             intent=intent, tool_results=tool_results, citations=citations

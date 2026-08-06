@@ -15,6 +15,7 @@ from app.ai.constants import (
     FEATURE_HOST_ANNOUNCEMENTS_DRAFT,
     FEATURE_HOST_SPONSORSHIP_PITCH,
     FEATURE_FAN_PASSPORT_BIO,
+    FEATURE_PLATFORM_ASSISTANT_CHAT,
     DEFAULT_FEATURE_PERMISSIONS,
     FEATURE_LABELS,
     FUTURE_AI_FEATURES,
@@ -223,7 +224,7 @@ def get_or_create_feature_route(db: Session, feature_key: str) -> AIFeatureRoute
         daily_request_limit=cfg.daily_request_limit if cfg else None,
         monthly_request_limit=cfg.monthly_request_limit if cfg else None,
         max_tokens=cfg.token_limit_per_request if cfg else None,
-        requires_human_review=True,
+        requires_human_review=feature_key != FEATURE_PLATFORM_ASSISTANT_CHAT,
         allowed_permissions=list(
             (cfg.allowed_permissions if cfg else None)
             or DEFAULT_FEATURE_PERMISSIONS.get(feature_key, [])

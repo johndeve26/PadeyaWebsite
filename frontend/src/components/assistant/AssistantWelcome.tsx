@@ -5,25 +5,20 @@ import type { AssistantSuggestedPrompt } from "@/lib/types/assistant";
 
 export function AssistantWelcome({
   role,
-  productTitle,
-  subtitle,
   onSelect,
 }: {
   role: string | null;
-  productTitle: string;
-  subtitle: string;
+  productTitle?: string;
+  subtitle?: string;
   onSelect: (prompt: AssistantSuggestedPrompt) => void;
 }) {
   const prompts = getWelcomePrompts(role);
 
   return (
-    <div className="flex flex-col gap-4 px-1 py-2">
-      <div className="space-y-1">
-        <p className="text-base font-extrabold tracking-tight text-heading">
-          {productTitle}
-        </p>
-        <p className="text-sm text-muted-foreground">{subtitle}</p>
-      </div>
+    <div className="flex flex-col gap-3 px-1 py-1">
+      <p className="text-sm text-muted-foreground">
+        Pick a prompt or type your question below.
+      </p>
       <ul className="grid gap-2">
         {prompts.map((p) => (
           <li key={p.id}>

@@ -128,7 +128,15 @@ Crawled pages, event descriptions, Memories captions, and tool text are **untrus
 
 ## Model routing
 
-Reuses `app.ai.providers`. Template/fallback provider keeps deterministic tools usable when network AI is down. Do not retry mutations blindly.
+Reuses the **AI Control Center** via feature key `platform.assistant.chat`:
+
+1. **Admin → Pàdéyá AI → Providers** — configure primary network provider + model (same as Host/Fan Copilot).
+2. **Admin → Pàdéyá AI → Features** — enable `platform.assistant.chat` and assign primary/fallback providers.
+3. **Env** — `AI_ENABLED=true`, `AI_API_KEY=…`, and optional `AI_PROVIDER` / `AI_MODEL` for the default env-backed profile.
+
+The assistant does **not** read frontend env vars. If Control Center is configured but chat still uses template fallback, check backend logs for `assistant.provider_fallback` (missing key, wrong model, or provider HTTP error). Template fallback keeps event search + navigation working when the network provider is down or spend-capped.
+
+Do not retry mutations blindly.
 
 ---
 

@@ -34,6 +34,9 @@ FEATURE_ADMIN_REVENUE_SUMMARY = "admin.analytics.revenue_summary"
 FEATURE_ADMIN_REPORTS_SUMMARY = "admin.reports.summary"
 FEATURE_ADMIN_DAILY_OPS = "admin.operations.daily_summary"
 
+# Conversational site assistant (Ask Pàdéyá / Pàdéyá Copilot)
+FEATURE_PLATFORM_ASSISTANT_CHAT = "platform.assistant.chat"
+
 # Canonical Phase 1 Blog CMS AI keys (draft-only; never auto-publish)
 FEATURE_ADMIN_BLOG_TITLE = "admin.blog.title"
 FEATURE_ADMIN_BLOG_OUTLINE = "admin.blog.outline"
@@ -239,6 +242,7 @@ ADMIN_CONTROL_FEATURES: tuple[str, ...] = (
     FEATURE_ADMIN_BLOG_INTERNAL_LINKS,
     FEATURE_ADMIN_BLOG_FACT_REVIEW,
     FEATURE_ADMIN_BLOG_SIMILARITY,
+    FEATURE_PLATFORM_ASSISTANT_CHAT,
 )
 
 DEFAULT_FEATURE_PERMISSIONS: dict[str, list[str]] = {
@@ -276,10 +280,13 @@ DEFAULT_FEATURE_PERMISSIONS: dict[str, list[str]] = {
     FEATURE_ADMIN_BLOG_INTERNAL_LINKS: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
     FEATURE_ADMIN_BLOG_FACT_REVIEW: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
     FEATURE_ADMIN_BLOG_SIMILARITY: ["ai.use_platform", "admin.blog.edit", "admin.blog.create"],
+    FEATURE_PLATFORM_ASSISTANT_CHAT: [],
 }
 
 
 def feature_group(feature_key: str) -> str:
+    if feature_key.startswith("platform."):
+        return "platform"
     if feature_key.startswith("fan."):
         return "fan"
     if feature_key.startswith("host."):
@@ -330,6 +337,7 @@ FEATURE_CANONICAL: dict[str, str] = {
     FEATURE_ADMIN_BLOG_INTERNAL_LINKS: FEATURE_ADMIN_BLOG_INTERNAL_LINKS,
     FEATURE_ADMIN_BLOG_FACT_REVIEW: FEATURE_ADMIN_BLOG_FACT_REVIEW,
     FEATURE_ADMIN_BLOG_SIMILARITY: FEATURE_ADMIN_BLOG_SIMILARITY,
+    FEATURE_PLATFORM_ASSISTANT_CHAT: FEATURE_PLATFORM_ASSISTANT_CHAT,
     "summarize_support_complaints": FEATURE_ADMIN_SUPPORT_QUEUE,
     "explain_revenue_trends": FEATURE_ADMIN_REVENUE_SUMMARY,
     "summarize_review_reports": FEATURE_ADMIN_REPORTS_SUMMARY,
@@ -413,6 +421,7 @@ FEATURE_LABELS: dict[str, str] = {
     FEATURE_ADMIN_BLOG_INTERNAL_LINKS: "Suggest blog internal links",
     FEATURE_ADMIN_BLOG_FACT_REVIEW: "Review blog factual claims",
     FEATURE_ADMIN_BLOG_SIMILARITY: "Review blog similarity",
+    FEATURE_PLATFORM_ASSISTANT_CHAT: "Conversational assistant chat",
     "generate_event_title": "Generate event title",
     "generate_event_description": "Generate event description",
     "generate_ticket_tier_copy": "Generate ticket tier copy",
@@ -470,6 +479,7 @@ DEFAULT_FEATURE_ENABLED: dict[str, bool] = {
     FEATURE_ADMIN_BLOG_INTERNAL_LINKS: True,
     FEATURE_ADMIN_BLOG_FACT_REVIEW: True,
     FEATURE_ADMIN_BLOG_SIMILARITY: True,
+    FEATURE_PLATFORM_ASSISTANT_CHAT: True,
     "generate_event_title": True,
     "generate_event_description": True,
     "summarize_support_complaints": True,
