@@ -83,8 +83,12 @@ def get_session_for_actor(
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
     now = datetime.now(UTC)
-    if session.expires_at and session.expires_at <= now:
-        raise HTTPException(status_code=410, detail="Session expired")
+    if session.expires_at:
+        expires = session.expires_at
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=UTC)
+        if expires <= now:
+            raise HTTPException(status_code=410, detail="Session expired")
     if user is not None:
         if session.user_id is not None and session.user_id != user.id:
             raise HTTPException(status_code=403, detail="Session not owned by user")
@@ -127,6 +131,9 @@ def delete_session(
         user=user,
         anonymous_session_id=anonymous_session_id,
     )
+    from app.assistant.context.state import cancel_pending_confirmations
+
+    cancel_pending_confirmations(db, session=session, user=user)
     db.delete(session)
     db.commit()
 

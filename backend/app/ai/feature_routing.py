@@ -297,6 +297,7 @@ def complete_for_feature(
     system_prompt: str,
     user_prompt: str,
     force_template_only: bool = False,
+    max_tokens_override: int | None = None,
 ) -> RoutedCompletion:
     """Primary → fallback profile → template fallback → legacy runtime provider."""
     chain: list[str] = []
@@ -329,7 +330,11 @@ def complete_for_feature(
         if fb and fb.is_enabled and fb.id != route.primary_provider_id:
             attempts.append((fb, route.fallback_model, "fallback"))
 
-    max_tok = route.max_tokens
+    max_tok = (
+        max_tokens_override
+        if max_tokens_override is not None
+        else route.max_tokens
+    )
 
     for profile, model, label in attempts:
         if profile is None:

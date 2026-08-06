@@ -23,6 +23,20 @@ from app.assistant.constants import (
     MODE_PUBLIC,
     PUBLIC_PRODUCT_NAME,
 )
+from app.assistant.context import (
+    attach_anonymous_session,
+    build_context_user_prompt,
+    get_conversation_state,
+    get_session_summary,
+    handle_role_transition,
+    load_scrubbed_history,
+    maybe_update_summary,
+    resolve_follow_up,
+    resolve_output_token_limit,
+    save_conversation_state,
+    update_state_after_turn,
+)
+from app.assistant.context.tokens import load_context_budgets, trim_knowledge_citations
 from app.assistant.intent import IntentResult, classify_intent
 from app.assistant.knowledge.retrieve import retrieve_knowledge
 from app.assistant.privacy import sanitize_page_context, sanitize_user_message
@@ -125,7 +139,8 @@ def _call_provider(
     *,
     system_prompt: str,
     user_prompt: str,
-) -> tuple[str, str | None, str | None, bool]:
+    max_output_tokens: int | None = None,
+) -> tuple[str, str | None, str | None, bool, int]:
     """Route through AI Control Center (provider profiles + runtime settings)."""
     from fastapi import HTTPException
 
@@ -134,15 +149,17 @@ def _call_provider(
     from app.ai.feature_routing import complete_for_feature
     from app.ai.feature_toggles import assert_ai_globally_available, is_feature_enabled
 
+    applied_limit = resolve_output_token_limit(task_limit=max_output_tokens)
+
     try:
         assert_ai_globally_available()
     except HTTPException:
         logger.info("assistant.provider_skipped kill_switch")
-        return "", "none", None, True
+        return "", "none", None, True, applied_limit
 
     if not is_feature_enabled(FEATURE_PLATFORM_ASSISTANT_CHAT, db=db):
         logger.info("assistant.provider_skipped feature_disabled")
-        return "", "none", None, True
+        return "", "none", None, True, applied_limit
 
     force_template = False
     try:
@@ -150,10 +167,10 @@ def _call_provider(
         force_template = bool(spend.get("force_template_fallback"))
     except HTTPException as exc:
         logger.warning("assistant.spend_gate_blocked: %s", exc.detail)
-        return "", "none", None, True
+        return "", "none", None, True, applied_limit
     except Exception as exc:
         logger.warning("assistant.spend_gate_blocked: %s", exc)
-        return "", "none", None, True
+        return "", "none", None, True, applied_limit
 
     try:
         routed = complete_for_feature(
@@ -162,6 +179,7 @@ def _call_provider(
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             force_template_only=force_template,
+            max_tokens_override=applied_limit,
         )
         result = routed.result
         text = (result.text or "").strip()
@@ -177,83 +195,11 @@ def _call_provider(
             result.provider,
             result.model_name,
             bool(result.used_fallback),
+            applied_limit,
         )
     except Exception:
         logger.exception("assistant.provider_failed")
-        return "", "none", None, True
-
-
-def _build_user_prompt(
-    *,
-    message: str,
-    intent: IntentResult,
-    tool_results: list[dict[str, Any]],
-    citations: list[Citation],
-    page_context: dict[str, Any],
-) -> str:
-    parts = [f"User message:\n{message}"]
-    parts.append(f"\nDetected intent: {intent.intent} (confidence={intent.confidence})")
-    if page_context:
-        parts.append(f"\nPage context (safe): {page_context}")
-    if tool_results:
-        compact = []
-        for tr in tool_results[:4]:
-            row: dict[str, Any] = {
-                "tool": tr.get("tool_name"),
-                "ok": tr.get("ok"),
-                "count": tr.get("count"),
-                "error": tr.get("error"),
-            }
-            if tr.get("summary"):
-                row["summary"] = tr.get("summary")
-            if tr.get("note"):
-                row["note"] = tr.get("note")
-            if tr.get("host_fee_categories"):
-                row["host_fee_categories"] = tr.get("host_fee_categories")
-            if tr.get("buyer_fee_categories"):
-                row["buyer_fee_categories"] = tr.get("buyer_fee_categories")
-            if tr.get("stats"):
-                row["stats"] = tr.get("stats")
-            if tr.get("following_count") is not None:
-                row["following_count"] = tr.get("following_count")
-            if tr.get("tickets_sold") is not None:
-                row["tickets_sold"] = tr.get("tickets_sold")
-                row["check_ins"] = tr.get("check_ins")
-                row["unique_visitors"] = tr.get("unique_visitors")
-            if tr.get("connection_count") is not None:
-                row["connection_count"] = tr.get("connection_count")
-            if tr.get("total_tickets") is not None:
-                row["total_tickets"] = tr.get("total_tickets")
-                row["upcoming_count"] = tr.get("upcoming_count")
-                row["past_count"] = tr.get("past_count")
-            if tr.get("results") is not None:
-                row["results"] = tr.get("results")
-            elif tr.get("result") is not None:
-                row["result"] = tr.get("result")
-            elif tr.get("knowledge"):
-                row["knowledge"] = tr.get("knowledge")
-            if tr.get("hub") or tr.get("support"):
-                row["links"] = {
-                    k: tr[k]
-                    for k in ("hub", "support", "url")
-                    if tr.get(k)
-                }
-            compact.append(row)
-        parts.append(f"\nTool results:\n{compact}")
-    if citations:
-        lines = []
-        for c in citations[:6]:
-            line = f"- {c.title}: {c.url}"
-            if c.snippet:
-                line += f"\n  excerpt: {c.snippet[:400]}"
-            lines.append(line)
-        parts.append("\nCitations:\n" + "\n".join(lines))
-    parts.append(
-        "\nRespond helpfully. Do not invent prices, routes, or private data. "
-        "When tool results include summary fields or counts, use them directly in your answer. "
-        "Cite sources when using knowledge. Prefer short actionable answers."
-    )
-    return "\n".join(parts)
+        return "", "none", None, True, applied_limit
 
 
 def _fallback_text(
@@ -457,6 +403,29 @@ def run_chat_turn(
     )
     roles = user_role_names(user) if user else []
     permissions = user_permission_codes(user) if user else []
+
+    if user is not None and session.user_id is None and session.anonymous_session_id:
+        if anon_sid and session.anonymous_session_id == anon_sid:
+            attach_anonymous_session(
+                db,
+                session=session,
+                user=user,
+                roles=roles,
+                permissions=permissions,
+            )
+            anon_sid = session_svc.new_anonymous_session_id()
+
+    handle_role_transition(
+        session,
+        new_role=page_context.get("role"),
+        roles=roles,
+        permissions=permissions,
+    )
+
+    recent_history = load_scrubbed_history(db, session=session)
+    conversation_state = get_conversation_state(session)
+    session_summary = get_session_summary(session)
+
     intent = classify_intent(
         clean_message,
         authenticated=user is not None,
@@ -464,6 +433,53 @@ def run_chat_turn(
         permissions=permissions,
         page_context=page_context,
     )
+    follow_up = resolve_follow_up(
+        clean_message, state=conversation_state, intent=intent
+    )
+
+    if follow_up.clarification and follow_up.skip_provider:
+        trace_id = secrets.token_hex(8)
+        session_svc.add_message(
+            db,
+            session=session,
+            role="user",
+            content=clean_message,
+            safety_status="ok",
+            trace_id=trace_id,
+        )
+        clarification = follow_up.clarification
+        conversation_state["pending_clarification"] = clarification
+        save_conversation_state(session, state=conversation_state)
+        db.commit()
+        db.refresh(session)
+        assistant_msg = session_svc.add_message(
+            db,
+            session=session,
+            role="assistant",
+            content=clarification,
+            structured_content_json={"intent": intent.intent, "clarification": True},
+            safety_status="ok",
+            trace_id=trace_id,
+        )
+        response = AssistantResponse(
+            session_id=session.id,
+            message_id=assistant_msg.id,
+            mode=mode,
+            product_name=AUTH_PRODUCT_NAME if mode == MODE_AUTHENTICATED else PUBLIC_PRODUCT_NAME,
+            text=clarification,
+            citations=[],
+            cards=[],
+            actions=[],
+            safety_status="ok",
+            used_fallback=False,
+            provider=None,
+            model=None,
+            intent=intent.intent,
+            confirmation_id=None,
+            trace_id=trace_id,
+        )
+        return response, [], anon_sid or ""
+
     trace_id = secrets.token_hex(8)
     stream_meta: list[dict[str, Any]] = []
 
@@ -477,15 +493,17 @@ def run_chat_turn(
     )
 
     tool_results: list[dict[str, Any]] = []
+    tool_args_by_name: dict[str, dict[str, Any]] = {}
     citations: list[Citation] = []
     cards: list[Card] = []
     actions: list[Action] = []
     confirmation_id: UUID | None = None
 
     max_steps = int(getattr(get_settings(), "assistant_max_tool_steps", None) or 4)
+    ctx_budgets = load_context_budgets()
 
     if not intent.refuse:
-        hints = list(intent.tool_hints)
+        hints = list(follow_up.tool_hints or intent.tool_hints)
         if intent.intent in {"search_events", "unknown"} and flags[
             FLAG_ASSISTANT_EVENT_SEARCH_ENABLED
         ]:
@@ -508,8 +526,11 @@ def run_chat_turn(
             if name not in allowed:
                 continue
             args: dict[str, Any] = {"query": clean_message, "q": clean_message}
+            if follow_up.tool_args:
+                args.update(follow_up.tool_args)
             if intent.route_key:
                 args["route_key"] = intent.route_key
+            tool_args_by_name[name] = args
             stream_meta.append({"event": "tool_started", "data": {"tool_name": name}})
             result = execute_tool(
                 db,
@@ -519,6 +540,7 @@ def run_chat_turn(
                 page_context=page_context,
                 confirmed=False,
             )
+            result["tool_name"] = name
             tool_results.append(result)
             stream_meta.append(
                 {
@@ -631,7 +653,9 @@ def run_chat_turn(
             "support",
             "insights",
         }:
-            for hit in retrieve_knowledge(db, query=clean_message, top_k=4):
+            for hit in retrieve_knowledge(
+                db, query=clean_message, top_k=ctx_budgets.knowledge_top_k
+            ):
                 cit = Citation(
                     title=str(hit.get("title") or "Pàdéyá"),
                     url=str(hit.get("url") or "/"),
@@ -647,24 +671,59 @@ def run_chat_turn(
                     }
                 )
 
+        citations = trim_knowledge_citations(
+            citations,
+            top_k=ctx_budgets.knowledge_top_k,
+            absolute_max=ctx_budgets.knowledge_max,
+        )
+
+        if follow_up.navigate_url:
+            actions.append(
+                Action(
+                    type="navigate",
+                    label=follow_up.navigate_label or "Open",
+                    url=follow_up.navigate_url,
+                )
+            )
+
+    conversation_state = update_state_after_turn(
+        conversation_state,
+        intent=intent.intent,
+        tool_results=tool_results,
+        tool_args_by_name=tool_args_by_name,
+        confirmation_id=confirmation_id,
+    )
+    save_conversation_state(session, state=conversation_state)
+    session_summary = maybe_update_summary(
+        db,
+        session=session,
+        recent_turn_count=len(recent_history),
+        state=conversation_state,
+    )
+
     system_prompt = get_system_prompt(mode, page_context.get("role"))
-    user_prompt = _build_user_prompt(
+    user_prompt = build_context_user_prompt(
         message=clean_message,
         intent=intent,
         tool_results=tool_results,
         citations=citations,
         page_context=page_context,
+        session_summary=session_summary,
+        recent_turns=recent_history,
+        conversation_state=conversation_state,
     )
 
     text = ""
     provider = None
     model = None
     used_fallback = True
+    output_token_limit = resolve_output_token_limit()
     if not intent.refuse:
-        text, provider, model, used_fallback = _call_provider(
+        text, provider, model, used_fallback, output_token_limit = _call_provider(
             db,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
+            max_output_tokens=output_token_limit,
         )
     if not text:
         text = _fallback_text(
@@ -684,6 +743,8 @@ def run_chat_turn(
             "cards": [c.model_dump() for c in cards],
             "actions": [a.model_dump(mode="json") for a in actions],
             "intent": intent.intent,
+            "output_token_limit": output_token_limit,
+            "context_turns": len(recent_history),
         },
         model=model,
         safety_status=safety,

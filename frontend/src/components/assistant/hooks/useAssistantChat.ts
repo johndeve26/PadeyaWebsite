@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { streamAssistantChat } from "@/lib/assistant-api";
+import { getAssistantSession, streamAssistantChat } from "@/lib/assistant-api";
 import type {
   AssistantAction,
   AssistantCard,
@@ -12,6 +12,30 @@ import type {
   AssistantPageContext,
   AssistantSseEvent,
 } from "@/lib/types/assistant";
+
+const SESSION_STORAGE_KEY = "padeya-assistant-session-id";
+
+function readStoredSessionId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(SESSION_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredSessionId(sessionId: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (sessionId) {
+      window.sessionStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+    } else {
+      window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+}
 
 function localId(prefix: string): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -73,7 +97,7 @@ export type UseAssistantChatOptions = {
 
 export function useAssistantChat(options: UseAssistantChatOptions = {}) {
   const [messages, setMessages] = useState<AssistantChatMessage[]>([]);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(() => readStoredSessionId());
   const [productName, setProductName] = useState<string | null>(null);
   const [streaming, setStreaming] = useState(false);
   const [statusPhase, setStatusPhase] = useState<string | null>(null);
@@ -94,6 +118,34 @@ export function useAssistantChat(options: UseAssistantChatOptions = {}) {
     setOnline(options.aiProviderReady ?? true);
   }, [options.aiProviderReady]);
 
+  useEffect(() => {
+    const stored = readStoredSessionId();
+    if (!stored || messages.length > 0) return;
+    let cancelled = false;
+    void getAssistantSession(stored)
+      .then((detail) => {
+        if (cancelled) return;
+        setSessionId(stored);
+        setMessages(
+          (detail.messages ?? []).map((m) => ({
+            id: m.id,
+            role: m.role as AssistantChatMessage["role"],
+            content: m.content,
+            citations: (m.structured_content_json?.citations as AssistantCitation[]) ?? [],
+            cards: (m.structured_content_json?.cards as AssistantCard[]) ?? [],
+            actions: (m.structured_content_json?.actions as AssistantAction[]) ?? [],
+          })),
+        );
+      })
+      .catch(() => {
+        writeStoredSessionId(null);
+        setSessionId(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [messages.length]);
+
   const stop = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
@@ -111,6 +163,7 @@ export function useAssistantChat(options: UseAssistantChatOptions = {}) {
     stop();
     setMessages([]);
     setSessionId(null);
+    writeStoredSessionId(null);
     setProductName(null);
     setStatusPhase(null);
     assistantDraftId.current = null;
@@ -120,7 +173,10 @@ export function useAssistantChat(options: UseAssistantChatOptions = {}) {
     const { event: type, data } = event;
 
     if (type === "session") {
-      if (typeof data.session_id === "string") setSessionId(data.session_id);
+      if (typeof data.session_id === "string") {
+        setSessionId(data.session_id);
+        writeStoredSessionId(data.session_id);
+      }
       if (typeof data.product_name === "string") {
         setProductName(data.product_name);
       }

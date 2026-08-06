@@ -151,6 +151,12 @@ class Settings(BaseSettings):
     assistant_knowledge_sitemap_url: str = ""  # empty → derive from frontend_url
     assistant_max_tool_steps: int = 4
     assistant_max_output_tokens: int = 800
+    assistant_absolute_max_output_tokens: int = 2000
+    assistant_recent_turn_limit: int = 6
+    assistant_recent_history_token_budget: int = 4000
+    assistant_session_summary_token_budget: int = 800
+    assistant_knowledge_top_k: int = 4
+    assistant_knowledge_max: int = 6
     assistant_tool_timeout_seconds: int = 8
     assistant_primary_model: str = ""  # empty → use ai_model
     assistant_fast_model: str = ""
