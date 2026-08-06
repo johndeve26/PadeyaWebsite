@@ -47,8 +47,10 @@ def _set_anon_cookie(response: Response, sid: str) -> None:
 
 
 @router.get("/status", response_model=AssistantStatusPublic)
-def assistant_status() -> AssistantStatusPublic:
-    return AssistantStatusPublic(**public_status())
+def assistant_status(
+    db: Annotated[Session, Depends(get_db)],
+) -> AssistantStatusPublic:
+    return AssistantStatusPublic(**public_status(db))
 
 
 @router.post("/chat/stream")

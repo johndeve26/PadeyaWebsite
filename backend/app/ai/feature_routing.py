@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
@@ -39,6 +40,8 @@ from app.ai.runtime_config import effective_base_url, resolve_ai_settings
 from app.core.config import get_settings
 from app.core.encryption import decrypt_secret
 from app.ai.providers import AICompletion, get_ai_provider
+
+logger = logging.getLogger("padeya.ai.routing")
 
 
 @dataclass
@@ -246,10 +249,15 @@ def _resolve_api_key(profile: AIProviderProfile) -> str | None:
     if profile.api_key_encrypted:
         try:
             key = decrypt_secret(profile.api_key_encrypted).strip()
-            return key or None
+            if key:
+                return key
         except ValueError:
-            return None
-    return None
+            logger.warning(
+                "provider.encrypted_key_unavailable profile=%s — trying AI_API_KEY env",
+                profile.display_name,
+            )
+    env_key = (get_settings().ai_api_key or "").strip()
+    return env_key or None
 
 
 def invoke_config_for_profile(

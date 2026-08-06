@@ -66,6 +66,7 @@ function asCitation(data: Record<string, unknown>): AssistantCitation | null {
 
 export type UseAssistantChatOptions = {
   pageContext?: AssistantPageContext | null;
+  aiProviderReady?: boolean;
   onMessageSent?: () => void;
   onError?: (message: string) => void;
 };
@@ -76,7 +77,7 @@ export function useAssistantChat(options: UseAssistantChatOptions = {}) {
   const [productName, setProductName] = useState<string | null>(null);
   const [streaming, setStreaming] = useState(false);
   const [statusPhase, setStatusPhase] = useState<string | null>(null);
-  const [online, setOnline] = useState(true);
+  const [online, setOnline] = useState(options.aiProviderReady ?? true);
   const abortRef = useRef<AbortController | null>(null);
   const assistantDraftId = useRef<string | null>(null);
   const pageContextRef = useRef(options.pageContext);
@@ -88,6 +89,10 @@ export function useAssistantChat(options: UseAssistantChatOptions = {}) {
     onMessageSentRef.current = options.onMessageSent;
     onErrorRef.current = options.onError;
   }, [options.pageContext, options.onMessageSent, options.onError]);
+
+  useEffect(() => {
+    setOnline(options.aiProviderReady ?? true);
+  }, [options.aiProviderReady]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
@@ -212,6 +217,8 @@ export function useAssistantChat(options: UseAssistantChatOptions = {}) {
       setMessages((prev) =>
         prev.map((m) => {
           if (m.id !== draftId) return m;
+          const usedFallback = done.used_fallback ?? m.usedFallback;
+          if (usedFallback) setOnline(false);
           return {
             ...m,
             content: done.text?.trim() ? done.text : m.content,
@@ -222,7 +229,7 @@ export function useAssistantChat(options: UseAssistantChatOptions = {}) {
             actions: done.actions?.length ? done.actions : m.actions,
             confirmationId: done.confirmation_id ?? m.confirmationId,
             safetyStatus: done.safety_status ?? m.safetyStatus,
-            usedFallback: done.used_fallback ?? m.usedFallback,
+            usedFallback,
             error: done.ok === false ? true : m.error,
           };
         }),
@@ -255,7 +262,7 @@ export function useAssistantChat(options: UseAssistantChatOptions = {}) {
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
       setStreaming(true);
       setStatusPhase("starting");
-      setOnline(true);
+      setOnline(options.aiProviderReady ?? true);
       onMessageSentRef.current?.();
 
       const controller = new AbortController();

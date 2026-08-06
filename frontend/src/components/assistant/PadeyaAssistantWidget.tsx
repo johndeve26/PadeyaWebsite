@@ -74,6 +74,7 @@ export function PadeyaAssistantWidget({
     resetSession,
   } = useAssistantChat({
     pageContext,
+    aiProviderReady: status.ai_provider_ready ?? false,
     onMessageSent: () => {
       track("assistant_message_sent", {
         metadata: { mode: useCopilot ? "authenticated" : "public" },

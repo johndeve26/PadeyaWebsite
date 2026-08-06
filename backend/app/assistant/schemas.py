@@ -149,3 +149,5 @@ class AssistantStatusPublic(BaseModel):
     event_search_enabled: bool = False
     product_public: str = "Ask Pàdéyá"
     product_authenticated: str = "Pàdéyá Copilot"
+    ai_feature_enabled: bool = False
+    ai_provider_ready: bool = False

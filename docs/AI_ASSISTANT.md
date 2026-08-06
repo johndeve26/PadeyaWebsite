@@ -136,6 +136,26 @@ Reuses the **AI Control Center** via feature key `platform.assistant.chat`:
 
 The assistant does **not** read frontend env vars. If Control Center is configured but chat still uses template fallback, check backend logs for `assistant.provider_fallback` (missing key, wrong model, or provider HTTP error). Template fallback keeps event search + navigation working when the network provider is down or spend-capped.
 
+### Troubleshooting “AI not connected”
+
+Run the diagnostic CLI (uses your local DB + env):
+
+```bash
+cd backend && python -m scripts.diagnose_assistant_ai
+```
+
+Common blockers:
+
+| Symptom | Fix |
+|---------|-----|
+| `ASSISTANT_ENABLED=false` | Set `ASSISTANT_ENABLED=true` (+ public/auth flags) in `backend/.env` and restart API |
+| `ai_provider_ready=false` | Set `AI_API_KEY=sk-…` in env **or** re-save the provider key in Admin → Pàdéyá AI → Providers |
+| `Failed to decrypt secret` in logs | Admin-stored key was encrypted with a different `SECRET_KEY` / `EMAIL_SETTINGS_ENCRYPTION_KEY` — re-enter the API key in Admin, or set `AI_API_KEY` in env (env key is used when decrypt fails) |
+| Feature disabled | Admin → Features → enable `platform.assistant.chat` and assign a network primary |
+| Widget shows “Offline” | `/api/v1/assistant/status` returns `ai_provider_ready: false` — fix provider key as above |
+
+`GET /api/v1/assistant/status` exposes `ai_feature_enabled` and `ai_provider_ready` (no secrets). The widget header uses these instead of always showing “Online”.
+
 Do not retry mutations blindly.
 
 ---

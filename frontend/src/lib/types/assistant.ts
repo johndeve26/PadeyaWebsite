@@ -10,6 +10,8 @@ export type AssistantStatus = {
   event_search_enabled: boolean;
   product_public: string;
   product_authenticated: string;
+  ai_feature_enabled?: boolean;
+  ai_provider_ready?: boolean;
 };
 
 export type AssistantPageContext = {

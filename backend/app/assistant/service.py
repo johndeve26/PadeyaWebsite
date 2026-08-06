@@ -72,9 +72,9 @@ def assert_assistant_allowed(*, user: User | None) -> dict[str, bool]:
     return flags
 
 
-def public_status() -> dict[str, Any]:
+def public_status(db: Session | None = None) -> dict[str, Any]:
     flags = assistant_flags()
-    return {
+    payload: dict[str, Any] = {
         "assistant_enabled": flags[FLAG_ASSISTANT_ENABLED],
         "public_enabled": flags[FLAG_ASSISTANT_PUBLIC_ENABLED],
         "authenticated_enabled": flags[FLAG_ASSISTANT_AUTHENTICATED_ENABLED],
@@ -82,7 +82,42 @@ def public_status() -> dict[str, Any]:
         "event_search_enabled": flags[FLAG_ASSISTANT_EVENT_SEARCH_ENABLED],
         "product_public": PUBLIC_PRODUCT_NAME,
         "product_authenticated": AUTH_PRODUCT_NAME,
+        "ai_feature_enabled": False,
+        "ai_provider_ready": False,
     }
+    if db is None:
+        return payload
+
+    from app.ai.constants import FEATURE_PLATFORM_ASSISTANT_CHAT
+    from app.ai.feature_routing import (
+        ensure_default_provider_profiles,
+        get_or_create_feature_route,
+        invoke_config_for_profile,
+    )
+    from app.ai.feature_toggles import is_feature_enabled
+    from app.ai.models import AIProviderProfile
+    from app.core.config import get_settings
+
+    ensure_default_provider_profiles(db)
+    route = get_or_create_feature_route(db, FEATURE_PLATFORM_ASSISTANT_CHAT)
+    db.commit()
+    primary = (
+        db.get(AIProviderProfile, route.primary_provider_id)
+        if route.primary_provider_id
+        else None
+    )
+    payload["ai_feature_enabled"] = is_feature_enabled(
+        FEATURE_PLATFORM_ASSISTANT_CHAT, db=db
+    )
+    env_key = bool((get_settings().ai_api_key or "").strip())
+    provider_ready = env_key
+    if primary and primary.provider_type != "template_fallback":
+        cfg = invoke_config_for_profile(
+            primary, model_override=None, max_tokens_override=None
+        )
+        provider_ready = provider_ready or bool(cfg.api_key)
+    payload["ai_provider_ready"] = provider_ready
+    return payload
 
 
 def _call_provider(
@@ -92,25 +127,17 @@ def _call_provider(
     user_prompt: str,
 ) -> tuple[str, str | None, str | None, bool]:
     """Route through AI Control Center (provider profiles + runtime settings)."""
-    import os
+    from fastapi import HTTPException
 
     from app.ai.admin_controls import assert_spend_allows_network
     from app.ai.constants import FEATURE_PLATFORM_ASSISTANT_CHAT
     from app.ai.feature_routing import complete_for_feature
-    from app.ai.feature_toggles import is_feature_enabled
-    from app.ai.runtime_config import resolve_ai_settings
+    from app.ai.feature_toggles import assert_ai_globally_available, is_feature_enabled
 
-    if (os.environ.get("AI_KILL_SWITCH") or "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-    }:
+    try:
+        assert_ai_globally_available()
+    except HTTPException:
         logger.info("assistant.provider_skipped kill_switch")
-        return "", "none", None, True
-
-    runtime = resolve_ai_settings(db)
-    if not runtime.ai_enabled:
-        logger.info("assistant.provider_skipped ai_disabled")
         return "", "none", None, True
 
     if not is_feature_enabled(FEATURE_PLATFORM_ASSISTANT_CHAT, db=db):
@@ -121,6 +148,9 @@ def _call_provider(
     try:
         spend = assert_spend_allows_network(db)
         force_template = bool(spend.get("force_template_fallback"))
+    except HTTPException as exc:
+        logger.warning("assistant.spend_gate_blocked: %s", exc.detail)
+        return "", "none", None, True
     except Exception as exc:
         logger.warning("assistant.spend_gate_blocked: %s", exc)
         return "", "none", None, True

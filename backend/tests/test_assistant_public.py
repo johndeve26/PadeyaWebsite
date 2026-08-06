@@ -43,6 +43,8 @@ def test_status_endpoint_returns_flags(client: TestClient, assistant_public):
     assert body["assistant_enabled"] is True
     assert body["public_enabled"] is True
     assert body["event_search_enabled"] is True
+    assert "ai_provider_ready" in body
+    assert "ai_feature_enabled" in body
     assert "Ask" in body["product_public"] or "Pàdéyá" in body["product_public"]
 
 
