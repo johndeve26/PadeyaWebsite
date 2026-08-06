@@ -56,6 +56,18 @@ AUTH_ROUTE_REGISTRY: dict[str, AuthRouteEntry] = {
         synonyms=("my events", "host events", "event studio list"),
         common_questions=("Show my events", "Where do I manage events?"),
     ),
+    "host_audience": AuthRouteEntry(
+        key="host_audience",
+        path="/host/audience",
+        title="Audience CRM",
+        description="Followers, buyers, and marketing opt-ins for your host profile.",
+        required_roles=("host",),
+        synonyms=("audience", "followers", "crm", "marketing opt in"),
+        common_questions=(
+            "How many followers do I have?",
+            "How many people opted in?",
+        ),
+    ),
     "host_events_create": AuthRouteEntry(
         key="host_events_create",
         path="/host/events/new",

@@ -212,6 +212,16 @@ def _build_user_prompt(
                 row["host_fee_categories"] = tr.get("host_fee_categories")
             if tr.get("buyer_fee_categories"):
                 row["buyer_fee_categories"] = tr.get("buyer_fee_categories")
+            if tr.get("stats"):
+                row["stats"] = tr.get("stats")
+            if tr.get("following_count") is not None:
+                row["following_count"] = tr.get("following_count")
+            if tr.get("tickets_sold") is not None:
+                row["tickets_sold"] = tr.get("tickets_sold")
+                row["check_ins"] = tr.get("check_ins")
+                row["unique_visitors"] = tr.get("unique_visitors")
+            if tr.get("connection_count") is not None:
+                row["connection_count"] = tr.get("connection_count")
             if tr.get("total_tickets") is not None:
                 row["total_tickets"] = tr.get("total_tickets")
                 row["upcoming_count"] = tr.get("upcoming_count")
@@ -269,6 +279,14 @@ def _fallback_text(
                 tr.get("summary")
                 or f"You have {tr.get('total_tickets', 0)} ticket(s) on your account."
             )
+        if tr.get("tool_name") == "get_my_following_summary" and tr.get("ok"):
+            return str(tr.get("summary") or "You are not following any hosts yet.")
+        if tr.get("tool_name") == "get_my_audience_summary" and tr.get("ok"):
+            return str(tr.get("summary") or "Audience stats loaded.")
+        if tr.get("tool_name") == "get_my_event_analytics" and tr.get("ok"):
+            return str(tr.get("summary") or "Event analytics loaded.")
+        if tr.get("tool_name") == "get_my_fan_connect_summary" and tr.get("ok"):
+            return str(tr.get("summary") or "Fan Connect summary loaded.")
         if tr.get("tool_name") == "get_public_pricing" and tr.get("ok"):
             summary = tr.get("summary")
             if summary:
@@ -528,6 +546,15 @@ def run_chat_turn(
                         url=intent.path or "/dashboard/tickets",
                     )
                 )
+            if name == "get_my_audience_summary" and result.get("ok"):
+                actions.append(
+                    Action(
+                        type="navigate",
+                        label="Open Audience CRM",
+                        route_key="host_audience",
+                        url="/host/audience",
+                    )
+                )
             if name == "get_public_pricing" and result.get("ok"):
                 actions.append(
                     Action(
@@ -549,6 +576,7 @@ def run_chat_turn(
             "tickets",
             "orders",
             "support",
+            "insights",
         }:
             for hit in retrieve_knowledge(db, query=clean_message, top_k=4):
                 cit = Citation(

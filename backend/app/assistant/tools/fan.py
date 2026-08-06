@@ -143,31 +143,24 @@ def get_my_order_summary(
 def list_my_saved_events(
     db: Session, *, user: User | None, args: dict[str, Any] | None = None, **_: Any
 ) -> dict[str, Any]:
-    """Best-effort saved/followed hosts — empty list if no saved-events module."""
-    if user is None:
-        return {"ok": False, "error": "auth_required", "results": []}
-    limit = min(int((args or {}).get("limit") or 10), 25)
-    results: list[dict[str, Any]] = []
-    try:
-        from app.crm.models import HostFollower
+    """Followed hosts — delegates to following summary."""
+    from app.assistant.tools import insights
 
-        stmt = (
-            select(HostFollower)
-            .where(HostFollower.user_id == user.id)
-            .limit(limit)
-        )
-        rows = list(db.scalars(stmt).all())
-        for row in rows:
-            results.append(
-                {
-                    "host_id": str(getattr(row, "host_id", "")),
-                    "followed_at": (
-                        row.created_at.isoformat()
-                        if getattr(row, "created_at", None)
-                        else None
-                    ),
-                }
-            )
-    except Exception:
-        results = []
-    return {"ok": True, "results": results, "count": len(results)}
+    summary = insights.get_my_following_summary(db, user=user, args=args)
+    if not summary.get("ok"):
+        return {**summary, "results": []}
+    sample = summary.get("hosts_sample") or []
+    results = [
+        {
+            "display_name": item.get("display_name"),
+            "username": item.get("username"),
+            "marketing_opt_in": item.get("marketing_opt_in"),
+        }
+        for item in sample
+    ]
+    return {
+        "ok": True,
+        "results": results,
+        "count": summary.get("following_count", len(results)),
+        "summary": summary.get("summary"),
+    }

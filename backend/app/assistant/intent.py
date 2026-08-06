@@ -18,6 +18,7 @@ from app.assistant.constants import (
     INTENT_NAVIGATE,
     INTENT_ORDERS,
     INTENT_PRICING,
+    INTENT_INSIGHTS,
     INTENT_SEARCH_EVENTS,
     INTENT_SEARCH_HOSTS,
     INTENT_SEARCH_MEMORIES,
@@ -88,6 +89,39 @@ _BECOME_HOST_PATTERNS = (
     r"\bhost on p[aà]d[eé]y[aá]\b",
 )
 
+_FOLLOWING_PATTERNS = (
+    r"\bhow many hosts?\b.{0,40}\b(follow|following)\b",
+    r"\bhosts? (?:am i|i'?m|i am) following\b",
+    r"\bhow many (?:people|hosts?) (?:do )?i follow\b",
+)
+
+_FOLLOWER_PATTERNS = (
+    r"\bhow many followers?\b",
+    r"\bfollower count\b",
+    r"\bhow many follow(?:ers)? do i have\b",
+)
+
+_AUDIENCE_PATTERNS = (
+    r"\bhow many (?:people|fans|audience|customers)\b",
+    r"\bmarketing opt.?in\b",
+    r"\bopted? in\b",
+    r"\baudience size\b",
+    r"\bmy audience\b",
+)
+
+_EVENT_SALES_PATTERNS = (
+    r"\bhow many tickets?\b.{0,50}\b(sold|sales)\b",
+    r"\btickets? sold\b",
+    r"\bhow many (?:people|tickets?) (?:bought|purchased)\b",
+    r"\bsales for (?:my |this |the )?event\b",
+)
+
+_FAN_CONNECT_PATTERNS = (
+    r"\bfan connect\b",
+    r"\bhow many connections?\b",
+    r"\bconnections do i have\b",
+)
+
 _TICKET_COUNT_PATTERNS = (
     r"\bhow many tickets?\b",
     r"\bnumber of tickets?\b",
@@ -111,6 +145,26 @@ def _matches_fee_pricing_query(lower: str) -> bool:
 
 def _matches_become_host_query(lower: str) -> bool:
     return _match_any(lower, _BECOME_HOST_PATTERNS)
+
+
+def _matches_following_query(lower: str) -> bool:
+    return _match_any(lower, _FOLLOWING_PATTERNS)
+
+
+def _matches_follower_query(lower: str) -> bool:
+    return _match_any(lower, _FOLLOWER_PATTERNS)
+
+
+def _matches_audience_query(lower: str) -> bool:
+    return _match_any(lower, _AUDIENCE_PATTERNS)
+
+
+def _matches_event_sales_query(lower: str) -> bool:
+    return _match_any(lower, _EVENT_SALES_PATTERNS)
+
+
+def _matches_fan_connect_query(lower: str) -> bool:
+    return _match_any(lower, _FAN_CONNECT_PATTERNS)
 
 
 def _matches_ticket_count_query(lower: str) -> bool:
@@ -178,6 +232,66 @@ def classify_intent(
             route_key="for_hosts",
             path="/for-hosts",
             tool_hints=["search_help", "search_public_pages", "navigate_to_route"],
+        )
+
+    if _matches_following_query(lower):
+        if not authenticated:
+            return IntentResult(
+                intent=INTENT_INSIGHTS,
+                confidence=0.9,
+                tool_hints=[],
+                reason="auth_required_for_intent",
+            )
+        return IntentResult(
+            intent=INTENT_INSIGHTS,
+            confidence=0.9,
+            tool_hints=["get_my_following_summary"],
+        )
+
+    if _matches_fan_connect_query(lower):
+        if not authenticated:
+            return IntentResult(
+                intent=INTENT_INSIGHTS,
+                confidence=0.85,
+                tool_hints=[],
+                reason="auth_required_for_intent",
+            )
+        return IntentResult(
+            intent=INTENT_INSIGHTS,
+            confidence=0.85,
+            tool_hints=["get_my_fan_connect_summary"],
+        )
+
+    if _matches_event_sales_query(lower):
+        if not authenticated:
+            return IntentResult(
+                intent=INTENT_INSIGHTS,
+                confidence=0.9,
+                tool_hints=[],
+                reason="auth_required_for_intent",
+            )
+        return IntentResult(
+            intent=INTENT_INSIGHTS,
+            confidence=0.9,
+            tool_hints=["get_my_event_analytics", "list_my_events"],
+            route_key="host_events",
+            path="/host/events",
+        )
+
+    if _matches_follower_query(lower) or _matches_audience_query(lower):
+        if not authenticated:
+            return IntentResult(
+                intent=INTENT_INSIGHTS,
+                confidence=0.9,
+                tool_hints=[],
+                reason="auth_required_for_intent",
+            )
+        return IntentResult(
+            intent=INTENT_INSIGHTS,
+            confidence=0.9,
+            tool_hints=["get_my_audience_summary"],
+            route_key="host_audience",
+            path="/host/audience",
         )
 
     if _matches_ticket_count_query(lower) or _matches_ticket_wallet_query(lower):

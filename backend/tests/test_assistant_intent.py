@@ -5,6 +5,7 @@ from __future__ import annotations
 from app.assistant.constants import (
     INTENT_HIGH_RISK,
     INTENT_INJECTION,
+    INTENT_INSIGHTS,
     INTENT_PRICING,
     INTENT_SEARCH_EVENTS,
     INTENT_SEARCH_PAGES,
@@ -109,3 +110,30 @@ def test_become_host_routes_to_for_hosts():
     assert r.intent == INTENT_SEARCH_PAGES
     assert r.route_key == "for_hosts"
     assert r.path == "/for-hosts"
+
+
+def test_following_hosts_requires_auth():
+    r = classify_intent("how many hosts am i following", authenticated=False)
+    assert r.intent == INTENT_INSIGHTS
+    assert r.reason == "auth_required_for_intent"
+
+
+def test_following_hosts_uses_summary_tool():
+    r = classify_intent("how many hosts am i following", authenticated=True)
+    assert r.intent == INTENT_INSIGHTS
+    assert "get_my_following_summary" in r.tool_hints
+
+
+def test_follower_count_uses_audience_tool():
+    r = classify_intent("how many followers do i have", authenticated=True)
+    assert r.intent == INTENT_INSIGHTS
+    assert "get_my_audience_summary" in r.tool_hints
+    assert r.path == "/host/audience"
+
+
+def test_event_tickets_sold_uses_analytics_tool():
+    r = classify_intent(
+        "how many tickets have been sold for my event", authenticated=True
+    )
+    assert r.intent == INTENT_INSIGHTS
+    assert "get_my_event_analytics" in r.tool_hints

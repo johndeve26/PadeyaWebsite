@@ -155,9 +155,22 @@ TOOL_REGISTRY: dict[str, ToolDefinition] = {
     ),
     "list_my_saved_events": _t(
         "list_my_saved_events",
-        "List saved/followed items for the signed-in user (best-effort).",
+        "List hosts the signed-in fan follows (alias for following summary).",
         SAFETY_LEVEL_AUTH_READ,
         requires_auth=True,
+    ),
+    "get_my_following_summary": _t(
+        "get_my_following_summary",
+        "Count hosts the signed-in fan follows and marketing opt-ins.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+    ),
+    "get_my_fan_connect_summary": _t(
+        "get_my_fan_connect_summary",
+        "Count Fan Connect peer connections for the signed-in user.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+        required_permissions=("fan_connect.use",),
     ),
     # Host
     "list_my_events": _t(
@@ -170,6 +183,20 @@ TOOL_REGISTRY: dict[str, ToolDefinition] = {
     "get_my_event_summary": _t(
         "get_my_event_summary",
         "Summarize one owned event (no finance mutations).",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+        required_roles=("host",),
+    ),
+    "get_my_audience_summary": _t(
+        "get_my_audience_summary",
+        "Host audience aggregates: followers, opt-ins, buyers, check-ins.",
+        SAFETY_LEVEL_AUTH_READ,
+        requires_auth=True,
+        required_roles=("host",),
+    ),
+    "get_my_event_analytics": _t(
+        "get_my_event_analytics",
+        "Per-event sales metrics for an owned event (tickets sold, check-ins, traffic).",
         SAFETY_LEVEL_AUTH_READ,
         requires_auth=True,
         required_roles=("host",),
