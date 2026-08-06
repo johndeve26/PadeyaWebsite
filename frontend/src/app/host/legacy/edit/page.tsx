@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { LegacyContactSettingsEditor } from "@/components/legacy/studio/LegacyContactSettingsEditor";
+import { LegacyCtaSettingsEditor } from "@/components/legacy/studio/LegacyCtaSettingsEditor";
 import {
   LegacySocialLinksEditor,
   socialLinksToDraft,
@@ -195,12 +196,14 @@ export default function HostLegacyEditPage() {
               value={tagline}
               onChange={(e) => setTagline(e.target.value)}
               placeholder="Nights that travel."
+              hint="One line under your name on the public page."
             />
             <Textarea
               label="Bio"
               rows={5}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
+              placeholder="Tell fans about your nights, cities, and what to expect…"
               hint="Tell fans about your events, vibe, and reputation."
             />
             <div className="grid gap-4 sm:grid-cols-2">
@@ -208,20 +211,23 @@ export default function HostLegacyEditPage() {
                 label="Host type"
                 value={hostType}
                 onChange={(e) => setHostType(e.target.value)}
-                placeholder="dj, promoter…"
+                placeholder="dj, promoter, collective…"
+                hint="How you describe your role (slug-style, e.g. dj)."
               />
               <Input
                 label="Primary category"
                 value={primaryCategory}
                 onChange={(e) => setPrimaryCategory(e.target.value)}
-                placeholder="nightlife, culture…"
+                placeholder="nightlife, culture, live-music…"
+                hint="Main scene fans associate with you."
               />
             </div>
             <Input
               label="Website"
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
-              placeholder="https://…"
+              placeholder="https://yourbrand.com"
+              hint="Optional personal or brand site (separate from hero buttons)."
             />
           </section>
 
@@ -269,55 +275,31 @@ export default function HostLegacyEditPage() {
           </section>
 
           <section className="space-y-4">
-            <SectionHeader title="Calls to action" />
-            <div className="grid gap-4 sm:grid-cols-3">
-              <Input
-                label="Primary CTA label"
-                value={primaryCtaLabel}
-                onChange={(e) => setPrimaryCtaLabel(e.target.value)}
-              />
-              <Input
-                label="Primary CTA type"
-                value={primaryCtaType}
-                onChange={(e) => setPrimaryCtaType(e.target.value)}
-                placeholder="vault | events | sponsors | url"
-              />
-              <Input
-                label="Primary CTA value"
-                value={primaryCtaValue}
-                onChange={(e) => setPrimaryCtaValue(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <Input
-                label="Secondary CTA label"
-                value={secondaryCtaLabel}
-                onChange={(e) => setSecondaryCtaLabel(e.target.value)}
-              />
-              <Input
-                label="Secondary CTA type"
-                value={secondaryCtaType}
-                onChange={(e) => setSecondaryCtaType(e.target.value)}
-              />
-              <Input
-                label="Secondary CTA value"
-                value={secondaryCtaValue}
-                onChange={(e) => setSecondaryCtaValue(e.target.value)}
-              />
-            </div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <input
-                type="checkbox"
-                checked={sponsorshipAvailable}
-                onChange={(e) => setSponsorshipAvailable(e.target.checked)}
-              />
-              Open to sponsorship
-            </label>
-            <Textarea
-              label="Sponsorship note"
-              rows={2}
-              value={sponsorshipNote}
-              onChange={(e) => setSponsorshipNote(e.target.value)}
+            <SectionHeader
+              title="Hero buttons & sponsorship"
+              description="Buttons fans see first on your public Legacy Page, plus whether brands can inquire."
+            />
+            <LegacyCtaSettingsEditor
+              value={{
+                primaryLabel: primaryCtaLabel,
+                primaryType: primaryCtaType,
+                primaryValue: primaryCtaValue,
+                secondaryLabel: secondaryCtaLabel,
+                secondaryType: secondaryCtaType,
+                secondaryValue: secondaryCtaValue,
+                sponsorshipAvailable,
+                sponsorshipNote,
+              }}
+              onChange={(next) => {
+                setPrimaryCtaLabel(next.primaryLabel);
+                setPrimaryCtaType(next.primaryType);
+                setPrimaryCtaValue(next.primaryValue);
+                setSecondaryCtaLabel(next.secondaryLabel);
+                setSecondaryCtaType(next.secondaryType);
+                setSecondaryCtaValue(next.secondaryValue);
+                setSponsorshipAvailable(next.sponsorshipAvailable);
+                setSponsorshipNote(next.sponsorshipNote);
+              }}
             />
           </section>
 
