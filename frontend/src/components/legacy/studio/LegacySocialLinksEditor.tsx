@@ -117,11 +117,3 @@ export function socialLinksToDraft(links: LegacySocialLink[] | undefined): Draft
     label: l.label ?? "",
   }));
 }
-
-export function socialLinksToDraft(links: LegacySocialLink[] | undefined): Draft[] {
-  return (links ?? []).map((l) => ({
-    platform: l.platform,
-    url: l.url,
-    label: l.label ?? "",
-  }));
-}
