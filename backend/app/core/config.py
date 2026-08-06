@@ -135,6 +135,26 @@ class Settings(BaseSettings):
     ai_timeout_seconds: int = 30
     ai_rate_limit_per_hour: int = 60  # placeholder soft rate limit
 
+    # Conversational assistant (Ask Pàdéyá / Pàdéyá Copilot) — default OFF
+    assistant_enabled: bool = False
+    assistant_public_enabled: bool = False
+    assistant_authenticated_enabled: bool = False
+    assistant_actions_enabled: bool = False
+    assistant_event_search_enabled: bool = True  # when assistant on
+    assistant_support_drafts_enabled: bool = False
+    assistant_admin_enabled: bool = False
+    assistant_anonymous_rate_limit_per_hour: int = 30
+    assistant_auth_rate_limit_per_hour: int = 120
+    assistant_session_retention_days: int = 30
+    assistant_public_session_retention_hours: int = 24
+    assistant_knowledge_sync_enabled: bool = False
+    assistant_knowledge_sitemap_url: str = ""  # empty → derive from frontend_url
+    assistant_max_tool_steps: int = 4
+    assistant_max_output_tokens: int = 800
+    assistant_tool_timeout_seconds: int = 8
+    assistant_primary_model: str = ""  # empty → use ai_model
+    assistant_fast_model: str = ""
+
     # Merch cart recovery TTLs (MERCH_CART_ABANDON_AFTER aliases hours)
     merch_cart_abandon_after_hours: int = Field(
         default=24,

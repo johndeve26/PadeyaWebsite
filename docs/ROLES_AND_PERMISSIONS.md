@@ -126,8 +126,10 @@ cd backend && PYTHONPATH=. python scripts/seed_rbac.py
 6. Ticket issuance follows **verified payment webhooks**, not frontend success callbacks.
 7. Check-in uses **signed QR payloads**.
 8. Ledger entries are **append-only**.
+9. **Conversational assistant (Ask Pàdéyá / Pàdéyá Copilot)** may explain, draft, navigate, and run Level‑4 confirmed low-risk actions only. It must **never** autonomously refund, release payouts, publish events, alter finance/permissions, or bypass RBAC. Tool auth is always server-derived. See `docs/AI_ASSISTANT.md`. Knowledge sync admin APIs require `admin.ai.manage_settings` (or equivalent full access).
 
 ## Enforcement
 
 - Backend: `get_current_user`, `require_role`, `require_permission`
 - Frontend: route guards hide/deny UI only — API remains authoritative
+- Assistant: `app/assistant/tools/executor.py` + feature flags; hiding the widget is not authorization

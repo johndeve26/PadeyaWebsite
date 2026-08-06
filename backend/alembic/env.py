@@ -31,6 +31,7 @@ from app.messaging import models as messaging_models  # noqa: F401
 from app.fan_connect import models as fan_connect_models  # noqa: F401
 from app.analytics import models as analytics_models  # noqa: F401
 from app.ai import models as ai_models  # noqa: F401
+from app.assistant import models as assistant_models  # noqa: F401
 from app.sponsorships import models as sponsorships_models  # noqa: F401
 from app.sponsor_profiles.recommendations import models as sponsor_campaign_rec_models  # noqa: F401
 from app.tickets import advanced_models as ticket_advanced_models  # noqa: F401

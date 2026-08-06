@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 
+import { PadeyaAssistantLoader } from "@/components/assistant/PadeyaAssistantLoader";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { ImpersonationBanner } from "@/components/auth/ImpersonationBanner";
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
@@ -135,6 +136,7 @@ export default function RootLayout({
                       <div className="min-w-0 flex-1">{children}</div>
                       <SiteFooter />
                       <MobileBottomNav />
+                      <PadeyaAssistantLoader />
                     </MaintenanceGate>
                   </ImageLightboxProvider>
                 </NotificationToastProvider>

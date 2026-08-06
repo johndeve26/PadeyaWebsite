@@ -162,7 +162,8 @@ def test_impression_session_dedupe_skips_duplicate_stream(
 
 def test_recalculate_daily_rollup(client: TestClient, db_session: Session):
     event = _seed(db_session)
-    day = date.today()
+    # Rollups bucket by UTC day; track endpoints stamp occurred_at in UTC.
+    day = datetime.now(UTC).date()
     for action in (
         TrackedAction.EVENT_CARD_IMPRESSION,
         TrackedAction.EVENT_CARD_CLICK,

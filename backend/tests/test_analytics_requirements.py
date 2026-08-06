@@ -607,7 +607,8 @@ def test_rollup_idempotency_preserves_counts(db_session: Session):
     _, _, event, tt = _seed(
         db_session, email="roll@example.com", slug="roll-h", event_slug="roll-night"
     )
-    day = date.today()
+    # Rollups bucket by UTC day; stream rows use datetime.now(UTC).
+    day = datetime.now(UTC).date()
     for i in range(3):
         _add_stream(
             db_session,

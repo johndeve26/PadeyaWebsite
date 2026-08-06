@@ -410,8 +410,17 @@ Permissions: `admin.maintenance.view|manage|schedule|notify|bypass`. Tests: `tes
 | Prompt templates | `ai_prompt_templates` | Seed | Used at generate | Seed `is_active` | Soft intended | Soft | — | `ai/seed.py` | partial | No admin template CRUD |
 | AI usage logs | `ai_usage_logs` | On generate (system) | Response id only | Immutable | Never | Never | Host/admin AI pages | Generate endpoints | **planned-readonly** (partial) | No usage dashboard API yet |
 | AI settings | Env/config only | Deploy/env | `GET /ai/status` | Env deploy | Never | N/A (not DB) | Indirect | `core/config.py` | **planned-readonly** | Secrets stay in env — not a DB CRUD resource |
+| Assistant sessions | `assistant_sessions` | System (anon cookie or auth) | Owner only | Title/metadata | Expire / user DELETE | Cascade messages/tool calls | Widget history | `/api/v1/assistant/sessions*` | **complete** (v1) | Retention via env + cleanup script |
+| Assistant messages | `assistant_messages` | System on chat | Session owner | Immutable | With session | Cascade | Widget | stream + session detail | **complete** (v1) | No secrets in content; structured_content_json for cards |
+| Assistant tool calls | `assistant_tool_calls` | System | Session owner (sanitized) | Status transitions | With session | Cascade | — | Internal + stream status | **complete** (v1) | Args sanitized; no private dumps in SSE |
+| Assistant feedback | `assistant_feedback` | User | Owner / admin review | Never | Soft retain | Prefer retain | Widget | `POST /assistant/feedback` | **complete** (v1) | Does not auto-alter answers |
+| Assistant action confirmations | `assistant_action_confirmations` | System (Level 4) | Bound user | confirm/cancel/expire | Expire | Prefer expire | Confirmation cards | `/assistant/actions/{id}/confirm\|cancel` | **complete** (v1) | Idempotent; re-auth on confirm |
+| Assistant knowledge documents | `assistant_knowledge_documents` | Admin sync job | Admin status; retrieve internal | Reindex on hash change | Archive missing | Prefer archive | Admin sync | `/admin/assistant/knowledge/*` | **complete** (v1) | Public pages only; FTS chunks |
+| Assistant knowledge chunks | `assistant_knowledge_chunks` | Sync job | Retrieval only | Replace on reindex | Cascade with doc | Cascade | — | FTS retrieve | **complete** (v1) | Untrusted text; no pgvector in v1 |
 
 Generate (not content CRUD): `POST /ai/host/generate`, `.../events/{id}/generate`, `/ai/admin/generate`, `/ai/admin/support/summary`.
+
+Conversational assistant (not content CRUD): `POST /assistant/chat/stream`, session CRUD, action confirm/cancel, feedback, admin knowledge sync. See `docs/AI_ASSISTANT.md`. High-risk finance/moderation actions are **system-only via protected UI** — never via chat tools.
 
 ---
 

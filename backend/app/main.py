@@ -27,6 +27,9 @@ from app.appeals.router import router as appeals_router
 from app.auth.session_middleware import AuthSessionMiddleware
 from app.ai.router import router as ai_router
 from app.ai.seed import seed_ai_prompt_templates
+from app.assistant import models as assistant_models  # noqa: F401
+from app.assistant.admin_router import router as assistant_admin_router
+from app.assistant.router import router as assistant_router
 from app.analytics.admin_event_router import router as admin_event_analytics_router
 from app.analytics.host_event_router import router as host_event_analytics_router
 from app.analytics.router import router as analytics_router
@@ -388,6 +391,8 @@ app.include_router(placements_router, prefix=api)
 app.include_router(analytics_router, prefix=api)
 app.include_router(host_event_analytics_router, prefix=api)
 app.include_router(ai_router, prefix=api)
+app.include_router(assistant_router, prefix=api)
+app.include_router(assistant_admin_router, prefix=api)
 app.include_router(sponsor_profiles_router, prefix=api)
 app.include_router(sponsor_team_router, prefix=api)
 app.include_router(sponsor_saved_router, prefix=api)
